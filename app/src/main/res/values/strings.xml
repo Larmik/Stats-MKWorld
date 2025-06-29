@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name" translatable="false">Stats MKWorld</string>
+    <string name="email">Email adress</string>
+    <string name="password">Password</string>
+    <string name="login">Log in</string>
+    <string name="signup">Sign up</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="mkc_id">MKC ID</string>
+    <string name="welcome">Welcome!</string>
+    <string name="search_team">Search team...</string>
+    <string name="rechercher_un_joueur">Search player...</string>
+    <string name="mbc">Mario Bros. Circuit</string>
+    <string name="cc1">Crown City</string>
+    <string name="ws">Whistlestop Summit</string>
+    <string name="dks">DK Spaceport</string>
+    <string name="rdh">Desert Hills</string>
+    <string name="rsgb">Shy Guy Bazaar</string>
+    <string name="rws">Wario Stadium</string>
+    <string name="raf">Airship Fortress</string>
+    <string name="rdkp">DK Pass</string>
+    <string name="sp">Starview Peak</string>
+    <string name="rshs">Sky High Sundae</string>
+    <string name="rwsh">Wario Shipyard</string>
+    <string name="rktb">Koopa Troopa Beach</string>
+    <string name="fo">Faraway Oasis</string>
+    <string name="ps1">Peach Stadium</string>
+    <string name="rpb">Peach Beach</string>
+    <string name="sss">Salty Salty Speedway</string>
+    <string name="rddj">Dino Dino Jungle</string>
+    <string name="gbr">Great ? Block Ruins</string>
+    <string name="ccf">Cheep Cheep Falls</string>
+    <string name="dd">Dandelion Depths</string>
+    <string name="bci">Boo Cinema</string>
+    <string name="dbb">Dry Bones Burnout</string>
+    <string name="rmmm">Moo Moo Meadows</string>
+    <string name="rcm">Choco Mountain</string>
+    <string name="rtf">Toad\'s Factory</string>
+    <string name="bc">Bowser Castle</string>
+    <string name="ah">Acorn Heights</string>
+    <string name="mc">Mario Circuit</string>
+    <string name="rr">Rainbow Road</string>
+    <string name="rechercher_un_circuit">Rechercher un circuit...</string>
+</resources>

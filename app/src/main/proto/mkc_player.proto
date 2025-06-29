@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option java_package = "fr.harmoniamk.statsmkworld.debug";
+option java_multiple_files = true;
+
+
+message MKCPlayerProto {
+  int64 id = 1;
+  string name = 2;
+  string country_code = 3;
+  int64 join_date = 7;
+  MKCDiscordInfoProto discord = 8;
+  repeated MKCFriendCodeProto friend_codes = 9;
+  repeated MKCRosterProto rosters = 10;
+  MKCUserSettingsProto user_settings = 12;
+}
+
+message MKCDiscordInfoProto {
+  string discord_id = 1;
+  string username = 2;
+  string discriminator = 3;
+  string global_name = 4;
+  string avatar = 5;
+}
+
+message MKCFriendCodeProto {
+  int64 id = 1;
+  string fc = 2;
+  string type = 3;
+  int64 player_id = 4;
+  bool is_verified = 5;
+  bool is_primary = 6;
+  int64 creation_date = 7;
+  string description = 8;
+  bool is_active = 9;
+}
+
+message MKCRosterProto {
+  int64 roster_id = 1;
+  int64 join_date = 2;
+  int64 team_id = 3;
+  string team_name = 4;
+  string team_tag = 5;
+  int64 team_color = 6;
+  string roster_name = 7;
+  string roster_tag = 8;
+  string game = 9;
+  string mode = 10;
+}
+
+message MKCUserSettingsProto {
+  int64 user_id = 1;
+  string avatar = 2;
+  string about_me = 3;
+  string language = 4;
+  string color_scheme = 5;
+  string timezone = 6;
+}
+

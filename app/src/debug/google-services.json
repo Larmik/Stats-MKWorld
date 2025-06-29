@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1053418916893",
+    "firebase_url": "https://stats-mkworld-debug-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "stats-mkworld-debug",
+    "storage_bucket": "stats-mkworld-debug.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1053418916893:android:6eafdde2b28be12f4a8af4",
+        "android_client_info": {
+          "package_name": "fr.harmoniamk.statsmkworld.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPueC41URXSVrBJRnKIRip8ubNgdS72V4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

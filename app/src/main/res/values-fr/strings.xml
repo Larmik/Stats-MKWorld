@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="email">Adresse mail</string>
+    <string name="password">Mot de passe</string>
+    <string name="login">Se connecter</string>
+    <string name="signup">S\'inscrire</string>
+    <string name="confirm_password">Confirmer le mot de passe</string>
+    <string name="mkc_id">Identifiant MKC</string>
+    <string name="welcome">Bienvenue !</string>
+    <string name="search_team">Rechercher une équipe...</string>
+    <string name="rechercher_un_joueur">Rechercher un joueur</string>
+    <string name="mbc">Circuit Mario Bros.</string>
+    <string name="cc1">Trophéopolis</string>
+    <string name="ws">Mont Tchou Tchou</string>
+    <string name="dks">Spatioport DK</string>
+    <string name="rdh">Désert du Soleil</string>
+    <string name="rsgb">Souk Maskass</string>
+    <string name="rws">Stade Wario</string>
+    <string name="raf">Bateau volant</string>
+    <string name="rdkp">Alpes DK</string>
+    <string name="sp">Pic de l\'observatoire</string>
+    <string name="rshs">Cité Sorbet</string>
+    <string name="rwsh">Galion de Wario</string>
+    <string name="rktb">Plage Koopa</string>
+    <string name="fo">Savane sauvage</string>
+    <string name="ps1">Stade Peach</string>
+    <string name="rpb">Plage Peach</string>
+    <string name="sss">Cité Fleur-de-Sel</string>
+    <string name="rddj">Jungle Dino Dino</string>
+    <string name="gbr">Bloc ? antique</string>
+    <string name="ccf">Chutes Cheep Cheep</string>
+    <string name="dd">Gouffre Pissenlit</string>
+    <string name="bci">Cinéma Boo</string>
+    <string name="dbb">Fournaise osseuse</string>
+    <string name="rmmm">Prairie Meuh Meuh</string>
+    <string name="rcm">Montagne Choco</string>
+    <string name="rtf">Usine Toad</string>
+    <string name="bc">Château de Bowser</string>
+    <string name="mc">Circuit Mario</string>
+    <string name="rr">Route Arc-en-ciel</string>
+    <string name="ah">Chemin du chêne</string>
+    <string name="rechercher_un_circuit">Rechercher un circuit...</string>
+</resources>

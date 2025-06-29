@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option java_package = "fr.harmoniamk.statsmkworld.debug";
+option java_multiple_files = true;
+
+
+message MKCTeamProto {
+    int64 id = 1;
+    string name = 2;
+    string tag = 3;
+    string description = 4;
+    int64 creation_date = 5;
+    string language = 6;
+    int64 color = 7;
+    string logo = 8;
+    string approval_status = 9;
+    repeated MKCTeamRosterProto rosters = 10;
+}
+
+message MKCTeamRosterProto {
+    int64 id = 1;
+    int64 team_id = 2;
+    string game = 3;
+    string mode = 4;
+    string name = 5;
+    string tag = 6;
+    int64 creation_date = 7;
+    int32 is_recruiting = 8;
+    int32 is_active = 9;
+    string approval_status = 10;
+    int32 color = 11;
+    repeated MKCTeamPlayerProto players = 12;
+
+}
+
+
+
+// Message principal pour un joueur
+message MKCTeamPlayerProto {
+    int32 player_id = 1;
+    string name = 2;
+    string country_code = 3;
+    bool is_banned = 4;
+    DiscordProfile discord = 5;
+    int64 join_date = 6;
+    bool is_manager = 7;
+    bool is_leader = 8;
+    bool is_bagger_clause = 9;
+    repeated FriendCode friend_codes = 10;
+}
+
+// Profil Discord imbriqué
+message DiscordProfile {
+    string discord_id = 1;
+    string username = 2;
+    string discriminator = 3;
+    string global_name = 4;
+    string avatar = 5;
+}
+
+// Code ami imbriqué
+message FriendCode {
+    int32 id = 1;
+    string fc = 2;
+    string type = 3;
+    int32 player_id = 4;
+    bool is_verified = 5;
+    bool is_primary = 6;
+    int64 creation_date = 7;
+    string description = 8;
+    bool is_active = 9;
+}
