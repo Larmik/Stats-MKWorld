@@ -91,10 +91,10 @@ class CurrentWarViewModel @Inject constructor(
 
 
         val players = when (currentLocalPlayers.isEmpty()) {
-            true -> firebaseRepository.getUsers()
+            true -> firebaseRepository.getUsers(war.teamHost)
                 .firstOrNull()
                 ?.filter { it.currentWar == war.id.toString() }
-                ?.map { user ->  localPlayers?.firstOrNull { it.id == user.id } }
+                ?.map { user -> localPlayers?.firstOrNull { it.id == user.id } }
                 ?.map { PlayerScore(it, 0) }
                 .orEmpty()
 
@@ -150,7 +150,8 @@ class CurrentWarViewModel @Inject constructor(
                     players?.filter { it.currentWar == war.id.toString() }?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
                         firebaseRepository.writeUser(
-                            User(
+                            teamId = state.value.details?.war?.teamHost.orEmpty(),
+                            user = User(
                                 id = it.id,
                                 currentWar = "",
                                 role = it.role

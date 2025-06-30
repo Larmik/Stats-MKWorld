@@ -37,8 +37,6 @@ interface DataStoreRepositoryInterface {
     suspend fun setPage(page: Int)
     suspend fun setMKCPlayer(player: MKCPlayer)
     suspend fun setMKCTeam(team: MKCTeam)
-    suspend fun setCountry(country: String)
-    suspend fun setLaunchedBefore(launched: Boolean)
     suspend fun setCurrentWar(war: War)
     suspend fun deleteCurrentWar()
     suspend fun clearPlayer()
@@ -49,8 +47,6 @@ interface DataStoreRepositoryInterface {
     val page: Flow<Int>
     val mkcPlayer: Flow<MKCPlayer>
     val mkcTeam: Flow<MKCTeam>
-    val country: Flow<String>
-    val launchedBefore: Flow<Boolean>
     val war: Flow<War?>
     val lastUpdate: Flow<Long>
 }
@@ -90,19 +86,6 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
-    override suspend fun setCountry(country: String) {
-        val key = stringPreferencesKey("country")
-        context.dataStore.edit {
-            it[key] = country
-        }
-    }
-
-    override suspend fun setLaunchedBefore(launched: Boolean) {
-        val key = booleanPreferencesKey("launchedBefore")
-        context.dataStore.edit {
-            it[key] = launched
-        }
-    }
 
     override suspend fun setCurrentWar(war: War) {
         context.warDataStore.updateData {
@@ -154,16 +137,6 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         get() = context.mkcTeamDataStore.data
             .map { MKCTeam(it) }
 
-    override val country: Flow<String>
-        get() {
-            val key = stringPreferencesKey("country")
-            return context.dataStore.data.map { it[key].orEmpty() }
-        }
-    override val launchedBefore: Flow<Boolean>
-        get() {
-            val key = booleanPreferencesKey("launchedBefore")
-            return context.dataStore.data.map { it[key] == true }
-        }
     override val war: Flow<War?>
         get() = context.warDataStore.data
             .map { DatastoreWar(it) }

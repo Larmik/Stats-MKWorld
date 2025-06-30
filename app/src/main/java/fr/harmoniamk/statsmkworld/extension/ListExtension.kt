@@ -5,6 +5,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 
 fun Any?.toMapList(): List<Map<*, *>>? = this as? List<Map<*, *>>
+
 fun List<Map<*, *>>?.parseTracks(): List<WarTrack>? =
     this?.map { track ->
         WarTrack(
@@ -19,9 +20,7 @@ fun List<Map<*, *>>?.parseTracks(): List<WarTrack>? =
                     )
                 }.orEmpty()
         )
-
     }
-
 
 fun List<Map<*, *>>?.parsePenalties(): List<WarPenalty>? =
     this?.map { item ->
@@ -30,7 +29,6 @@ fun List<Map<*, *>>?.parsePenalties(): List<WarPenalty>? =
             amount = item["amount"].toString().toInt()
         )
     }
-
 
 fun <T> List<T>.safeSubList(from: Int, to: Int): List<T> = when {
     this.size < to -> this

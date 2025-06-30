@@ -3,6 +3,7 @@ package fr.harmoniamk.statsmkworld.screen.welcome
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -33,7 +34,7 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
         .mapNotNull { player ->
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
                 val buttonVisible = firebaseRepository
-                    .getUser(player.id.toString())
+                    .getUser(team.id.toString(), player.id.toString())
                     .map { it?.role ?: 0 }
                     .map { it > 0 }
                     .firstOrNull()
@@ -43,6 +44,7 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
                     ?.map { War(it) }
                     ?.map { WarDetails(it) }
                     ?.sortedByDescending { it.war.id }
+                    ?.safeSubList(0, 5)
                     .orEmpty()
                 State(
                     teamName = team.name,

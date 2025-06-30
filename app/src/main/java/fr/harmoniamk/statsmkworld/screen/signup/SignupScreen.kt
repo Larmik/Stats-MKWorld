@@ -125,7 +125,7 @@ fun SignupScreen(
                                 scope.launch { pagerState.animateScrollToPage(selectedIndex.intValue) }
                             }
                         }
-                    }, onCountrySelected = { viewModel.onCountrySelected(it.countryCode) })
+                    })
             }
         }
 

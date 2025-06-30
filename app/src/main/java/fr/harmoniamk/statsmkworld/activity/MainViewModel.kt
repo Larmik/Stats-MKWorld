@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -30,15 +31,18 @@ class MainViewModel @Inject constructor(dataStoreRepository: DataStoreRepository
 
     private val _state = MutableStateFlow(State())
 
-    val state = dataStoreRepository.launchedBefore.zip(dataStoreRepository.mkcPlayer) { launchedBefore, player ->
+    val state = flowOf(Unit)
+        .map {
+            val player = dataStoreRepository.mkcPlayer.firstOrNull()
             val currentPage = dataStoreRepository.page.firstOrNull()
             when {
-                player.id != 0L  -> {
-                    delay(3000)
+                player?.id != 0L  -> {
+                    delay(1000)
                     _state.value.copy(startDestination = "Home")
                 }
                 else -> _state.value.copy(currentPage = currentPage, startDestination = "Signup")
             }
+
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.Lazily, _state.value)

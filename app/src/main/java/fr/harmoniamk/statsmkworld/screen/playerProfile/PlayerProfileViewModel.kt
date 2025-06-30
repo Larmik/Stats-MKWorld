@@ -66,8 +66,9 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
     }
         .filterNotNull()
         .mapNotNull {
-            val roster = dataStoreRepository.mkcTeam
+            val team = dataStoreRepository.mkcTeam
                 .firstOrNull()
+            val roster = team
                 ?.rosters
                 ?.firstOrNull { it.game == "mkworld" }
                 ?.players.orEmpty()
@@ -75,14 +76,14 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
             val isAlly = databaseRepository.getPlayers().firstOrNull()
                 ?.singleOrNull { it.id == id }
                 ?.isAlly
-            val role = firebaseRepository.getUser(it.id.toString())
+            val role = firebaseRepository.getUser(team?.id.toString(), it.id.toString())
                 .map { when (it?.role) {
                     1 -> "Admin"
                     2 -> "Leader"
                     else -> "Membre"
                 }
                 }.firstOrNull()
-            val lastUpdate =   dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { it?.startsWith("01/01/1970") != true }
+            val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { it?.startsWith("01/01/1970") != true }
             State(player = it, buttonVisible = canAlly && isAlly != true, isAlly = isAlly == true, role = role,  showMenu = id == "me", lastUpdate = lastUpdate)
         }
         .mergeWith(_state)

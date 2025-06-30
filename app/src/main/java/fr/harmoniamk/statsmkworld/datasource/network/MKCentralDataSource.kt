@@ -18,7 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface MKCentralDataSourceInterface {
-    fun getPlayers(page: Int, country: String): Flow<MKCPlayerResponse?>
+    fun findPlayer(discordId: String): Flow<MKCPlayerResponse?>
     fun getPlayer(playerId: String): Flow<NetworkResponse<MKCPlayer>>
     fun getTeam(teamId: String): Flow<MKCTeam?>
     fun getTeams(page: Int): Flow<MKCTeamResponse?>
@@ -37,12 +37,12 @@ interface MKCentralDataSourceModule {
 
 
 class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
-    override fun getPlayers(page: Int, country: String): Flow<MKCPlayerResponse?> = callbackFlow {
+    override fun findPlayer(discordId: String): Flow<MKCPlayerResponse?> = callbackFlow {
         val call = RetrofitUtils.createRetrofit(
             MKCentralApi::class.java,
             MKCentralApi.baseUrl,
             timeout = 5
-        ).getPlayers(page, country)
+        ).findPlayer(discordId)
 
         call.enqueue(object : retrofit2.Callback<MKCPlayerResponse> {
 

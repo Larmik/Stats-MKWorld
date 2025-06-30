@@ -30,13 +30,11 @@ import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 @Composable
-fun TutorialPage(item: TutorialItem, onClick: (TutorialItem) -> Unit, onCountrySelected: (Country) -> Unit) {
+fun TutorialPage(item: TutorialItem, onClick: (TutorialItem) -> Unit) {
 
-    val country = remember { mutableStateOf<Country?>(null) }
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 500.dp)
             .background(color = Colors.black, shape = RoundedCornerShape(15.dp))
             .border(
                 width = 2.dp,
@@ -51,17 +49,13 @@ fun TutorialPage(item: TutorialItem, onClick: (TutorialItem) -> Unit, onCountryS
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 MKText(text = item.title, textColor = Colors.white, font = Fonts.NunitoBD, fontSize = 18)
                     MKText(text = item.text, textColor = Colors.white)
-                    if (item == TutorialItem.COUNTRY) {
-                        CountrySelector {
-                            country.value = it
-                        }
-                    }
+
                     Box(contentAlignment = Alignment.Center) {
                         item.image?.let {
-                            Image(modifier = Modifier.size(300.dp).padding(vertical = 50.dp), painter = painterResource(it), contentDescription = null)
+                            Image(modifier = Modifier.size(200.dp).padding(vertical = 50.dp), painter = painterResource(it), contentDescription = null)
                         }
                         item.lottie?.let {
-                            LottieAnimComposable(modifier = Modifier.heightIn(max = 300.dp), lottieFile = it)
+                            LottieAnimComposable(modifier = Modifier.heightIn(max = 200.dp), lottieFile = it)
                         }
                     }
                     item.secondText?.let {
@@ -72,15 +66,11 @@ fun TutorialPage(item: TutorialItem, onClick: (TutorialItem) -> Unit, onCountryS
                     MKButton(
                         style = MKButtonStyle.Gradient,
                         text = it,
-                        enabled = item != TutorialItem.COUNTRY || country.value != null,
                         onClick = {
-                            if (item == TutorialItem.COUNTRY) country.value?.let(onCountrySelected)
                             onClick(item)
                         }
                     )
                 }
-
-
             }
 
     }

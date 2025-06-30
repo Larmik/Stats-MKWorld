@@ -36,9 +36,9 @@ import kotlin.collections.get
 
 interface FirebaseRepositoryInterface{
     //SplashScreen/Login
-    fun getUser(id: String): Flow<User?>
-    fun getUsers(): Flow<List<User>>
-    fun writeUser(user: User): Flow<Unit>
+    fun getUser(teamId: String, id: String): Flow<User?>
+    fun getUsers(teamId: String): Flow<List<User>>
+    fun writeUser(teamId: String, user: User): Flow<Unit>
 
     fun getWars(teamId: String): Flow<List<War>>
     fun writeCurrentWar(war: War): Flow<Unit>
@@ -74,13 +74,13 @@ class FirebaseRepository @Inject constructor(
 
     private val database = Firebase.database.reference
 
-    override fun writeUser(user: User) = flow {
-        database.child("users").child(user.id).setValue(user)
+    override fun writeUser(teamId: String, user: User) = flow {
+        database.child("users").child(teamId).child(user.id).setValue(user)
         emit(Unit)
     }
 
-    override fun getUser(id: String): Flow<User?>  = callbackFlow {
-        database.child("users").child(id.split(".").first()).get().addOnSuccessListener { snapshot ->
+    override fun getUser(teamId: String, id: String): Flow<User?>  = callbackFlow {
+        database.child("users").child(teamId).child(id).get().addOnSuccessListener { snapshot ->
             (snapshot.value as? Map<*,*>)?.let { value ->
                 launch {
                     val user =  User(
@@ -183,8 +183,8 @@ class FirebaseRepository @Inject constructor(
         awaitClose {  }
     }.flowOn(Dispatchers.IO)
 
-    override fun getUsers(): Flow<List<User>> = callbackFlow {
-        database.child("users").get().addOnSuccessListener { snapshot ->
+    override fun getUsers(teamId: String): Flow<List<User>> = callbackFlow {
+        database.child("users").child(teamId).get().addOnSuccessListener { snapshot ->
             val wars: List<User> = snapshot.children
                 .map { it.value as Map<*, *> }
                 .map { map -> User(

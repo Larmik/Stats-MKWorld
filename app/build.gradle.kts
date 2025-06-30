@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,18 +22,23 @@ android {
         versionName = "1.1.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+        buildConfigField("String", "DISCORD_API_SECRET", properties.getProperty("DISCORD_API_SECRET"))
+
     }
 
     signingConfigs {
         create("release") {
+            val properties = Properties()
+            properties.load(project.rootProject.file("local.properties").inputStream())
             storeFile  = file("/Users/pascal/Documents/statsmkworld_keystore")
-            storePassword  = "Harmonia2025!"
-            keyPassword =  "Harmonia2025!"
+            storePassword  = properties.getProperty("KEYSTORE_PASSWORD")
+            keyPassword =  properties.getProperty("KEYSTORE_PASSWORD")
             keyAlias =  "statsmkworld"
         }
     }
-
-
 
     buildTypes {
         release {

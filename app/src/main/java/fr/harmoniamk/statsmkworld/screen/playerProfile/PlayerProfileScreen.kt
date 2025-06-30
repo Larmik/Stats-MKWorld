@@ -173,8 +173,6 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                                 }
                             }
                         }
-
-
                     }
                 }
 
@@ -211,9 +209,9 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
 
                         }
                     }
-                }
-                state.value.lastUpdate?.let {
-                    MKText(text = "Dernière mise à jour : $it", modifier = Modifier.padding(top = 10.dp))
+                    state.value.lastUpdate?.let {
+                        MKText(text = "Dernière mise à jour : $it", modifier = Modifier.padding(top = 10.dp))
+                    }
                 }
             }
         }

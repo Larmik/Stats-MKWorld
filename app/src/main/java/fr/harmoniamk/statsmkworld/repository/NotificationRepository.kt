@@ -79,7 +79,7 @@ class NotificationRepository @Inject constructor(@ApplicationContext val context
     override fun sendNotification(message: String) {
         val builder = NotificationCompat.Builder(context, "DEBUG")
             .setSmallIcon(R.drawable.mkcentralpic)
-            .setContentTitle("Stats MKWorld Debug")
+            .setContentTitle("Stats MKWorld")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 

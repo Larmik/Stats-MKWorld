@@ -64,7 +64,6 @@ class FetchUseCase @Inject constructor(
     private val databaseRepository: DatabaseRepositoryInterface
 ) : FetchUseCaseInterface, CoroutineScope {
 
-
     override fun fetchPlayer(playerId: String): Flow<MKCPlayer> =  mkCentralDataSource.getPlayer(playerId)
         .mapNotNull { it.successResponse }
         .onEach { dataStoreRepository.setMKCPlayer(it) }
@@ -83,14 +82,13 @@ class FetchUseCase @Inject constructor(
                    return@map PlayerEntity(player = it, role = role)
                 }).firstOrNull()
                 databaseRepository.getPlayers().firstOrNull()?.forEach { player ->
-                    firebaseRepository.getUser(player.id).firstOrNull()?.let {
+                    firebaseRepository.getUser(teamId, player.id).firstOrNull()?.let {
                         databaseRepository.updateUser(player.id, role = it.role).firstOrNull()
                         databaseRepository.updateUser(player.id, currentWar = it.currentWar.orEmpty()).firstOrNull()
                     }
                 }
             }
         }
-
 
     override fun fetchAllies(teamId: String): Flow<Unit> = dataStoreRepository.mkcTeam
         .flatMapLatest { firebaseRepository.getAllies(it.id.toString()) }
@@ -109,7 +107,6 @@ class FetchUseCase @Inject constructor(
                             response.successResponse?.let {
                                 databaseRepository.addAlly(PlayerEntity(it, isAlly = true)).firstOrNull()
                             }
-
                         }
                     }
                 }

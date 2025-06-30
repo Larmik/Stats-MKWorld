@@ -111,7 +111,8 @@ class AddWarViewModel @Inject constructor(
             .onEach { war ->
                 _state.value.playerList.filter { it.isSelected }.forEach {
                     firebaseRepository.writeUser(
-                        User(
+                        teamId = currentTeam?.id.toString(),
+                        user = User(
                             id = it.player.id,
                             currentWar = war.id.toString(),
                             role = it.player.role

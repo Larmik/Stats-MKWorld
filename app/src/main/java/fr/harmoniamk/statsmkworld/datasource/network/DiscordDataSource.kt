@@ -4,6 +4,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import fr.harmoniamk.statsmkworld.BuildConfig
 import fr.harmoniamk.statsmkworld.api.DiscordApi
 import fr.harmoniamk.statsmkworld.api.RetrofitUtils
 import fr.harmoniamk.statsmkworld.application.Constants
@@ -45,7 +46,7 @@ class DiscordDataSource @Inject constructor(
         get() = Dispatchers.IO
 
     override fun getToken(code: String): Flow<NetworkResponse<TokenResponse>> = callbackFlow {
-        val credentials = Credentials.basic(Constants.authClientId, Constants.authClientSecret)
+        val credentials = Credentials.basic(Constants.authClientId, BuildConfig.DISCORD_API_SECRET)
         val call = RetrofitUtils.createRetrofit(
             DiscordApi::class.java,
             DiscordApi.baseUrl,
@@ -108,7 +109,7 @@ class DiscordDataSource @Inject constructor(
     }
 
     override fun revokeToken(token: String): Flow<Unit?> = callbackFlow {
-        val credentials = Credentials.basic(Constants.authClientId, Constants.authClientSecret)
+        val credentials = Credentials.basic(Constants.authClientId, BuildConfig.DISCORD_API_SECRET)
         val call = RetrofitUtils.createRetrofit(
             DiscordApi::class.java,
             DiscordApi.baseUrl,

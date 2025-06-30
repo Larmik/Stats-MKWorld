@@ -117,7 +117,8 @@ class CurrentWarActionsViewModel @Inject constructor(
                     ?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
                         firebaseRepository.writeUser(
-                            User(
+                            teamId = state.value.war?.teamHost.orEmpty(),
+                            user = User(
                                 id = it.id,
                                 currentWar = "",
                                 role = it.role

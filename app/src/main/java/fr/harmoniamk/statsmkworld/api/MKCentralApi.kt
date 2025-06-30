@@ -15,10 +15,9 @@ interface MKCentralApi {
         const val baseUrl: String = Constants.mkCentralBaseUrl
     }
 
-    @GET("registry/players?detailed=true&is_banned=false&is_hidden=false&matching_fcs_only=true&is_shadow=false")
-    fun getPlayers(
-        @Query("page") page: Int,
-        @Query("country") country: String
+    @GET("registry/players")
+    fun findPlayer(
+        @Query("discord_id") discordId: String
     ): Call<MKCPlayerResponse>
 
     @GET("registry/players?detailed=true&is_banned=false&is_hidden=false&matching_fcs_only=true&is_shadow=false")

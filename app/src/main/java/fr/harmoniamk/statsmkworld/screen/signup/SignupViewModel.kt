@@ -9,6 +9,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.datasource.network.DiscordDataSourceInterface
+import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.extension.emit
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
@@ -17,7 +18,8 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.NotificationRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.WorkerRepositoryInterface
-import fr.harmoniamk.statsmkworld.worker.FindPlayerWorker
+import fr.harmoniamk.statsmkworld.usecase.FetchUseCase
+import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,6 +37,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Date
 
 enum class TutorialItem(
     val title: String,
@@ -52,23 +55,19 @@ enum class TutorialItem(
     ),
     OPEN_APP(
         title = "Autoriser l'ouverture des liens",
-        text = "Avant toute chose, l'application a besoin d'avoir accès à quelques autorisations, à commencer par l'ouverture des liens dédiés. Cela te permettra de t'authentifier plus facilement avec Discord. \n \n Cette autorisation est nécessaire sur les appareils à partir de Android 12.",
+        text = "Avant toute chose, l'application a besoin d'avoir accès à quelques autorisations, à commencer par l'ouverture des liens dédiés. Cela est nécessaire afin de t'authentifier avec Discord. \n \n Cette autorisation est demandée sur les appareils à partir de Android 12.",
         buttonText = "Réglage des liens",
         lottie = R.raw.link,
         secondText = "Une fois dans les paramètres, il te suffit de sélectionner \"Ajouter un lien\" et d'ajouter le lien \"statsmkworld.com\" proposé afin d'autoriser son ouverture dans l'application."
     ),
     NOTIFICATIONS(
         title = "Autoriser les notifications",
-        text = "L'application a également besoin de t'envoyer des notifications pour te tenir informé de l'avancée de certains processus. \n  \n Cette autorisation est nécessaire sur les appareils à partir de Android 13.",
+        text = "L'application a également besoin de t'envoyer des notifications pour te tenir informé de l'avancée de certains processus. \n  \n Cette autorisation est demandée sur les appareils à partir de Android 13.",
         buttonText = "Activer",
         lottie = R.raw.notif,
         secondText = "Ne t'inquiète pas, l'application ne te spammera sous aucun prétexte."
     ),
-    COUNTRY(
-        title = "Sélection du pays",
-        text = "Sélectionne ton pays tel qu'indiqué sur ton compte MKCentral.",
-        buttonText = "Continuer"
-    ),
+
     AUTH(
         title = "Connexion via Discord",
         text = "Parfait ! C'est le moment de t'authentifier à l'aide de ton compte Discord.",
@@ -77,10 +76,9 @@ enum class TutorialItem(
     ),
     FIND_PLAYER(
         title = "Recherche du profil",
-        text = "Afin de te proposer la meilleure expérience possible, l'appli va récupérer tes données MKCentral. Patiente le temps de la recherche de ton profil, cela peut prendre jusqu'à 10 minutes.",
+        text = "Afin de te proposer la meilleure expérience possible, l'appli va récupérer tes données MKCentral. Patiente le temps de la recherche de ton profil.",
         image = R.drawable.mkcentralpic,
         lottie = R.raw.search,
-        secondText = "Tu peux faire autre chose : Si tu as permis les notifications, une notification t'avertira lorsque l'application sera prête."
     ),
     WELCOME(
         title = "Tout est prêt !",
@@ -89,7 +87,7 @@ enum class TutorialItem(
     ),
     ERROR(
         title = "Oups !",
-        text = "Une erreur est survenue durant la recherche de ton profil MKCentral. Il y'a deux raisons principales :\n \n -Tu n'as pas sélectionné le bon pays. \n \n -Ton compte Discord n'est pas lié à MKCentral.",
+        text = "Une erreur est survenue durant la recherche de ton profil MKCentral. Il y'a trois raisons principales :\n \n -Ton compte Discord n'est pas lié à MKCentral. \n -Le serveur MKCentral ne répond pas \n -Une mauvaise connexion réseau",
         buttonText = "Recommencer",
         secondText = "Note: Tu dois être inscrit sur MKCentral afin de pouvoir utiliser l'application.",
         lottie = R.raw.fail
@@ -102,9 +100,10 @@ class SignupViewModel @AssistedInject constructor(
     @Assisted val code: String,
     private val authDataSource: DiscordDataSourceInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val workerRepository: WorkerRepositoryInterface,
+    private val mkCentralDataSource: MKCentralDataSourceInterface,
     private val notificationRepository: NotificationRepositoryInterface,
-    private val firebaseRepository: FirebaseRepositoryInterface
+    private val firebaseRepository: FirebaseRepositoryInterface,
+    private val fetchUseCase: FetchUseCaseInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -125,7 +124,6 @@ class SignupViewModel @AssistedInject constructor(
     val showNotif = _showNotif.asSharedFlow()
     val onNext = _onNext.asSharedFlow()
 
-    private var player: MKCPlayer? = null
     private var currentPage: Int? = null
 
     init {
@@ -138,62 +136,53 @@ class SignupViewModel @AssistedInject constructor(
     }
 
     val state = when {
-        code.isNotEmpty() -> authDataSource.getToken(code)
-            .onEach {
-                it.errorResponse?.let {
-                    firebaseRepository.log(it, "SignupViewModel").firstOrNull()
+        code.isNotEmpty() ->
+            //Récupération du token Discord à partir de la redirection
+            authDataSource.getToken(code)
+                .mapNotNull { it.successResponse?.accessToken }
+                .filterNot { it.isEmpty() }
+                .onEach {
+                    dataStoreRepository.setAccessToken(it)
+                    dataStoreRepository.setPage(4)
+
                 }
-            }
-            .mapNotNull { it.successResponse?.accessToken }
-            .filterNot { it.isEmpty() }
-            .onEach { dataStoreRepository.setAccessToken(it) }
+        //Récupération du token en local (user déjà connecté)
         else -> dataStoreRepository.accessToken.filterNot { it.isEmpty() }
     }
-        .onEach {
-            player = dataStoreRepository.mkcPlayer.firstOrNull()
-            currentPage = dataStoreRepository.page.firstOrNull()
-        }
+        .onEach { currentPage = dataStoreRepository.page.firstOrNull() }
         .flatMapLatest { authDataSource.getUser(it) }
-        .onEach {
-            it.errorResponse?.let {
-                firebaseRepository.log(it, "SignupViewModel").firstOrNull()
-            }
-        }
         .mapNotNull {
-            val launchedBefore = dataStoreRepository.launchedBefore.firstOrNull()
-            when {
-                it.successResponse == null && launchedBefore != true -> dataStoreRepository.setPage(7)
-                player?.id != 0L ->  {
-                    flowOf(Unit)
-                        .mapNotNull { dataStoreRepository.mkcPlayer.firstOrNull() }
-                        .onEach {
-                            if (firebaseRepository.getUser(it.id.toString()).firstOrNull() == null) {
-                                val user = User(it.id.toString())
-                                firebaseRepository.writeUser(user)
-                            }
-                            dataStoreRepository.setLaunchedBefore(true)
-                        }.launchIn(viewModelScope)
-                }
-                (currentPage ?: 0) < 7 && code.isNotEmpty() -> dataStoreRepository.setPage(5)
-            }
-            firebaseRepository.log("Launch task with id ${it.successResponse?.id}, already launched: ${_state.value.launched}, mkcPlayerId: ${dataStoreRepository.mkcPlayer.firstOrNull()?.id}", "SignupViewModel").firstOrNull()
+            if (it.successResponse == null)
+                 dataStoreRepository.setPage(6)
             it.successResponse?.id
         }
-        .filterNot { _state.value.launched && dataStoreRepository.mkcPlayer.firstOrNull()?.id != 0L}
+        //On recherche dans le registre avec l'ID Discord, puis on récupère le fullPlayer avec l'ID du résultat
+        .flatMapLatest { mkCentralDataSource.findPlayer(it) }
+        .mapNotNull { it?.playerList?.firstOrNull() }
+        .flatMapLatest { mkCentralDataSource.getPlayer(it.id.toString()) }
+        .mapNotNull { it.successResponse }
         .map {
-            if (currentPage == 5) {
-                val country = dataStoreRepository.country.firstOrNull()
-                val data = Data.Builder()
-                    .putString("discord_id", it)
-                    .putString("country", country.orEmpty())
-                    .build()
-                firebaseRepository.log("Launch bg task", "SignupViewModel").firstOrNull()
-                workerRepository.launchBackgroundTask(
-                    FindPlayerWorker::class.java,
-                    "findPlayer",
-                    data
-                )
+            val teamId = it.rosters?.firstOrNull()?.teamID
+            //Set player dans datastore puis écriture sur Firebase (si non existant)
+            dataStoreRepository.setMKCPlayer(it)
+            if (firebaseRepository.getUser(teamId.toString(), it.id.toString()).firstOrNull() == null) {
+                val user = User(it.id.toString())
+                firebaseRepository.writeUser(teamId.toString(), user)
             }
+            //Fetch classique, puis affichage du succès, MAJ de la date et redirection home
+            fetchUseCase.fetchTeam(teamId.toString())
+                .flatMapLatest { fetchUseCase.fetchAllies(teamId.toString()) }
+                .flatMapLatest { fetchUseCase.fetchTeams() }
+                .flatMapLatest { fetchUseCase.fetchWars(teamId.toString()) }
+                .onEach {
+                    dataStoreRepository.setLastUpdate(Date().time)
+                    dataStoreRepository.setPage(5)
+                    delay(2000)
+                    _onNext.emit(Unit)
+                }.launchIn(viewModelScope)
+
+
+
             _state.value.copy(currentPage = currentPage, launched = true)
         }
         .mergeWith(_state)
@@ -205,17 +194,10 @@ class SignupViewModel @AssistedInject constructor(
         else _showNotif.emit(Unit, viewModelScope)
     }
 
-    fun onCountrySelected(country: String) {
-        viewModelScope.launch {
-            dataStoreRepository.setCountry(country)
-        }
-    }
-
 
     fun onRetry() {
         viewModelScope.launch {
             dataStoreRepository.setAccessToken("")
-            dataStoreRepository.setCountry("")
             dataStoreRepository.setPage(3)
         }
     }
