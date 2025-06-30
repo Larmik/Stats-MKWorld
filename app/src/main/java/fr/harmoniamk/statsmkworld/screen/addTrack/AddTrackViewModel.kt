@@ -8,6 +8,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
+import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
@@ -23,13 +24,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.set
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -51,7 +52,8 @@ class AddTrackViewModel @Inject constructor(
         val diff: String? = null,
         val trackScore: String? = null,
         val trackDiff: String? = null,
-        val trackOrder: Int? = null
+        val trackOrder: Int? = null,
+        val shocks: Map<String, Int> = mutableMapOf()
     )
 
     private val _state = MutableStateFlow(State())
@@ -167,12 +169,26 @@ class AddTrackViewModel @Inject constructor(
         }
     }
 
+    fun onAddShock(id: String) {
+        val shocks = state.value.shocks.toMutableMap()
+        shocks[id]?.let { shocks[id] = it + 1 } ?: run { shocks[id] = 1 }
+        _state.value = state.value.copy(shocks = shocks)
+    }
+
+    fun onRemoveShock(id: String) {
+        val shocks = state.value.shocks.toMutableMap()
+        shocks[id]?.let { shocks[id] = it - 1 }
+        _state.value = state.value.copy(shocks = shocks)
+    }
+
     fun onValidate() {
         details?.war?.let {
+            val shockList = state.value.shocks.map { Shock(it.key, it.value) }
             val track = WarTrack(
                 id = System.currentTimeMillis(),
                 index = _state.value.mapSelected?.ordinal ?: 0,
-                positions = _state.value.selectedPositions.map { it.position }
+                positions = _state.value.selectedPositions.map { it.position },
+                shocks = shockList
             )
             val tracks = mutableListOf<WarTrack>()
             tracks.addAll(it.tracks)

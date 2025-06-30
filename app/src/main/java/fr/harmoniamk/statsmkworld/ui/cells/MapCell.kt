@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -52,6 +53,16 @@ fun MapCell(
                 MKText(text = stringResource(mapToDisplay.label), font = Fonts.NunitoBD, textColor = textColor, maxLines = 1)
                 MKText(text = mapToDisplay.name, fontSize = 10, textColor = textColor, font = Fonts.NunitoIT)
             }
+
+        when (val total = track?.track?.shocks?.takeIf { it.isNotEmpty() }.orEmpty().sumOf { it.count }) {
+            0 -> Spacer(Modifier.size(20.dp))
+            else ->   Row {
+                (0 until total).forEach { i ->
+                    Image(painter = painterResource(R.drawable.shock), modifier = Modifier.size(20.dp), contentDescription = null)
+                }
+            }
+        }
+
             track?.let {
                 Column(modifier = Modifier.padding(bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     MKText(text = it.displayedResult, fontSize = 24, font = Fonts.NunitoBD, textColor = textColor)

@@ -16,6 +16,7 @@ message WarTrackProto {
     int64 id = 1;
     int32 index = 2;
     repeated WarPositionProto positions = 3;
+    repeated ShockProto shocks = 4;
 }
 
 message WarPenaltyProto {
@@ -27,4 +28,9 @@ message WarPositionProto {
     int64 id = 1;
     string player_id = 2;
     int32 position = 3;
+}
+
+message ShockProto {
+    string player_id = 1;
+    int32 count = 2;
 }

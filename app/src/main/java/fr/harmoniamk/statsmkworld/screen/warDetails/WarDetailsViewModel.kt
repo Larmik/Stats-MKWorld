@@ -65,11 +65,12 @@ class WarDetailsViewModel @AssistedInject constructor(
     private suspend fun initPlayersList(war: War): List<PlayerScore> {
         val players = databaseRepository.getPlayers().firstOrNull()
             ?.filter { player -> war.tracks.any { it.positions.any { it.playerId == player.id } } }
-            ?.map { PlayerScore(it, 0) }
+            ?.map { PlayerScore(it, 0, 0) }
             .orEmpty()
         val trackList = war.tracks
         val finalList = mutableListOf<PlayerScore>()
         val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
+        val shocks =  trackList.flatMap { it.shocks.orEmpty() }
         trackList.forEach {
             it.positions.takeIf { it.isNotEmpty() }?.let { warPositions ->
                 val trackPositions = mutableListOf<PositionDetails>()
@@ -100,7 +101,8 @@ class WarDetailsViewModel @AssistedInject constructor(
                 PlayerScore(
                 player = pair.first,
                 score = pair.second,
-            )
+                shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
+                )
             )
         }
         players

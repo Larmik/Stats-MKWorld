@@ -31,7 +31,9 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.VerticalGrid
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
+import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
 import kotlinx.coroutines.launch
 
@@ -41,7 +43,7 @@ fun EditTrackScreen(
     onBack: () -> Unit,
     onBackToCurrent: () -> Unit
 ) {
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val pagerState = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
     val state = viewModel.state.collectAsState()
     BackHandler { onBack() }
@@ -61,7 +63,8 @@ fun EditTrackScreen(
             repeat(pagerState.pageCount) { iteration ->
                 val text = when (iteration) {
                     0 -> "Circuit"
-                    else -> "Positions"
+                    1 -> "Positions"
+                    else -> "Shocks"
                 }
                 val bgColor = when (iteration == pagerState.currentPage) {
                     true -> Colors.blackAlphaed
@@ -130,8 +133,7 @@ fun EditTrackScreen(
                         }
 
                     }
-
-                    else -> {
+                    1 -> {
                         Column(
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -161,6 +163,20 @@ fun EditTrackScreen(
                                             )
                                         }
                                     }
+                                }
+                            }
+
+                        }
+                    }
+                    else -> {
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            VerticalGrid {
+                                state.value.initialPositions.forEach {
+                                    PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock) { }
                                 }
                             }
 

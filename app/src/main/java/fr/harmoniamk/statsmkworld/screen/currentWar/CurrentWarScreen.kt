@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.LifecycleResumeEffect
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -62,7 +61,8 @@ fun CurrentWarScreen(
                     teamOpponent = state.value.teamOpponent,
                     score = state.value.details?.displayedScore.orEmpty(),
                     diff = state.value.details?.displayedDiff.orEmpty(),
-                    penalties = state.value.details?.war?.penalties.orEmpty()
+                    penalties = state.value.details?.war?.penalties.orEmpty(),
+                    shockCount = state.value.details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } }
                 )
                 Spacer(Modifier.height(20.dp))
                 WarPlayersCell(players = state.value.players)

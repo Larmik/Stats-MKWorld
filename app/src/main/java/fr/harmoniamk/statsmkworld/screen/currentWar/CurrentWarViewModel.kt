@@ -86,7 +86,7 @@ class CurrentWarViewModel @Inject constructor(
 
         val currentLocalPlayers = localPlayers
             ?.filter { it.currentWar == war.id.toString() }
-            ?.map { PlayerScore(it, 0) }
+            ?.map { PlayerScore(it, 0, 0) }
             .orEmpty()
 
 
@@ -95,7 +95,7 @@ class CurrentWarViewModel @Inject constructor(
                 .firstOrNull()
                 ?.filter { it.currentWar == war.id.toString() }
                 ?.map { user -> localPlayers?.firstOrNull { it.id == user.id } }
-                ?.map { PlayerScore(it, 0) }
+                ?.map { PlayerScore(it, 0, 0) }
                 .orEmpty()
 
             else -> currentLocalPlayers
@@ -104,6 +104,7 @@ class CurrentWarViewModel @Inject constructor(
         val trackList = war.tracks
         val finalList = mutableListOf<PlayerScore>()
         val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
+        val shocks =  trackList.flatMap { it.shocks.orEmpty() }
         trackList.forEach {
             it.positions.takeIf { it.isNotEmpty() }?.let { warPositions ->
                 val trackPositions = mutableListOf<PositionDetails>()
@@ -127,12 +128,13 @@ class CurrentWarViewModel @Inject constructor(
             }
         }
         val temp = positions.groupBy { it.first }
-            .map { Pair(it.key, it.value.map { it.second }.sum()) }
+            .map { Pair(it.key, it.value.sumOf { it.second }) }
             .sortedByDescending { it.second }
         temp.forEach { pair ->
             finalList.add(PlayerScore(
                 player = pair.first,
                 score = pair.second,
+                shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
             ))
         }
         players

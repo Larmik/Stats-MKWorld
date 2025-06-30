@@ -18,8 +18,8 @@ android {
         applicationId = "fr.harmoniamk.statsmkworld"
         minSdk = 28
         targetSdk = 35
-        versionCode = 13
-        versionName = "1.1.0"
+        versionCode = 14
+        versionName = "1.2.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -109,6 +109,8 @@ dependencies {
     implementation(libs.firebase.ui.auth)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.fragment.compose)
+    implementation(libs.firebase.config)
+    implementation(libs.firebase.analytics)
 
 
     // Hilt

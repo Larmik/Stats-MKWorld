@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,14 +20,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import fr.harmoniamk.statsmkworld.R
-import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -34,12 +33,12 @@ import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
+import fr.harmoniamk.statsmkworld.ui.VerticalGrid
 import fr.harmoniamk.statsmkworld.ui.WarScoreStyle
 import fr.harmoniamk.statsmkworld.ui.WarScoreView
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
-import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
@@ -129,13 +128,14 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                 }
 
             }
-            else -> BaseScreen(title = "Résumé") {
+            else -> BaseScreen(title = "Résumé", modifier = Modifier.verticalScroll(rememberScrollState())) {
                 state.value.mapSelected?.let {
                     MapCell(map = it, backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = { })
                 }
-                LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(state.value.selectedPositions) {
-                        PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp)) { }
+                VerticalGrid {
+                    state.value.selectedPositions.forEach {
+                        PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock) { }
+
                     }
                 }
 

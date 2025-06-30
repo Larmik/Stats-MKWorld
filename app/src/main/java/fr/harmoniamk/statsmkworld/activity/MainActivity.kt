@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import fr.harmoniamk.statsmkworld.extension.emit
 import fr.harmoniamk.statsmkworld.screen.RootScreen
+import fr.harmoniamk.statsmkworld.ui.MKDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -43,6 +44,10 @@ class MainActivity : AppCompatActivity() {
         viewModel.state
             .filterNotNull()
             .onEach {
+                if (it.needUpdate)
+                    setContent {
+                        MKDialog(title = "Mise à jour nécessaire", message = "L'application a besoin d'une mise à jour pour continuer à fonctionner correctement.", buttonText = "Mettre à jour", secondButtonText = "Fermer", onButtonClick = {}, onSecondButtonClick = { finish() })
+                    }
                 it.startDestination?.let { destination ->
                     setContent {
                         RootScreen(startDestination = destination, code = it.code, currentPage = it.currentPage) { finish() }

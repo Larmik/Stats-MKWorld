@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.extension
 
+import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
@@ -18,7 +19,14 @@ fun List<Map<*, *>>?.parseTracks(): List<WarTrack>? =
                         playerId = it["playerId"].toString(),
                         position = it["position"].toString().toInt()
                     )
-                }.orEmpty()
+                }.orEmpty(),
+            shocks = (track["shocks"]?.toMapList())
+                ?.map {
+                    Shock(
+                        playerId = it["playerId"].toString(),
+                        count = it["count"].toString().toInt()
+                    )
+                }
         )
     }
 

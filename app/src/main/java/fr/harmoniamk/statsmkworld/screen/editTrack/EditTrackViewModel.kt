@@ -1,6 +1,5 @@
 package fr.harmoniamk.statsmkworld.screen.editTrack
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
@@ -9,6 +8,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
@@ -18,14 +18,12 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -52,7 +50,9 @@ class EditTrackViewModel @AssistedInject constructor(
         val players: List<PlayerEntity> = listOf(),
         val currentPlayer: PlayerEntity? = null,
         val selectedPositions: List<PlayerPosition> = listOf(),
-        val buttonEnabled: Boolean = false
+        val initialPositions: List<PlayerPosition> = listOf(),
+        val buttonEnabled: Boolean = false,
+        val shocks: Map<String, Int> = mutableMapOf()
     )
 
     private val positions = mutableListOf<PlayerPosition>()
@@ -66,9 +66,19 @@ class EditTrackViewModel @AssistedInject constructor(
         .map { war ->
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == war.id.toString() }?.sortedBy { it.name }.orEmpty()
+
+            val positions = players.map { player ->
+                details?.track?.positions.orEmpty().singleOrNull { it.playerId == player.id }?.let {
+                    PlayerPosition(
+                        player = player,
+                        position = it
+                    )
+                }
+            }
             State(
                 players = players,
-                currentPlayer = players.firstOrNull()
+                currentPlayer = players.firstOrNull(),
+                initialPositions = positions.filterNotNull().sortedBy { it.position.position }
             )
         }
         .mergeWith(_state)
@@ -104,10 +114,15 @@ class EditTrackViewModel @AssistedInject constructor(
                 val tracks = war.tracks.toMutableList()
                 details?.track?.let { track ->
                     war.tracks.indexOf(track).takeIf { it != -1 }?.let { index ->
+                        val shocks = state.value.shocks.map { Shock(it.key, it.value) }
+                        val trackWithShock = when (shocks.isEmpty()) {
+                            true -> track
+                            else -> track.copy(shocks = shocks)
+                        }
                         when {
                             _state.value.mapSelected != null && _state.value.selectedPositions.isEmpty() -> {
                                 tracks.add(
-                                    index, track.copy(
+                                    index, trackWithShock.copy(
                                         index = _state.value.mapSelected?.ordinal ?: track.index,
                                     )
                                 )
@@ -116,7 +131,7 @@ class EditTrackViewModel @AssistedInject constructor(
                             }
                             _state.value.mapSelected != null && _state.value.selectedPositions.size == 6 -> {
                                 tracks.add(
-                                    index, track.copy(
+                                    index, trackWithShock.copy(
                                         index = _state.value.mapSelected?.ordinal ?: track.index,
                                         positions = _state.value.selectedPositions.map { it.position }
                                     )
@@ -126,10 +141,15 @@ class EditTrackViewModel @AssistedInject constructor(
                             }
                             _state.value.mapSelected == null && _state.value.selectedPositions.size == 6 -> {
                                 tracks.add(
-                                    index, track.copy(
+                                    index, trackWithShock.copy(
                                         positions = _state.value.selectedPositions.map { it.position }
                                     )
                                 )
+                                tracks.removeAt(index+1)
+                                updateWar(war, tracks)
+                            }
+                            _state.value.shocks.isNotEmpty() -> {
+                                tracks.add(index, trackWithShock)
                                 tracks.removeAt(index+1)
                                 updateWar(war, tracks)
                             }
@@ -138,6 +158,24 @@ class EditTrackViewModel @AssistedInject constructor(
                 }
             }
         }
+    }
+
+    fun onAddShock(id: String) {
+        val shocks = state.value.shocks.toMutableMap()
+        shocks[id]?.let { shocks[id] = it + 1 } ?: run { shocks[id] = 1 }
+        _state.value = state.value.copy(
+            shocks = shocks,
+            buttonEnabled = true
+        )
+    }
+
+    fun onRemoveShock(id: String) {
+        val shocks = state.value.shocks.toMutableMap()
+        shocks[id]?.let { shocks[id] = it - 1 }
+        _state.value = state.value.copy(
+            shocks = shocks,
+            buttonEnabled = true
+        )
     }
 
     private fun updateWar(war: War, tracks: List<WarTrack>) {
