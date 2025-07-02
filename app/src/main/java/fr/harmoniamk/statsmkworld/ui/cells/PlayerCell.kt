@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +45,7 @@ fun PlayerCell(
     onRemoveShock: (String) -> Unit = {},
     onClick: (PlayerEntity) -> Unit
 ) {
-    val shockCountState = remember { mutableStateOf(shockCount ?: 0) }
+    val shockCountState = remember { mutableIntStateOf(shockCount ?: 0) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
@@ -82,7 +82,7 @@ fun PlayerCell(
                     fontSize = 40,
                     font = Fonts.MKPosition
                 )
-                when (val shocks = shockCountState.value.takeIf { it > 0 }) {
+                when (val shocks = shockCountState.intValue.takeIf { it > 0 }) {
                     null -> Spacer(Modifier.size(20.dp))
                     else -> Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
@@ -115,9 +115,9 @@ fun PlayerCell(
                     font = Fonts.Bungee,
                     fontSize = 18,
                     modifier = Modifier.clickable(onClick = {
-                        player?.id?.takeIf { shockCountState.value > 0 }?.let {
+                        player?.id?.takeIf { shockCountState.intValue > 0 }?.let {
                             onRemoveShock(it)
-                            shockCountState.value -= 1
+                            shockCountState.intValue -= 1
                         }
                     })
                 )
@@ -137,7 +137,7 @@ fun PlayerCell(
                     modifier = Modifier.clickable(onClick = {
                         player?.id?.let {
                             onAddShock(it)
-                            shockCountState.value += 1
+                            shockCountState.intValue += 1
                         }
                     })
                 )

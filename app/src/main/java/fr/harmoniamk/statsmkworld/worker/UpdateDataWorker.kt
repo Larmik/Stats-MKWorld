@@ -11,6 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.NotificationRepositoryInterface
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
@@ -71,7 +72,7 @@ class UpdateDataWorker @AssistedInject constructor(
                 .flatMapLatest { fetchUseCase.fetchWars(it.id.toString()) }
                 .onEach {
                     dataStoreRepository.setLastUpdate(Date().time)
-                    notificationRepository.sendNotification("Les données de l'application on été mises à jour")
+                    notificationRepository.sendNotification(context.getString(R.string.data_updated))
                 }.launchIn(this)
         }
 

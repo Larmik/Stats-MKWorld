@@ -3,7 +3,6 @@ package fr.harmoniamk.statsmkworld.model.firebase
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.model.local.DatastoreWar
 
-
 data class War(
     val id: Long,
     val teamHost: String,

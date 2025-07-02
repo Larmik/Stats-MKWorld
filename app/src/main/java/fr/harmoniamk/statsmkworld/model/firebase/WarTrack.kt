@@ -15,5 +15,4 @@ data class WarTrack(
         positions = track.positions,
         shocks = track.shocks
     )
-
 }

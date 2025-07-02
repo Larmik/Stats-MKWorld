@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -78,7 +79,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
         userScrollEnabled = false
     ) {
         when (it) {
-            0 -> BaseScreen(title = "Sélection du circuit") {
+            0 -> BaseScreen(title = stringResource(R.string.pick_circuit)) {
                 MKTextField(
                     value = search.value,
                     onValueChange = {
@@ -98,7 +99,9 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                 }
             }
 
-            1 -> BaseScreen(title = "Sélection des positions", subtitle = "Course ${state.value.trackOrder}/12") {
+            1 -> BaseScreen(title = stringResource(R.string.pick_position), subtitle = stringResource(
+                R.string.current_race, state.value.trackOrder.toString()
+            )) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     WarScoreView(
                         modifier = Modifier.weight(1f),
@@ -128,7 +131,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                 }
 
             }
-            else -> BaseScreen(title = "Résumé", modifier = Modifier.verticalScroll(rememberScrollState())) {
+            else -> BaseScreen(title = stringResource(R.string.resume), modifier = Modifier.verticalScroll(rememberScrollState())) {
                 state.value.mapSelected?.let {
                     MapCell(map = it, backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = { })
                 }
@@ -141,8 +144,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
 
                 MKText(text = state.value.trackScore.orEmpty(), fontSize = 32)
                 MKText(text = state.value.trackDiff.orEmpty(), fontSize = 24)
-                MKButton(style = MKButtonStyle.Gradient, text = "Confirmer", onClick = viewModel::onValidate)
-
+                MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.confirmer), onClick = viewModel::onValidate)
             }
         }
     }

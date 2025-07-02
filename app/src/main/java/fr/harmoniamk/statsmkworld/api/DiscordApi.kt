@@ -1,8 +1,5 @@
 package fr.harmoniamk.statsmkworld.api
 
-import fr.harmoniamk.statsmkworld.application.Constants
-import fr.harmoniamk.statsmkworld.model.network.discord.DiscordGuild
-import fr.harmoniamk.statsmkworld.model.network.discord.DiscordMember
 import fr.harmoniamk.statsmkworld.model.network.discord.DiscordUser
 import fr.harmoniamk.statsmkworld.model.network.discord.TokenResponse
 import retrofit2.Call
@@ -11,11 +8,10 @@ import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
-import retrofit2.http.Path
 
 interface DiscordApi {
     companion object {
-        const val baseUrl: String = Constants.discordBaseUrl
+        const val baseUrl: String = "https://discord.com/"
     }
 
     @FormUrlEncoded
@@ -39,6 +35,5 @@ interface DiscordApi {
 
     @GET("api/users/@me")
     fun getCurrentUser(@Header("Authorization") authorization: String): Call<DiscordUser>
-
 
 }

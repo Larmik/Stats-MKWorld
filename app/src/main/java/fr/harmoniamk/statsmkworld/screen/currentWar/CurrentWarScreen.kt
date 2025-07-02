@@ -16,10 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -51,7 +53,7 @@ fun CurrentWarScreen(
         }
     }
     BackHandler { onBack() }
-    BaseScreen(title = "War en cours") {
+    BaseScreen(title = stringResource(R.string.war_en_cours)) {
 
         when (val details = state.value.details) {
             null -> CircularProgressIndicator()
@@ -74,8 +76,8 @@ fun CurrentWarScreen(
 
                         MKButton(
                             style = MKButtonStyle.Gradient, text = when (state.value.isOver) {
-                                true -> "Valider la war"
-                                else -> "Course suivante"
+                                true -> stringResource(R.string.valider_la_war)
+                                else -> stringResource(R.string.course_suivante)
                             }, onClick = {
                                 when (state.value.isOver) {
                                     true -> viewModel.onValidateWar()
@@ -85,7 +87,7 @@ fun CurrentWarScreen(
                         MKButton(
                             modifier = Modifier.weight(1f),
                             style = MKButtonStyle.Minor(Colors.black),
-                            text = "Plus d'actions",
+                            text = stringResource(R.string.more_actions),
                             onClick = onActions
                         )
                     }
@@ -99,7 +101,7 @@ fun CurrentWarScreen(
 
                 details.warTracks.takeIf { it.isNotEmpty() }?.let {
                     MKText(
-                        text = "Courses jouées (${it.size}/12):",
+                        text = stringResource(R.string.player_courses, it.size),
                         font = Fonts.NunitoBD,
                         modifier = Modifier.padding(top = 10.dp)
                     )

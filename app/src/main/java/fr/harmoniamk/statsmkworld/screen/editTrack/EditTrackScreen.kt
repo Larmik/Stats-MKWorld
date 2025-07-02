@@ -24,7 +24,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -52,7 +54,7 @@ fun EditTrackScreen(
             onBackToCurrent()
         }
     }
-    BaseScreen(title = "Edition circuit") {
+    BaseScreen(title = stringResource(R.string.edition_circuit)) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -62,9 +64,9 @@ fun EditTrackScreen(
         ) {
             repeat(pagerState.pageCount) { iteration ->
                 val text = when (iteration) {
-                    0 -> "Circuit"
-                    1 -> "Positions"
-                    else -> "Shocks"
+                    0 -> stringResource(R.string.circuit)
+                    1 -> stringResource(R.string.positions)
+                    else -> stringResource(R.string.shocks)
                 }
                 val bgColor = when (iteration == pagerState.currentPage) {
                     true -> Colors.blackAlphaed
@@ -192,13 +194,13 @@ fun EditTrackScreen(
         ) {
             MKButton(
                 style = MKButtonStyle.Gradient,
-                text = "Confirmer",
+                text = stringResource(R.string.confirmer),
                 enabled = state.value.buttonEnabled,
                 onClick = viewModel::onValidate
             )
             MKButton(
                 style = MKButtonStyle.Minor(Colors.black),
-                text = "Annuler",
+                text = stringResource(R.string.cancel),
                 onClick = onBack
             )
         }

@@ -14,8 +14,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -46,7 +48,9 @@ fun WarCell(modifier: Modifier = Modifier, viewModel: WarCellViewModel, onClick:
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 MKText(text = state.value.score.orEmpty(), fontSize = 20, font = Fonts.NunitoBD, maxLines = 1)
                 MKText(text = state.value.diff.orEmpty(), font = Fonts.NunitoBD)
-                MKText(text = state.value.mapsWon.orEmpty(), fontSize = 12, font = Fonts.NunitoIT, maxLines = 1, modifier = Modifier.padding(bottom = 5.dp))
+                state.value.mapsWon?.let {
+                    MKText(text = stringResource(R.string.maps_won, it.toString()), fontSize = 12, font = Fonts.NunitoIT, maxLines = 1, modifier = Modifier.padding(bottom = 5.dp))
+                }
             }
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 AsyncImage(

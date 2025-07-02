@@ -15,6 +15,7 @@ data class DatastoreWarPosition(
         playerId = position.playerId,
         position = position.position
     )
+
     constructor(proto: WarPositionProto) : this(
         id = proto.id,
         playerId = proto.playerId,

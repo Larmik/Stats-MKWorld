@@ -47,6 +47,7 @@ data class WarTrackDetails(val track: WarTrack): Serializable {
             }
             return 0
         }
+
     val displayedResult: String
         get() = "$teamScore - $opponentScore"
 

@@ -9,7 +9,6 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -51,7 +50,7 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
                     teamLogo = team.logo?.let { "https://mkcentral.com$it" },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.let { "https://mkcentral.com$it" },
-                    buttonVisible = buttonVisible ?: false,
+                    buttonVisible = buttonVisible == true,
                     currentWar = firebaseRepository.getCurrentWar(team.id.toString()).firstOrNull(),
                     wars = wars
                 )

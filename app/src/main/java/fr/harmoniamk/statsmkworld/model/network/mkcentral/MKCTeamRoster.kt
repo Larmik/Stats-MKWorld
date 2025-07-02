@@ -2,7 +2,6 @@ package fr.harmoniamk.statsmkworld.model.network.mkcentral
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import fr.harmoniamk.statsmkworld.debug.MKCTeamProto
 import fr.harmoniamk.statsmkworld.debug.MKCTeamRosterProto
 
 @JsonClass(generateAdapter = true)
@@ -41,11 +40,9 @@ data class MKCTeamRoster (
                 .setColor(color.toInt())
                 .setGame(game)
                 .setMode(mode)
-
             players.forEach {
                 builder.addPlayers(it.proto)
             }
-
             return builder.build()
         }
 }

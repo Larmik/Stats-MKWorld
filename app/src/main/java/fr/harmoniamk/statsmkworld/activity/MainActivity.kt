@@ -7,9 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.emit
 import fr.harmoniamk.statsmkworld.screen.RootScreen
 import fr.harmoniamk.statsmkworld.ui.MKDialog
@@ -30,9 +32,10 @@ class MainActivity : AppCompatActivity() {
 
     val sharedNotificationsGranted = _sharedNotificationsGranted.asSharedFlow()
 
-    val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        _sharedNotificationsGranted.emit(granted, lifecycleScope)
-    }
+    val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            _sharedNotificationsGranted.emit(granted, lifecycleScope)
+        }
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,16 +49,26 @@ class MainActivity : AppCompatActivity() {
             .onEach {
                 if (it.needUpdate)
                     setContent {
-                        MKDialog(title = "Mise à jour nécessaire", message = "L'application a besoin d'une mise à jour pour continuer à fonctionner correctement.", buttonText = "Mettre à jour", secondButtonText = "Fermer", onButtonClick = {}, onSecondButtonClick = { finish() })
+                        MKDialog(
+                            title = stringResource(R.string.force_update_title),
+                            message = stringResource(R.string.force_update_message),
+                            buttonText = stringResource(R.string.force_update_button),
+                            secondButtonText = stringResource(R.string.close),
+                            onButtonClick = {},
+                            onSecondButtonClick = { finish() }
+                        )
                     }
                 it.startDestination?.let { destination ->
                     setContent {
-                        RootScreen(startDestination = destination, code = it.code, currentPage = it.currentPage) { finish() }
+                        RootScreen(
+                            startDestination = destination,
+                            code = it.code,
+                            currentPage = it.currentPage
+                        ) { finish() }
                     }
                     delay(1000)
                     splashscreen.setKeepOnScreenCondition { false }
                 }
-
             }.launchIn(lifecycleScope)
     }
 

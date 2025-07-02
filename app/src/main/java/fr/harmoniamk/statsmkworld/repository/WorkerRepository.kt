@@ -15,13 +15,12 @@ import javax.inject.Singleton
 
 interface WorkerRepositoryInterface {
     fun <T : ListenableWorker> launchBackgroundTask(workerClass: Class<T>, tag: String, data: Data?)
-    fun cancelAllTaksk()
+    fun cancelAllTask()
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
 interface WorkerRepositoryModule {
-
     @Binds
     @Singleton
     fun bind(impl: WorkerRepository): WorkerRepositoryInterface
@@ -34,17 +33,14 @@ class WorkerRepository @Inject constructor(@ApplicationContext val context: Cont
     override fun <T : ListenableWorker> launchBackgroundTask(workerClass: Class<T>, tag: String, data: Data?) {
         val builder = OneTimeWorkRequest.Builder(workerClass)
             .addTag(tag)
-
         data?.let { builder.setInputData(it) }
         val request = builder.build()
         manager.cancelAllWorkByTag(tag)
         manager.enqueue(request)
-
     }
 
-    override fun cancelAllTaksk() {
+    override fun cancelAllTask() {
         manager.cancelAllWork()
     }
-
 
 }

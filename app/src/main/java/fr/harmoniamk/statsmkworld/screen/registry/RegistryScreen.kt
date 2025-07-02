@@ -22,12 +22,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
-import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -44,7 +44,7 @@ fun RegistryScreen(viewModel: RegistryViewModel = hiltViewModel(), onPlayerProfi
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
     val state = viewModel.state.collectAsState()
-    BaseScreen(title = "Registre") {
+    BaseScreen(title = stringResource(R.string.registre)) {
 
         Row(
             Modifier
@@ -55,8 +55,8 @@ fun RegistryScreen(viewModel: RegistryViewModel = hiltViewModel(), onPlayerProfi
         ) {
             repeat(pagerState.pageCount) { iteration ->
                 val text = when (iteration) {
-                    0 -> "Joueurs"
-                    else -> "Equipes"
+                    0 -> stringResource(R.string.joueurs)
+                    else -> stringResource(R.string.equipes)
                 }
                 val bgColor = when (iteration == pagerState.currentPage) {
                     true -> Colors.blackAlphaed

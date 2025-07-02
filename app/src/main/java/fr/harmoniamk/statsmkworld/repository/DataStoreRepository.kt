@@ -3,7 +3,6 @@ package fr.harmoniamk.statsmkworld.repository
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -35,13 +34,15 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "da
 interface DataStoreRepositoryInterface {
     suspend fun setAccessToken(token: String)
     suspend fun setPage(page: Int)
+    suspend fun setLastUpdate(lastUpdate: Long)
+
     suspend fun setMKCPlayer(player: MKCPlayer)
     suspend fun setMKCTeam(team: MKCTeam)
     suspend fun setCurrentWar(war: War)
+
     suspend fun deleteCurrentWar()
     suspend fun clearPlayer()
     suspend fun clearTeam()
-    suspend fun setLastUpdate(lastUpdate: Long)
 
     val accessToken: Flow<String>
     val page: Flow<Int>
@@ -60,6 +61,7 @@ interface DataStoreRepositoryModule {
 }
 
 class DataStoreRepository @Inject constructor(@ApplicationContext val context: Context): DataStoreRepositoryInterface {
+
     override suspend fun setAccessToken(token: String) {
         val key = stringPreferencesKey("access_token")
         context.dataStore.edit {
@@ -86,13 +88,10 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
-
     override suspend fun setCurrentWar(war: War) {
         context.warDataStore.updateData {
             DatastoreWar(war).proto
         }
-
-
     }
 
     override suspend fun deleteCurrentWar() {
@@ -106,6 +105,7 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
             MKCPlayerProto.newBuilder().build()
         }
     }
+
     override suspend fun clearTeam() {
         context.mkcTeamDataStore.updateData {
             MKCTeamProto.newBuilder().build()
@@ -124,11 +124,13 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
             val key = stringPreferencesKey("access_token")
             return context.dataStore.data.map { it[key].orEmpty() }
         }
+
     override val page: Flow<Int>
         get() {
             val key = intPreferencesKey("page")
             return context.dataStore.data.map { it[key]?.toInt() ?: 0 }
         }
+
     override val mkcPlayer: Flow<MKCPlayer>
         get() = context.mkcPlayerDataStore.data
             .map { MKCPlayer(it) }

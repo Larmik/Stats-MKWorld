@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -118,13 +119,13 @@ fun WarScoreView(
                 .padding(horizontal = 40.dp)) {
                 penalties.filter { it.teamId == teamHost?.id }.takeIf { it.isNotEmpty() }?.let {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        MKText(text = "Pénalité")
+                        MKText(text = stringResource(R.string.penalty))
                         MKText(text = "-${it.sumOf { it.amount }}")
                     }
                 }
                 penalties.filter { it.teamId == teamOpponent?.id }.takeIf { it.isNotEmpty() }?.let {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        MKText(text = "Pénalité")
+                        MKText(text = stringResource(R.string.penalty))
                         MKText(text = "-${it.sumOf { it.amount }}")
                     }
                 }

@@ -12,21 +12,15 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
-import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarViewModel
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
-import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.WarScoreView
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
@@ -41,14 +35,15 @@ fun WarDetailsScreen(
     val state = viewModel.state.collectAsState()
 
     BackHandler { onBack() }
-    BaseScreen(title = "Details war") {
+    BaseScreen(title = stringResource(R.string.details_war)) {
         state.value.details?.let {
             WarScoreView(
                 teamHost = state.value.teamHost,
                 teamOpponent = state.value.teamOpponent,
                 score = state.value.details?.displayedScore.orEmpty(),
                 diff = state.value.details?.displayedDiff.orEmpty(),
-                penalties = state.value.details?.war?.penalties.orEmpty()
+                penalties = state.value.details?.war?.penalties.orEmpty(),
+                shockCount = state.value.details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } }
             )
             Spacer(Modifier.height(20.dp))
             WarPlayersCell(players = state.value.players)
@@ -65,7 +60,7 @@ fun WarDetailsScreen(
 
             it.warTracks.takeIf { it.isNotEmpty() }?.let {
                 MKText(
-                    text = "Courses jouées :",
+                    text = stringResource(R.string.courses_jouees),
                     font = Fonts.NunitoBD,
                     modifier = Modifier.padding(top = 10.dp)
                 )

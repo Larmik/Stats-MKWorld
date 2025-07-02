@@ -3,7 +3,6 @@ package fr.harmoniamk.statsmkworld.model.network.mkcentral
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import fr.harmoniamk.statsmkworld.debug.MKCTeamPlayerProto
-import fr.harmoniamk.statsmkworld.debug.MKCTeamRosterProto
 
 @JsonClass(generateAdapter = true)
 data class MKCTeamPlayer(

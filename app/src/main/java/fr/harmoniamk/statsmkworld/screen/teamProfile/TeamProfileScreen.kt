@@ -20,9 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.countryFlag
 import fr.harmoniamk.statsmkworld.extension.displayedString
@@ -39,7 +40,7 @@ import java.util.Date
 fun TeamProfileScreen(viewModel: TeamProfileViewModel, onBack: () -> Unit, onPlayerClick: (String) -> Unit) {
     val state = viewModel.state.collectAsState()
     BackHandler { onBack() }
-    BaseScreen(title = "Profil équipe") {
+    BaseScreen(title = stringResource(R.string.team_profile)) {
         when (val team = state.value.team) {
             null -> CircularProgressIndicator()
             else -> {
@@ -75,7 +76,7 @@ fun TeamProfileScreen(viewModel: TeamProfileViewModel, onBack: () -> Unit, onPla
                             Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            MKText(text = "Date de création", textColor = Colors.white)
+                            MKText(text = stringResource(R.string.created_date), textColor = Colors.white)
                             MKText(
                                 text = Date(team.creationDate * 1000).displayedString("dd MMMM yyyy"),
                                 textColor = Colors.white,
@@ -100,7 +101,7 @@ fun TeamProfileScreen(viewModel: TeamProfileViewModel, onBack: () -> Unit, onPla
                                     fontSize = 18,
                                     font = Fonts.NunitoBD,
                                     textColor = Colors.white,
-                                    text = "Roster"
+                                    text = stringResource(R.string.roster)
                                 )
                             }
                         }
@@ -132,7 +133,7 @@ fun TeamProfileScreen(viewModel: TeamProfileViewModel, onBack: () -> Unit, onPla
                                         fontSize = 18,
                                         font = Fonts.NunitoBD,
                                         textColor = Colors.white,
-                                        text = "Allies"
+                                        text = stringResource(R.string.allies)
                                     )
                                 }
                             }

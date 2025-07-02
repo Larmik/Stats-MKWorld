@@ -26,10 +26,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import fr.harmoniamk.statsmkworld.model.local.PenaltyType
+import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.model.selectors.PenaltyType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -47,14 +50,14 @@ fun CurrentWarActionsScreen(
     val pagerState = rememberPagerState(pageCount = { 3 })
     val state = viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
-
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.bavkToWelcome.collect {
             onBackToWelcome()
         }
     }
 
-    BaseScreen(title = "Actions") {
+    BaseScreen(title = stringResource(R.string.actions)) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -64,9 +67,9 @@ fun CurrentWarActionsScreen(
         ) {
             repeat(pagerState.pageCount) { iteration ->
                 val text = when (iteration) {
-                    0 -> "Pénalité"
-                    1 -> "Remplacement"
-                    else -> "Annuler la war"
+                    0 -> stringResource(R.string.penalties)
+                    1 -> stringResource(R.string.remplacement)
+                    else -> stringResource(R.string.cancel_war)
                 }
                 val bgColor = when (iteration == pagerState.currentPage) {
                     true -> Colors.blackAlphaed
@@ -125,10 +128,22 @@ fun CurrentWarActionsScreen(
                                            .heightIn(min = 120.dp)
                                            .fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                                            val text = when (it.penalty) {
-                                               PenaltyType.REPICK_HOST -> "Repick de ${state.value.teamHost}"
-                                               PenaltyType.INTERMISSION_HOST -> "Intermission votée par ${state.value.teamHost}"
-                                               PenaltyType.REPICK_OPPONENT -> "Repick de ${state.value.teamOpponent}"
-                                               PenaltyType.INTERMISSION_OPPONENT -> "Intermission votée par ${state.value.teamOpponent}"
+                                               PenaltyType.REPICK_HOST -> context.getString(
+                                                   R.string.repick_placeholder,
+                                                   state.value.teamHost
+                                               )
+                                               PenaltyType.INTERMISSION_HOST -> context.getString(
+                                                   R.string.intermission_placeholder,
+                                                   state.value.teamHost
+                                               )
+                                               PenaltyType.REPICK_OPPONENT ->  context.getString(
+                                                   R.string.repick_placeholder,
+                                                   state.value.teamOpponent
+                                               )
+                                               PenaltyType.INTERMISSION_OPPONENT -> context.getString(
+                                                   R.string.intermission_placeholder,
+                                                   state.value.teamOpponent
+                                               )
                                            }
                                            MKText(modifier = Modifier.padding(5.dp), text = text, font = Fonts.NunitoBD, textColor = textColor)
                                        }
@@ -138,12 +153,12 @@ fun CurrentWarActionsScreen(
                            }
                             Spacer(Modifier.height(30.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                                MKButton(style = MKButtonStyle.Gradient, text = "Valider", onClick = {
+                                MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.valider), onClick = {
                                     viewModel.onPenaltyValidated()
                                     onBack()
                                 }, enabled = state.value.penalties?.any { it.isSelected } == true)
                                 Spacer(Modifier.width(10.dp))
-                                MKButton(style = MKButtonStyle.Minor(Colors.black), text = "Annuler", onClick = {
+                                MKButton(style = MKButtonStyle.Minor(Colors.black), text = stringResource(R.string.cancel), onClick = {
                                     viewModel.clearPenalties()
                                     onBack()
                                 })
@@ -156,16 +171,16 @@ fun CurrentWarActionsScreen(
                     }
 
                     else -> {
-                        MKText(text = "En annulant la war, tu perdras toute la progression ainsi que les statistiques générées par celle-ci. \n \n Es-tu sûr(e) de vouloir effacer la partie ?")
+                        MKText(text = stringResource(R.string.cancel_confirm))
                         Spacer(Modifier.height(15.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             MKButton(
                                 style = MKButtonStyle.Gradient,
-                                text = "Effacer la war",
+                                text = stringResource(R.string.delete_war),
                                 onClick = viewModel::cancelWar
                             )
                             Spacer(Modifier.width(10.dp))
-                            MKButton(style = MKButtonStyle.Minor(Colors.black), text = "Annuler", onClick = onBack)
+                            MKButton(style = MKButtonStyle.Minor(Colors.black), text = stringResource(R.string.cancel), onClick = onBack)
                         }
                     }
                 }

@@ -5,6 +5,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 
+@Suppress("UNCHECKED_CAST")
 fun Any?.toMapList(): List<Map<*, *>>? = this as? List<Map<*, *>>
 
 fun List<Map<*, *>>?.parseTracks(): List<WarTrack>? =

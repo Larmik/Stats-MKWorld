@@ -32,7 +32,6 @@ data class DatastoreWar(
         penalties = proto.penaltiesList
             .map { DatastoreWarPenalty(it) }
             .map { WarPenalty(it) }
-
     )
 
     val proto: WarProto
@@ -41,14 +40,12 @@ data class DatastoreWar(
                 .setId(id)
                 .setTeamHost(teamHost)
                 .setTeamOpponent(teamOpponent)
-
             tracks.forEach {
                 builder.addTracks(DatastoreWarTrack(it).proto)
             }
             penalties.forEach {
                 builder.addPenalties(DatastoreWarPenalty(it).proto)
             }
-
             return builder.build()
         }
 }

@@ -7,7 +7,6 @@ import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.BuildConfig
 import fr.harmoniamk.statsmkworld.api.DiscordApi
 import fr.harmoniamk.statsmkworld.api.RetrofitUtils
-import fr.harmoniamk.statsmkworld.application.Constants
 import fr.harmoniamk.statsmkworld.model.network.NetworkResponse
 import fr.harmoniamk.statsmkworld.model.network.discord.DiscordUser
 import fr.harmoniamk.statsmkworld.model.network.discord.TokenResponse
@@ -46,7 +45,7 @@ class DiscordDataSource @Inject constructor(
         get() = Dispatchers.IO
 
     override fun getToken(code: String): Flow<NetworkResponse<TokenResponse>> = callbackFlow {
-        val credentials = Credentials.basic(Constants.authClientId, BuildConfig.DISCORD_API_SECRET)
+        val credentials = Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)
         val call = RetrofitUtils.createRetrofit(
             DiscordApi::class.java,
             DiscordApi.baseUrl,
@@ -73,7 +72,6 @@ class DiscordDataSource @Inject constructor(
                 trySend(NetworkResponse.Error(t.message ?: "Erreur inconnnue"))
             }
         })
-
         awaitClose { }
     }
 
@@ -104,12 +102,11 @@ class DiscordDataSource @Inject constructor(
                 trySend(NetworkResponse.Error(t.message ?: "Erreur inconnnue"))
             }
         })
-
         awaitClose { }
     }
 
     override fun revokeToken(token: String): Flow<Unit?> = callbackFlow {
-        val credentials = Credentials.basic(Constants.authClientId, BuildConfig.DISCORD_API_SECRET)
+        val credentials = Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)
         val call = RetrofitUtils.createRetrofit(
             DiscordApi::class.java,
             DiscordApi.baseUrl,
@@ -134,10 +131,7 @@ class DiscordDataSource @Inject constructor(
                 trySend(null)
             }
         })
-
         awaitClose { }
-
     }
-
 
 }

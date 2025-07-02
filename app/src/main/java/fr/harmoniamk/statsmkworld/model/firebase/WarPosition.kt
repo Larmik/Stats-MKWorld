@@ -12,5 +12,4 @@ data class WarPosition(
         playerId = position.playerId,
         position = position.position
     )
-
 }

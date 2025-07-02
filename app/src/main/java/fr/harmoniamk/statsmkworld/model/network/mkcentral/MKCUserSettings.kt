@@ -2,7 +2,6 @@ package fr.harmoniamk.statsmkworld.model.network.mkcentral
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import fr.harmoniamk.statsmkworld.debug.MKCPlayerProto
 import fr.harmoniamk.statsmkworld.debug.MKCUserSettingsProto
 
 

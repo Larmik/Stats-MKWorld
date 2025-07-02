@@ -10,5 +10,4 @@ val String.countryFlag: String
             return String(Character.toChars(firstChar)) + String(Character.toChars(secondChar))
         }
         return ""
-
     }

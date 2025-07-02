@@ -25,7 +25,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
@@ -127,5 +126,5 @@ fun MKTextField(
 @Composable
 @ExperimentalMaterial3Api
 fun MKTextFieldPreview() {
-    MKTextField(value = "", placeHolderRes = R.string.app_name, onValueChange = {}, errorMessage = "Tu t'es gouré quelque part")
+    MKTextField(value = "", placeHolderRes = R.string.app_name, onValueChange = {})
 }

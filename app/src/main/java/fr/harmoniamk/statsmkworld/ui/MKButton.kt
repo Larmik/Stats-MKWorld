@@ -40,14 +40,14 @@ fun MKButton(
     val borderColor: Color
     val elevation: Dp
     when {
-        // Standard
+
         style is MKButtonStyle.Standard && enabled -> {
             textColor = Colors.black
             backgroundColor = style.color
             borderColor = Colors.transparent
             elevation = 5.dp
         }
-        // Mineur
+
         style is MKButtonStyle.Minor && enabled -> {
             textColor = style.color
             borderColor = style.color

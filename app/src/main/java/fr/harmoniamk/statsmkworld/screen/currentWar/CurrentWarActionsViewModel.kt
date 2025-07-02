@@ -8,8 +8,8 @@ import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
-import fr.harmoniamk.statsmkworld.model.local.PenaltySelector
-import fr.harmoniamk.statsmkworld.model.local.PenaltyType
+import fr.harmoniamk.statsmkworld.model.selectors.PenaltySelector
+import fr.harmoniamk.statsmkworld.model.selectors.PenaltyType
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface

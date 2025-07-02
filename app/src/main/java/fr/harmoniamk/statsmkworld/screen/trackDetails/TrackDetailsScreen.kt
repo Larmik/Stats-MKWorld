@@ -10,8 +10,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -29,7 +30,7 @@ fun TrackDetailsScreen(viewModel: TrackDetailsViewModel,
 ) {
     val state = viewModel.state.collectAsState()
     BackHandler { onBack() }
-    BaseScreen(title = "Résumé") {
+    BaseScreen(title = stringResource(R.string.resume)) {
         state.value.track?.let {
             MapCell(map = Maps.entries[it.index], backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = {})
         }
@@ -43,7 +44,7 @@ fun TrackDetailsScreen(viewModel: TrackDetailsViewModel,
         }
 
         if (state.value.buttonVisible) {
-            MKButton(style = MKButtonStyle.Minor(Colors.black), text = "Editer", onClick = {
+            MKButton(style = MKButtonStyle.Minor(Colors.black), text = stringResource(R.string.editer), onClick = {
                 state.value.track?.let(
                     onEditTrack
                 )

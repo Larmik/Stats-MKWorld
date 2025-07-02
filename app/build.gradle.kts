@@ -26,6 +26,7 @@ android {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
         buildConfigField("String", "DISCORD_API_SECRET", properties.getProperty("DISCORD_API_SECRET"))
+        buildConfigField("String", "DISCORD_API_CLIENT", properties.getProperty("DISCORD_API_CLIENT"))
 
     }
 
@@ -34,8 +35,8 @@ android {
             val properties = Properties()
             properties.load(project.rootProject.file("local.properties").inputStream())
             storeFile  = file("/Users/pascal/Documents/statsmkworld_keystore")
-            storePassword  = properties.getProperty("KEYSTORE_PASSWORD")
-            keyPassword =  properties.getProperty("KEYSTORE_PASSWORD")
+            storePassword  = "Harmonia2025!"
+            keyPassword =  "Harmonia2025!"
             keyAlias =  "statsmkworld"
         }
     }
@@ -140,7 +141,7 @@ dependencies {
     implementation( libs.androidx.work.runtime)
     implementation( libs.androidx.room.ktx)
     annotationProcessor( libs.androidx.room.compiler)
-    kapt(libs.androidx.room.room.compiler)
+    kapt(libs.androidx.room.compiler)
     kapt(libs.sqlite.jdbc)
     implementation(dependencyNotation = libs.work.runtime)
 

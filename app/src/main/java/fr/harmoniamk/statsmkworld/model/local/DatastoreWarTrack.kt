@@ -18,6 +18,7 @@ data class DatastoreWarTrack(
         positions = track.positions,
         shocks = track.shocks
     )
+
     constructor(proto: WarTrackProto) : this(
         id = proto.id,
         index = proto.index,
@@ -34,14 +35,12 @@ data class DatastoreWarTrack(
             val builder = WarTrackProto.newBuilder()
                 .setId(id)
                 .setIndex(index)
-
             positions.forEach {
                 builder.addPositions(DatastoreWarPosition(it).proto)
             }
             shocks?.forEach {
                 builder.addShocks(DatastoreShock(it).proto)
             }
-
             return builder.build()
         }
 }

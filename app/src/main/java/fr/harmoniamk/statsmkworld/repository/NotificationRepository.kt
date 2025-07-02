@@ -38,7 +38,6 @@ interface NotificationRepositoryInterface {
 @Module
 @InstallIn(SingletonComponent::class)
 interface NotificationRepositoryModule {
-
     @Binds
     @Singleton
     fun bind(impl: NotificationRepository): NotificationRepositoryInterface
@@ -46,7 +45,6 @@ interface NotificationRepositoryModule {
 
 
 class NotificationRepository @Inject constructor(@ApplicationContext val context: Context) : NotificationRepositoryInterface {
-
 
     override val notificationsEnabled: Boolean
         get() {
@@ -58,13 +56,13 @@ class NotificationRepository @Inject constructor(@ApplicationContext val context
     override val requestAuthorization: Boolean
         get() {
                 val areNotificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && permissionStatus == PermissionStatus.CanAsk) {
-                    return false
-                } else if (areNotificationsEnabled.not()) {
-                    return true
-                } else {
-                    return false
-                }
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && permissionStatus == PermissionStatus.CanAsk) {
+                false
+            } else if (areNotificationsEnabled.not()) {
+                true
+            } else {
+                false
+            }
 
         }
 
@@ -95,7 +93,6 @@ class NotificationRepository @Inject constructor(@ApplicationContext val context
         ) as NotificationManager
         notificationManager.createNotificationChannel(channel)
         builder.setChannelId("CHANNEL_ID")
-
         notificationManager.notify((Date().time / 1000L % Int.MAX_VALUE).toInt(), builder.build())
     }
 }

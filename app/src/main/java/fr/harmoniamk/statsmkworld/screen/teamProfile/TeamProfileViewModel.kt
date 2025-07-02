@@ -11,12 +11,10 @@ import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterfac
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
-import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
 
 @HiltViewModel(assistedFactory = TeamProfileViewModel.Factory::class)
 class TeamProfileViewModel @AssistedInject constructor(@Assisted val id: String, dataStoreRepository: DataStoreRepositoryInterface, mkCentralDataSource: MKCentralDataSourceInterface, databaseRepository: DatabaseRepositoryInterface) : ViewModel() {

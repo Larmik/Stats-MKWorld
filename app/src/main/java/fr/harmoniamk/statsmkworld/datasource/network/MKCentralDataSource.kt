@@ -29,12 +29,10 @@ interface MKCentralDataSourceInterface {
 @Module
 @InstallIn(SingletonComponent::class)
 interface MKCentralDataSourceModule {
-
     @Binds
     @Singleton
     fun bind(impl: MKCentralDataSource): MKCentralDataSourceInterface
 }
-
 
 class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
     override fun findPlayer(discordId: String): Flow<MKCPlayerResponse?> = callbackFlow {
@@ -151,7 +149,6 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
                 trySend(null)
             }
         })
-
         awaitClose {  }
     }
 
@@ -180,7 +177,6 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
                 trySend(null)
             }
         })
-
         awaitClose {  }
     }
 
@@ -209,11 +205,7 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
                 trySend(null)
             }
         })
-
         awaitClose {  }
     }
-
-
-
 
 }

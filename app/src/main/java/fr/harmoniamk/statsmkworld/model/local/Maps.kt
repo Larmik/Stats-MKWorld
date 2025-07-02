@@ -36,5 +36,4 @@ enum class Maps(@StringRes val label: Int, @DrawableRes val picture: Int, @Drawa
     AH(R.string.ah, R.drawable.ah, R.drawable.special),
     MC(R.string.mc, R.drawable.mc, R.drawable.special),
     RR(R.string.rr, R.drawable.rr, R.drawable.special),
-
 }

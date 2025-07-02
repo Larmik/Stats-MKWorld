@@ -1,13 +1,13 @@
 package fr.harmoniamk.statsmkworld.screen.playerProfile
 
-import android.util.Log
-import androidx.compose.runtime.MutableState
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.datasource.network.DiscordDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
@@ -47,11 +47,11 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
         val player: MKCPlayer? = null,
         val buttonVisible: Boolean = false,
         val isAlly: Boolean = false,
-        val role: String? = null,
+        @StringRes val role: Int? = null,
         val lastUpdate: String? = null,
         val showMenu: Boolean = false,
-        val dialogTitle: String? = null,
-        val confirmDialog: String? = null
+        @StringRes val dialogTitle: Int? = null,
+        @StringRes val confirmDialog: Int? = null
     )
 
     private val _state = MutableStateFlow(State())
@@ -78,9 +78,9 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
                 ?.isAlly
             val role = firebaseRepository.getUser(team?.id.toString(), it.id.toString())
                 .map { when (it?.role) {
-                    1 -> "Admin"
-                    2 -> "Leader"
-                    else -> "Membre"
+                    1 -> R.string.admin
+                    2 -> R.string.leader
+                    else -> R.string.membre
                 }
                 }.firstOrNull()
             val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { it?.startsWith("01/01/1970") != true }
@@ -112,27 +112,27 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
     fun onRefresh() {
         viewModelScope.launch {
             dataStoreRepository.mkcPlayer.firstOrNull()?.id?.let {
-                _state.value = state.value.copy(dialogTitle = "Récupération du joueur")
+                _state.value = state.value.copy(dialogTitle = R.string.fetch_player)
                 fetchUseCase.fetchPlayer(it.toString())
                     .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" } }
                     .onEach {
-                       _state.value = state.value.copy(dialogTitle = "Récupération de l'équipe...")
+                       _state.value = state.value.copy(dialogTitle = R.string.fetch_team)
 
                     }
                     .flatMapLatest { fetchUseCase.fetchTeam(it.teamID.toString()) }
                     .onEach {
-                        _state.value = state.value.copy(dialogTitle = "Récupération des allies...")
+                        _state.value = state.value.copy(dialogTitle = R.string.fetch_allies)
 
                     }
                     .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
                     .onEach {
-                        _state.value = state.value.copy(dialogTitle = "Récupération des adversaires...")
+                        _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents)
 
                     }
                     .flatMapLatest { fetchUseCase.fetchTeams() }
                     .flatMapLatest { dataStoreRepository.mkcTeam }
                     .onEach {
-                        _state.value = state.value.copy(dialogTitle = "Récupération des wars...")
+                        _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars)
 
                     }
                     .flatMapLatest { fetchUseCase.fetchWars(it.id.toString()) }
@@ -148,7 +148,7 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
 
     fun onLogoutClick() {
 
-        _state.value = state.value.copy(confirmDialog = "Es-tu sûr(e) de vouloir te déconnecter ?")
+        _state.value = state.value.copy(confirmDialog = R.string.logout_confirm)
     }
 
     fun dismissPopup() {

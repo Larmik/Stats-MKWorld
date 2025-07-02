@@ -6,12 +6,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
-import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
-import fr.harmoniamk.statsmkworld.model.local.PositionDetails
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -21,11 +20,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -107,11 +104,11 @@ class CurrentWarViewModel @Inject constructor(
         val shocks =  trackList.flatMap { it.shocks.orEmpty() }
         trackList.forEach {
             it.positions.takeIf { it.isNotEmpty() }?.let { warPositions ->
-                val trackPositions = mutableListOf<PositionDetails>()
+                val trackPositions = mutableListOf<PlayerPosition>()
                 warPositions.forEach { position ->
                         trackPositions.add(
-                            PositionDetails(
-                                position = position.position,
+                            PlayerPosition(
+                                position = position,
                                 player = players.map { it.player }.singleOrNull { it?.id == position.playerId }
                             )
                         )
@@ -121,7 +118,7 @@ class CurrentWarViewModel @Inject constructor(
                     positions.add(
                         Pair(
                             entry.key,
-                            entry.value.sumOf { pos -> pos.position.positionToPoints() }
+                            entry.value.sumOf { playerPos -> playerPos.position.position.positionToPoints() }
                         )
                     )
                 }

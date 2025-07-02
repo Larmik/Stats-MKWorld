@@ -1,6 +1,5 @@
 package fr.harmoniamk.statsmkworld.api
 
-import fr.harmoniamk.statsmkworld.application.Constants
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayerResponse
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
@@ -12,7 +11,7 @@ import retrofit2.http.Query
 
 interface MKCentralApi {
     companion object {
-        const val baseUrl: String = Constants.mkCentralBaseUrl
+        const val baseUrl: String = "https://mkcentral.com/api/"
     }
 
     @GET("registry/players")

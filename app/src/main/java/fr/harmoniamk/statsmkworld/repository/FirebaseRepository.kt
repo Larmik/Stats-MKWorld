@@ -34,22 +34,23 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.collections.get
 
-interface FirebaseRepositoryInterface{
+interface FirebaseRepositoryInterface {
     //SplashScreen/Login
-    fun getUser(teamId: String, id: String): Flow<User?>
     fun getUsers(teamId: String): Flow<List<User>>
+    fun getUser(teamId: String, id: String): Flow<User?>
     fun writeUser(teamId: String, user: User): Flow<Unit>
 
     fun getWars(teamId: String): Flow<List<War>>
-    fun writeCurrentWar(war: War): Flow<Unit>
     fun writeWar(war: War): Flow<Unit>
+
     fun getCurrentWar(teamId: String): Flow<War?>
     fun listenToCurrentWar(teamId: String): Flow<War?>
+    fun writeCurrentWar(war: War): Flow<Unit>
     fun deleteCurrentWar(teamId: String): Flow<Unit>
 
     fun getAllies(teamId: String): Flow<List<String>>
-    fun writeAlly(teamId: String, ally : String): Flow<Unit>
-    fun deleteAlly(teamId: String, ally : String): Flow<Unit>
+    fun writeAlly(teamId: String, ally: String): Flow<Unit>
+    fun deleteAlly(teamId: String, ally: String): Flow<Unit>
 
     fun log(message: String, type: String): Flow<Unit>
 
@@ -67,10 +68,8 @@ interface FirebaseRepositoryModule {
 
 @FlowPreview
 @ExperimentalCoroutinesApi
-class FirebaseRepository @Inject constructor(
-    private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface
-) : FirebaseRepositoryInterface {
+class FirebaseRepository @Inject constructor(private val dataStoreRepository: DataStoreRepositoryInterface) :
+    FirebaseRepositoryInterface {
 
     private val database = Firebase.database.reference
 
@@ -79,11 +78,11 @@ class FirebaseRepository @Inject constructor(
         emit(Unit)
     }
 
-    override fun getUser(teamId: String, id: String): Flow<User?>  = callbackFlow {
+    override fun getUser(teamId: String, id: String): Flow<User?> = callbackFlow {
         database.child("users").child(teamId).child(id).get().addOnSuccessListener { snapshot ->
-            (snapshot.value as? Map<*,*>)?.let { value ->
+            (snapshot.value as? Map<*, *>)?.let { value ->
                 launch {
-                    val user =  User(
+                    val user = User(
                         id = value["id"].toString(),
                         currentWar = value["currentWar"].toString(),
                         role = value["role"].toString().toIntOrNull() ?: 0,
@@ -92,15 +91,15 @@ class FirebaseRepository @Inject constructor(
                 }
             } ?: trySend(null)
         }
-        awaitClose {  }
+        awaitClose { }
     }.flowOn(Dispatchers.IO)
 
     override fun writeWar(war: War): Flow<Unit> = dataStoreRepository.mkcTeam
         .mapNotNull { it.id }
-        .onEach { database.child("newWars").child(it.toString()).child(war.id.toString()).setValue(war) }
-        .mapNotNull {  }
-
-
+        .onEach {
+            database.child("newWars").child(it.toString()).child(war.id.toString()).setValue(war)
+        }
+        .mapNotNull { }
 
     override fun writeCurrentWar(war: War): Flow<Unit> = flow {
         database.child("currentWars").child(war.teamHost).setValue(war)
@@ -111,44 +110,44 @@ class FirebaseRepository @Inject constructor(
         database.child("newWars").child(teamId).get().addOnSuccessListener { snapshot ->
             val wars: List<War> = snapshot.children
                 .map { it.value as Map<*, *> }
-                .map { map -> War(
-                    id = map["id"].toString().toLong(),
-                    teamHost = map["teamHost"].toString(),
-                    teamOpponent = map["teamOpponent"].toString(),
-                    tracks = map["tracks"].toMapList().parseTracks().orEmpty(),
-                    penalties =  map["penalties"].toMapList().parsePenalties().orEmpty()
-                )
+                .map { map ->
+                    War(
+                        id = map["id"].toString().toLong(),
+                        teamHost = map["teamHost"].toString(),
+                        teamOpponent = map["teamOpponent"].toString(),
+                        tracks = map["tracks"].toMapList().parseTracks().orEmpty(),
+                        penalties = map["penalties"].toMapList().parsePenalties().orEmpty()
+                    )
                 }
             if (isActive) trySend(wars)
         }
-        awaitClose {  }
+        awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    override fun getCurrentWar(teamId: String): Flow<War?>  = callbackFlow {
+    override fun getCurrentWar(teamId: String): Flow<War?> = callbackFlow {
         database.child("currentWars").child(teamId).get().addOnSuccessListener { snapshot ->
-            (snapshot.value as? Map<*,*>)?.let { value ->
+            (snapshot.value as? Map<*, *>)?.let { value ->
                 launch {
                     val war = War(
                         id = value["id"].toString().toLong(),
                         teamOpponent = value["teamOpponent"].toString(),
                         teamHost = value["teamHost"].toString(),
                         tracks = value["tracks"].toMapList().parseTracks().orEmpty(),
-                        penalties =  value["penalties"].toMapList().parsePenalties().orEmpty()
+                        penalties = value["penalties"].toMapList().parsePenalties().orEmpty()
                     )
                     if (isActive) trySend(war)
                 }
             } ?: trySend(null)
         }
-        awaitClose {  }
+        awaitClose { }
     }.flowOn(Dispatchers.IO)
-
-
 
     override fun listenToCurrentWar(teamId: String): Flow<War?> = callbackFlow {
         val postListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 launch {
-                    val war = when (val value = dataSnapshot.child("currentWars").child(teamId).value as? Map<*,*>) {
+                    val war = when (val value =
+                        dataSnapshot.child("currentWars").child(teamId).value as? Map<*, *>) {
                         null -> null
                         else -> War(
                             id = value["id"].toString().toLong(),
@@ -180,25 +179,26 @@ class FirebaseRepository @Inject constructor(
             val teams: List<String> = snapshot.children.map { it.value as String }
             if (isActive) trySend(teams)
         }
-        awaitClose {  }
+        awaitClose { }
     }.flowOn(Dispatchers.IO)
 
     override fun getUsers(teamId: String): Flow<List<User>> = callbackFlow {
         database.child("users").child(teamId).get().addOnSuccessListener { snapshot ->
             val wars: List<User> = snapshot.children
                 .map { it.value as Map<*, *> }
-                .map { map -> User(
-                    id = map["id"].toString(),
-                    currentWar = map["currentWar"].toString(),
-                    role = map["role"].toString().toIntOrNull() ?: 0,
-                )
+                .map { map ->
+                    User(
+                        id = map["id"].toString(),
+                        currentWar = map["currentWar"].toString(),
+                        role = map["role"].toString().toIntOrNull() ?: 0,
+                    )
                 }
             if (isActive) trySend(wars)
         }
-        awaitClose {  }
+        awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    override fun writeAlly(teamId: String, ally: String): Flow<Unit>  =
+    override fun writeAlly(teamId: String, ally: String): Flow<Unit> =
         getAllies(teamId)
             .map { database.child("allies").child(teamId).child(it.size.toString()).setValue(ally) }
 
@@ -207,8 +207,8 @@ class FirebaseRepository @Inject constructor(
     }
 
     override fun log(message: String, type: String): Flow<Unit> = flow {
-        database.child("debug").child(Date().displayedString("dd-MM-yyyy")).child(type).child(Date().time.toString()).setValue(message)
+        database.child("debug").child(Date().displayedString("dd-MM-yyyy")).child(type)
+            .child(Date().time.toString()).setValue(message)
     }
-
 
 }

@@ -24,7 +24,6 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.screen.registry.RegistryScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
 import fr.harmoniamk.statsmkworld.screen.welcome.WelcomeScreen
-import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 
 enum class BottomNavItem(var icon: Int, var route: String) {

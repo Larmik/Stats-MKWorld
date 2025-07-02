@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,9 +22,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -47,7 +48,7 @@ fun WelcomeScreen(
     onWarDetailsClick: (WarDetails) -> Unit
 ) {
     val state = viewModel.state.collectAsState()
-    BaseScreen(title = "Accueil", modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.accueil), modifier = Modifier.padding(bottom = 90.dp)) {
 
         when (state.value.playerName.isNullOrEmpty()) {
             true -> CircularProgressIndicator()
@@ -95,7 +96,7 @@ fun WelcomeScreen(
                                         .clickable { onTeamProfile() }
                                 ) {
                                     MKText(
-                                        text = "Voir l'équipe",
+                                        text = stringResource(R.string.show_team_btn),
                                         font = Fonts.NunitoIT,
                                         modifier = Modifier
                                             .padding(8.dp)
@@ -123,20 +124,25 @@ fun WelcomeScreen(
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                Spacer((Modifier.fillMaxWidth().height(1.dp).background(Colors.blackAlphaed)))
+                Spacer((Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Colors.blackAlphaed)))
                 state.value.currentWar?.let {
                     Spacer(Modifier.height(10.dp))
-                    MKText(text = "War en cours :",  fontSize = 16, font = Fonts.NunitoBD, modifier = Modifier.padding(bottom = 5.dp))
+                    MKText(text = stringResource(R.string.war_en_cours),  fontSize = 16, font = Fonts.NunitoBD, modifier = Modifier.padding(bottom = 5.dp))
                     CurrentWarCell(onClick = onCurrentWar)
                     Spacer(Modifier.height(10.dp))
                 }
                 when (state.value.wars.isEmpty()) {
-                    true -> Column(Modifier.weight(1f).padding(top = 15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        MKText(text = "Bienvenue, joueur de MKWorld ! \n \n",  font = Fonts.NunitoBD, fontSize = 16)
-                        MKText(text = "Ton équipe n'a pas encore enregistré de résultats sur cette application. Pour créer une nouvelle war, tu peux cliquer sur le bouton ci-dessous si tu as le rôle approprié. \n \n Si tu ne peux pas saisir de résultats, rapproche-toi d'un leader de ton équipe pour qu'il t'accorde le bon rôle.", fontSize = 16)
+                    true -> Column(Modifier
+                        .weight(1f)
+                        .padding(top = 15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        MKText(text = stringResource(R.string.welcome_title),  font = Fonts.NunitoBD, fontSize = 16)
+                        MKText(text = stringResource(R.string.welcome_text), fontSize = 16)
                     }
                     else -> {
-                        MKText(text = "Derniers résultats :", fontSize = 16, font = Fonts.NunitoBD, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp))
+                        MKText(text = stringResource(R.string.last_results), fontSize = 16, font = Fonts.NunitoBD, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp))
                         LazyColumn(Modifier.weight(1f)) {
                             items(state.value.wars) {
                                 WarCell(
@@ -153,7 +159,7 @@ fun WelcomeScreen(
                     }
                 }
                 if (state.value.currentWar == null)
-                    MKButton(style = MKButtonStyle.Gradient, text = "Nouvelle war", onClick = onAddWar, modifier = Modifier.padding(bottom = 5.dp), enabled = state.value.buttonVisible)
+                    MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.nouvelle_war), onClick = onAddWar, modifier = Modifier.padding(bottom = 5.dp), enabled = state.value.buttonVisible)
             }
         }
 

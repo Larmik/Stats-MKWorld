@@ -95,7 +95,7 @@ class AddTrackViewModel @Inject constructor(
             it.name.lowercase()
                 .contains(searched.lowercase()) || MainApplication.instance?.applicationContext?.getString(
                 it.label
-            )?.lowercase()?.contains(searched.lowercase()) ?: true
+            )?.lowercase()?.contains(searched.lowercase()) != false
         })
     }
 

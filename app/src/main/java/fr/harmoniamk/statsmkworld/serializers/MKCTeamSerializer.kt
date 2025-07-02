@@ -7,7 +7,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
 import com.google.protobuf.InvalidProtocolBufferException
-import fr.harmoniamk.statsmkworld.debug.MKCPlayerProto
 import fr.harmoniamk.statsmkworld.debug.MKCTeamProto
 import java.io.InputStream
 import java.io.OutputStream

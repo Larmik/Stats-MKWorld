@@ -19,8 +19,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.countryFlag
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -31,7 +33,6 @@ import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKDialog
 import fr.harmoniamk.statsmkworld.ui.MKLoaderDialog
 import fr.harmoniamk.statsmkworld.ui.MKText
-import kotlinx.coroutines.flow.collect
 import java.util.Date
 
 @Composable
@@ -46,19 +47,19 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
     }
 
     state.value.dialogTitle?.let {
-        MKLoaderDialog(it)
+        MKLoaderDialog(stringResource(it))
     }
     state.value.confirmDialog?.let {
         MKDialog(
-            title = "Se déconnecter",
-            message = it,
-            buttonText = "Déconnection",
-            secondButtonText = "Retour",
+            title = stringResource(R.string.logout),
+            message = stringResource(it),
+            buttonText = stringResource(R.string.logout_btn),
+            secondButtonText = stringResource(R.string.back),
             onButtonClick = viewModel::onLogout,
             onSecondButtonClick = viewModel::dismissPopup
         )
     }
-    BaseScreen(title = "Profil joueur") {
+    BaseScreen(title = stringResource(R.string.profil_joueur)) {
         when (val player = state.value.player) {
             null -> CircularProgressIndicator()
             else -> {
@@ -81,7 +82,8 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                 )
 
                 Column(
-                    Modifier.background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+                    Modifier
+                        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
                         .border(1.dp, Colors.white, RoundedCornerShape(5.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -90,7 +92,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                             Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            MKText(text = "Inscrit depuis le", textColor = Colors.white)
+                            MKText(text = stringResource(R.string.inscrit_depuis_le), textColor = Colors.white)
                             MKText(
                                 text = Date(player.joinDate * 1000).displayedString("dd MMMM yyyy"),
                                 textColor = Colors.white,
@@ -102,7 +104,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                                 Modifier.weight(1f),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                MKText(text = "Code ami", textColor = Colors.white)
+                                MKText(text = stringResource(R.string.code_ami), textColor = Colors.white)
                                 MKText(text = it, font = Fonts.NunitoBD, textColor = Colors.white)
                             }
                         }
@@ -115,7 +117,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                                 Modifier.weight(1f),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                MKText(text = "Tag Discord", textColor = Colors.white)
+                                MKText(text = stringResource(R.string.tag_discord), textColor = Colors.white)
                                 MKText(
                                     text = it.username,
                                     textColor = Colors.white,
@@ -128,7 +130,8 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                 Spacer(Modifier.height(10.dp))
                 player.rosters?.firstOrNull { it.game == "mkworld" }?.let { roster ->
                     Column(
-                        Modifier.background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+                        Modifier
+                            .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
                             .border(1.dp, Colors.white, RoundedCornerShape(5.dp)),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -137,7 +140,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                                 Modifier.weight(1f),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                MKText(text = "Equipe actuelle", textColor = Colors.white)
+                                MKText(text = stringResource(R.string.equipe_actuelle), textColor = Colors.white)
                                 MKText(
                                     text = roster.teamName,
                                     textColor = Colors.white,
@@ -149,7 +152,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                                 Modifier.weight(1f),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                MKText(text = "Entrée dans l'équipe", textColor = Colors.white)
+                                MKText(text = stringResource(R.string.team_since), textColor = Colors.white)
                                 MKText(
                                     text = Date(roster.joinDate * 1000).displayedString("dd MMMM yyyy"),
                                     textColor = Colors.white,
@@ -164,7 +167,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                                     Modifier.weight(1f),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    MKText(text = "Rôle", textColor = Colors.white)
+                                    MKText(text = stringResource(R.string.role), textColor = Colors.white)
                                     MKText(
                                         text = it,
                                         textColor = Colors.white,
@@ -179,13 +182,13 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                 if (state.value.buttonVisible) {
                     MKButton(
                         style = MKButtonStyle.Gradient,
-                        text = "Ajouter en tant qu'ally",
+                        text = stringResource(R.string.ajouter_en_tant_qu_ally),
                         onClick = viewModel::onAddAlly
                     )
                 }
                 if (state.value.isAlly) {
                     MKText(
-                        text = "Ce joueur est un ally de l'équipe",
+                        text = stringResource(R.string.already_ally),
                         font = Fonts.NunitoIT,
                         fontSize = 16,
                         modifier = Modifier.padding(top = 10.dp)
@@ -194,23 +197,33 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                 if (state.value.showMenu) {
                     LazyColumn {
                         item {
-                            Row(modifier = Modifier.fillMaxWidth().clickable { viewModel.onRefresh() }) {
-                                MKText(text = "Rafraîchir les données", font = Fonts.Urbanist, modifier = Modifier.padding(vertical = 20.dp))
+                            Row(modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.onRefresh() }) {
+                                MKText(text = stringResource(R.string.refresh), font = Fonts.Urbanist, modifier = Modifier.padding(vertical = 20.dp))
 
                             }
-                            Spacer(Modifier.fillMaxWidth().height(1.dp).background(Colors.blackAlphaed))
+                            Spacer(Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Colors.blackAlphaed))
 
                         }
                         item {
-                            Row(modifier = Modifier.fillMaxWidth().clickable { viewModel.onLogoutClick() }) {
-                                MKText(text = "Se déconnecter", font = Fonts.Urbanist, modifier = Modifier.padding(vertical = 20.dp))
+                            Row(modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.onLogoutClick() }) {
+                                MKText(text = stringResource(R.string.logout), font = Fonts.Urbanist, modifier = Modifier.padding(vertical = 20.dp))
                             }
-                            Spacer(Modifier.fillMaxWidth().height(1.dp).background(Colors.blackAlphaed))
+                            Spacer(Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Colors.blackAlphaed))
 
                         }
                     }
                     state.value.lastUpdate?.let {
-                        MKText(text = "Dernière mise à jour : $it", modifier = Modifier.padding(top = 10.dp))
+                        MKText(text = stringResource(R.string.last_update, it), modifier = Modifier.padding(top = 10.dp))
                     }
                 }
             }
