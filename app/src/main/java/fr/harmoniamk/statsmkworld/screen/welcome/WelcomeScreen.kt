@@ -35,6 +35,7 @@ import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCell
+import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCellViewModel
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
@@ -131,7 +132,12 @@ fun WelcomeScreen(
                 state.value.currentWar?.let {
                     Spacer(Modifier.height(10.dp))
                     MKText(text = stringResource(R.string.war_en_cours),  fontSize = 16, font = Fonts.NunitoBD, modifier = Modifier.padding(bottom = 5.dp))
-                    CurrentWarCell(onClick = onCurrentWar)
+                    CurrentWarCell(onClick = onCurrentWar, viewModel = hiltViewModel(
+                        key = it.id.toString() + it.tracks.joinToString { it.id.toString() },
+                        creationCallback = { factory : CurrentWarCellViewModel.Factory ->
+                            factory.create(it)
+                        }
+                    ))
                     Spacer(Modifier.height(10.dp))
                 }
                 when (state.value.wars.isEmpty()) {

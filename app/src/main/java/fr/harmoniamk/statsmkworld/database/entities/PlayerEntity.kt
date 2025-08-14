@@ -17,7 +17,7 @@ class PlayerEntity(
     @ColumnInfo(name = "currentWar") val currentWar: String,
     @ColumnInfo(name = "isAlly") val isAlly: Boolean,
 ) {
-    constructor(player: MKCPlayer,  role: Int = 0,isAlly: Boolean = false) : this(
+    constructor(player: MKCPlayer, role: Int = 0, isAlly: Boolean = false) : this(
         id = player.id.toString(),
         name = player.name,
         country = player.countryCode,
@@ -26,12 +26,12 @@ class PlayerEntity(
         isAlly = isAlly
     )
 
-    constructor(player: MKCTeamPlayer,  role: Int = 0,isAlly: Boolean = false) : this(
+    constructor(player: MKCTeamPlayer, role: Int = 0, currentWar: String = "", isAlly: Boolean = false) : this(
         id = player.playerId,
         name = player.name,
         country = player.countryCode,
         role = role,
-        currentWar = "",
+        currentWar = currentWar,
         isAlly = isAlly
     )
 }

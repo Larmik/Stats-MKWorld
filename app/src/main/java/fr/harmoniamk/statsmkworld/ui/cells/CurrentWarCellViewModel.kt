@@ -2,8 +2,12 @@ package fr.harmoniamk.statsmkworld.ui.cells
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -13,17 +17,22 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class CurrentWarCellViewModel @Inject constructor(
-    databaseRepository: DatabaseRepositoryInterface,
-    dataStoreRepository: DataStoreRepositoryInterface,
-    firebaseRepository: FirebaseRepositoryInterface
+@HiltViewModel(assistedFactory = CurrentWarCellViewModel.Factory::class)
+class CurrentWarCellViewModel @AssistedInject constructor(
+    @Assisted val currentWar: War?,
+    databaseRepository: DatabaseRepositoryInterface
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(currentWar: War?): CurrentWarCellViewModel
+    }
 
     data class State(
         val teamHost: TeamEntity? = null,
@@ -33,8 +42,7 @@ class CurrentWarCellViewModel @Inject constructor(
         val remaining: Int? = null
     )
 
-    val state = dataStoreRepository.mkcTeam
-            .flatMapLatest { firebaseRepository.getCurrentWar(it.id.toString()) }
+    val state = flowOf(currentWar)
             .filterNotNull()
             .map { war ->
                 val details = WarDetails(war)

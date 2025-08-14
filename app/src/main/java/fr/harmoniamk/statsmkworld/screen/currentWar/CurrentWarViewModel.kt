@@ -112,7 +112,6 @@ class CurrentWarViewModel @Inject constructor(
                                 player = players.map { it.player }.singleOrNull { it?.id == position.playerId }
                             )
                         )
-
                 }
                 trackPositions.groupBy { it.player }.entries.forEach { entry ->
                     positions.add(

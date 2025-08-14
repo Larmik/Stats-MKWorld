@@ -109,7 +109,8 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                 onTrackDetails = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
                     navController.navigate("Home/TrackDetails/true")
-                }
+                },
+                onWarValidated = { navController.navigate("Home") }
             )
         }
 

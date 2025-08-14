@@ -25,7 +25,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 @Composable
-fun CurrentWarCell(modifier: Modifier = Modifier, viewModel: CurrentWarCellViewModel = hiltViewModel(), onClick: () -> Unit) {
+fun CurrentWarCell(modifier: Modifier = Modifier, viewModel: CurrentWarCellViewModel, onClick: () -> Unit) {
     val state = viewModel.state.collectAsState()
     Column(modifier.background(Colors.blackAlphaed, RoundedCornerShape(5.dp)).border(1.dp, Colors.white, RoundedCornerShape(5.dp)).clickable { onClick() }, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

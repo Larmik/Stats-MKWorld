@@ -86,7 +86,8 @@ fun SignupScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             HorizontalPager(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
                 count = TutorialItem.entries.size,
                 state = pagerState,
                 userScrollEnabled = false

@@ -18,7 +18,7 @@ import javax.inject.Singleton
 interface PlayerLocalDataSourceInterface {
     fun getAll(): Flow<List<PlayerEntity>>
     fun getById(id: String): Flow<PlayerEntity>
-    fun bulkInsert(players: List<PlayerEntity>): Flow<Unit>
+    fun insert(player: PlayerEntity): Flow<Unit>
     fun upsert(player: PlayerEntity): Flow<Unit>
     fun setCurrentWar(id: String, currentWar: String): Flow<Unit>
     fun setRole(id: String, role: Int): Flow<Unit>
@@ -45,7 +45,7 @@ class PlayerLocalDataSource @Inject constructor(@ApplicationContext private val 
 
     override fun getAll(): Flow<List<PlayerEntity>> = dao.getAll()
     override fun getById(id: String): Flow<PlayerEntity> = dao.getById(id)
-    override fun bulkInsert(players: List<PlayerEntity>): Flow<Unit> = flow { emit(dao.bulkInsert(players)) }
+    override fun insert(player: PlayerEntity): Flow<Unit> = flow { emit(dao.insert(player)) }
     override fun upsert(player: PlayerEntity): Flow<Unit> = flow { emit(dao.upsert(player)) }
     override fun setCurrentWar(id: String, currentWar: String): Flow<Unit> = flow { emit(dao.setCurrentWar(id, currentWar)) }
     override fun setRole(id: String, role: Int): Flow<Unit> = flow { emit(dao.setRole(id, role)) }

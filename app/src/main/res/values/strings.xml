@@ -131,4 +131,6 @@
     <string name="penalty">Penalty</string>
     <string name="cancel_confirm">By cancelling this war, you will lose all progress and stats provided. Are you sure you want to delete it ?</string>
     <string name="valider">Confirm</string>
+    <string name="basculer_en_tant_que_membre">Switch as member</string>
+    <string name="basculer_en_tant_qu_admin">Switch as admin</string>
 </resources>

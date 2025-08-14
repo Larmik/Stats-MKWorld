@@ -28,7 +28,7 @@ interface PlayerDao {
     suspend fun setAlly(id: String, ally: Boolean)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun bulkInsert(teams: List<PlayerEntity>)
+    suspend fun insert(player: PlayerEntity)
 
     @Upsert
     suspend fun upsert(player: PlayerEntity)

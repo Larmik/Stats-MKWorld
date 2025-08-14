@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 
 @Composable
-fun MKText(modifier: Modifier = Modifier, text: Any, font: Font = Fonts.NunitoRG, fontSize: Int = 14, textColor: Color = Colors.black, maxLines: Int = Integer.MAX_VALUE, textAlign: TextAlign = TextAlign.Center) {
+fun MKText(modifier: Modifier = Modifier, text: Any, font: Font = Fonts.NunitoRG, fontSize: Int = 14, textColor: Color = Colors.black, maxLines: Int = Integer.MAX_VALUE, textAlign: TextAlign = TextAlign.Center, resizable: Boolean = true) {
     val targetTextSizeHeight = TextUnit(fontSize.toFloat(), TextUnitType.Sp)
     val textSize = remember { mutableStateOf(targetTextSizeHeight) }
 
@@ -32,9 +32,12 @@ fun MKText(modifier: Modifier = Modifier, text: Any, font: Font = Fonts.NunitoRG
         overflow = TextOverflow.Ellipsis,
         maxLines = maxLines,
         onTextLayout = {
-            val maxCurrentLineIndex = it.lineCount - 1
-            if (it.isLineEllipsized(maxCurrentLineIndex))
-                textSize.value = textSize.value.times(0.9f)
+            if (resizable) {
+                val maxCurrentLineIndex = it.lineCount - 1
+                if (it.isLineEllipsized(maxCurrentLineIndex))
+                    textSize.value = textSize.value.times(0.9f)
+            }
+
         }
     )
 }

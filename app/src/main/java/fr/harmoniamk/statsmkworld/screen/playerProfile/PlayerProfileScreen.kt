@@ -60,12 +60,13 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
         )
     }
     BaseScreen(title = stringResource(R.string.profil_joueur)) {
+        state.value.player?.userSettings?.avatar?.let {
+            AsyncImage(model = "https://mkcentral.com$it", contentDescription = null)
+        }
         when (val player = state.value.player) {
             null -> CircularProgressIndicator()
             else -> {
-                player.userSettings?.avatar?.let {
-                    AsyncImage(model = "https://mkcentral.com$it", contentDescription = null)
-                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(10.dp),
@@ -77,8 +78,8 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                 MKText(
                     text = player.userSettings?.aboutMe.orEmpty(),
                     modifier = Modifier.padding(bottom = 10.dp),
-                    fontSize = 16,
-                    font = Fonts.NunitoIT
+                    font = Fonts.NunitoIT,
+                    resizable = false
                 )
 
                 Column(
@@ -193,6 +194,9 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                         fontSize = 16,
                         modifier = Modifier.padding(top = 10.dp)
                     )
+                }
+                state.value.adminButtonLabel?.let {
+                    MKButton(text = stringResource(it), style = MKButtonStyle.Gradient, onClick = viewModel::onSwitchRole)
                 }
                 if (state.value.showMenu) {
                     LazyColumn {

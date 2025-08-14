@@ -60,8 +60,8 @@ fun TeamProfileScreen(viewModel: TeamProfileViewModel, onBack: () -> Unit, onPla
                 MKText(
                     text = team.description,
                     modifier = Modifier.padding(bottom = 10.dp),
-                    fontSize = 16,
-                    font = Fonts.NunitoIT
+                    font = Fonts.NunitoIT,
+                    resizable = false
                 )
 
 

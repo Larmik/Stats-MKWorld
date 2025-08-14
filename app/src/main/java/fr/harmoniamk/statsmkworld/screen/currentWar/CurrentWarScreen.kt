@@ -39,7 +39,8 @@ fun CurrentWarScreen(
     onBack: () -> Unit,
     onAddTrack: () -> Unit,
     onActions: () -> Unit,
-    onTrackDetails: (WarTrackDetails) -> Unit
+    onTrackDetails: (WarTrackDetails) -> Unit,
+    onWarValidated: () -> Unit
 ) {
     val state = viewModel.state.collectAsState()
 
@@ -49,7 +50,7 @@ fun CurrentWarScreen(
 
     LaunchedEffect(Unit) {
         viewModel.backToHome.collect {
-            onBack()
+            onWarValidated()
         }
     }
     BackHandler { onBack() }

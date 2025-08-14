@@ -68,23 +68,10 @@ class FetchUseCase @Inject constructor(
         .onEach {
             dataStoreRepository.setMKCTeam(it)
             databaseRepository.clearPlayers().firstOrNull()
-            it.rosters.firstOrNull { it.game == "mkworld" }?.players?.let {
-                databaseRepository.writePlayers(it.map {
-                    val role = when (it.leader || it.manager) {
-                        true -> 2
-                        else -> 0
-                    }
-                    return@map PlayerEntity(player = it, role = role)
-                }).firstOrNull()
-                databaseRepository.getPlayers().firstOrNull()?.forEach { player ->
-                    firebaseRepository.getUser(teamId, player.id).firstOrNull()?.let {
-                        databaseRepository.updateUser(player.id, role = it.role).firstOrNull()
-                        databaseRepository.updateUser(
-                            player.id,
-                            currentWar = it.currentWar.orEmpty()
-                        ).firstOrNull()
-                    }
-                }
+            it.rosters.firstOrNull { it.game == "mkworld" }?.players?.forEach { player ->
+                val user = firebaseRepository.getUser(teamId, player.playerId).firstOrNull()
+                val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty())
+                databaseRepository.writePlayer(playerEntity).firstOrNull()
             }
         }
 

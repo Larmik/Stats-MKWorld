@@ -26,10 +26,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -44,6 +46,7 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
     }
 
     data class State(
+        val currentPlayer: MKCPlayer? = null,
         val player: MKCPlayer? = null,
         val buttonVisible: Boolean = false,
         val isAlly: Boolean = false,
@@ -51,7 +54,9 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
         val lastUpdate: String? = null,
         val showMenu: Boolean = false,
         @StringRes val dialogTitle: Int? = null,
-        @StringRes val confirmDialog: Int? = null
+        @StringRes val confirmDialog: Int? = null,
+        @StringRes val adminButtonLabel: Int? = null,
+        val teamId: String? = null
     )
 
     private val _state = MutableStateFlow(State())
@@ -60,31 +65,61 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
     val backToLogin = _backToLogin.asSharedFlow()
 
 
-    val state = when (id) {
-        "me" -> dataStoreRepository.mkcPlayer
-        else -> mkCentralDataSource.getPlayer(id).mapNotNull { it.successResponse }
-    }
+
+
+    val state = dataStoreRepository.mkcPlayer
+        .flatMapLatest {
+            _state.value = _state.value.copy(currentPlayer = it)
+            when (id) {
+                "me" -> flowOf(it)
+                else -> mkCentralDataSource.getPlayer(id).mapNotNull { it.successResponse }
+            }
+        }
         .filterNotNull()
         .mapNotNull {
             val team = dataStoreRepository.mkcTeam
                 .firstOrNull()
+
+            val isLeader =  firebaseRepository.getUser(team?.id.toString(), _state.value.currentPlayer?.id.toString())
+                .map { it?.role ?: 0 }
+                .map { it == 2 }
+                .firstOrNull()
+
             val roster = team
                 ?.rosters
                 ?.firstOrNull { it.game == "mkworld" }
                 ?.players.orEmpty()
+
             val canAlly = !roster.map { it.playerId }.contains(id) && id != "me"
+
             val isAlly = databaseRepository.getPlayers().firstOrNull()
                 ?.singleOrNull { it.id == id }
                 ?.isAlly
+
             val role = firebaseRepository.getUser(team?.id.toString(), it.id.toString())
                 .map { when (it?.role) {
                     1 -> R.string.admin
                     2 -> R.string.leader
                     else -> R.string.membre
-                }
-                }.firstOrNull()
-            val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { it?.startsWith("01/01/1970") != true }
-            State(player = it, buttonVisible = canAlly && isAlly != true, isAlly = isAlly == true, role = role,  showMenu = id == "me", lastUpdate = lastUpdate)
+                } }.firstOrNull()
+            val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { id == "me" && it?.startsWith("01/01/1970") != true }
+            State(
+                player = it,
+                buttonVisible = canAlly && isAlly != true,
+                isAlly = isAlly == true,
+                role = role.takeIf { _ -> it.rosters?.any { it.teamID.toString() == team?.id.toString() } == true },
+                showMenu = id == "me",
+                lastUpdate = lastUpdate,
+                adminButtonLabel = role.takeIf { role ->
+                    role != R.string.leader && isLeader == true && id != "me" && id != _state.value.currentPlayer?.id.toString() && it.rosters?.any { it.teamID.toString() == team?.id.toString() } == true
+                }?.let {
+                    when (it) {
+                        R.string.admin -> R.string.basculer_en_tant_que_membre
+                        else -> R.string.basculer_en_tant_qu_admin
+                    }
+                },
+                teamId = team?.id.toString()
+            )
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
@@ -99,6 +134,48 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
                 buttonVisible = false,
                 isAlly = true
             ) }
+            .launchIn(viewModelScope)
+
+    }
+
+    fun onSwitchRole() {
+        dataStoreRepository.mkcTeam
+            .flatMapLatest { firebaseRepository.getUser(it.id.toString(), id) }
+            .filterNotNull()
+            .map {
+                val newRole = when (state.value.role) {
+                    R.string.membre -> 1
+                    else -> 0
+                }
+                _state.value = state.value.copy(
+                    adminButtonLabel = when (newRole) {
+                        0 -> R.string.basculer_en_tant_qu_admin
+                        else -> R.string.basculer_en_tant_que_membre
+                    },
+                    role = when (newRole) {
+                        0 -> R.string.membre
+                        else -> R.string.admin
+                    }
+                )
+                it.copy(role = newRole)
+            }
+            .flatMapLatest { firebaseRepository.writeUser(state.value.teamId.orEmpty(), it) }
+            .flatMapLatest { databaseRepository.getPlayer(id) }
+            .flatMapLatest {
+                val newRole = when (_state.value.role) {
+                    R.string.admin -> 1
+                    else -> 0
+                }
+                val updatedPlayer = PlayerEntity(
+                    id = it.id,
+                    name = it.name,
+                    country = it.country,
+                    role = newRole,
+                    currentWar = it.currentWar,
+                    isAlly = it.isAlly
+                )
+                databaseRepository.writePlayer(updatedPlayer)
+            }
             .launchIn(viewModelScope)
 
     }

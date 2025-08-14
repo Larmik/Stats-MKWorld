@@ -131,4 +131,6 @@
     <string name="maps_won">Maps gagnées : %1$s/12</string>
     <string name="penalty">Pénalité</string>
     <string name="cancel_confirm">En annulant la war, tu perdras toute la progression ainsi que les statistiques générées par celle-ci.     Es-tu sûr(e) de vouloir effacer la partie ?</string>
+    <string name="basculer_en_tant_que_membre">Basculer en tant que membre</string>
+    <string name="basculer_en_tant_qu_admin">Basculer en tant qu\'admin</string>
 </resources>

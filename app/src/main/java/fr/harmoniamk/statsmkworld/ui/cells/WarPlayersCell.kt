@@ -52,7 +52,8 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>) {
                                 modifier = Modifier.padding(horizontal = 5.dp),
                                 text = it.player?.name.orEmpty(),
                                 maxLines = 1,
-                                textColor = Colors.white
+                                textColor = Colors.white,
+                                resizable = false
                             )
                             /*
                             val text = when (it.tracksPlayed in 1 until trackCount) {
@@ -93,7 +94,8 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>) {
                                 modifier = Modifier.padding(horizontal = 5.dp),
                                 text = it.player?.name.orEmpty(),
                                 maxLines = 1,
-                                textColor = Colors.white
+                                textColor = Colors.white,
+                                resizable = false
                             )
 
                             /*
