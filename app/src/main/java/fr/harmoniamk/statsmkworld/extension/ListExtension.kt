@@ -15,6 +15,8 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarScore
 import fr.harmoniamk.statsmkworld.model.local.WarStats
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -70,22 +72,25 @@ fun List<Int?>?.sum(): Int {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterface, userId: String? = null): Flow<Stats> {
+fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterface, statsRepository: StatsRepositoryInterface, userId: String? = null): Flow<Stats> {
 
-    val maps = mutableListOf<TrackStats>()
     val warScores = mutableListOf<WarScore>()
     val averageForMaps = mutableListOf<TrackStats>()
 
     val mostPlayedTeamId = this
+        .filter { (userId != null && it.war.hasPlayer(userId)) || userId == null }
         .groupBy { it.war.teamOpponent }
-        .toList().maxByOrNull { it.second.size }
+        .toList()
+        .maxByOrNull { it.second.size }
 
     val mostDefeatedTeamId = this
+        .filter { (userId != null && it.war.hasPlayer(userId)) || userId == null }
         .filterNot { it.displayedDiff.contains('-') }
         .groupBy { it.war.teamOpponent }
         .toList().maxByOrNull { it.second.size }
 
     val lessDefeatedTeamId = this
+        .filter { (userId != null && it.war.hasPlayer(userId)) || userId == null }
         .filter { it.displayedDiff.contains('-') }
         .groupBy { it.war.teamOpponent }
         .toList().maxByOrNull { it.second.size }
@@ -110,7 +115,7 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
                     ?.map { it.count }?.forEach {
                         shockCount += it
                     }
-                maps.add(
+                averageForMaps.add(
                     TrackStats(
                         trackIndex = track.index,
                         teamScore = teamScoreForTrack,
@@ -123,19 +128,12 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
             currentPoints = 0
         }
 
-    maps.groupBy { it.trackIndex }
-        .filter { it.value.isNotEmpty() }
-        .forEach { entry ->
-            val stats = TrackStats(
-                map = Maps.entries[entry.key ?: -1],
-                teamScore = (entry.value.map { it.teamScore }
-                    .sum() / entry.value.map { it.teamScore }.count()),
-                playerScore = (entry.value.map { it.playerScore }
-                    .sum() / entry.value.map { it.playerScore }.count()),
-                totalPlayed = entry.value.size
-            )
-            averageForMaps.add(stats)
-        }
+    val maps = when (userId) {
+        null -> statsRepository.trackRankList.mapNotNull { (it as? RankingItem.TrackRanking)?.stats }
+        else -> this.map { WarEntity(it.war) }
+            .filter { it.hasPlayer(userId) }
+            .withTrackStats(userId)
+    }
 
     return flowOf(
         Stats(
@@ -163,13 +161,14 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 fun List<TeamEntity>.withFullTeamStats(
     wars: List<WarEntity>,
     databaseRepository: DatabaseRepositoryInterface,
+    statsRepository: StatsRepositoryInterface,
 ) = flow {
     val temp = mutableListOf<Pair<TeamEntity, Stats>>()
     this@withFullTeamStats.forEach { team ->
         wars
             .filter { it.hasTeam(team.id) }
             .map { WarDetails(War(it)) }
-            .withFullStats(databaseRepository)
+            .withFullStats(databaseRepository, statsRepository)
             .firstOrNull()
             ?.let {
                 if (it.warStats.list.isNotEmpty())
@@ -178,5 +177,36 @@ fun List<TeamEntity>.withFullTeamStats(
     }
     emit(temp)
 }
+
+fun List<WarEntity>.withTrackStats(userId: String?): List<TrackStats> = this
+    .flatMap { it.warTracks.orEmpty() }
+    .groupBy { it.index }.toList()
+    .sortedByDescending { it.second.size }
+    .map {
+        var teamScoreForTrack = 0
+        var playerScoreForTrack = 0
+        var shockCount = 0
+        it.second.forEach { track ->
+            playerScoreForTrack += track.positions
+                .singleOrNull { pos -> pos.playerId == userId }
+                ?.position.positionToPoints()
+            track.positions.map { it.position.positionToPoints() }.forEach {
+                teamScoreForTrack += it
+            }
+            track.shocks?.map { it.count }?.forEach {
+                shockCount += it
+            }
+        }
+        TrackStats(
+            stats = null,
+            map = Maps.entries[it.first],
+            trackIndex = it.first,
+            totalPlayed = it.second.size,
+            winRate = (it.second.filter { it.displayedDiff.contains('+') }.size * 100) / it.second.size,
+            teamScore = teamScoreForTrack / it.second.size,
+            shockCount = shockCount,
+            playerScore = playerScoreForTrack / it.second.size
+        )
+    }
 
 

@@ -60,7 +60,7 @@ fun PlayerCell(
             .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
             .clickable {
                 keyboardController?.hide()
-                player?.let(onClick)
+                finalPlayer?.let(onClick)
             }, horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(

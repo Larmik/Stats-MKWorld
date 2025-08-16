@@ -7,6 +7,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.withFullStats
@@ -19,6 +20,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,7 +53,8 @@ sealed class StatsType(val title: String): Serializable {
 class StatsViewModel @AssistedInject constructor(
     @Assisted val type: StatsType?,
     private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val statsRepository: StatsRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -62,7 +65,8 @@ class StatsViewModel @AssistedInject constructor(
     data class State(
         val stats: Stats? = null,
         val mapStats: MapStats? = null,
-        val subtitle: String? = null
+        val team: TeamEntity? = null,
+        val player: PlayerEntity? = null
     )
 
     private val wars = mutableListOf<WarDetails>()
@@ -92,58 +96,42 @@ class StatsViewModel @AssistedInject constructor(
             this.wars.addAll(wars)
             when {
                 type is StatsType.PlayerStats ->
-                    wars
-                        .filter { war ->
-                            war.war.hasPlayer(
-                                type.userId.split(".").firstOrNull()
-                            )
-                        }
+                    wars.filter { war -> war.war.hasPlayer(type.userId) }
                         .withFullStats(
                             databaseRepository,
-                            userId = type.userId.split(".").firstOrNull()
+                            statsRepository,
+                            type.userId
                         )
 
                 type is StatsType.OpponentStats -> databaseRepository.getTeam(type.teamId)
                     .flatMapLatest { team ->
-                        val filteredWars =
-                            when (val userId = type.userId?.split(".")?.firstOrNull()) {
-                                null -> wars.filter { it.war.hasTeam(team?.id.toString()) }
-                                else -> wars.filter {
-                                    it.war.hasTeam(team?.id.toString()) && it.war.hasPlayer(
-                                        userId
-                                    )
-                                }
-                            }
+                        val filteredWars = when (type.userId) {
+                            null -> wars.filter { it.war.hasTeam(team?.id.toString()) }
+                            else -> wars.filter { it.war.hasTeam(team?.id.toString()) && it.war.hasPlayer(type.userId) }
+                        }
                         filteredWars.withFullStats(
                             databaseRepository,
-                            userId = type.userId?.split(".")?.firstOrNull()
+                            statsRepository,
+                            type.userId
                         )
                     }
                     .filterNotNull()
 
-                else -> wars.withFullStats(databaseRepository)
+                else -> wars.withFullStats(databaseRepository, statsRepository)
             }
         }
         .map { stats ->
-            val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
-            val subtitle = when (type) {
-                is StatsType.TeamStats -> team?.name
-                is StatsType.PlayerStats -> currentPlayer?.name
-                else -> {
-                    val userId = (type as? StatsType.OpponentStats)?.userId
-                        ?: (type as? StatsType.MapStats)?.userId
-                    val teamId = (type as? StatsType.OpponentStats)?.teamId
-                        ?: (type as? StatsType.MapStats)?.teamId
-                    val user = databaseRepository.getPlayer(userId.orEmpty()).firstOrNull()
-                    val team = databaseRepository.getTeam(teamId.orEmpty()).firstOrNull()
-                    when {
-                        user != null && team != null -> "${user.name} vs ${team.name}"
-                        user != null -> user.name
-                        team != null -> team.name
-                        else -> null
-                    }
-                }
-            }
+            val userId = (type as? StatsType.OpponentStats)?.userId
+                ?: (type as? StatsType.MapStats)?.userId
+                ?: (type as? StatsType.PlayerStats)?.userId
+
+            val teamId = (type as? StatsType.OpponentStats)?.teamId
+                ?: (type as? StatsType.MapStats)?.teamId
+                ?: (type as? StatsType.TeamStats)?.let { dataStoreRepository.mkcTeam.firstOrNull()?.id.toString() }
+
+            val player = databaseRepository.getPlayer(userId.orEmpty()).firstOrNull()
+            val team = databaseRepository.getTeam(teamId.orEmpty()).firstOrNull()
+
             when (type) {
                 is StatsType.PlayerStats, is StatsType.TeamStats -> _state.value = _state.value.copy(stats = stats)
                 is StatsType.OpponentStats -> databaseRepository.getPlayers()
@@ -259,7 +247,7 @@ class StatsViewModel @AssistedInject constructor(
                 }
                 else -> {}
             }
-            _state.value.copy(subtitle = subtitle)
+            _state.value.copy(team = team, player = player)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)

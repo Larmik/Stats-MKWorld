@@ -94,10 +94,15 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                 navController.previousBackStackEntry?.savedStateHandle?.get<StatsType>("type")
             StatsRankingScreen(
                 viewModel = hiltViewModel(
-                creationCallback = { factory: StatsRankingViewModel.Factory ->
-                    factory.create(type)
+                    creationCallback = { factory: StatsRankingViewModel.Factory ->
+                        factory.create(type)
+                    }
+                ),
+                onPlayerStats = {
+                    navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
+                    navController.navigate("Stats")
                 }
-            ))
+            )
         }
 
         composable(

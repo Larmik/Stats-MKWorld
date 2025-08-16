@@ -21,27 +21,27 @@ data class Stats(
     val highestScore: WarScore? = warScores.maxByOrNull { it.score }
     val lowestScore: WarScore? = warScores.minByOrNull { it.score }
     val bestMap: TrackStats? =
-        averageForMaps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.teamScore ?: 0 }
+        maps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.teamScore ?: 0 }
     val worstMap: TrackStats? =
-        averageForMaps.filter { it.totalPlayed >= 2 }.minByOrNull { it.teamScore ?: 0 }
+        maps.filter { it.totalPlayed >= 2 }.minByOrNull { it.teamScore ?: 0 }
     val bestPlayerMap: TrackStats? =
-        averageForMaps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.playerScore ?: 0 }
+        maps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.playerScore ?: 0 }
     val worstPlayerMap: TrackStats? =
-        averageForMaps.filter { it.totalPlayed >= 2 }.minByOrNull { it.playerScore ?: 0 }
+        maps.filter { it.totalPlayed >= 2 }.minByOrNull { it.playerScore ?: 0 }
     val mostPlayedMap: TrackStats? =
-        averageForMaps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.totalPlayed }
+        maps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.totalPlayed }
     val averagePoints: Int =
         warScores.sumOf { it.score } / (warScores.takeIf { it.isNotEmpty() }?.size ?: 1)
     val averagePointsLabel: String = averagePoints.warScoreToDiff()
     private val averageMapPoints: Int =
-        (maps.map { it.teamScore }.sum() / (maps.takeIf { it.isNotEmpty() }?.size ?: 1))
+        (averageForMaps.map { it.teamScore }.sum() / (averageForMaps.takeIf { it.isNotEmpty() }?.size ?: 1))
     val averagePlayerPosition: Int =
-        (maps.map { it.playerScore }.sum() / (maps.takeIf { it.isNotEmpty() }?.size
+        (averageForMaps.map { it.playerScore }.sum() / (averageForMaps.takeIf { it.isNotEmpty() }?.size
             ?: 1)).pointsToPosition()
 
     val averageMapPointsLabel = averageMapPoints.trackScoreToDiff()
-    val mapsWon = "${maps.filter { (it.teamScore ?: 0) > 41 }.size} / ${maps.size}"
-    val shockCount = maps.map { it.shockCount }.sum()
+    val mapsWon = "${averageForMaps.filter { (it.teamScore ?: 0) > 41 }.size} / ${averageForMaps.size}"
+    val shockCount = averageForMaps.map { it.shockCount }.sum()
     var highestPlayerScore: Pair<Int, String?>? = null
     var lowestPlayerScore: Pair<Int, String?>? = null
 }
@@ -50,7 +50,7 @@ class WarScore(
     val war: WarDetails,
     val score: Int
 ) {
-    val opponentLabel = "vs ${war.war.teamOpponent.orEmpty()}"
+    val opponentLabel = "vs ${war.war.teamOpponent}"
 }
 
 data class TrackStats(

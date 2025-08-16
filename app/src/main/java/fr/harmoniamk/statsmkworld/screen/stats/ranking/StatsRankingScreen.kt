@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.VerticalGrid
@@ -16,7 +17,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 
 @Composable
-fun StatsRankingScreen(viewModel: StatsRankingViewModel) {
+fun StatsRankingScreen(viewModel: StatsRankingViewModel, onPlayerStats: (StatsType) -> Unit) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = state.value.title.orEmpty()) {
 
@@ -30,7 +31,7 @@ fun StatsRankingScreen(viewModel: StatsRankingViewModel) {
                             .fillMaxWidth(0.48f),
                         textColor = Colors.white,
                         backgroundColor = Colors.blackAlphaed,
-                        onClick = {  },
+                        onClick = { onPlayerStats(StatsType.PlayerStats(it.id)) },
                         playerRanking = it,
                         player = null
                     )

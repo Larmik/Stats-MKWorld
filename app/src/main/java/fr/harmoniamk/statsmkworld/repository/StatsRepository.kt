@@ -12,6 +12,7 @@ interface StatsRepositoryInterface {
     var playersRankList: List<RankingItem>
     var opponentRankList: List<RankingItem>
     var trackRankList: List<RankingItem>
+    var playerTrackRankList: List<RankingItem>
 }
 
 
@@ -28,6 +29,7 @@ class StatsRepository @Inject constructor() : StatsRepositoryInterface {
     private var _playersRankingList: List<RankingItem> = listOf()
     private var _opponentRankingList: List<RankingItem> = listOf()
     private var _trackRankList: List<RankingItem> = listOf()
+    private var _playerTrackRankList: List<RankingItem> = listOf()
 
     override var playersRankList: List<RankingItem>
         get() = _playersRankingList
@@ -39,5 +41,8 @@ class StatsRepository @Inject constructor() : StatsRepositoryInterface {
     override var trackRankList: List<RankingItem>
         get() = _trackRankList
         set(value) { _trackRankList = value }
+    override var playerTrackRankList: List<RankingItem>
+        get() = _playerTrackRankList
+        set(value) { _playerTrackRankList = value }
 
 }

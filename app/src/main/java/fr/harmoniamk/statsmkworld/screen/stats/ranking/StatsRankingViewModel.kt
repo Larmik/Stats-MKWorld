@@ -52,9 +52,7 @@ sealed interface RankingItem {
             }
     }
 
-    class TrackRanking(val stats: TrackStats) : RankingItem {
-
-    }
+    class TrackRanking(val stats: TrackStats) : RankingItem
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

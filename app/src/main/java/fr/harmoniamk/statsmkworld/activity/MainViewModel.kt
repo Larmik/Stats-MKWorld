@@ -6,12 +6,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.BuildConfig
 import fr.harmoniamk.statsmkworld.extension.mergeWith
-import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
+import fr.harmoniamk.statsmkworld.extension.withTrackStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
-import fr.harmoniamk.statsmkworld.model.local.Maps
-import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -19,7 +17,6 @@ import fr.harmoniamk.statsmkworld.repository.RemoteConfigRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
@@ -72,6 +69,10 @@ class MainViewModel @Inject constructor(
     suspend fun initStats() {
         databaseRepository.getWars().firstOrNull()?.let { warList ->
             val currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
+            val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
+
+            statsRepository.trackRankList = warList.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
+            statsRepository.playerTrackRankList = warList.filter { it.hasPlayer(currentPlayer?.id.toString()) == true }.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
             databaseRepository.getPlayers()
                 .mapNotNull { it.sortedBy { it.name } }
                 .firstOrNull()
@@ -81,7 +82,7 @@ class MainViewModel @Inject constructor(
                         warList
                             .filter { war -> war.hasPlayer(user.id) }
                             .map { WarDetails(War(it)) }
-                            .withFullStats(databaseRepository, userId = user.id)
+                            .withFullStats(databaseRepository, statsRepository, userId = user.id)
                             .map { players.add(RankingItem.PlayerRanking(user, it)) }
                             .firstOrNull()
                     }
@@ -93,43 +94,13 @@ class MainViewModel @Inject constructor(
                 .flatMapLatest {
                     it.withFullTeamStats(
                         wars = warList,
-                        databaseRepository = databaseRepository
+                        databaseRepository = databaseRepository,
+                        statsRepository = statsRepository
                     )
                 }
                 .mapNotNull { it.map { RankingItem.OpponentRanking(it.first, it.second) } }
                 .firstOrNull()
-                ?.let { opponents ->
-                    statsRepository.opponentRankList = opponents
-
-                }
-
-            val trackStats = warList
-                .flatMap { it.warTracks.orEmpty() }
-                .groupBy { it.index }.toList()
-                .sortedByDescending { it.second.size }
-                .map {
-                    var teamScoreForTrack = 0
-                    var shockCount = 0
-                    it.second.forEach { track ->
-                        track.positions.map { it.position.positionToPoints() }.forEach {
-                            teamScoreForTrack += it
-                        }
-                        track.shocks?.map { it.count }?.forEach {
-                            shockCount += it
-                        }
-                    }
-                    TrackStats(
-                        stats = null,
-                        map = Maps.entries[it.first],
-                        trackIndex = it.first,
-                        totalPlayed = it.second.size,
-                        winRate = (it.second.filter { it.displayedDiff.contains('+') }.size * 100) / it.second.size,
-                        teamScore = teamScoreForTrack / it.second.size,
-                        shockCount = shockCount
-                    )
-                }.map { RankingItem.TrackRanking(it) }
-
-            statsRepository.trackRankList = trackStats
+                ?.let { opponents -> statsRepository.opponentRankList = opponents }
         }
     }
 }

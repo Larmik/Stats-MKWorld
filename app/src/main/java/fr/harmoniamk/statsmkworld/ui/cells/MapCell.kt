@@ -153,15 +153,8 @@ fun MapCell(
                             true -> it.stats.playerScore?.pointsToPosition().toString()
                             else -> it.stats.teamScore?.trackScoreToDiff().toString()
                         },
-                        font = when (isIndiv) {
-                            true -> Fonts.MKPosition
-                            else -> Fonts.NunitoBD
-                        },
-                        textColor = Colors.white,
-                        fontSize = when (isIndiv) {
-                            true -> 18
-                            else -> 14
-                        }
+                        font = Fonts.NunitoBD,
+                        textColor = Colors.white
                     )
                 }
 
