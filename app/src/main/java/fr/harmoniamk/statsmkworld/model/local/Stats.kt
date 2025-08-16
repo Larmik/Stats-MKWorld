@@ -113,7 +113,7 @@ class MapStats(
                 it.track.hasPlayer(userId)
             } == true) || !isIndiv
         }
-    val teamScore = list.map { pair -> pair.warTrack }.map { it.teamScore }.sum() / list.size
+    val teamScore = list.map { pair -> pair.warTrack }.map { it.teamScore }.sum() / (list.takeIf { it.isNotEmpty() }?.size ?: 1)
     val playerPosition = playerScoreList.takeIf { it.isNotEmpty() }
         ?.let { (playerScoreList.sum() / playerScoreList.size).pointsToPosition() } ?: 0
     val topsTable = listOf(

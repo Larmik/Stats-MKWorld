@@ -1,7 +1,6 @@
 package fr.harmoniamk.statsmkworld.ui.stats
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,17 +39,17 @@ fun MKLineChart(stats: Stats?, mapStats: MapStats?) {
 
     Row(Modifier.fillMaxWidth().height(35.dp), verticalAlignment = Alignment.CenterVertically) {
         Spacer(Modifier.width(10.dp).height(35.dp))
-        win?.takeIf { it != 0f }?.let {
+        win?.takeIf { it > 0f }?.let {
             val endCorner = when (it) {
                 1f -> 20.dp
                 else -> 0.dp
             }
             Spacer(Modifier.weight(it*100).height(25.dp).background(Colors.green, shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = endCorner, bottomEnd = endCorner)))
         }
-        tie?.takeIf { it != 0f }?.let {
+        tie?.takeIf { it > 0f }?.let {
             Spacer(Modifier.weight(it*100).height(25.dp).background(Colors.white))
         }
-        loss?.takeIf { it != 0f }?.let {
+        loss?.takeIf { it > 0f }?.let {
             val startCorner = when (it) {
                 1f -> 20.dp
                 else -> 0.dp

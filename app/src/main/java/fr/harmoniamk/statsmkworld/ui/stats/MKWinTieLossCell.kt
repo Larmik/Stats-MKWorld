@@ -22,12 +22,11 @@ import kotlinx.coroutines.FlowPreview
 @Composable
 fun MKWinTieLossCell(stats: Stats?, mapStats: MapStats?) {
     val warStats = stats?.warStats
-    val played = warStats?.warsPlayed ?: mapStats?.trackPlayed ?: 1
+    val played = warStats?.warsPlayed ?: mapStats?.trackPlayed
     val win = warStats?.warsWon ?: mapStats?.trackWon ?: 0
     val tie = warStats?.warsTied ?: mapStats?.trackTie ?: 0
     val loss = warStats?.warsLoss ?: mapStats?.trackLoss ?: 0
-    val winRate = (win * 100) / played
-
+    val winRate = (win * 100) / (played?.takeIf { it > 0 } ?: 1)
 
     Column(
         modifier = Modifier

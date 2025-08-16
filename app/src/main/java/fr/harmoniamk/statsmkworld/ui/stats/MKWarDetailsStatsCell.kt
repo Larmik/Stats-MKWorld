@@ -42,7 +42,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
             )
     ) {
 
-
+        if (type !is StatsType.MapStats)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(top = 10.dp)
@@ -92,7 +92,10 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                 )
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                val shockLabel = "Shocks/War"
+                val shockLabel = when (type) {
+                    is StatsType.MapStats -> "Shocks"
+                    else -> "Shocks/War"
+                }
                 val shockCount = when (stats) {
                     null ->  mapStats?.shockCount.toString()
                     else -> String.format("%.2f", (stats.shockCount.toFloat() / stats.warStats.warsPlayed))

@@ -46,7 +46,7 @@ fun StatsRankingScreen(
                         is RankingItem.TrackRanking -> MapCell(
                             modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
                             trackRanking = it,
-                            onClick = {}
+                            onClick = { onPlayerStats(StatsType.MapStats(trackIndex = it.ordinal))}
                         )
                         else -> {}
                     }

@@ -1,6 +1,5 @@
 package fr.harmoniamk.statsmkworld.screen.stats
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
@@ -10,11 +9,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKMapsStatsCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKPlayerScoreCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKTeamStatsView
+import fr.harmoniamk.statsmkworld.ui.stats.MKTopBottomCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKWarDetailsStatsView
 import fr.harmoniamk.statsmkworld.ui.stats.MKWarStatsView
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,19 +26,32 @@ import kotlinx.coroutines.FlowPreview
 fun StatsScreen(viewModel: StatsViewModel) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = viewModel.type?.title ?: "Statistiques") {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
             state.value.team?.let {
                 TeamCell(team = it, onClick = { })
             }
             state.value.player?.let {
                 PlayerCell(player = it, onClick = { })
             }
+            state.value.map?.let {
+                MapCell(map = it, onClick = { })
+            }
             MKWarStatsView(state.value.stats, state.value.mapStats)
             MKWarDetailsStatsView(state.value.stats, state.value.mapStats, type = viewModel.type)
-            MKPlayerScoreCell(stats = state.value.stats, type = viewModel.type)
-            if (viewModel.type !is StatsType.OpponentStats)
+            if (viewModel.type !is StatsType.MapStats)
+                MKPlayerScoreCell(stats = state.value.stats, type = viewModel.type)
+            if (viewModel.type is StatsType.PlayerStats || viewModel.type is StatsType.TeamStats)
                 MKTeamStatsView(state.value.stats)
             MKMapsStatsCell(stats = state.value.stats, type = viewModel.type)
+            val tops = state.value.mapStats?.topsTable
+            val bottoms = state.value.mapStats?.bottomsTable
+            val indivTops = state.value.mapStats?.indivTopsTable
+            val indivBottoms = state.value.mapStats?.indivBottomsTable
+            if (tops.takeIf { it?.any { it.second > 0 } == true } != null && bottoms.takeIf { it?.any { it.second > 0 } == true } != null)
+                MKTopBottomCell(false, tops, bottoms)
+            if (indivTops.takeIf { it?.any { it.second > 0 } == true } != null && indivTops.takeIf { it?.any { it.second > 0 } == true } != null)
+                MKTopBottomCell(true, indivTops, indivBottoms)
+
         }
     }
 

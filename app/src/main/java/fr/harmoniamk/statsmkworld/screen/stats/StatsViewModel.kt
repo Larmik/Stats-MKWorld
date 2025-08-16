@@ -14,6 +14,7 @@ import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
 import fr.harmoniamk.statsmkworld.model.local.MapStats
+import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
@@ -53,8 +54,7 @@ sealed class StatsType(val title: String): Serializable {
 class StatsViewModel @AssistedInject constructor(
     @Assisted val type: StatsType?,
     private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface,
-    private val statsRepository: StatsRepositoryInterface
+    private val databaseRepository: DatabaseRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -66,7 +66,8 @@ class StatsViewModel @AssistedInject constructor(
         val stats: Stats? = null,
         val mapStats: MapStats? = null,
         val team: TeamEntity? = null,
-        val player: PlayerEntity? = null
+        val player: PlayerEntity? = null,
+        val map: Maps? = null
     )
 
     private val wars = mutableListOf<WarDetails>()
@@ -155,72 +156,28 @@ class StatsViewModel @AssistedInject constructor(
                 is StatsType.MapStats -> {
                     val finalList = mutableListOf<MapDetails>()
 
-                    val onlyIndiv = type.userId != null
-                    when {
-                        type.userId != null && type.teamId?.takeIf { it.isNotEmpty() } != null -> wars.filter { war ->
-                            war.war.hasPlayer(
-                                type.userId.split(".").firstOrNull()
-                            ) && war.war.hasTeam(type.teamId)
-                        }
-
-                        onlyIndiv -> wars.filter { war ->
-                            war.war.hasPlayer(
-                                type.userId.split(".").firstOrNull()
+                    wars.forEach { mkWar ->
+                        mkWar.warTracks.filter { track -> track.index == type.trackIndex }.forEach { track ->
+                            val position = track.track.positions.singleOrNull { it.playerId == type.userId }?.position?.takeIf { type.userId != null }
+                            finalList.add(
+                                MapDetails(
+                                    war = mkWar,
+                                    warTrack = track,
+                                    position = position
+                                )
                             )
                         }
-
-                        type.teamId?.takeIf { it.isNotEmpty() } != null -> wars.filter { war ->
-                            war.war.hasTeam(
-                                type.teamId
-                            )
-                        }
-
-                        else -> wars.filter { war -> war.war.hasTeam(team?.id.toString()) }
-                    }.filter { (!onlyIndiv && it.war.hasTeam(team?.id.toString())) || onlyIndiv }
-                        .filter {
-                            (onlyIndiv && it.war.hasPlayer(
-                                type.userId.split(
-                                    "."
-                                ).firstOrNull()
-                            )) || !onlyIndiv && it.war.hasTeam(
-                                team?.id.toString()
-                            )
-                        }.forEach { mkWar ->
-                            mkWar.warTracks.filter { track -> track.index == type.trackIndex }.forEach { track ->
-                                    val position =
-                                        track.track.positions.singleOrNull { it.playerId == type.userId }?.position?.takeIf { type.userId != null }
-                                    finalList.add(
-                                        MapDetails(
-                                            war = mkWar,
-                                            warTrack = track,
-                                            position = position
-                                        )
-                                    )
-                                }
-                        }
+                    }
 
                     val mapDetailsList = mutableListOf<MapDetails>()
-                    mapDetailsList.addAll(
-                        finalList
-                            .filter {
-                                (onlyIndiv && it.war.warTracks?.any {
-                                    it.track.hasPlayer(
-                                        type.userId.split(".").firstOrNull()
-                                    )
-                                } == true) || !onlyIndiv
-                            }
-                            .filter {
-                                type.teamId?.takeIf { it.isNotEmpty() } == null || it.war.war.hasTeam(
-                                    type.teamId
-                                )
-                            }
-                    )
+                    mapDetailsList.addAll(finalList)
                     _state.value = _state.value.copy(
                         mapStats = MapStats(
                             list = mapDetailsList,
-                            isIndiv = onlyIndiv,
+                            isIndiv = false,
                             userId = type.userId?.split(".")?.firstOrNull()
-                        )
+                        ),
+                        map = Maps.entries[mapDetailsList.first().warTrack.track.index]
                     )
                 }
                 else -> {}
