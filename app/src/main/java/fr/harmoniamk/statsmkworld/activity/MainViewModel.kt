@@ -82,7 +82,7 @@ class MainViewModel @Inject constructor(
                         warList
                             .filter { war -> war.hasPlayer(user.id) }
                             .map { WarDetails(War(it)) }
-                            .withFullStats(databaseRepository, statsRepository, userId = user.id)
+                            .withFullStats(databaseRepository, userId = user.id)
                             .map { players.add(RankingItem.PlayerRanking(user, it)) }
                             .firstOrNull()
                     }
@@ -94,8 +94,7 @@ class MainViewModel @Inject constructor(
                 .flatMapLatest {
                     it.withFullTeamStats(
                         wars = warList,
-                        databaseRepository = databaseRepository,
-                        statsRepository = statsRepository
+                        databaseRepository = databaseRepository
                     )
                 }
                 .mapNotNull { it.map { RankingItem.OpponentRanking(it.first, it.second) } }

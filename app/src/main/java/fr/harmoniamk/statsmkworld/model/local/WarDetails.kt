@@ -1,11 +1,15 @@
 package fr.harmoniamk.statsmkworld.model.local
 
+import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import java.io.Serializable
+import java.util.Date
 
 data class WarDetails(val war: War): Serializable {
+
+    val date = Date(war.id).displayedString("dd/MM/yyyy")
 
     val warTracks = war.tracks.map { WarTrackDetails(it) }
 

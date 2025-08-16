@@ -72,7 +72,7 @@ fun List<Int?>?.sum(): Int {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterface, statsRepository: StatsRepositoryInterface, userId: String? = null): Flow<Stats> {
+fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterface, userId: String? = null, teamId: String? = null): Flow<Stats> {
 
     val warScores = mutableListOf<WarScore>()
     val averageForMaps = mutableListOf<TrackStats>()
@@ -95,7 +95,10 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
         .groupBy { it.war.teamOpponent }
         .toList().maxByOrNull { it.second.size }
 
-    this.map { Pair(it, it.warTracks) }
+    this
+        .filter { (userId != null && it.war.hasPlayer(userId)) || userId == null }
+        .filter { (teamId != null && it.war.hasTeam(teamId)) || teamId == null }
+        .map { Pair(it, it.warTracks) }
         .forEach {
             var currentPoints = 0
             it.second.forEach { track ->
@@ -128,11 +131,20 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
             currentPoints = 0
         }
 
-    val maps = when (userId) {
-        null -> statsRepository.trackRankList.mapNotNull { (it as? RankingItem.TrackRanking)?.stats }
-        else -> this.map { WarEntity(it.war) }
+    val maps = when  {
+        userId != null && teamId != null -> this.map { WarEntity(it.war) }
+            .filter { it.hasTeam(teamId) }
             .filter { it.hasPlayer(userId) }
-            .withTrackStats(userId)
+            .withTrackStats(teamId = teamId, userId = userId)
+        userId != null -> this.map { WarEntity(it.war) }
+            .filter { it.hasPlayer(userId) }
+            .withTrackStats(userId = userId)
+        teamId != null -> this.map { WarEntity(it.war) }
+            .filter { it.hasTeam(teamId) }
+            .withTrackStats(teamId = teamId)
+        else -> this.map { WarEntity(it.war) }
+            .withTrackStats(userId = userId)
+
     }
 
     return flowOf(
@@ -160,15 +172,14 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
 fun List<TeamEntity>.withFullTeamStats(
     wars: List<WarEntity>,
-    databaseRepository: DatabaseRepositoryInterface,
-    statsRepository: StatsRepositoryInterface,
+    databaseRepository: DatabaseRepositoryInterface
 ) = flow {
     val temp = mutableListOf<Pair<TeamEntity, Stats>>()
     this@withFullTeamStats.forEach { team ->
         wars
             .filter { it.hasTeam(team.id) }
             .map { WarDetails(War(it)) }
-            .withFullStats(databaseRepository, statsRepository)
+            .withFullStats(databaseRepository)
             .firstOrNull()
             ?.let {
                 if (it.warStats.list.isNotEmpty())
@@ -178,7 +189,9 @@ fun List<TeamEntity>.withFullTeamStats(
     emit(temp)
 }
 
-fun List<WarEntity>.withTrackStats(userId: String?): List<TrackStats> = this
+fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = null): List<TrackStats> = this
+    .filter { (teamId != null && it.hasTeam(teamId) || teamId == null) }
+    .filter { (userId != null && it.hasPlayer(userId) || userId == null) }
     .flatMap { it.warTracks.orEmpty() }
     .groupBy { it.index }.toList()
     .sortedByDescending { it.second.size }

@@ -11,15 +11,11 @@ import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
-import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 
 @Composable
-fun MKMapsStatsCell(
-    stats: Stats?,
-    type: StatsType?
-) {
+fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
 
     val userId = (type as? StatsType.PlayerStats)?.userId
 
@@ -32,8 +28,6 @@ fun MKMapsStatsCell(
         else -> stats?.worstPlayerMap
     }
 
-    Column {
-        MKText(text = "Circuits", font = Fonts.NunitoBD, fontSize = 16)
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(bottom = 10.dp)
@@ -41,8 +35,8 @@ fun MKMapsStatsCell(
             stats?.mostPlayedMap?.let {
                 Column(Modifier.fillMaxWidth().padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     MKText(
-                        text = "Le plus joué",
-                        fontSize = 12,
+                        text = "Circuit le plus joué",
+                        modifier = Modifier.padding(bottom = 5.dp)
                     )
                     Row(Modifier.fillMaxWidth(0.5f)) {
                         MapCell(
@@ -62,7 +56,7 @@ fun MKMapsStatsCell(
                     bestMap?.let {
                         MKText(
                             text = "Meilleur circuit",
-                            fontSize = 12,
+                            modifier = Modifier.padding(bottom = 5.dp)
                         )
                         MapCell(
                             track = null,
@@ -76,7 +70,7 @@ fun MKMapsStatsCell(
                     worstMap?.let {
                         MKText(
                             text = "Pire circuit",
-                            fontSize = 12,
+                            modifier = Modifier.padding(bottom = 5.dp)
                         )
                         MapCell(
                             track = null,
@@ -87,6 +81,5 @@ fun MKMapsStatsCell(
                     }
                 }
             }
-        }
     }
 }

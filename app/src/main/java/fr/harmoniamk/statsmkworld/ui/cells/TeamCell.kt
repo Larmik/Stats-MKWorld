@@ -35,6 +35,7 @@ fun TeamCell(
     modifier: Modifier = Modifier,
     team: TeamEntity?,
     teamRanking: RankingItem.OpponentRanking? = null,
+    teamStatsLabel: String? = null,
     onClick: (TeamEntity) -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -46,7 +47,7 @@ fun TeamCell(
             .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
             .clickable {
                 keyboardController?.hide()
-                team?.let(onClick)
+                finalTeam?.let(onClick)
             }, horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(Modifier.padding(15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -112,6 +113,9 @@ fun TeamCell(
                         )
                     }
                 }
+            }
+            teamStatsLabel?.let {
+                MKText(text = it, fontSize = 12, textColor = Colors.white, modifier = Modifier.padding(top = 10.dp))
             }
         }
     }

@@ -49,9 +49,7 @@ data class Stats(
 class WarScore(
     val war: WarDetails,
     val score: Int
-) {
-    val opponentLabel = "vs ${war.war.teamOpponent}"
-}
+)
 
 data class TrackStats(
     val stats: Stats? = null,

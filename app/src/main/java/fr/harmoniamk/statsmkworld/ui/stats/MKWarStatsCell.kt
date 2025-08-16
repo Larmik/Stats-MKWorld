@@ -26,15 +26,14 @@ fun MKWarStatsView(stats: Stats?, mapStats: MapStats?) {
         else -> ""
     }
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 20.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 20.dp)) {
             Column(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                MKText(text = totalPlayed.toString(), font = Fonts.Urbanist, fontSize = 20)
-                MKText(text = totalPlayedLabel, font = Fonts.Urbanist, fontSize = 16)
+                Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                MKText(text = totalPlayed.toString(), font = Fonts.Urbanist, fontSize = 26)
+                MKText(text = totalPlayedLabel, font = Fonts.Urbanist, fontSize = 20)
                 Spacer(modifier = Modifier.height(15.dp))
                 MKWinTieLossCell(stats = stats, mapStats = mapStats)
+                Spacer(modifier = Modifier.height(15.dp))
                 MKLineChart(stats = stats, mapStats = mapStats)
             }
         }

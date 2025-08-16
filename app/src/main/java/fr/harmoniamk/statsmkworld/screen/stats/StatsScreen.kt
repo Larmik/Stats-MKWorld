@@ -35,7 +35,8 @@ fun StatsScreen(viewModel: StatsViewModel) {
             MKWarStatsView(state.value.stats, state.value.mapStats)
             MKWarDetailsStatsView(state.value.stats, state.value.mapStats, type = viewModel.type)
             MKPlayerScoreCell(stats = state.value.stats, type = viewModel.type)
-            MKTeamStatsView(state.value.stats)
+            if (viewModel.type !is StatsType.OpponentStats)
+                MKTeamStatsView(state.value.stats)
             MKMapsStatsCell(stats = state.value.stats, type = viewModel.type)
         }
     }

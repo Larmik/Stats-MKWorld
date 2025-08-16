@@ -78,13 +78,8 @@ class StatsViewModel @AssistedInject constructor(
         .map {
             team = dataStoreRepository.mkcTeam.firstOrNull()
             when {
-                type is StatsType.PlayerStats -> it.filter { war -> war.hasPlayer(type.userId.split(".").firstOrNull()) }
+                type is StatsType.PlayerStats -> it.filter { war -> war.hasPlayer(type.userId) }
                 type is StatsType.TeamStats -> it.filter { war -> war.hasTeam(team?.id.toString()) }
-                (type as? StatsType.OpponentStats)?.userId != null -> it.filter { war ->
-                    war.hasTeam(
-                        type.teamId
-                    ) && war.hasPlayer(type.userId?.split(".")?.firstOrNull())
-                }
                 type is StatsType.OpponentStats -> it.filter { war -> war.hasTeam(type.teamId) }
                 else -> it
             }
@@ -95,29 +90,11 @@ class StatsViewModel @AssistedInject constructor(
             this.wars.clear()
             this.wars.addAll(wars)
             when {
-                type is StatsType.PlayerStats ->
-                    wars.filter { war -> war.war.hasPlayer(type.userId) }
-                        .withFullStats(
-                            databaseRepository,
-                            statsRepository,
-                            type.userId
-                        )
-
+                type is StatsType.PlayerStats -> wars.withFullStats(databaseRepository, userId = type.userId)
                 type is StatsType.OpponentStats -> databaseRepository.getTeam(type.teamId)
-                    .flatMapLatest { team ->
-                        val filteredWars = when (type.userId) {
-                            null -> wars.filter { it.war.hasTeam(team?.id.toString()) }
-                            else -> wars.filter { it.war.hasTeam(team?.id.toString()) && it.war.hasPlayer(type.userId) }
-                        }
-                        filteredWars.withFullStats(
-                            databaseRepository,
-                            statsRepository,
-                            type.userId
-                        )
-                    }
+                    .flatMapLatest { team -> wars.withFullStats(databaseRepository, teamId = type.teamId) }
                     .filterNotNull()
-
-                else -> wars.withFullStats(databaseRepository, statsRepository)
+                else -> wars.withFullStats(databaseRepository)
             }
         }
         .map { stats ->
@@ -135,7 +112,8 @@ class StatsViewModel @AssistedInject constructor(
             when (type) {
                 is StatsType.PlayerStats, is StatsType.TeamStats -> _state.value = _state.value.copy(stats = stats)
                 is StatsType.OpponentStats -> databaseRepository.getPlayers()
-                    .map { users ->
+                    .firstOrNull()
+                    ?.let  { users ->
                         val finalList = mutableListOf<Pair<Int, String?>>()
                         stats.warStats.list.forEach { war ->
                             val positions = mutableListOf<Pair<PlayerEntity?, Int>>()

@@ -31,13 +31,6 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
 
     val userId = (type as? StatsType.PlayerStats)?.userId
 
-    val diffColor = when {
-        userId != null -> Colors.white
-        stats?.averagePoints == 0 -> Colors.white
-        stats?.averagePointsLabel?.contains("+") == true || mapStats?.teamScore?.trackScoreToDiff()?.contains("+") == true -> Colors.green
-        stats?.averagePointsLabel?.contains("-") == true || mapStats?.teamScore?.trackScoreToDiff()?.contains("-") == true -> Colors.red
-        else -> Colors.white
-    }
 
     Column(
         modifier = Modifier
@@ -58,17 +51,17 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                     Modifier
                         .weight(1f), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MKText(text = "Score moyen", fontSize = 12,
+                    MKText(text = "Score moyen",
                         textColor = Colors.white)
                     MKText(
                         text = when (userId) {
                             null -> stats?.averagePointsLabel.toString()
                             else -> stats?.averagePoints.toString()
                         } ,
-                        font = Fonts.Urbanist, fontSize = 20, textColor = diffColor)
+                        font = Fonts.Urbanist, fontSize = 20, textColor = Colors.white)
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MKText(text = "Maps gagnées", fontSize = 12,
+                    MKText(text = "Maps gagnées",
                         textColor = Colors.white)
                     MKText(text = stats?.mapsWon.toString(), fontSize = 16, font = Fonts.NunitoBD,
                         textColor = Colors.white)
@@ -86,7 +79,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                     text =  when (userId) {
                         null -> "Moyenne map"
                         else -> "Position moyenne"
-                    } , fontSize = 12,
+                    },
                     textColor = Colors.white
                 )
                 MKText(
@@ -95,7 +88,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                         else -> (stats?.averagePlayerPosition ?: mapStats?.playerPosition).toString()
                     },
 
-                    font = Fonts.Urbanist, fontSize = 20, textColor = diffColor
+                    font = Fonts.Urbanist, fontSize = 20, textColor = Colors.white
                 )
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -104,7 +97,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                     null ->  mapStats?.shockCount.toString()
                     else -> String.format("%.2f", (stats.shockCount.toFloat() / stats.warStats.warsPlayed))
                 }
-                MKText(text = shockLabel, fontSize = 12,
+                MKText(text = shockLabel,
                     textColor = Colors.white)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

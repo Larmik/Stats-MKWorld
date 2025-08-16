@@ -17,7 +17,9 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 
 @Composable
-fun StatsRankingScreen(viewModel: StatsRankingViewModel, onPlayerStats: (StatsType) -> Unit) {
+fun StatsRankingScreen(
+    viewModel: StatsRankingViewModel,
+    onPlayerStats: (StatsType) -> Unit) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = state.value.title.orEmpty()) {
 
@@ -40,7 +42,7 @@ fun StatsRankingScreen(viewModel: StatsRankingViewModel, onPlayerStats: (StatsTy
                             .padding(5.dp)
                             .fillMaxWidth(0.48f),
                         teamRanking = it,
-                        onClick = { },
+                        onClick = { onPlayerStats(StatsType.OpponentStats(teamId = it.id))},
                         team = null
                     )
                     is RankingItem.TrackRanking -> MapCell(
