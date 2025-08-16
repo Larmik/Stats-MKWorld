@@ -15,7 +15,6 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.emit
 import fr.harmoniamk.statsmkworld.screen.RootScreen
 import fr.harmoniamk.statsmkworld.ui.MKDialog
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -59,6 +58,7 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 it.startDestination?.let { destination ->
+                    viewModel.initStats()
                     setContent {
                         RootScreen(
                             startDestination = destination,
@@ -66,7 +66,6 @@ class MainActivity : AppCompatActivity() {
                             currentPage = it.currentPage
                         ) { finish() }
                     }
-                    delay(1000)
                     splashscreen.setKeepOnScreenCondition { false }
                 }
             }.launchIn(lifecycleScope)

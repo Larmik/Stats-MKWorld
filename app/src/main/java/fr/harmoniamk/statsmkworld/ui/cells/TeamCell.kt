@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -23,46 +24,94 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 
 @Composable
-fun TeamCell(modifier: Modifier = Modifier, team: TeamEntity, onClick: (TeamEntity) -> Unit) {
+fun TeamCell(
+    modifier: Modifier = Modifier,
+    team: TeamEntity?,
+    teamRanking: RankingItem.OpponentRanking? = null,
+    onClick: (TeamEntity) -> Unit
+) {
     val keyboardController = LocalSoftwareKeyboardController.current
+    val finalTeam = team ?: teamRanking?.team
 
-    Column(modifier.background(Colors.blackAlphaed, RoundedCornerShape(5.dp)).border(1.dp, Colors.white, RoundedCornerShape(5.dp)).clickable {
-        keyboardController?.hide()
-        onClick(team)
-                                                                                                                                             }, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier
+            .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+            .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
+            .clickable {
+                keyboardController?.hide()
+                team?.let(onClick)
+            }, horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Column(Modifier.padding(15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             AsyncImage(
-                model = "https://mkcentral.com${team.logo}",
+                model = "https://mkcentral.com${finalTeam?.logo}",
                 contentDescription = null,
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
             )
             Spacer(Modifier.height(10.dp))
-            MKText(text = team.name, font = Fonts.NunitoBD, textColor = Colors.white, maxLines = 1)
+            MKText(
+                text = finalTeam?.name.orEmpty(),
+                font = Fonts.NunitoBD,
+                textColor = Colors.white,
+                maxLines = 1
+            )
             Row(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .defaultMinSize(minWidth = 70.dp)
                     .background(
-                        color = team.color.toTeamColor(),
+                        color = finalTeam?.color.toTeamColor(),
                         shape = RoundedCornerShape(5.dp)
                     )
             )
             {
                 MKText(
-                    text = team.tag,
+                    text = finalTeam?.tag.orEmpty(),
                     fontSize = 16,
                     font = Fonts.NunitoBD,
                     textColor = Colors.white,
                     modifier = Modifier.padding(5.dp)
                 )
+            }
+
+            teamRanking?.let {
+                Row(Modifier.padding(bottom = 10.dp)) {
+                    Column {
+                        MKText(text = "Wars jouées", fontSize = 12, textColor = Colors.white)
+                        MKText(text = "Winrate", fontSize = 12, textColor = Colors.white)
+                        MKText(text = "Score moyen", fontSize = 12, textColor = Colors.white)
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        MKText(
+                            text = it.warsPlayedLabel,
+                            font = Fonts.NunitoBdIt,
+                            fontSize = 12,
+                            textColor = Colors.white
+                        )
+                        MKText(
+                            text = it.winrateLabel,
+                            font = Fonts.NunitoBdIt,
+                            fontSize = 12,
+                            textColor = Colors.white
+                        )
+                        MKText(
+                            text = it.averageLabel,
+                            font = Fonts.NunitoBdIt,
+                            fontSize = 12,
+                            textColor = Colors.white
+                        )
+                    }
+                }
             }
         }
     }
@@ -71,7 +120,15 @@ fun TeamCell(modifier: Modifier = Modifier, team: TeamEntity, onClick: (TeamEnti
 @Preview
 @Composable
 fun TeamCellPreview() {
-    TeamCell(team = TeamEntity(id = "874", name = "Harmonia", tag = "HR", color = 5, logo = "/img/mkcv1_images/team_logos/yC17RqXyH5j921D7KQ6t7CWj6ISysnzV9tzgJWyf.png")) {
+    TeamCell(
+        team = TeamEntity(
+            id = "874",
+            name = "Harmonia",
+            tag = "HR",
+            color = 5,
+            logo = "/img/mkcv1_images/team_logos/yC17RqXyH5j921D7KQ6t7CWj6ISysnzV9tzgJWyf.png"
+        )
+    ) {
 
     }
 }

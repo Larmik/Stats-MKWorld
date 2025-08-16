@@ -22,7 +22,8 @@ import androidx.navigation.compose.rememberNavController
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.screen.registry.RegistryScreen
-import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
+import fr.harmoniamk.statsmkworld.screen.stats.StatsType
+import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuScreen
 import fr.harmoniamk.statsmkworld.screen.welcome.WelcomeScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 
@@ -34,7 +35,16 @@ enum class BottomNavItem(var icon: Int, var route: String) {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeScreen(onBack: () -> Unit, onTeamProfile: (String) -> Unit, onPlayerProfile: (String) -> Unit, onAddWar: () -> Unit, onCurrentWar: () -> Unit, onWarDetailsClick: (WarDetails) -> Unit) {
+fun HomeScreen(
+    onBack: () -> Unit,
+    onTeamProfile: (String) -> Unit,
+    onPlayerProfile: (String) -> Unit,
+    onAddWar: () -> Unit,
+    onCurrentWar: () -> Unit,
+    onWarDetailsClick: (WarDetails) -> Unit,
+    onStats: (StatsType) -> Unit,
+    onRanking: (StatsType?) -> Unit
+) {
     val navController = rememberNavController()
 
     BackHandler { onBack() }
@@ -79,7 +89,10 @@ fun HomeScreen(onBack: () -> Unit, onTeamProfile: (String) -> Unit, onPlayerProf
                    WelcomeScreen(onTeamProfile = { onTeamProfile("me") }, onPlayerProfile = { onPlayerProfile("me") }, onAddWar = onAddWar, onCurrentWar = onCurrentWar, onWarDetailsClick = onWarDetailsClick)
                 }
                 composable(route = "Home/Stats") {
-                    StatsScreen()
+                    StatsMenuScreen(
+                        onClick = onStats,
+                        onRanking = onRanking
+                    )
                 }
                 composable(route = "Home/Registry") {
                     RegistryScreen(onPlayerProfile = onPlayerProfile, onTeamProfile = onTeamProfile)

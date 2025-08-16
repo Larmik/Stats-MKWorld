@@ -178,7 +178,7 @@ fun EditTrackScreen(
                         ) {
                             VerticalGrid {
                                 state.value.initialPositions.forEach {
-                                    PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock) { }
+                                    PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock, onClick = {})
                                 }
                             }
 

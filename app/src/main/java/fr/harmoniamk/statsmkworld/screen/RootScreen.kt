@@ -22,6 +22,10 @@ import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileScreen
 import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.signup.SignupScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupViewModel
+import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
+import fr.harmoniamk.statsmkworld.screen.stats.StatsType
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingViewModel
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileScreen
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
@@ -32,7 +36,11 @@ import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
 @Composable
 fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, onBack: () -> Unit) {
     val navController = rememberNavController()
-    NavHost(modifier = Modifier.fillMaxSize(), navController = navController, startDestination = startDestination) {
+    NavHost(
+        modifier = Modifier.fillMaxSize(),
+        navController = navController,
+        startDestination = startDestination
+    ) {
 
         composable(route = "Signup") {
             SignupScreen(
@@ -53,16 +61,47 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                 onBack = onBack,
                 onTeamProfile = { navController.navigate("Team/Profile/$it") },
                 onPlayerProfile = { navController.navigate("Player/Profile/$it") },
-                onAddWar = { navController.navigate("Home/AddWar")},
-                onCurrentWar = { navController.navigate("Home/CurrentWar")},
+                onAddWar = { navController.navigate("Home/AddWar") },
+                onCurrentWar = { navController.navigate("Home/CurrentWar") },
                 onWarDetailsClick = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
                     navController.navigate("Home/WarDetails")
+                },
+                onStats = {
+                    navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
+                    navController.navigate("Stats")
+                },
+                onRanking = {
+                    navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
+                    navController.navigate("Stats/Ranking")
                 }
             )
         }
 
-        composable(route = "Player/Profile/{id}",
+        composable("Stats") {
+            val type =
+                navController.previousBackStackEntry?.savedStateHandle?.get<StatsType>("type")
+            StatsScreen(
+                viewModel = hiltViewModel(
+                creationCallback = { factory: fr.harmoniamk.statsmkworld.screen.stats.StatsViewModel.Factory ->
+                    factory.create(type)
+                }
+            ))
+        }
+
+        composable("Stats/Ranking") {
+            val type =
+                navController.previousBackStackEntry?.savedStateHandle?.get<StatsType>("type")
+            StatsRankingScreen(
+                viewModel = hiltViewModel(
+                creationCallback = { factory: StatsRankingViewModel.Factory ->
+                    factory.create(type)
+                }
+            ))
+        }
+
+        composable(
+            route = "Player/Profile/{id}",
             arguments = listOf(navArgument("id") { type = NavType.StringType })
         ) {
             val id = it.arguments?.getString("id")
@@ -74,19 +113,21 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                     }
                 ),
                 onBack = { navController.popBackStack() },
-                onDisconnect = { navController.navigate("Signup")}
+                onDisconnect = { navController.navigate("Signup") }
             )
         }
 
-        composable(route = "Team/Profile/{id}",
+        composable(
+            route = "Team/Profile/{id}",
             arguments = listOf(navArgument("id") { type = NavType.StringType })
         ) {
             val id = it.arguments?.getString("id")
-            TeamProfileScreen(viewModel =  hiltViewModel(
-                key = id.toString(),
-                creationCallback = { factory: TeamProfileViewModel.Factory ->
-                    factory.create(id.toString())
-                }),
+            TeamProfileScreen(
+                viewModel = hiltViewModel(
+                    key = id.toString(),
+                    creationCallback = { factory: TeamProfileViewModel.Factory ->
+                        factory.create(id.toString())
+                    }),
                 onBack = { navController.popBackStack() },
                 onPlayerClick = { navController.navigate("Player/Profile/$it") },
             )
@@ -97,15 +138,15 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                 navController.popBackStack()
             }, onCurrentWar = {
                 navController.popBackStack()
-                navController.navigate(route =  "Home/CurrentWar")
+                navController.navigate(route = "Home/CurrentWar")
             })
         }
 
         composable(route = "Home/CurrentWar") {
-            CurrentWarScreen (
+            CurrentWarScreen(
                 onBack = { navController.popBackStack() },
-                onAddTrack = { navController.navigate(route = "Home/CurrentWar/AddTrack")},
-                onActions = { navController.navigate("Home/CurrentWar/Actions")},
+                onAddTrack = { navController.navigate(route = "Home/CurrentWar/AddTrack") },
+                onActions = { navController.navigate("Home/CurrentWar/Actions") },
                 onTrackDetails = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
                     navController.navigate("Home/TrackDetails/true")
@@ -126,10 +167,10 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
 
         composable(route = "Home/WarDetails") {
             val war = navController.previousBackStackEntry?.savedStateHandle?.get<WarDetails>("war")
-            WarDetailsScreen (
+            WarDetailsScreen(
                 viewModel = hiltViewModel(
                     key = war?.war?.id.toString(),
-                    creationCallback = { factory:  WarDetailsViewModel.Factory ->
+                    creationCallback = { factory: WarDetailsViewModel.Factory ->
                         factory.create(war)
                     }
                 ),
@@ -141,16 +182,18 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
             )
         }
 
-        composable(route = "Home/TrackDetails/{editing}",
+        composable(
+            route = "Home/TrackDetails/{editing}",
             arguments = listOf(navArgument("editing") { type = NavType.BoolType })
 
         ) {
-            val track = navController.previousBackStackEntry?.savedStateHandle?.get<WarTrackDetails>("track")
+            val track =
+                navController.previousBackStackEntry?.savedStateHandle?.get<WarTrackDetails>("track")
             val editing = it.arguments?.getBoolean("editing") == true
-            TrackDetailsScreen (
+            TrackDetailsScreen(
                 viewModel = hiltViewModel(
                     key = track?.track?.id.toString(),
-                    creationCallback = { factory:  TrackDetailsViewModel.Factory ->
+                    creationCallback = { factory: TrackDetailsViewModel.Factory ->
                         factory.create(track, editing)
                     }
                 ),
@@ -163,11 +206,12 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
         }
 
         composable(route = "Home/EditTrack") {
-            val track = navController.previousBackStackEntry?.savedStateHandle?.get<WarTrackDetails>("track")
+            val track =
+                navController.previousBackStackEntry?.savedStateHandle?.get<WarTrackDetails>("track")
             EditTrackScreen(
                 viewModel = hiltViewModel(
                     key = track?.track?.id.toString(),
-                    creationCallback = { factory:  EditTrackViewModel.Factory ->
+                    creationCallback = { factory: EditTrackViewModel.Factory ->
                         factory.create(track)
                     }
                 ),

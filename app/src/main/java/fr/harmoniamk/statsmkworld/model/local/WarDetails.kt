@@ -9,7 +9,7 @@ data class WarDetails(val war: War): Serializable {
 
     val warTracks = war.tracks.map { WarTrackDetails(it) }
 
-    private val scoreHost = warTracks.sumOf { it.teamScore }
+    val scoreHost = warTracks.sumOf { it.teamScore }
     private val scoreOpponent = (82 * warTracks.size) - scoreHost
     private val scoreHostWithPenalties = scoreHost - war.penalties.filter { it.teamId == war.teamHost }.sumOf { it.amount }
     private val scoreOpponentWithPenalties = scoreOpponent - war.penalties.filter { it.teamId == war.teamOpponent }.sumOf { it.amount }

@@ -77,3 +77,45 @@ fun Int?.positionToPoints() = when (this) {
     12 -> 1
     else -> 0
 }
+
+
+fun Int.warScoreToDiff() : String {
+    val halfDiff = when {
+        this > 492 -> this - 492
+        this < 492 -> 492 - this
+        else -> 0
+    }
+    return when {
+        this > 492 -> "+${halfDiff*2}"
+        this < 492 -> "-${halfDiff*2}"
+        else -> "0"
+    }
+}
+fun Int.trackScoreToDiff() : String {
+    val halfDiff = when {
+        this > 41 -> this - 41
+        this < 41 -> 41 - this
+        else -> 0
+    }
+    return when {
+        this > 41 -> "+${halfDiff*2}"
+        this < 41 -> "-${halfDiff*2}"
+        else -> "0"
+    }
+}
+
+fun Int?.pointsToPosition() = when (this) {
+    14, 15 -> 1
+    11, 12, 13 -> 2
+    10 -> 3
+    9 -> 4
+    8 -> 5
+    7 -> 6
+    6 -> 7
+    5 -> 8
+    4 -> 9
+    3 -> 10
+    2 -> 11
+    1 -> 12
+    else -> 0
+}

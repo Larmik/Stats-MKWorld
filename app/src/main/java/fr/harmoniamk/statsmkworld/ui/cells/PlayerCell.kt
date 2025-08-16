@@ -31,6 +31,9 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.model.local.Stats
+import fr.harmoniamk.statsmkworld.model.local.WarStats
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 
 @Composable
 fun PlayerCell(
@@ -43,10 +46,13 @@ fun PlayerCell(
     shockCount: Int? = null,
     onAddShock: (String) -> Unit = {},
     onRemoveShock: (String) -> Unit = {},
-    onClick: (PlayerEntity) -> Unit
+    onClick: (PlayerEntity) -> Unit,
+    playerRanking: RankingItem.PlayerRanking? = null
 ) {
     val shockCountState = remember { mutableIntStateOf(shockCount ?: 0) }
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val finalPlayer = player ?: playerRanking?.player
 
     Column(
         modifier
@@ -62,9 +68,9 @@ fun PlayerCell(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            MKText(text = player?.country?.countryFlag.orEmpty(), fontSize = 30)
+            MKText(text = finalPlayer?.country?.countryFlag.orEmpty(), fontSize = 30)
             MKText(
-                text = player?.name.orEmpty(),
+                text = finalPlayer?.name.orEmpty(),
                 font = Fonts.NunitoBD,
                 textColor = textColor,
                 maxLines = 1
@@ -143,6 +149,21 @@ fun PlayerCell(
                 )
             }
         }
+        playerRanking?.let {
+            Row(Modifier.padding(bottom = 10.dp)) {
+                Column {
+                    MKText(text = "Wars jouées", fontSize = 12, textColor = Colors.white)
+                    MKText(text ="Winrate", fontSize = 12, textColor = Colors.white)
+                    MKText(text = "Score moyen", fontSize = 12, textColor = Colors.white)
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    MKText(text = it.warsPlayedLabel, font = Fonts.NunitoBdIt, fontSize = 12, textColor = Colors.white)
+                    MKText(text = it.winrateLabel, font = Fonts.NunitoBdIt, fontSize = 12, textColor = Colors.white)
+                    MKText(text = it.averageLabel, font = Fonts.NunitoBdIt, fontSize = 12, textColor = Colors.white)
+                }
+            }
+        }
     }
 }
 
@@ -158,10 +179,30 @@ fun PlayerCellPreview() {
             currentWar = "",
             isAlly = false
         ),
-        position = 1,
-        shocksEnabled = true,
-        shockCount = 1,
+        position = null,
+        shocksEnabled = false,
+        shockCount = null,
         onClick = {},
         onAddShock = {},
-        onRemoveShock = {})
+        onRemoveShock = {},
+        playerRanking = RankingItem.PlayerRanking(
+            player =  PlayerEntity(
+                id = "18595",
+                name = "Larii",
+                country = "FR",
+                role = 0,
+                currentWar = "",
+                isAlly = false
+            ),
+            stats = Stats(
+                WarStats(listOf()),
+                null,
+                null,
+                null,
+                listOf(),
+                listOf(),
+                listOf(),
+            )
+        )
+    )
 }

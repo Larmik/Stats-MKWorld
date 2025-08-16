@@ -28,4 +28,11 @@ data class War(
         penalties = entity.penalties.orEmpty()
     )
 
+    fun hasPlayer(playerId: String?): Boolean {
+        return tracks.size == tracks.filter { it.positions.any { pos -> pos.playerId == playerId } }.size
+    }
+    fun hasTeam(teamId: String?): Boolean {
+        return teamHost == teamId || teamOpponent == teamId
+    }
+
 }

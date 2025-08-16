@@ -1,0 +1,267 @@
+package fr.harmoniamk.statsmkworld.screen.stats
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.positionToPoints
+import fr.harmoniamk.statsmkworld.extension.withFullStats
+import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.local.MapDetails
+import fr.harmoniamk.statsmkworld.model.local.MapStats
+import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
+import fr.harmoniamk.statsmkworld.model.local.Stats
+import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
+import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import java.io.Serializable
+
+sealed class StatsType(val title: String): Serializable {
+    class PlayerStats(val userId: String) : StatsType("Statistiques du joueur")
+    class TeamStats : StatsType("Statistiques de l'équipe")
+    class OpponentStats(
+        val teamId: String,
+        val userId: String? = null
+    ) : StatsType("Statistiques de l'adversaire")
+
+    class MapStats(
+        val userId: String? = null,
+        val teamId: String? = null,
+        val trackIndex: Int? = null
+    ) : StatsType("Statistiques du circuit")
+}
+
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@HiltViewModel(assistedFactory = StatsViewModel.Factory::class)
+class StatsViewModel @AssistedInject constructor(
+    @Assisted val type: StatsType?,
+    private val dataStoreRepository: DataStoreRepositoryInterface,
+    private val databaseRepository: DatabaseRepositoryInterface
+) : ViewModel() {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(type: StatsType?): StatsViewModel
+    }
+
+    data class State(
+        val stats: Stats? = null,
+        val mapStats: MapStats? = null,
+        val subtitle: String? = null
+    )
+
+    private val wars = mutableListOf<WarDetails>()
+    private var team: MKCTeam? = null
+
+    private val _state = MutableStateFlow(State())
+
+    val state = databaseRepository.getWars()
+        .map {
+            team = dataStoreRepository.mkcTeam.firstOrNull()
+            when {
+                type is StatsType.PlayerStats -> it.filter { war -> war.hasPlayer(type.userId.split(".").firstOrNull()) }
+                type is StatsType.TeamStats -> it.filter { war -> war.hasTeam(team?.id.toString()) }
+                (type as? StatsType.OpponentStats)?.userId != null -> it.filter { war ->
+                    war.hasTeam(
+                        type.teamId
+                    ) && war.hasPlayer(type.userId?.split(".")?.firstOrNull())
+                }
+                type is StatsType.OpponentStats -> it.filter { war -> war.hasTeam(type.teamId) }
+                else -> it
+            }
+        }
+        .filterNot { it.isEmpty() }
+        .map { it.map { WarDetails(War(it)) } }
+        .flatMapLatest { wars ->
+            this.wars.clear()
+            this.wars.addAll(wars)
+            when {
+                type is StatsType.PlayerStats ->
+                    wars
+                        .filter { war ->
+                            war.war.hasPlayer(
+                                type.userId.split(".").firstOrNull()
+                            )
+                        }
+                        .withFullStats(
+                            databaseRepository,
+                            userId = type.userId.split(".").firstOrNull()
+                        )
+
+                type is StatsType.OpponentStats -> databaseRepository.getTeam(type.teamId)
+                    .flatMapLatest { team ->
+                        val filteredWars =
+                            when (val userId = type.userId?.split(".")?.firstOrNull()) {
+                                null -> wars.filter { it.war.hasTeam(team?.id.toString()) }
+                                else -> wars.filter {
+                                    it.war.hasTeam(team?.id.toString()) && it.war.hasPlayer(
+                                        userId
+                                    )
+                                }
+                            }
+                        filteredWars.withFullStats(
+                            databaseRepository,
+                            userId = type.userId?.split(".")?.firstOrNull()
+                        )
+                    }
+                    .filterNotNull()
+
+                else -> wars.withFullStats(databaseRepository)
+            }
+        }
+        .map { stats ->
+            val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
+            val subtitle = when (type) {
+                is StatsType.TeamStats -> team?.name
+                is StatsType.PlayerStats -> currentPlayer?.name
+                else -> {
+                    val userId = (type as? StatsType.OpponentStats)?.userId
+                        ?: (type as? StatsType.MapStats)?.userId
+                    val teamId = (type as? StatsType.OpponentStats)?.teamId
+                        ?: (type as? StatsType.MapStats)?.teamId
+                    val user = databaseRepository.getPlayer(userId.orEmpty()).firstOrNull()
+                    val team = databaseRepository.getTeam(teamId.orEmpty()).firstOrNull()
+                    when {
+                        user != null && team != null -> "${user.name} vs ${team.name}"
+                        user != null -> user.name
+                        team != null -> team.name
+                        else -> null
+                    }
+                }
+            }
+            when (type) {
+                is StatsType.PlayerStats, is StatsType.TeamStats -> _state.value = _state.value.copy(stats = stats)
+                is StatsType.OpponentStats -> databaseRepository.getPlayers()
+                    .map { users ->
+                        val finalList = mutableListOf<Pair<Int, String?>>()
+                        stats.warStats.list.forEach { war ->
+                            val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
+                            war.warTracks.forEach { warTrack ->
+                                warTrack.track.positions.let { warPositions ->
+                                    val trackPositions = mutableListOf<PlayerPosition>()
+                                    warPositions.forEach { position ->
+                                        trackPositions.add(
+                                            PlayerPosition(
+                                                position = position,
+                                                player = users.singleOrNull { it.id == position.playerId })
+                                        )
+                                    }
+                                    trackPositions.groupBy { it.player }.entries.forEach { entry ->
+                                        positions.add(
+                                            Pair(
+                                                entry.key,
+                                                entry.value.sumOf { pos -> pos.position.position.positionToPoints() }
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            positions
+                                .groupBy { it.first }
+                                .map { Pair(it.key, it.value.sumOf { it.second }) }
+                                .filter { it.first?.id == type.userId }
+                                .map { Pair(it.second, war.war.id.toString()) }
+                                .forEach { pair -> finalList.add(pair) }
+                        }
+                        _state.value = _state.value.copy(
+                            stats = stats.apply {
+                                this.highestPlayerScore = finalList.maxByOrNull { it.first }
+                                this.lowestPlayerScore = finalList.minByOrNull { it.first }
+                            }
+                        )
+                    }
+
+                is StatsType.MapStats -> {
+                    val finalList = mutableListOf<MapDetails>()
+
+                    val onlyIndiv = type.userId != null
+                    when {
+                        type.userId != null && type.teamId?.takeIf { it.isNotEmpty() } != null -> wars.filter { war ->
+                            war.war.hasPlayer(
+                                type.userId.split(".").firstOrNull()
+                            ) && war.war.hasTeam(type.teamId)
+                        }
+
+                        onlyIndiv -> wars.filter { war ->
+                            war.war.hasPlayer(
+                                type.userId.split(".").firstOrNull()
+                            )
+                        }
+
+                        type.teamId?.takeIf { it.isNotEmpty() } != null -> wars.filter { war ->
+                            war.war.hasTeam(
+                                type.teamId
+                            )
+                        }
+
+                        else -> wars.filter { war -> war.war.hasTeam(team?.id.toString()) }
+                    }.filter { (!onlyIndiv && it.war.hasTeam(team?.id.toString())) || onlyIndiv }
+                        .filter {
+                            (onlyIndiv && it.war.hasPlayer(
+                                type.userId.split(
+                                    "."
+                                ).firstOrNull()
+                            )) || !onlyIndiv && it.war.hasTeam(
+                                team?.id.toString()
+                            )
+                        }.forEach { mkWar ->
+                            mkWar.warTracks.filter { track -> track.index == type.trackIndex }.forEach { track ->
+                                    val position =
+                                        track.track.positions.singleOrNull { it.playerId == type.userId }?.position?.takeIf { type.userId != null }
+                                    finalList.add(
+                                        MapDetails(
+                                            war = mkWar,
+                                            warTrack = track,
+                                            position = position
+                                        )
+                                    )
+                                }
+                        }
+
+                    val mapDetailsList = mutableListOf<MapDetails>()
+                    mapDetailsList.addAll(
+                        finalList
+                            .filter {
+                                (onlyIndiv && it.war.warTracks?.any {
+                                    it.track.hasPlayer(
+                                        type.userId.split(".").firstOrNull()
+                                    )
+                                } == true) || !onlyIndiv
+                            }
+                            .filter {
+                                type.teamId?.takeIf { it.isNotEmpty() } == null || it.war.war.hasTeam(
+                                    type.teamId
+                                )
+                            }
+                    )
+                    _state.value = _state.value.copy(
+                        mapStats = MapStats(
+                            list = mapDetailsList,
+                            isIndiv = onlyIndiv,
+                            userId = type.userId?.split(".")?.firstOrNull()
+                        )
+                    )
+                }
+                else -> {}
+            }
+            _state.value.copy(subtitle = subtitle)
+        }
+        .mergeWith(_state)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+}

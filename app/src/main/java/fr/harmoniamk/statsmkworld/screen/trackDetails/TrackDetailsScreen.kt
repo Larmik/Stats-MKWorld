@@ -39,7 +39,7 @@ fun TrackDetailsScreen(viewModel: TrackDetailsViewModel,
         Spacer(Modifier.height(20.dp))
         LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
             items(state.value.positions) {
-                PlayerCell(player = it.player, position = it.position.position, shockCount = state.value.track?.track?.shocks?.firstOrNull { shock -> shock.playerId == it.player?.id }?.count, modifier = Modifier.padding(5.dp)) { }
+                PlayerCell(player = it.player, position = it.position.position, shockCount = state.value.track?.track?.shocks?.firstOrNull { shock -> shock.playerId == it.player?.id }?.count, modifier = Modifier.padding(5.dp), onClick = { })
             }
         }
 
