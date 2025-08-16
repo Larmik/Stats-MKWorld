@@ -38,16 +38,24 @@ fun MKLineChart(stats: Stats?, mapStats: MapStats?) {
         else -> null
     }
 
-    Row(Modifier.fillMaxWidth().height(35.dp).background(color = Colors.blackAlphaed, RoundedCornerShape(5.dp)).border(1.dp, Colors.white, RoundedCornerShape(5.dp)), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(35.dp), verticalAlignment = Alignment.CenterVertically) {
         Spacer(Modifier.width(10.dp).height(35.dp))
         win?.takeIf { it != 0f }?.let {
-            Spacer(Modifier.weight(it*100).height(25.dp).background(Colors.green))
+            val endCorner = when (it) {
+                1f -> 20.dp
+                else -> 0.dp
+            }
+            Spacer(Modifier.weight(it*100).height(25.dp).background(Colors.green, shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = endCorner, bottomEnd = endCorner)))
         }
         tie?.takeIf { it != 0f }?.let {
             Spacer(Modifier.weight(it*100).height(25.dp).background(Colors.white))
         }
         loss?.takeIf { it != 0f }?.let {
-            Spacer(Modifier.weight(it*100).height(25.dp).background(Colors.red))
+            val startCorner = when (it) {
+                1f -> 20.dp
+                else -> 0.dp
+            }
+            Spacer(Modifier.weight(it*100).height(25.dp).background(Colors.red, shape = RoundedCornerShape(topStart = startCorner, bottomStart = startCorner, topEnd = 20.dp, bottomEnd = 20.dp)))
         }
         Spacer(Modifier.width(10.dp).height(35.dp))
     }

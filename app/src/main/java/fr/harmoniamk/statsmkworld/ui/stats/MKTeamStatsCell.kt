@@ -16,9 +16,8 @@ import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 fun MKTeamStatsView(stats: Stats?) {
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier
-                .padding(bottom = 20.dp)
-                .fillMaxWidth()
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(bottom = 10.dp).fillMaxWidth()
         ) {
             stats?.mostPlayedTeam?.let {
                     MKText(text = "Adversaire le plus joué",  modifier = Modifier.padding(bottom = 5.dp))
@@ -30,11 +29,10 @@ fun MKTeamStatsView(stats: Stats?) {
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 20.dp)) {
             stats?.mostDefeatedTeam?.let {
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     MKText(text = "Le plus vaincu",  modifier = Modifier.padding(bottom = 5.dp))
-
                     Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
                             TeamCell(
                                 Modifier.fillMaxWidth(),

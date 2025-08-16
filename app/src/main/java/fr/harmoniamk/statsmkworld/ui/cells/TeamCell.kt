@@ -85,7 +85,7 @@ fun TeamCell(
             }
 
             teamRanking?.let {
-                Row(Modifier.padding(bottom = 10.dp)) {
+                Row(Modifier.padding(vertical = 10.dp)) {
                     Column {
                         MKText(text = "Wars jouées", fontSize = 12, textColor = Colors.white)
                         MKText(text = "Winrate", fontSize = 12, textColor = Colors.white)

@@ -22,10 +22,11 @@ import kotlinx.coroutines.FlowPreview
 @Composable
 fun MKWinTieLossCell(stats: Stats?, mapStats: MapStats?) {
     val warStats = stats?.warStats
-
-    val win = warStats?.warsWon ?: mapStats?.trackWon
-    val tie = warStats?.warsTied ?: mapStats?.trackTie
-    val loss = warStats?.warsLoss ?: mapStats?.trackLoss
+    val played = warStats?.warsPlayed ?: mapStats?.trackPlayed ?: 1
+    val win = warStats?.warsWon ?: mapStats?.trackWon ?: 0
+    val tie = warStats?.warsTied ?: mapStats?.trackTie ?: 0
+    val loss = warStats?.warsLoss ?: mapStats?.trackLoss ?: 0
+    val winRate = (win * 100) / played
 
 
     Column(
@@ -34,7 +35,8 @@ fun MKWinTieLossCell(stats: Stats?, mapStats: MapStats?) {
             .background(
                 color = Colors.blackAlphaed,
                 shape = RoundedCornerShape(5.dp)
-            )
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(Modifier.padding(5.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -50,5 +52,7 @@ fun MKWinTieLossCell(stats: Stats?, mapStats: MapStats?) {
                 MKText(text = loss.toString(), font = Fonts.Urbanist, modifier = Modifier.padding(vertical = 5.dp), fontSize = 20, textColor = Colors.white)
             }
         }
+        MKLineChart(stats = stats, mapStats = mapStats)
+        MKText(text = "Winrate : $winRate%", font = Fonts.NunitoBD, modifier = Modifier.padding(vertical = 5.dp), textColor = Colors.white)
     }
 }

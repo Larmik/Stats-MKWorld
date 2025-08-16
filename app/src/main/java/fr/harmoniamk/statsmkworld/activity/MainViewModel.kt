@@ -71,8 +71,8 @@ class MainViewModel @Inject constructor(
             val currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
             val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
 
-            statsRepository.trackRankList = warList.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
-            statsRepository.playerTrackRankList = warList.filter { it.hasPlayer(currentPlayer?.id.toString()) == true }.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
+            statsRepository.trackRankList = warList.withTrackStats().map { RankingItem.TrackRanking(it) }
+            statsRepository.playerTrackRankList = warList.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
             databaseRepository.getPlayers()
                 .mapNotNull { it.sortedBy { it.name } }
                 .firstOrNull()

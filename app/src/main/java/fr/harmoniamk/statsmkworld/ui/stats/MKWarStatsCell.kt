@@ -33,8 +33,7 @@ fun MKWarStatsView(stats: Stats?, mapStats: MapStats?) {
                 MKText(text = totalPlayedLabel, font = Fonts.Urbanist, fontSize = 20)
                 Spacer(modifier = Modifier.height(15.dp))
                 MKWinTieLossCell(stats = stats, mapStats = mapStats)
-                Spacer(modifier = Modifier.height(15.dp))
-                MKLineChart(stats = stats, mapStats = mapStats)
+
             }
         }
     }

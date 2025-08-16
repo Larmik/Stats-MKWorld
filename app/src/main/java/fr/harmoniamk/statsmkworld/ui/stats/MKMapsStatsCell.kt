@@ -28,58 +28,53 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
         else -> stats?.worstPlayerMap
     }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(bottom = 10.dp)
-        ) {
-            stats?.mostPlayedMap?.let {
-                Column(Modifier.fillMaxWidth().padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MKText(
-                        text = "Circuit le plus joué",
-                        modifier = Modifier.padding(bottom = 5.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(bottom = 10.dp)
+            .fillMaxWidth()
+    ) {
+        stats?.mostPlayedMap?.let {
+            MKText(text = "Circuit le plus joué", modifier = Modifier.padding(bottom = 5.dp))
+            MapCell(
+                Modifier.fillMaxWidth(0.5f),
+                track = null,
+                isIndiv = userId != null,
+                trackRanking = RankingItem.TrackRanking(it),
+                onClick = {}
+            )
+        }
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 20.dp)) {
+        bestMap?.let {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                MKText(text = "Meilleur circuit", modifier = Modifier.padding(bottom = 5.dp))
+                Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
+                    MapCell(
+                        Modifier.fillMaxWidth(),
+                        track = null,
+                        isIndiv = userId != null,
+                        trackRanking = RankingItem.TrackRanking(it),
+                        onClick = {}
                     )
-                    Row(Modifier.fillMaxWidth(0.5f)) {
-                        MapCell(
-                            track = null,
-                            isIndiv = userId != null,
-                            trackRanking = RankingItem.TrackRanking(it),
-                            onClick = {}
-                        )
-                    }
-
-                }
-
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    bestMap?.let {
-                        MKText(
-                            text = "Meilleur circuit",
-                            modifier = Modifier.padding(bottom = 5.dp)
-                        )
-                        MapCell(
-                            track = null,
-                            isIndiv = userId != null,
-                            trackRanking = RankingItem.TrackRanking(it),
-                            onClick = {}
-                        )
-                    }
-                }
-                Column(Modifier.weight(1f).padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    worstMap?.let {
-                        MKText(
-                            text = "Pire circuit",
-                            modifier = Modifier.padding(bottom = 5.dp)
-                        )
-                        MapCell(
-                            track = null,
-                            isIndiv = userId != null,
-                            trackRanking = RankingItem.TrackRanking(it),
-                            onClick = {}
-                        )
-                    }
                 }
             }
+        }
+        worstMap?.let {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                MKText(text = "Pire circuit", modifier = Modifier.padding(bottom = 5.dp))
+                Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
+                    MapCell(
+                        Modifier.fillMaxWidth(),
+                        track = null,
+                        isIndiv = userId != null,
+                        trackRanking = RankingItem.TrackRanking(it),
+                        onClick = {}
+                    )
+                }
+            }
+        }
+
     }
 }
