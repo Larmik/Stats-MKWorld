@@ -18,8 +18,8 @@ android {
         applicationId = "fr.harmoniamk.statsmkworld"
         minSdk = 28
         targetSdk = 35
-        versionCode = 14
-        versionName = "1.2.0"
+        versionCode = 15
+        versionName = "2.0.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
