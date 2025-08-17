@@ -27,7 +27,7 @@ fun MKTopBottomCell(indiv: Boolean, tops: List<Pair<String, Int>>?, bottoms:  Li
 
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp, horizontal = padding), horizontalArrangement = SpaceBetween, verticalAlignment = CenterVertically) {
                     when (indiv) {
-                        true ->  MKText(text = it.first, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 20)
+                        true ->  MKText(text = it.first, font = Fonts.MKPosition, textColor = Colors.white, fontSize = 20)
                         else ->  MKText(text = it.first)
                     }
                     MKText(text = it.second.toString(), font = Fonts.Urbanist, fontSize = 16)
@@ -39,7 +39,7 @@ fun MKTopBottomCell(indiv: Boolean, tops: List<Pair<String, Int>>?, bottoms:  Li
             bottoms?.forEach {
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp, horizontal = padding), horizontalArrangement = SpaceBetween, verticalAlignment = CenterVertically) {
                     when (indiv) {
-                        true ->  MKText(text = it.first, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 20)
+                        true ->  MKText(text = it.first, font = Fonts.MKPosition, textColor = Colors.white, fontSize = 20)
                         else ->  MKText(text = it.first)
                     }
 

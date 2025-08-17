@@ -98,7 +98,7 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                         factory.create(type)
                     }
                 ),
-                onPlayerStats = {
+                onStats = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
                     navController.navigate("Stats")
                 }

@@ -11,12 +11,15 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
+import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -60,6 +63,7 @@ sealed interface RankingItem {
 class StatsRankingViewModel @AssistedInject constructor(
     @Assisted val type: StatsType?,
     databaseRepository: DatabaseRepositoryInterface,
+    dataStoreRepository: DataStoreRepositoryInterface,
     private val statsRepository: StatsRepositoryInterface
 ) : ViewModel() {
 
@@ -73,10 +77,12 @@ class StatsRankingViewModel @AssistedInject constructor(
         val userId: String? = null,
         val teamId: String? = null,
         val list: List<RankingItem> = listOf(),
-        val index: Int = 0
+        val index: Int = 0,
+        val currentUserId: String? = null
     )
 
     private val _state = MutableStateFlow(State())
+    private var currentUser: MKCPlayer? = null
 
     val state = databaseRepository.getWars()
         .map { warList ->
@@ -85,6 +91,7 @@ class StatsRankingViewModel @AssistedInject constructor(
                 is StatsType.OpponentStats -> "Statistiques des adversaires"
                 else -> "Statistiques des circuits"
             }
+            currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             when (type) {
                 is StatsType.TeamStats -> _state.value.copy(
                     title = title,
@@ -105,14 +112,16 @@ class StatsRankingViewModel @AssistedInject constructor(
                         },
                     title = title,
                     userId = type.userId,
-                    teamId = type.teamId
+                    teamId = type.teamId,
+                    currentUserId = currentUser?.id.toString().takeIf { _state.value.index == 0 }
                 )
 
                 is StatsType.MapStats -> _state.value.copy(
                     list = statsRepository.playerTrackRankList,
                     title = title,
                     userId = type.userId,
-                    teamId = type.teamId
+                    teamId = type.teamId,
+                    currentUserId = currentUser?.id.toString().takeIf { _state.value.index == 0 }
                 )
 
                 else -> _state.value.copy(title = title)
@@ -136,6 +145,6 @@ class StatsRankingViewModel @AssistedInject constructor(
                 }
             else -> listOf()
         }
-        _state.value = state.value.copy(list = list, index = index)
+        _state.value = state.value.copy(list = list, index = index, currentUserId = currentUser?.id.toString().takeIf { index == 0 })
     }
 }

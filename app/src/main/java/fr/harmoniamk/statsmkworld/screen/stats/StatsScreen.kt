@@ -1,13 +1,16 @@
 package fr.harmoniamk.statsmkworld.screen.stats
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
@@ -27,14 +30,16 @@ fun StatsScreen(viewModel: StatsViewModel) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = viewModel.type?.title ?: "Statistiques") {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
-            state.value.team?.let {
-                TeamCell(team = it, onClick = { })
-            }
-            state.value.player?.let {
-                PlayerCell(player = it, onClick = { })
-            }
-            state.value.map?.let {
-                MapCell(map = it, onClick = { })
+            Column(Modifier.fillMaxWidth(0.5f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                state.value.player?.let {
+                    PlayerCell(modifier = Modifier.fillMaxWidth(), player = it, onClick = { })
+                }
+                state.value.team?.let {
+                    TeamCell(modifier = Modifier.fillMaxWidth(), team = it, onClick = { })
+                }
+                state.value.map?.let {
+                    MapCell(modifier = Modifier.fillMaxWidth(), map = it, onClick = { })
+                }
             }
             MKWarStatsView(state.value.stats, state.value.mapStats)
             MKWarDetailsStatsView(state.value.stats, state.value.mapStats, type = viewModel.type)

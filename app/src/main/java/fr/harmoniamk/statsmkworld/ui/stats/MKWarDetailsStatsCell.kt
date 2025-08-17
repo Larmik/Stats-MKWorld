@@ -29,8 +29,7 @@ import kotlinx.coroutines.FlowPreview
 @Composable
 fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) {
 
-    val userId = (type as? StatsType.PlayerStats)?.userId
-
+    val userId = (type as? StatsType.PlayerStats)?.userId ?: (type as? StatsType.OpponentStats)?.userId ?: (type as? StatsType.MapStats)?.userId
 
     Column(
         modifier = Modifier

@@ -86,10 +86,10 @@ data class MapDetails(
 @ExperimentalCoroutinesApi
 class MapStats(
     val list: List<MapDetails>,
-    private val isIndiv: Boolean,
     val userId: String? = null
 ) {
 
+    private val isIndiv = userId != null
     private val playerScoreList = list
         .filter { pair -> pair.war.warTracks?.any { it.track.hasPlayer(userId) } == true }
         .map { it.warTrack.track.positions }

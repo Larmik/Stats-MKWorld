@@ -30,7 +30,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 @Composable
 fun StatsRankingScreen(
     viewModel: StatsRankingViewModel,
-    onPlayerStats: (StatsType) -> Unit
+    onStats: (StatsType) -> Unit
 ) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = state.value.title.orEmpty()) {
@@ -47,13 +47,13 @@ fun StatsRankingScreen(
                         is RankingItem.OpponentRanking -> TeamCell(
                             modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
                             teamRanking = it,
-                            onClick = { onPlayerStats(StatsType.OpponentStats(teamId = it.id)) },
+                            onClick = { onStats(StatsType.OpponentStats(teamId = it.id, userId = state.value.currentUserId)) },
                             team = null
                         )
                         is RankingItem.TrackRanking -> MapCell(
                             modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
                             trackRanking = it,
-                            onClick = { onPlayerStats(StatsType.MapStats(trackIndex = it.ordinal))}
+                            onClick = { onStats(StatsType.MapStats(userId = state.value.currentUserId, trackIndex = it.ordinal))}
                         )
                         else -> {}
                     }
@@ -91,7 +91,7 @@ fun StatsRankingScreen(
                                         .fillMaxWidth(0.48f),
                                     textColor = Colors.white,
                                     backgroundColor = Colors.blackAlphaed,
-                                    onClick = { onPlayerStats(StatsType.PlayerStats(it.id)) },
+                                    onClick = { onStats(StatsType.PlayerStats(it.id)) },
                                     playerRanking = it,
                                     player = null
                                 )
@@ -126,7 +126,7 @@ fun StatsRankingScreen(
                                         .fillMaxWidth(0.48f),
                                     textColor = Colors.white,
                                     backgroundColor = Colors.blackAlphaed,
-                                    onClick = { onPlayerStats(StatsType.PlayerStats(it.id)) },
+                                    onClick = { onStats(StatsType.PlayerStats(it.id)) },
                                     playerRanking = it,
                                     player = null
                                 )

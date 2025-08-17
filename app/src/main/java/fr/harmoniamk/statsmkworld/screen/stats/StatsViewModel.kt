@@ -81,7 +81,12 @@ class StatsViewModel @AssistedInject constructor(
             when {
                 type is StatsType.PlayerStats -> it.filter { war -> war.hasPlayer(type.userId) }
                 type is StatsType.TeamStats -> it.filter { war -> war.hasTeam(team?.id.toString()) }
-                type is StatsType.OpponentStats -> it.filter { war -> war.hasTeam(type.teamId) }
+                type is StatsType.OpponentStats -> it
+                    .filter { war -> war.hasTeam(type.teamId) }
+                    .filter { war -> (type.userId != null && war.hasPlayer(type.userId)) || type.userId == null }
+                type is StatsType.MapStats -> it
+                    .filter { war -> (type.teamId != null && war.hasTeam(type.teamId)) || type.teamId == null }
+                    .filter { war -> (type.userId != null && war.hasPlayer(type.userId)) || type.userId == null }
                 else -> it
             }
         }
@@ -92,9 +97,8 @@ class StatsViewModel @AssistedInject constructor(
             this.wars.addAll(wars)
             when {
                 type is StatsType.PlayerStats -> wars.withFullStats(databaseRepository, userId = type.userId)
-                type is StatsType.OpponentStats -> databaseRepository.getTeam(type.teamId)
-                    .flatMapLatest { team -> wars.withFullStats(databaseRepository, teamId = type.teamId) }
-                    .filterNotNull()
+                type is StatsType.OpponentStats -> wars.withFullStats(databaseRepository, teamId = type.teamId, userId = type.userId)
+                type is StatsType.MapStats -> wars.withFullStats(databaseRepository, teamId = type.teamId, userId = type.userId)
                 else -> wars.withFullStats(databaseRepository)
             }
         }
@@ -174,8 +178,7 @@ class StatsViewModel @AssistedInject constructor(
                     _state.value = _state.value.copy(
                         mapStats = MapStats(
                             list = mapDetailsList,
-                            isIndiv = false,
-                            userId = type.userId?.split(".")?.firstOrNull()
+                            userId = type.userId
                         ),
                         map = Maps.entries[mapDetailsList.first().warTrack.track.index]
                     )
