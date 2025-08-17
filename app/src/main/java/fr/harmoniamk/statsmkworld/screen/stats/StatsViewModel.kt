@@ -6,6 +6,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
@@ -30,19 +31,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.io.Serializable
 
-sealed class StatsType(val title: String): Serializable {
-    class PlayerStats(val userId: String) : StatsType("Statistiques du joueur")
-    class TeamStats : StatsType("Statistiques de l'équipe")
+sealed class StatsType(val title: Int): Serializable {
+    class PlayerStats(val userId: String) : StatsType(R.string.statistiques_du_joueur)
+    class TeamStats : StatsType(R.string.statistiques_de_l_quipe)
     class OpponentStats(
         val teamId: String,
         val userId: String? = null
-    ) : StatsType("Statistiques de l'adversaire")
+    ) : StatsType(R.string.statistiques_de_l_adversaire)
 
     class MapStats(
         val userId: String? = null,
         val teamId: String? = null,
         val trackIndex: Int? = null
-    ) : StatsType("Statistiques du circuit")
+    ) : StatsType(R.string.statistiques_du_circuit)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)

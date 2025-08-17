@@ -36,7 +36,7 @@ class CurrentWarActionsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _backToWelcome = MutableSharedFlow<Unit>()
-    val bavkToWelcome = _backToWelcome.asSharedFlow()
+    val backToWelcome = _backToWelcome.asSharedFlow()
 
 
     data class State(

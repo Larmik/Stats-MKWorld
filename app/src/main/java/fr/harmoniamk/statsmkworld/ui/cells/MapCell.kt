@@ -119,16 +119,18 @@ fun MapCell(
             }
         }
         trackRanking?.let {
-            Column(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier
+                .fillMaxWidth()
+                .padding(bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 MKText(
                     text = String.format(
-                        "Jouée %s fois",
+                        stringResource(R.string.times_played),
                         it.stats.totalPlayed.toString()
                     ), fontSize = 12,
                     textColor = Colors.white
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MKText(text = "Winrate : ", fontSize = 12,
+                    MKText(text = stringResource(R.string.winrate), fontSize = 12,
                         textColor = Colors.white)
                     Spacer(modifier = Modifier.width(5.dp))
                     MKText(
@@ -141,8 +143,8 @@ fun MapCell(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     MKText(
                         text = when (userId) {
-                            null -> "Score moyen : "
-                            else -> "Position moyenne : "
+                            null -> stringResource(R.string.average_score)
+                            else -> stringResource(R.string.average_position)
                         },
                         fontSize = 12,
                         textColor = Colors.white

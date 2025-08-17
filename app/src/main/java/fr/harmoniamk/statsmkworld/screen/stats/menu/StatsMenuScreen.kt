@@ -13,8 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -24,7 +26,7 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 @Composable
 fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (StatsType) -> Unit, onRanking: (StatsType?) -> Unit) {
     val state = viewModel.state.collectAsState()
-    BaseScreen(title = "Statistiques") {
+    BaseScreen(title = stringResource(R.string.statistiques)) {
         LazyColumn(
             Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -35,7 +37,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                         .fillMaxWidth()
                         .clickable { onClick(StatsType.PlayerStats(state.value.currentPlayerId.orEmpty())) }) {
                     MKText(
-                        text = "Statistiques individuelles",
+                        text = stringResource(R.string.statistiques_individuelles),
                         font = Fonts.Urbanist,
                         modifier = Modifier.padding(vertical = 20.dp)
                     )
@@ -53,7 +55,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                         .fillMaxWidth()
                         .clickable { onClick(StatsType.TeamStats()) }) {
                     MKText(
-                        text = "Statistiques de l'équipe",
+                        text = stringResource(R.string.statistiques_de_l_quipe),
                         font = Fonts.Urbanist,
                         modifier = Modifier.padding(vertical = 20.dp)
                     )
@@ -72,7 +74,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                         .fillMaxWidth()
                         .clickable { onRanking(StatsType.TeamStats()) }) {
                     MKText(
-                        text = "Statistiques des joueurs",
+                        text = stringResource(R.string.statistiques_des_joueurs),
                         font = Fonts.Urbanist,
                         modifier = Modifier.padding(vertical = 20.dp)
                     )
@@ -91,7 +93,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                         .fillMaxWidth()
                         .clickable { onRanking(StatsType.OpponentStats(state.value.currentTeamId.orEmpty())) }) {
                     MKText(
-                        text = "Statistiques des adversaires",
+                        text = stringResource(R.string.statistiques_des_adversaires),
                         font = Fonts.Urbanist,
                         modifier = Modifier.padding(vertical = 20.dp)
                     )
@@ -108,9 +110,16 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onRanking(StatsType.MapStats(userId = state.value.currentPlayerId.orEmpty(), teamId = state.value.currentTeamId.orEmpty())) }) {
+                        .clickable {
+                            onRanking(
+                                StatsType.MapStats(
+                                    userId = state.value.currentPlayerId.orEmpty(),
+                                    teamId = state.value.currentTeamId.orEmpty()
+                                )
+                            )
+                        }) {
                     MKText(
-                        text = "Statistiques des circuits",
+                        text = stringResource(R.string.statistiques_des_circuits),
                         font = Fonts.Urbanist,
                         modifier = Modifier.padding(vertical = 20.dp)
                     )

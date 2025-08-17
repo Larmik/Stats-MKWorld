@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -21,8 +23,8 @@ import kotlinx.coroutines.FlowPreview
 fun MKWarStatsView(stats: Stats?, mapStats: MapStats?) {
     val totalPlayed = stats?.warStats?.warsPlayed ?: mapStats?.trackPlayed
     val totalPlayedLabel = when  {
-        stats != null -> "Wars jouées"
-        mapStats != null -> "Map jouée"
+        stats != null -> stringResource(R.string.wars_played)
+        mapStats != null -> stringResource(R.string.maps_played)
         else -> ""
     }
     Column {

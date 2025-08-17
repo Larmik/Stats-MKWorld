@@ -52,7 +52,7 @@ fun CurrentWarActionsScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        viewModel.bavkToWelcome.collect {
+        viewModel.backToWelcome.collect {
             onBackToWelcome()
         }
     }

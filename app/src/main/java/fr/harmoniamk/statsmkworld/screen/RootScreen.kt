@@ -1,5 +1,7 @@
 package fr.harmoniamk.statsmkworld.screen
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -39,7 +41,22 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
     NavHost(
         modifier = Modifier.fillMaxSize(),
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination,
+        enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(700)) },
+        exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(700)) },
+        popEnterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.End,
+                tween(700)
+            )
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.End,
+                tween(700)
+            )
+        }
+
     ) {
 
         composable(route = "Signup") {
@@ -83,10 +100,10 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                 navController.previousBackStackEntry?.savedStateHandle?.get<StatsType>("type")
             StatsScreen(
                 viewModel = hiltViewModel(
-                creationCallback = { factory: fr.harmoniamk.statsmkworld.screen.stats.StatsViewModel.Factory ->
-                    factory.create(type)
-                }
-            ))
+                    creationCallback = { factory: fr.harmoniamk.statsmkworld.screen.stats.StatsViewModel.Factory ->
+                        factory.create(type)
+                    }
+                ))
         }
 
         composable("Stats/Ranking") {

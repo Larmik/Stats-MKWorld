@@ -3,7 +3,9 @@ package fr.harmoniamk.statsmkworld.screen.stats.ranking
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -33,26 +35,33 @@ fun StatsRankingScreen(
     onStats: (StatsType) -> Unit
 ) {
     val state = viewModel.state.collectAsState()
-    BaseScreen(title = state.value.title.orEmpty()) {
-        if (viewModel.type is StatsType.OpponentStats || viewModel.type is StatsType.MapStats)
+    BaseScreen(title = stringResource(state.value.title ?: R.string.statistiques)) {
+        if (viewModel.type is StatsType.OpponentStats || viewModel.type is StatsType.MapStats) {
             MKSegmentedSelector(
-                items = listOf("Individuel", "Equipe"),
+                items = listOf(stringResource(R.string.individuel), stringResource(R.string.equipe)),
                 page = state.value.index,
                 onClick = viewModel::onIndivSwitch
             )
+            Spacer(Modifier.height(10.dp))
+        }
+
         when (state.value.list.mapNotNull { it as? RankingItem.PlayerRanking }.isEmpty()) {
             true -> VerticalGrid(Modifier.verticalScroll(rememberScrollState())) {
                 state.value.list.forEach {
                     when (it) {
                         is RankingItem.OpponentRanking -> TeamCell(
-                            modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
+                            modifier = Modifier
+                                .padding(5.dp)
+                                .fillMaxWidth(0.48f),
                             teamRanking = it,
                             onClick = { onStats(StatsType.OpponentStats(teamId = it.id, userId = state.value.currentUserId)) },
                             userId = state.value.currentUserId,
                             team = null
                         )
                         is RankingItem.TrackRanking -> MapCell(
-                            modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
+                            modifier = Modifier
+                                .padding(5.dp)
+                                .fillMaxWidth(0.48f),
                             trackRanking = it,
                             userId = state.value.currentUserId,
                             onClick = { onStats(StatsType.MapStats(userId = state.value.currentUserId, trackIndex = it.ordinal))}

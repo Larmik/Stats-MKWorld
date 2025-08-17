@@ -1,11 +1,13 @@
 package fr.harmoniamk.statsmkworld.screen.stats.ranking
 
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
@@ -73,7 +75,7 @@ class StatsRankingViewModel @AssistedInject constructor(
     }
 
     data class State(
-        val title: String? = null,
+        val title: Int? = null,
         val userId: String? = null,
         val teamId: String? = null,
         val list: List<RankingItem> = listOf(),
@@ -87,9 +89,9 @@ class StatsRankingViewModel @AssistedInject constructor(
     val state = databaseRepository.getWars()
         .map { warList ->
             val title = when (type) {
-                is StatsType.TeamStats -> "Statistiques des joueurs"
-                is StatsType.OpponentStats -> "Statistiques des adversaires"
-                else -> "Statistiques des circuits"
+                is StatsType.TeamStats -> R.string.statistiques_des_joueurs
+                is StatsType.OpponentStats -> R.string.statistiques_des_adversaires
+                else -> R.string.statistiques_des_circuits
             }
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             when (type) {

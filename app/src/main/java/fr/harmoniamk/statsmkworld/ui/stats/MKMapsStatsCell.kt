@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
@@ -17,7 +19,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 @Composable
 fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
 
-    val userId = (type as? StatsType.PlayerStats)?.userId
+    val userId = (type as? StatsType.PlayerStats)?.userId ?: (type as? StatsType.OpponentStats)?.userId
 
     val bestMap = when (userId) {
         null -> stats?.bestMap
@@ -35,7 +37,7 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
             .fillMaxWidth()
     ) {
         stats?.mostPlayedMap?.let {
-            MKText(text = "Circuit le plus joué", modifier = Modifier.padding(bottom = 5.dp))
+            MKText(text = stringResource(R.string.most_played_map), modifier = Modifier.padding(bottom = 5.dp))
             MapCell(
                 Modifier.fillMaxWidth(0.5f),
                 track = null,
@@ -49,8 +51,10 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 20.dp)) {
         bestMap?.let {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                MKText(text = "Meilleur circuit", modifier = Modifier.padding(bottom = 5.dp))
-                Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
+                MKText(text = stringResource(R.string.best_map), modifier = Modifier.padding(bottom = 5.dp))
+                Row(Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 5.dp)) {
                     MapCell(
                         Modifier.fillMaxWidth(),
                         track = null,
@@ -63,8 +67,10 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
         }
         worstMap?.let {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                MKText(text = "Pire circuit", modifier = Modifier.padding(bottom = 5.dp))
-                Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp)) {
+                MKText(text = stringResource(R.string.worst_map), modifier = Modifier.padding(bottom = 5.dp))
+                Row(Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 5.dp)) {
                     MapCell(
                         Modifier.fillMaxWidth(),
                         track = null,

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.zip
 import javax.inject.Inject
 
 @HiltViewModel
-class StatsMenuViewModel @Inject constructor(private val dataStoreRepositoryInterface: DataStoreRepositoryInterface): ViewModel() {
+class StatsMenuViewModel @Inject constructor(dataStoreRepositoryInterface: DataStoreRepositoryInterface): ViewModel() {
 
     data class State(
         val currentTeamId: String? = null,

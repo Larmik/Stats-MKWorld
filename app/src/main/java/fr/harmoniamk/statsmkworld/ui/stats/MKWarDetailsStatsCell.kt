@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
@@ -24,6 +25,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import java.util.Locale
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @Composable
@@ -50,7 +52,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                     Modifier
                         .weight(1f), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MKText(text = "Score moyen",
+                    MKText(text = stringResource(R.string.average_score),
                         textColor = Colors.white)
                     MKText(
                         text = when (userId) {
@@ -60,7 +62,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                         font = Fonts.Urbanist, fontSize = 20, textColor = Colors.white)
                 }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MKText(text = "Maps gagnées",
+                    MKText(text = stringResource(R.string.maps_gagn_es),
                         textColor = Colors.white)
                     MKText(text = stats?.mapsWon.toString(), fontSize = 16, font = Fonts.NunitoBD,
                         textColor = Colors.white)
@@ -76,8 +78,8 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 MKText(
                     text =  when (userId) {
-                        null -> "Moyenne map"
-                        else -> "Position moyenne"
+                        null -> stringResource(R.string.moyenne_map)
+                        else -> stringResource(R.string.average_position)
                     },
                     textColor = Colors.white
                 )
@@ -97,7 +99,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                 }
                 val shockCount = when (stats) {
                     null ->  mapStats?.shockCount.toString()
-                    else -> String.format("%.2f", (stats.shockCount.toFloat() / stats.warStats.warsPlayed))
+                    else -> String.format(Locale.getDefault(), "%.2f", (stats.shockCount.toFloat() / stats.warStats.warsPlayed))
                 }
                 MKText(text = shockLabel,
                     textColor = Colors.white)
