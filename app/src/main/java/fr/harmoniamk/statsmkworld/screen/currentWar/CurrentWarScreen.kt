@@ -68,7 +68,7 @@ fun CurrentWarScreen(
                     shockCount = state.value.details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } }
                 )
                 Spacer(Modifier.height(20.dp))
-                WarPlayersCell(players = state.value.players)
+                WarPlayersCell(players = state.value.players, trackCount = state.value.details?.warTracks.orEmpty().size)
                 Row(
                     Modifier.padding(vertical = 5.dp),
                     horizontalArrangement = Arrangement.spacedBy(5.dp)

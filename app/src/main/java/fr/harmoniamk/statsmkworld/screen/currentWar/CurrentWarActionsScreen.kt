@@ -19,7 +19,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +41,8 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.VerticalGrid
+import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,6 +58,11 @@ fun CurrentWarActionsScreen(
     LaunchedEffect(Unit) {
         viewModel.backToWelcome.collect {
             onBackToWelcome()
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.onBack.collect {
+            onBack()
         }
     }
 
@@ -167,7 +176,64 @@ fun CurrentWarActionsScreen(
                     }
 
                     1 -> {
-                        MKText(text = "Les remplacements ne sont pas encore disponible. Reviens plus tard !")
+                       Column(Modifier
+                           .fillMaxSize()
+                           .verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+
+                           MKText(text = stringResource(R.string.joueur_sortant), font = Fonts.NunitoBD, fontSize = 16)
+                           VerticalGrid {
+                               state.value.currentPlayers?.forEach {
+                                       val textColor = when (it.isSelected) {
+                                           true -> Colors.black
+                                           else -> Colors.white
+                                       }
+                                       val backgroundColor = when (it.isSelected) {
+                                           true -> Colors.whiteAlphaed
+                                           else -> Colors.blackAlphaed
+                                       }
+                                       PlayerCell(
+                                           modifier = Modifier
+                                               .padding(5.dp)
+                                               .fillMaxWidth(0.48f),
+                                           player = it.player,
+                                           textColor = textColor,
+                                           backgroundColor = backgroundColor,
+                                           onClick = viewModel::onOldPlayerSelected
+                                       )
+                                   }
+
+                           }
+                           Spacer(Modifier.height(20.dp))
+                           MKText(text = stringResource(R.string.joueur_entrant), font = Fonts.NunitoBD, fontSize = 16)
+                           VerticalGrid {
+                               state.value.otherPlayers?.forEach {
+                                   val textColor = when (it.isSelected) {
+                                       true -> Colors.black
+                                       else -> Colors.white
+                                   }
+                                   val backgroundColor = when (it.isSelected) {
+                                       true -> Colors.whiteAlphaed
+                                       else -> Colors.blackAlphaed
+                                   }
+                                   PlayerCell(
+                                       modifier = Modifier
+                                           .padding(5.dp)
+                                           .fillMaxWidth(0.48f),
+                                       player = it.player,
+                                       textColor = textColor,
+                                       backgroundColor = backgroundColor,
+                                       onClick = viewModel::onNewPlayerSelected
+                                   )
+                               }
+                           }
+                           Spacer(Modifier.height(20.dp))
+                           Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                               MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.remplacer), enabled = state.value.currentPlayers.orEmpty().any { it.isSelected } && state.value.otherPlayers.orEmpty().any { it.isSelected }, onClick = viewModel::onSub)
+                               Spacer(Modifier.width(10.dp))
+                               MKButton(style = MKButtonStyle.Minor(Colors.black), text = stringResource(R.string.cancel), onClick = onBack)
+                           }
+
+                       }
                     }
 
                     else -> {

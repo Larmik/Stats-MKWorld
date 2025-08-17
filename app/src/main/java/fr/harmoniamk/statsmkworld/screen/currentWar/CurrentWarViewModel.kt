@@ -82,17 +82,17 @@ class CurrentWarViewModel @Inject constructor(
         val localPlayers = databaseRepository.getPlayers().firstOrNull()
 
         val currentLocalPlayers = localPlayers
-            ?.filter { it.currentWar == war.id.toString() }
-            ?.map { PlayerScore(it, 0, 0) }
+            ?.filter { player -> war.tracks.flatMap { it.positions }.any { it.playerId == player.id  } || player.currentWar == war.id.toString() }
+            ?.map { PlayerScore(it, 0, 0, 0) }
             .orEmpty()
 
 
         val players = when (currentLocalPlayers.isEmpty()) {
             true -> firebaseRepository.getUsers(war.teamHost)
                 .firstOrNull()
-                ?.filter { it.currentWar == war.id.toString() }
+                ?.filter { player -> war.tracks.flatMap { it.positions }.any { it.playerId == player.id  } ||  player.currentWar == war.id.toString()}
                 ?.map { user -> localPlayers?.firstOrNull { it.id == user.id } }
-                ?.map { PlayerScore(it, 0, 0) }
+                ?.map { PlayerScore(it, 0, 0, 0) }
                 .orEmpty()
 
             else -> currentLocalPlayers
@@ -130,6 +130,7 @@ class CurrentWarViewModel @Inject constructor(
             finalList.add(PlayerScore(
                 player = pair.first,
                 score = pair.second,
+                trackPlayed = trackList.filter { it.positions.any { it.playerId == pair.first?.id } }.size,
                 shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
             ))
         }

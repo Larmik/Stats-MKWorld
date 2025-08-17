@@ -170,4 +170,7 @@
     <string name="v">W</string>
     <string name="n">T</string>
     <string name="d">L</string>
+    <string name="joueur_sortant">Outgoing</string>
+    <string name="remplacer">Substitute</string>
+    <string name="joueur_entrant">Incoming</string>
 </resources>

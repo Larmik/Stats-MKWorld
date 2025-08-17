@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltySelector
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltyType
+import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -36,7 +37,9 @@ class CurrentWarActionsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _backToWelcome = MutableSharedFlow<Unit>()
+    private val _onBack = MutableSharedFlow<Unit>()
     val backToWelcome = _backToWelcome.asSharedFlow()
+    val onBack = _onBack.asSharedFlow()
 
 
     data class State(
@@ -44,7 +47,9 @@ class CurrentWarActionsViewModel @Inject constructor(
         val players: List<PlayerEntity>? = null,
         val penalties: List<PenaltySelector>? = null,
         val teamHost: String? = null,
-        val teamOpponent: String? = null
+        val teamOpponent: String? = null,
+        val currentPlayers: List<PlayerSelector>? = null,
+        val otherPlayers: List<PlayerSelector>? = null,
     )
 
     private val _state = MutableStateFlow(State())
@@ -62,7 +67,9 @@ class CurrentWarActionsViewModel @Inject constructor(
                 players = players,
                 penalties = PenaltyType.entries.map { PenaltySelector(it, false) },
                 teamHost = teamHost,
-                teamOpponent = teamOpponent
+                teamOpponent = teamOpponent,
+                currentPlayers = players?.filter { it.currentWar == war?.id.toString() }?.map { PlayerSelector(it, false) },
+                otherPlayers = players?.filterNot { it.currentWar == war?.id.toString() }?.map { PlayerSelector(it, false) }
             )
         }
         .mergeWith(_state)
@@ -100,10 +107,49 @@ class CurrentWarActionsViewModel @Inject constructor(
                         _state.value = state.value.copy(war = war)
                     }.launchIn(viewModelScope)
             }
-
-
         }
+    }
 
+    fun onOldPlayerSelected(player: PlayerEntity) {
+        val newList = state.value.currentPlayers.orEmpty().map { it.copy(isSelected = it.player.id == player.id) }
+        _state.value = state.value.copy(currentPlayers = newList)
+    }
+
+    fun onNewPlayerSelected(player: PlayerEntity) {
+        val newList = state.value.otherPlayers.orEmpty().map { it.copy(isSelected = it.player.id == player.id) }
+        _state.value = state.value.copy(otherPlayers = newList)
+    }
+
+    fun onSub() {
+        flowOf(Unit)
+            .mapNotNull {
+                val oldPlayer = state.value.currentPlayers?.singleOrNull { it.isSelected }
+                val newPlayer = state.value.otherPlayers?.singleOrNull { it.isSelected }
+                oldPlayer?.player?.let {
+                    databaseRepository.updateUser(it.id, "").firstOrNull()
+                    firebaseRepository.writeUser(
+                        teamId = state.value.war?.teamHost.orEmpty(),
+                        user = User(
+                            id = it.id,
+                            currentWar = "",
+                            role = it.role
+                        )
+                    ).firstOrNull()
+                }
+                newPlayer?.player?.let {
+                    databaseRepository.updateUser(it.id, state.value.war?.id.toString()).firstOrNull()
+                    firebaseRepository.writeUser(
+                        teamId = state.value.war?.teamHost.orEmpty(),
+                        user = User(
+                            id = it.id,
+                            currentWar = state.value.war?.id.toString(),
+                            role = it.role
+                        )
+                    ).firstOrNull()
+                }
+            }
+            .onEach { _onBack.emit(Unit) }
+            .launchIn(viewModelScope)
     }
 
     fun clearPenalties() {

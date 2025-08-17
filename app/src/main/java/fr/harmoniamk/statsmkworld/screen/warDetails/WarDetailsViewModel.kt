@@ -61,12 +61,12 @@ class WarDetailsViewModel @AssistedInject constructor(
     private suspend fun initPlayersList(war: War): List<PlayerScore> {
         val players = databaseRepository.getPlayers().firstOrNull()
             ?.filter { player -> war.tracks.any { it.positions.any { it.playerId == player.id } } }
-            ?.map { PlayerScore(it, 0, 0) }
+            ?.map { PlayerScore(it, 0, 0, 0) }
             .orEmpty()
         val trackList = war.tracks
         val finalList = mutableListOf<PlayerScore>()
         val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
-        val shocks =  trackList.flatMap { it.shocks.orEmpty() }
+        val shocks = trackList.flatMap { it.shocks.orEmpty() }
         trackList.forEach {
             it.positions.takeIf { it.isNotEmpty() }?.let { warPositions ->
                 val trackPositions = mutableListOf<PlayerPosition>()
@@ -74,7 +74,8 @@ class WarDetailsViewModel @AssistedInject constructor(
                     trackPositions.add(
                         PlayerPosition(
                             position = position,
-                            player = players.map { it.player }.singleOrNull { it?.id == position.playerId }
+                            player = players.map { it.player }
+                                .singleOrNull { it?.id == position.playerId }
                         )
                     )
 
@@ -95,9 +96,10 @@ class WarDetailsViewModel @AssistedInject constructor(
         temp.forEach { pair ->
             finalList.add(
                 PlayerScore(
-                player = pair.first,
-                score = pair.second,
-                shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
+                    player = pair.first,
+                    score = pair.second,
+                    trackPlayed = trackList.filter { it.positions.any { it.playerId == pair.first?.id } }.size,
+                    shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
                 )
             )
         }

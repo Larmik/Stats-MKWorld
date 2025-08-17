@@ -25,7 +25,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 @Composable
-fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>) {
+fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>, trackCount: Int) {
     val splitIndex = when (players.size % 2) {
         0 -> players.size / 2
         else -> players.size / 2 + 1
@@ -48,22 +48,17 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>) {
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val text = when (it.trackPlayed in 1 until trackCount) {
+                                true -> "${it.player?.name.orEmpty()} (${it.trackPlayed})"
+                                else -> it.player?.name.orEmpty()
+                            }
                             MKText(
                                 modifier = Modifier.padding(horizontal = 5.dp),
-                                text = it.player?.name.orEmpty(),
+                                text = text,
                                 maxLines = 1,
                                 textColor = Colors.white,
                                 resizable = false
                             )
-                            /*
-                            val text = when (it.tracksPlayed in 1 until trackCount) {
-                                true -> "${it.player?.name.orEmpty()} (${it.tracksPlayed})"
-                                else -> it.player?.name.orEmpty()
-                            }
-                            MKText(modifier = Modifier.padding(horizontal = 5.dp),text = text, maxLines = 1)
-
-                             */
-
                         }
                         MKText(
                             text = it.score.toString(),
@@ -90,22 +85,18 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>) {
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val text = when (it.trackPlayed in 1 until trackCount) {
+                                true -> "${it.player?.name.orEmpty()} (${it.trackPlayed})"
+                                else -> it.player?.name.orEmpty()
+                            }
                             MKText(
                                 modifier = Modifier.padding(horizontal = 5.dp),
-                                text = it.player?.name.orEmpty(),
+                                text = text,
                                 maxLines = 1,
                                 textColor = Colors.white,
                                 resizable = false
                             )
 
-                            /*
-                            val text = when (it.tracksPlayed in 1 until trackCount) {
-                                true -> "${it.player?.name.orEmpty()} (${it.tracksPlayed})"
-                                else -> it.player?.name.orEmpty()
-                            }
-                            MKText(modifier = Modifier.padding(horizontal = 5.dp),text = text, maxLines = 1)
-
-                             */
                         }
                         MKText(
                             text = it.score.toString(),

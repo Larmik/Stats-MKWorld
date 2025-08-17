@@ -170,4 +170,7 @@
     <string name="v">V</string>
     <string name="n">N</string>
     <string name="d">D</string>
+    <string name="joueur_sortant">Joueur sortant</string>
+    <string name="remplacer">Remplacer</string>
+    <string name="joueur_entrant">Joueur entrant</string>
 </resources>
