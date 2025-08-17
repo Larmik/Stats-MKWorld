@@ -9,25 +9,21 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
-import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
 import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Maps
-import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
-import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.filterNot
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -115,51 +111,9 @@ class StatsViewModel @AssistedInject constructor(
             val team = databaseRepository.getTeam(teamId.orEmpty()).firstOrNull()
 
             when (type) {
-                is StatsType.PlayerStats, is StatsType.TeamStats -> _state.value = _state.value.copy(stats = stats)
-                is StatsType.OpponentStats -> databaseRepository.getPlayers()
-                    .firstOrNull()
-                    ?.let  { users ->
-                        val finalList = mutableListOf<Pair<Int, String?>>()
-                        stats.warStats.list.forEach { war ->
-                            val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
-                            war.warTracks.forEach { warTrack ->
-                                warTrack.track.positions.let { warPositions ->
-                                    val trackPositions = mutableListOf<PlayerPosition>()
-                                    warPositions.forEach { position ->
-                                        trackPositions.add(
-                                            PlayerPosition(
-                                                position = position,
-                                                player = users.singleOrNull { it.id == position.playerId })
-                                        )
-                                    }
-                                    trackPositions.groupBy { it.player }.entries.forEach { entry ->
-                                        positions.add(
-                                            Pair(
-                                                entry.key,
-                                                entry.value.sumOf { pos -> pos.position.position.positionToPoints() }
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                            positions
-                                .groupBy { it.first }
-                                .map { Pair(it.key, it.value.sumOf { it.second }) }
-                                .filter { it.first?.id == type.userId }
-                                .map { Pair(it.second, war.war.id.toString()) }
-                                .forEach { pair -> finalList.add(pair) }
-                        }
-                        _state.value = _state.value.copy(
-                            stats = stats.apply {
-                                this.highestPlayerScore = finalList.maxByOrNull { it.first }
-                                this.lowestPlayerScore = finalList.minByOrNull { it.first }
-                            }
-                        )
-                    }
-
+                is StatsType.PlayerStats, is StatsType.TeamStats, is StatsType.OpponentStats -> _state.value = _state.value.copy(stats = stats)
                 is StatsType.MapStats -> {
                     val finalList = mutableListOf<MapDetails>()
-
                     wars.forEach { mkWar ->
                         mkWar.warTracks.filter { track -> track.index == type.trackIndex }.forEach { track ->
                             val position = track.track.positions.singleOrNull { it.playerId == type.userId }?.position?.takeIf { type.userId != null }
@@ -172,7 +126,6 @@ class StatsViewModel @AssistedInject constructor(
                             )
                         }
                     }
-
                     val mapDetailsList = mutableListOf<MapDetails>()
                     mapDetailsList.addAll(finalList)
                     _state.value = _state.value.copy(

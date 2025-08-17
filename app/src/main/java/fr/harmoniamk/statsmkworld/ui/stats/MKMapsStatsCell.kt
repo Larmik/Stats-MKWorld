@@ -39,7 +39,7 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
             MapCell(
                 Modifier.fillMaxWidth(0.5f),
                 track = null,
-                isIndiv = userId != null,
+                userId = userId,
                 trackRanking = RankingItem.TrackRanking(it),
                 onClick = {}
             )
@@ -54,7 +54,7 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
                     MapCell(
                         Modifier.fillMaxWidth(),
                         track = null,
-                        isIndiv = userId != null,
+                        userId = userId,
                         trackRanking = RankingItem.TrackRanking(it),
                         onClick = {}
                     )
@@ -68,7 +68,7 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
                     MapCell(
                         Modifier.fillMaxWidth(),
                         track = null,
-                        isIndiv = userId != null,
+                        userId = userId,
                         trackRanking = RankingItem.TrackRanking(it),
                         onClick = {}
                     )

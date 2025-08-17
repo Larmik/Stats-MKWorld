@@ -42,7 +42,7 @@ fun MapCell(
     borderColor: Color = Colors.white,
     onClick: (Maps) -> Unit,
     trackRanking: RankingItem.TrackRanking? = null,
-    isIndiv: Boolean = false,
+    userId: String? = null,
     onTrackDetails: (WarTrackDetails) -> Unit = {}
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -140,18 +140,18 @@ fun MapCell(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     MKText(
-                        text = when (isIndiv) {
-                            true -> "Position moyenne : "
-                            else -> "Score moyen : "
+                        text = when (userId) {
+                            null -> "Score moyen : "
+                            else -> "Position moyenne : "
                         },
                         fontSize = 12,
                         textColor = Colors.white
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     MKText(
-                        text = when (isIndiv) {
-                            true -> it.stats.playerScore?.pointsToPosition().toString()
-                            else -> it.stats.teamScore?.trackScoreToDiff().toString()
+                        text = when (userId) {
+                            null -> it.stats.teamScore?.trackScoreToDiff().toString()
+                            else -> it.stats.playerScore?.pointsToPosition().toString()
                         },
                         font = Fonts.NunitoBD,
                         textColor = Colors.white

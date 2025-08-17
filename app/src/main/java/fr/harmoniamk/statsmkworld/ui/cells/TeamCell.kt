@@ -36,6 +36,7 @@ fun TeamCell(
     team: TeamEntity?,
     teamRanking: RankingItem.OpponentRanking? = null,
     teamStatsLabel: String? = null,
+    userId: String? = null,
     onClick: (TeamEntity) -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -106,7 +107,10 @@ fun TeamCell(
                             textColor = Colors.white
                         )
                         MKText(
-                            text = it.averageLabel,
+                            text = when (userId) {
+                                null -> it.averageLabel
+                                else -> it.stats.averagePoints.toString()
+                            },
                             font = Fonts.NunitoBdIt,
                             fontSize = 12,
                             textColor = Colors.white

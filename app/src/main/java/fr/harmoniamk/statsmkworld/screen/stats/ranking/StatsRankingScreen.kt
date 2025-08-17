@@ -48,11 +48,13 @@ fun StatsRankingScreen(
                             modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
                             teamRanking = it,
                             onClick = { onStats(StatsType.OpponentStats(teamId = it.id, userId = state.value.currentUserId)) },
+                            userId = state.value.currentUserId,
                             team = null
                         )
                         is RankingItem.TrackRanking -> MapCell(
                             modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
                             trackRanking = it,
+                            userId = state.value.currentUserId,
                             onClick = { onStats(StatsType.MapStats(userId = state.value.currentUserId, trackIndex = it.ordinal))}
                         )
                         else -> {}

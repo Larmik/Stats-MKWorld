@@ -15,16 +15,12 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarScore
 import fr.harmoniamk.statsmkworld.model.local.WarStats
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
-import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
-import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlin.collections.forEach
-import kotlin.collections.get
 
 @Suppress("UNCHECKED_CAST")
 fun Any?.toMapList(): List<Map<*, *>>? = this as? List<Map<*, *>>
@@ -181,7 +177,7 @@ fun List<TeamEntity>.withFullTeamStats(
             .filter { it.hasTeam(team.id) }
             .filter { (userId != null && it.hasPlayer(userId)) || userId == null }
             .map { WarDetails(War(it)) }
-            .withFullStats(databaseRepository)
+            .withFullStats(databaseRepository, userId)
             .firstOrNull()
             ?.let {
                 if (it.warStats.list.isNotEmpty())
