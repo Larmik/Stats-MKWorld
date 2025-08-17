@@ -78,12 +78,16 @@ class InitStatsWorker @AssistedInject constructor(
 
             teams
                 .flatMapLatest { it.withFullTeamStats(wars = warList, databaseRepository = databaseRepository) }
-                .map { it.map { RankingItem.OpponentRanking(it.first, it.second) } }
+                .map { it
+                    .sortedByDescending { it.second.warStats.warsPlayed }
+                    .map { RankingItem.OpponentRanking(it.first, it.second) } }
                 .onEach { statsRepository.opponentRankList = it }
                 .launchIn(this)
             teams
                 .flatMapLatest { it.withFullTeamStats(wars = warList, databaseRepository = databaseRepository, userId = currentPlayer?.id.toString()) }
-                .map { it.map { RankingItem.OpponentRanking(it.first, it.second) } }
+                .map { it
+                    .sortedByDescending { it.second.warStats.warsPlayed }
+                    .map { RankingItem.OpponentRanking(it.first, it.second) } }
                 .onEach { statsRepository.playerOpponentRankList = it }
                 .launchIn(this)
         }

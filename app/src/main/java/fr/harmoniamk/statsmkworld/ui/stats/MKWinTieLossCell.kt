@@ -54,6 +54,6 @@ fun MKWinTieLossCell(stats: Stats?, mapStats: MapStats?) {
             }
         }
         MKLineChart(stats = stats, mapStats = mapStats)
-        MKText(text = stringResource(R.string.winrate_placeholder, winRate), font = Fonts.NunitoBD, modifier = Modifier.padding(vertical = 5.dp), textColor = Colors.white)
+        MKText(text = stringResource(R.string.winrate_placeholder, "$winRate%"), font = Fonts.NunitoBD, modifier = Modifier.padding(vertical = 5.dp), textColor = Colors.white)
     }
 }

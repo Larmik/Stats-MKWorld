@@ -165,7 +165,7 @@
     <string name="statistiques_du_joueur">Player statistics</string>
     <string name="statistiques_de_l_adversaire">Opponent statistics</string>
     <string name="statistiques_du_circuit">Track statistics</string>
-    <string name="winrate_placeholder">Winrate: %1$s%</string>
+    <string name="winrate_placeholder">Winrate: %s\%</string>
     <string name="opponent_times_played">Played %1$s times</string>
     <string name="v">W</string>
     <string name="n">T</string>
