@@ -15,15 +15,19 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.RemoteConfigRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.WorkerRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
+import fr.harmoniamk.statsmkworld.worker.InitStatsWorker
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -33,8 +37,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     remoteConfigRepository: RemoteConfigRepositoryInterface,
-    private val statsRepository: StatsRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface
+    private val workerRepository: WorkerRepositoryInterface
 ) : ViewModel() {
 
     data class State(
@@ -65,42 +68,10 @@ class MainViewModel @Inject constructor(
         }
     }
 
-
-    suspend fun initStats() {
-        databaseRepository.getWars().firstOrNull()?.let { warList ->
-            val currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
-            val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
-
-            statsRepository.trackRankList = warList.withTrackStats().map { RankingItem.TrackRanking(it) }
-            statsRepository.playerTrackRankList = warList.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
-            databaseRepository.getPlayers()
-                .mapNotNull { it.sortedBy { it.name } }
-                .firstOrNull()
-                ?.let { userList ->
-                    val players = mutableListOf<RankingItem>()
-                    userList.forEach { user ->
-                        warList
-                            .filter { war -> war.hasPlayer(user.id) }
-                            .map { WarDetails(War(it)) }
-                            .withFullStats(databaseRepository, userId = user.id)
-                            .map { players.add(RankingItem.PlayerRanking(user, it)) }
-                            .firstOrNull()
-                    }
-                    statsRepository.playersRankList = players
-                }
-            databaseRepository.getTeams()
-                .map { it.filterNot { team ->  team.id == currentTeam?.id.toString() } }
-                .mapNotNull { it.sortedBy { it.name } }
-                .flatMapLatest {
-                    it.withFullTeamStats(
-                        wars = warList,
-                        databaseRepository = databaseRepository
-                    )
-                }
-                .mapNotNull { it.map { RankingItem.OpponentRanking(it.first, it.second) } }
-                .firstOrNull()
-                ?.let { opponents -> statsRepository.opponentRankList = opponents }
-        }
+    fun initStats() {
+        workerRepository.launchBackgroundTask(InitStatsWorker::class.java, "InitStats", null)
     }
+
+
 }
 

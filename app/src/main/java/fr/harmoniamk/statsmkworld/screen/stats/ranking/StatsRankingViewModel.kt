@@ -72,7 +72,8 @@ class StatsRankingViewModel @AssistedInject constructor(
         val title: String? = null,
         val userId: String? = null,
         val teamId: String? = null,
-        val list: List<RankingItem> = listOf()
+        val list: List<RankingItem> = listOf(),
+        val index: Int = 0
     )
 
     private val _state = MutableStateFlow(State())
@@ -91,7 +92,7 @@ class StatsRankingViewModel @AssistedInject constructor(
                 )
 
                 is StatsType.OpponentStats -> _state.value.copy(
-                    list = statsRepository.opponentRankList
+                    list = statsRepository.playerOpponentRankList
                         .mapNotNull { it as? RankingItem.OpponentRanking }
                         .filter { vm ->
                             (type.userId == null && vm.stats.warStats.list.any { war ->
@@ -108,7 +109,7 @@ class StatsRankingViewModel @AssistedInject constructor(
                 )
 
                 is StatsType.MapStats -> _state.value.copy(
-                    list = statsRepository.trackRankList,
+                    list = statsRepository.playerTrackRankList,
                     title = title,
                     userId = type.userId,
                     teamId = type.teamId
@@ -120,4 +121,21 @@ class StatsRankingViewModel @AssistedInject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
+    fun onIndivSwitch(index: Int) {
+        val isIndiv = index == 0
+        val list = when (type) {
+            is StatsType.OpponentStats ->
+                when (isIndiv) {
+                    true -> statsRepository.playerOpponentRankList
+                    else -> statsRepository.opponentRankList
+                }
+            is StatsType.MapStats ->
+                when (isIndiv) {
+                    true -> statsRepository.playerTrackRankList
+                    else -> statsRepository.trackRankList
+                }
+            else -> listOf()
+        }
+        _state.value = state.value.copy(list = list, index = index)
+    }
 }

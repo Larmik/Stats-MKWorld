@@ -11,6 +11,7 @@ import javax.inject.Singleton
 interface StatsRepositoryInterface {
     var playersRankList: List<RankingItem>
     var opponentRankList: List<RankingItem>
+    var playerOpponentRankList: List<RankingItem>
     var trackRankList: List<RankingItem>
     var playerTrackRankList: List<RankingItem>
 }
@@ -28,6 +29,7 @@ class StatsRepository @Inject constructor() : StatsRepositoryInterface {
 
     private var _playersRankingList: List<RankingItem> = listOf()
     private var _opponentRankingList: List<RankingItem> = listOf()
+    private var _playerOpponentRankingList: List<RankingItem> = listOf()
     private var _trackRankList: List<RankingItem> = listOf()
     private var _playerTrackRankList: List<RankingItem> = listOf()
 
@@ -38,6 +40,9 @@ class StatsRepository @Inject constructor() : StatsRepositoryInterface {
     override var opponentRankList: List<RankingItem>
         get() = _opponentRankingList
         set(value) { _opponentRankingList = value }
+    override var playerOpponentRankList: List<RankingItem>
+        get() = _playerOpponentRankingList
+        set(value) { _playerOpponentRankingList = value }
     override var trackRankList: List<RankingItem>
         get() = _trackRankList
         set(value) { _trackRankList = value }

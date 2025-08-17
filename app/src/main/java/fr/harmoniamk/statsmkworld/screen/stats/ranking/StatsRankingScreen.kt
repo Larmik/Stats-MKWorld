@@ -20,6 +20,7 @@ import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.VerticalGrid
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
@@ -33,6 +34,12 @@ fun StatsRankingScreen(
 ) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = state.value.title.orEmpty()) {
+        if (viewModel.type is StatsType.OpponentStats || viewModel.type is StatsType.MapStats)
+            MKSegmentedSelector(
+                items = listOf("Individuel", "Equipe"),
+                page = state.value.index,
+                onClick = viewModel::onIndivSwitch
+            )
         when (state.value.list.mapNotNull { it as? RankingItem.PlayerRanking }.isEmpty()) {
             true -> VerticalGrid(Modifier.verticalScroll(rememberScrollState())) {
                 state.value.list.forEach {

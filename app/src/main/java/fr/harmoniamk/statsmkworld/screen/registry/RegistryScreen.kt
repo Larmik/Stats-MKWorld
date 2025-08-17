@@ -1,14 +1,7 @@
 package fr.harmoniamk.statsmkworld.screen.registry
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -30,15 +23,18 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
-import fr.harmoniamk.statsmkworld.ui.Fonts
-import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import kotlinx.coroutines.launch
 
 @Composable
-fun RegistryScreen(viewModel: RegistryViewModel = hiltViewModel(), onPlayerProfile: (String) -> Unit, onTeamProfile: (String) -> Unit) {
+fun RegistryScreen(
+    viewModel: RegistryViewModel = hiltViewModel(),
+    onPlayerProfile: (String) -> Unit,
+    onTeamProfile: (String) -> Unit
+) {
     val teamSearch = remember { mutableStateOf("") }
     val playerSearch = remember { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { 2 })
@@ -46,50 +42,16 @@ fun RegistryScreen(viewModel: RegistryViewModel = hiltViewModel(), onPlayerProfi
     val state = viewModel.state.collectAsState()
     BaseScreen(title = stringResource(R.string.registre)) {
 
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .border(1.dp, Colors.blackAlphaed),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            repeat(pagerState.pageCount) { iteration ->
-                val text = when (iteration) {
-                    0 -> stringResource(R.string.joueurs)
-                    else -> stringResource(R.string.equipes)
+        MKSegmentedSelector(
+            items = listOf(stringResource(R.string.joueurs), stringResource(R.string.equipes)),
+            page = pagerState.currentPage,
+            onClick = {
+                scope.launch {
+                    pagerState.animateScrollToPage(it)
                 }
-                val bgColor = when (iteration == pagerState.currentPage) {
-                    true -> Colors.blackAlphaed
-                    else -> Colors.transparent
-                }
-                val textColor = when (iteration == pagerState.currentPage) {
-                    true -> Colors.white
-                    else -> Colors.black
-                }
-
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .background(bgColor)
-                        .clickable {
-                            scope.launch {
-                                pagerState.animateScrollToPage(iteration)
-                            }
-                        }) {
-                    MKText(
-                        text = text,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(vertical = 10.dp),
-                        font = Fonts.Urbanist,
-                        textColor = textColor,
-                        fontSize = 16,
-                        maxLines = 1
-                    )
-                }
-
             }
-        }
+        )
+
         HorizontalPager(
             beyondViewportPageCount = 2,
             state = pagerState
@@ -114,7 +76,9 @@ fun RegistryScreen(viewModel: RegistryViewModel = hiltViewModel(), onPlayerProfi
 
                         LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
                             items(state.value.playerList) {
-                                PlayerCell(player = PlayerEntity(it), onClick = { onPlayerProfile(it.id) })
+                                PlayerCell(
+                                    player = PlayerEntity(it),
+                                    onClick = { onPlayerProfile(it.id) })
                             }
                         }
                     }

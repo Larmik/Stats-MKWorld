@@ -172,12 +172,14 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
 fun List<TeamEntity>.withFullTeamStats(
     wars: List<WarEntity>,
-    databaseRepository: DatabaseRepositoryInterface
+    databaseRepository: DatabaseRepositoryInterface,
+    userId: String? = null
 ) = flow {
     val temp = mutableListOf<Pair<TeamEntity, Stats>>()
     this@withFullTeamStats.forEach { team ->
         wars
             .filter { it.hasTeam(team.id) }
+            .filter { (userId != null && it.hasPlayer(userId)) || userId == null }
             .map { WarDetails(War(it)) }
             .withFullStats(databaseRepository)
             .firstOrNull()
