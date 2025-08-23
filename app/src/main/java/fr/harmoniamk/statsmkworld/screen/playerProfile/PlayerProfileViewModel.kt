@@ -37,7 +37,15 @@ import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = PlayerProfileViewModel.Factory::class)
-class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: String, mkCentralDataSource: MKCentralDataSourceInterface, private val dataStoreRepository: DataStoreRepositoryInterface, private val firebaseRepository: FirebaseRepositoryInterface, private val databaseRepository: DatabaseRepositoryInterface, private val fetchUseCase: FetchUseCaseInterface, private val authDataSource: DiscordDataSourceInterface) : ViewModel() {
+class PlayerProfileViewModel @AssistedInject constructor(
+    @Assisted val id: String,
+    private val dataStoreRepository: DataStoreRepositoryInterface,
+    private val firebaseRepository: FirebaseRepositoryInterface,
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val fetchUseCase: FetchUseCaseInterface,
+    private val authDataSource: DiscordDataSourceInterface,
+    private val mkCentralDataSource: MKCentralDataSourceInterface,
+) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
@@ -55,7 +63,8 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
         @StringRes val dialogTitle: Int? = null,
         @StringRes val confirmDialog: Int? = null,
         @StringRes val adminButtonLabel: Int? = null,
-        val teamId: String? = null
+        val teamId: String? = null,
+        val isMatrixMode: Boolean = false
     )
 
     private val _state = MutableStateFlow(State())
@@ -102,6 +111,7 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
                     else -> R.string.membre
                 } }.firstOrNull()
             val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { id == "me" && it?.startsWith("01/01/1970") != true }
+            val matrixMode = dataStoreRepository.matrixMode.firstOrNull()
             State(
                 player = it,
                 buttonVisible = canAlly && isAlly != true,
@@ -117,7 +127,8 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
                         else -> R.string.basculer_en_tant_qu_admin
                     }
                 },
-                teamId = team?.id.toString()
+                teamId = team?.id.toString(),
+                isMatrixMode = matrixMode == true
             )
         }
         .mergeWith(_state)
@@ -127,7 +138,7 @@ class PlayerProfileViewModel @AssistedInject constructor(@Assisted val id: Strin
         dataStoreRepository.mkcTeam
             .flatMapLatest { firebaseRepository.writeAlly(it.id.toString(), id) }
             .mapNotNull { state.value.player }
-            .map { PlayerEntity(it, isAlly = true) }
+            .map { PlayerEntity(player = it, isAlly = true) }
             .flatMapLatest { databaseRepository.addAlly(it) }
             .onEach { _state.value = state.value.copy(
                 buttonVisible = false,

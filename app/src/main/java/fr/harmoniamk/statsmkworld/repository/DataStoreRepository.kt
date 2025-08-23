@@ -3,6 +3,7 @@ package fr.harmoniamk.statsmkworld.repository
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -35,6 +36,7 @@ interface DataStoreRepositoryInterface {
     suspend fun setAccessToken(token: String)
     suspend fun setPage(page: Int)
     suspend fun setLastUpdate(lastUpdate: Long)
+    suspend fun setMatrixMode(active: Boolean)
 
     suspend fun setMKCPlayer(player: MKCPlayer)
     suspend fun setMKCTeam(team: MKCTeam)
@@ -46,6 +48,7 @@ interface DataStoreRepositoryInterface {
 
     val accessToken: Flow<String>
     val page: Flow<Int>
+    val matrixMode: Flow<Boolean>
     val mkcPlayer: Flow<MKCPlayer>
     val mkcTeam: Flow<MKCTeam>
     val war: Flow<War?>
@@ -119,6 +122,13 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
+    override suspend fun setMatrixMode(active: Boolean) {
+        val keyMode = booleanPreferencesKey("matrixMode")
+        context.dataStore.edit {
+            it[keyMode] = active
+        }
+    }
+
     override val accessToken: Flow<String>
         get() {
             val key = stringPreferencesKey("access_token")
@@ -130,6 +140,12 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
             val key = intPreferencesKey("page")
             return context.dataStore.data.map { it[key]?.toInt() ?: 0 }
         }
+    override val matrixMode: Flow<Boolean>
+        get() {
+            val key = booleanPreferencesKey("matrixMode")
+            return context.dataStore.data.map { it[key] == true }
+        }
+
 
     override val mkcPlayer: Flow<MKCPlayer>
         get() = context.mkcPlayerDataStore.data

@@ -17,6 +17,8 @@ import fr.harmoniamk.statsmkworld.screen.addTrack.AddTrackScreen
 import fr.harmoniamk.statsmkworld.screen.addWar.AddWarScreen
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarActionsScreen
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarScreen
+import fr.harmoniamk.statsmkworld.screen.debug.DebugScreen
+import fr.harmoniamk.statsmkworld.screen.editTab.EditTabScreen
 import fr.harmoniamk.statsmkworld.screen.editTrack.EditTrackScreen
 import fr.harmoniamk.statsmkworld.screen.editTrack.EditTrackViewModel
 import fr.harmoniamk.statsmkworld.screen.home.HomeScreen
@@ -135,7 +137,8 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                     }
                 ),
                 onBack = { navController.popBackStack() },
-                onDisconnect = { navController.navigate("Signup") }
+                onDisconnect = { navController.navigate("Signup") },
+                onDebug = { navController.navigate("Player/Profile/Debug") }
             )
         }
 
@@ -173,7 +176,8 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                     navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
                     navController.navigate("Home/TrackDetails/true")
                 },
-                onWarValidated = { navController.navigate("Home") }
+                onWarValidated = { navController.navigate("Home") },
+                onEditTab = { navController.navigate("Home/CurrentWar/EditTab")}
             )
         }
 
@@ -240,6 +244,12 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                 onBack = { navController.popBackStack() },
                 onBackToCurrent = { navController.navigate("Home/CurrentWar") },
             )
+        }
+        composable("Player/Profile/Debug") {
+            DebugScreen { navController.popBackStack() }
+        }
+        composable("Home/CurrentWar/EditTab") {
+            EditTabScreen { navController.popBackStack() }
         }
     }
 }

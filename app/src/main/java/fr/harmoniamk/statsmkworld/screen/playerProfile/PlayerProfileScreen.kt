@@ -36,7 +36,7 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 import java.util.Date
 
 @Composable
-fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, onDisconnect: () -> Unit) {
+fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, onDisconnect: () -> Unit, onDebug: () -> Unit) {
     val state = viewModel.state.collectAsState()
     BackHandler { onBack() }
 
@@ -225,6 +225,18 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                                 .background(Colors.blackAlphaed))
 
                         }
+                        if (state.value.player?.id.toString() == "18595" || state.value.isMatrixMode)
+                            item {
+                                Row(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onDebug() }) {
+                                    MKText(text = "Debug", font = Fonts.Urbanist, modifier = Modifier.padding(vertical = 20.dp))
+                                }
+                                Spacer(Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(Colors.blackAlphaed))
+                            }
                     }
                     state.value.lastUpdate?.let {
                         MKText(text = stringResource(R.string.last_update, it), modifier = Modifier.padding(top = 10.dp))

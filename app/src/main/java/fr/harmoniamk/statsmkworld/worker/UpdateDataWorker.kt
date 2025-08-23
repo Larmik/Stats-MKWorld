@@ -63,19 +63,8 @@ class UpdateDataWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         dataStoreRepository.mkcPlayer.firstOrNull()?.id?.let {
-            fetchUseCase.fetchPlayer(it.toString())
-                .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" } }
-                .flatMapLatest { fetchUseCase.fetchTeam(it.teamID.toString()) }
-                .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
-                .flatMapLatest { fetchUseCase.fetchTeams() }
-                .flatMapLatest { dataStoreRepository.mkcTeam }
-                .flatMapLatest { fetchUseCase.fetchWars(it.id.toString()) }
-                .onEach {
-                    dataStoreRepository.setLastUpdate(Date().time)
-                    notificationRepository.sendNotification(context.getString(R.string.data_updated))
-                }.launchIn(this)
+           fetchUseCase.fetchData(it.toString())
         }
-
         return Result.success()
 
     }

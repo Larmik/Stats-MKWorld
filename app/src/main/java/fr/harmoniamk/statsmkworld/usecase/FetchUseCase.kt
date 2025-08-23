@@ -8,6 +8,8 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
+import fr.harmoniamk.statsmkworld.model.firebase.Tag
+import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -27,16 +29,23 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.zip
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.collections.firstOrNull
 import kotlin.coroutines.CoroutineContext
 
 interface FetchUseCaseInterface {
+    fun fetchData(playerId: String): Flow<Unit>
     fun fetchPlayer(playerId: String): Flow<MKCPlayer>
     fun fetchTeam(teamId: String): Flow<MKCTeam>
     fun fetchAllies(teamId: String): Flow<Unit>
     fun fetchTeams(): Flow<String>
     fun fetchWars(teamId: String): Flow<Unit>
+    fun fetchTags(): Flow<Unit>
+
+    fun manageTransferts(): Flow<Unit>
 }
 
 @FlowPreview
@@ -57,6 +66,14 @@ class FetchUseCase @Inject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val databaseRepository: DatabaseRepositoryInterface
 ) : FetchUseCaseInterface, CoroutineScope {
+    override fun fetchData(playerId: String): Flow<Unit> = fetchPlayer(playerId)
+            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" } }
+            .flatMapLatest {fetchTeam(it.teamID.toString()) }
+            .flatMapLatest { fetchAllies(it.id.toString()) }
+            .flatMapLatest { fetchTeams() }
+            .flatMapLatest { dataStoreRepository.mkcTeam }
+            .flatMapLatest { fetchWars(it.id.toString()) }
+            .onEach { dataStoreRepository.setLastUpdate(Date().time) }
 
     override fun fetchPlayer(playerId: String): Flow<MKCPlayer> =
         mkCentralDataSource.getPlayer(playerId)
@@ -91,7 +108,7 @@ class FetchUseCase @Inject constructor(
                     else -> {
                         mkCentralDataSource.getPlayer(allyId).firstOrNull()?.let { response ->
                             response.successResponse?.let {
-                                databaseRepository.addAlly(PlayerEntity(it, isAlly = true))
+                                databaseRepository.addAlly(PlayerEntity(player = it, isAlly = true))
                                     .firstOrNull()
                             }
                         }
@@ -162,6 +179,28 @@ class FetchUseCase @Inject constructor(
                     databaseRepository.writeWar(WarEntity(war)).firstOrNull()
             }
         }
+    override fun fetchTags(): Flow<Unit> = databaseRepository.getTeams()
+        .map { it.map { Tag(it.tag, it.id) } }
+        .flatMapLatest { firebaseRepository.writeTags(it) }
+
+    override fun manageTransferts(): Flow<Unit> = dataStoreRepository.mkcTeam
+        .flatMapLatest { mkCentralDataSource.getTeam(it.id.toString()) }
+        .zip(databaseRepository.getPlayers()) { team, players ->
+            players.forEach { player ->
+                if (team?.rosters?.firstOrNull { it.game == "mkworld" }?.players?.none { it.playerId == player.id } == true) {
+                    mkCentralDataSource.getPlayer(player.id).firstOrNull()?.successResponse?.let { mkcPlayer ->
+                        val fbUser = firebaseRepository.getUser(team.id.toString(), player.id).firstOrNull()
+                        fbUser?.let {
+                            firebaseRepository.writeUser(mkcPlayer.rosters?.firstOrNull { it.game == "mkworld" }?.teamID.toString(), it).firstOrNull()
+                            firebaseRepository.writeAlly(team.id.toString(), it.id).firstOrNull()
+                            databaseRepository.updateUser(it.id, isAlly = true).firstOrNull()
+                            firebaseRepository.deleteUser(team.id.toString(), it.id).firstOrNull()
+                        }
+                    }
+                }
+            }
+        }
+
 
     private fun getTeams(page: Int) = mkCentralDataSource.getTeams(page)
         .map { Pair(it?.pageCount, it?.teamList) }

@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -39,11 +40,13 @@ fun MKTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: @Composable (() -> Unit)? = null,
-    placeHolderRes: Int,
+    placeHolderRes: Int? = null,
+    placeHolder: String? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     keyboardActions: KeyboardActions = KeyboardActions(),
+    imeAction: ImeAction = ImeAction.Unspecified,
     backgroundColor: Color = Colors.transparent,
     errorMessage: String? = null
 ) {
@@ -87,7 +90,7 @@ fun MKTextField(
                 KeyboardType.Password -> PasswordVisualTransformation()
                 else -> VisualTransformation.None
             },
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
             keyboardActions =  keyboardActions,
             interactionSource = interactionSource,
             singleLine = true,
@@ -99,7 +102,7 @@ fun MKTextField(
                     innerTextField = innerTextField,
                     placeholder = {
                         MKText(
-                            text = stringResource(id = placeHolderRes),
+                            text = placeHolderRes?.let { stringResource(it) } ?: placeHolder.orEmpty(),
                             textColor = Colors.grey,
                             fontSize = 13
                         )

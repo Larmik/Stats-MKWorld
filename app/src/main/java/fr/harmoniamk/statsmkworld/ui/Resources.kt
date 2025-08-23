@@ -18,6 +18,15 @@ object Colors{
     val black = Color(0xFF3C4043)
     val blackAlphaed = Color(0x773C4043)
     val transparent = Color(0x00FFFFFF)
+    val grey10 = Color(0xFFF5F5F5)
+    val grey20 = Color(0xFFEEEEEE)
+    val grey30 = Color(0xFFE0E0E0)
+    val grey40 = Color(0xFFBDBDBD)
+    val grey50 = Color(0xFF9E9E9E)
+    val grey60 = Color(0xFF757575)
+    val grey70 = Color(0xFF616161)
+    val grey80 = Color(0xFF424242)
+    val grey90 = Color(0xFF212121)
 }
 
 object Fonts {

@@ -173,4 +173,5 @@
     <string name="joueur_sortant">Joueur sortant</string>
     <string name="remplacer">Remplacer</string>
     <string name="joueur_entrant">Joueur entrant</string>
+    <string name="id_joueur">ID joueur</string>
 </resources>

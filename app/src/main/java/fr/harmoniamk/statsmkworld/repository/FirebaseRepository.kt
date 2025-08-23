@@ -14,6 +14,7 @@ import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.parsePenalties
 import fr.harmoniamk.statsmkworld.extension.parseTracks
 import fr.harmoniamk.statsmkworld.extension.toMapList
+import fr.harmoniamk.statsmkworld.model.firebase.Tag
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,7 @@ interface FirebaseRepositoryInterface {
     fun getUsers(teamId: String): Flow<List<User>>
     fun getUser(teamId: String, id: String): Flow<User?>
     fun writeUser(teamId: String, user: User): Flow<Unit>
+    fun deleteUser(teamId: String, id: String): Flow<Unit>
 
     fun getWars(teamId: String): Flow<List<War>>
     fun writeWar(war: War): Flow<Unit>
@@ -53,6 +55,7 @@ interface FirebaseRepositoryInterface {
     fun deleteAlly(teamId: String, ally: String): Flow<Unit>
 
     fun log(message: String, type: String): Flow<Unit>
+    fun writeTags(tags: List<Tag>) : Flow<Unit>
 
 }
 
@@ -78,6 +81,13 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         emit(Unit)
     }
 
+    override fun deleteUser(
+        teamId: String,
+        id: String
+    ): Flow<Unit> = flow {
+        database.child("users").child(teamId).child(id).removeValue()
+        emit(Unit)
+    }
     override fun getUser(teamId: String, id: String): Flow<User?> = callbackFlow {
         database.child("users").child(teamId).child(id).get().addOnSuccessListener { snapshot ->
             (snapshot.value as? Map<*, *>)?.let { value ->
@@ -86,6 +96,8 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
                         id = value["id"].toString(),
                         currentWar = value["currentWar"].toString(),
                         role = value["role"].toString().toIntOrNull() ?: 0,
+                        name = value["name"].toString(),
+                        discordId = value["discordId"].toString()
                     )
                     if (isActive) trySend(user)
                 }
@@ -191,6 +203,8 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
                         id = map["id"].toString(),
                         currentWar = map["currentWar"].toString(),
                         role = map["role"].toString().toIntOrNull() ?: 0,
+                        name = map["name"].toString(),
+                        discordId = map["discordId"].toString()
                     )
                 }
             if (isActive) trySend(wars)
@@ -209,6 +223,11 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
     override fun log(message: String, type: String): Flow<Unit> = flow {
         database.child("debug").child(Date().displayedString("dd-MM-yyyy")).child(type)
             .child(Date().time.toString()).setValue(message)
+    }
+
+    override fun writeTags(tags: List<Tag>): Flow<Unit> = flow {
+        database.child("tags").setValue(tags)
+        emit(Unit)
     }
 
 }

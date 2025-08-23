@@ -40,7 +40,8 @@ fun CurrentWarScreen(
     onAddTrack: () -> Unit,
     onActions: () -> Unit,
     onTrackDetails: (WarTrackDetails) -> Unit,
-    onWarValidated: () -> Unit
+    onWarValidated: () -> Unit,
+    onEditTab: () -> Unit
 ) {
     val state = viewModel.state.collectAsState()
 
@@ -88,8 +89,14 @@ fun CurrentWarScreen(
                         MKButton(
                             modifier = Modifier.weight(1f),
                             style = MKButtonStyle.Minor(Colors.black),
-                            text = stringResource(R.string.more_actions),
-                            onClick = onActions
+                            text = when (state.value.isOver) {
+                                true -> "Editer le tab"
+                                else -> stringResource(R.string.more_actions)
+                            },
+                            onClick = when (state.value.isOver) {
+                                true -> onEditTab
+                                else -> onActions
+                            }
                         )
                     }
                 }
