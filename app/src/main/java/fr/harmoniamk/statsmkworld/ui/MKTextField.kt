@@ -36,6 +36,7 @@ import fr.harmoniamk.statsmkworld.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MKTextField(
+    baseModifier: Modifier = Modifier,
     modifier: Modifier = Modifier.fillMaxWidth(),
     value: String,
     onValueChange: (String) -> Unit,
@@ -65,7 +66,7 @@ fun MKTextField(
         disabledContainerColor = backgroundColor,
 
     )
-    Column {
+    Column(modifier = baseModifier) {
         BasicTextField(
             value = value,
             modifier = modifier
