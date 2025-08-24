@@ -63,7 +63,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
         composable(route = "Signup") {
             SignupScreen(
                 viewModel = hiltViewModel(
-                    key = code,
+                    key = code + System.currentTimeMillis().toString(),
                     creationCallback = { factory: SignupViewModel.Factory ->
                         factory.create(code)
                     }

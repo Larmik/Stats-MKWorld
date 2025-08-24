@@ -52,8 +52,7 @@ class SignupViewModel @AssistedInject constructor(
 
     data class State(
         val launched: Boolean = false,
-        val country: String? = null,
-        val currentPage: Int? = null
+        val currentPage: Int = 0
     )
 
     private val _state = MutableStateFlow(State())
@@ -63,27 +62,25 @@ class SignupViewModel @AssistedInject constructor(
     val showNotif = _showNotif.asSharedFlow()
     val onNext = _onNext.asSharedFlow()
 
-    private var currentPage: Int? = null
-
-
     val state = when {
-        code.isNotEmpty() ->
-            //Récupération du token Discord à partir de la redirection
+        code.isNotEmpty() -> {
             authDataSource.getToken(code)
                 .mapNotNull { it.successResponse?.accessToken }
                 .filterNot { it.isEmpty() }
                 .onEach {
+                    _state.value = _state.value.copy(currentPage = 4)
                     dataStoreRepository.setAccessToken(it)
-                    currentPage = 4
-
                 }
+
+        }
+
         //Récupération du token en local (user déjà connecté)
         else -> dataStoreRepository.accessToken.filterNot { it.isEmpty() }
     }
         .flatMapLatest { authDataSource.getUser(it) }
         .mapNotNull {
-            if (it.successResponse == null)
-                 currentPage = 6
+            if (it.successResponse == null && code.isNotEmpty())
+                 _state.value = _state.value.copy(currentPage = 6)
             it.successResponse?.id
         }
         //On recherche dans le registre avec l'ID Discord, puis on récupère le fullPlayer avec l'ID du résultat
@@ -106,14 +103,14 @@ class SignupViewModel @AssistedInject constructor(
                 .flatMapLatest { fetchUseCase.fetchWars(teamId.toString()) }
                 .onEach {
                     dataStoreRepository.setLastUpdate(Date().time)
-                    currentPage = 5
+                    _state.value = _state.value.copy(currentPage = 5)
                     delay(2000)
                     _onNext.emit(Unit)
                 }.launchIn(viewModelScope)
 
 
 
-            _state.value.copy(currentPage = currentPage, launched = true)
+            _state.value.copy(launched = true)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
@@ -128,7 +125,7 @@ class SignupViewModel @AssistedInject constructor(
     fun onRetry() {
         viewModelScope.launch {
             dataStoreRepository.setAccessToken("")
-            currentPage = 3
+            _state.value = _state.value.copy(currentPage = 3)
         }
     }
 }

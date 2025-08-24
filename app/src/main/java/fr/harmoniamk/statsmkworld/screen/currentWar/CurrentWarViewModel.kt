@@ -60,38 +60,19 @@ class CurrentWarViewModel @Inject constructor(
             .flatMapLatest { firebaseRepository.listenToCurrentWar(it.id.toString()) }
             .filterNotNull()
             .onEach {
+                val teamHost = databaseRepository.getTeam(it.teamHost).firstOrNull()
+                val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
+                val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
+
                 _state.value = state.value.copy(
                     details = WarDetails(it),
                     players = it.withPlayersList(databaseRepository, firebaseRepository),
+                    teamHost = teamHost,
+                    teamOpponent = teamOpponent,
+                    buttonsVisible = buttonsVisible,
                     isOver = it.tracks.size == 12
                 )
             }.launchIn(viewModelScope)
-    }
-
-
-    fun onResume() {
-        dataStoreRepository.mkcTeam
-            .mapNotNull { it.id }
-            .mapNotNull {
-                val datastoreWar = dataStoreRepository.war.firstOrNull()
-                (datastoreWar ?: firebaseRepository.getCurrentWar(it.toString())
-                    .firstOrNull())?.let { war ->
-                    val teamHost = databaseRepository.getTeam(war.teamHost).firstOrNull()
-                    val teamOpponent = databaseRepository.getTeam(war.teamOpponent).firstOrNull()
-                    val buttonsVisible = datastoreWar != null
-                    State(
-                        details = WarDetails(war),
-                        players = war.withPlayersList(databaseRepository, firebaseRepository),
-                        teamHost = teamHost,
-                        teamOpponent = teamOpponent,
-                        buttonsVisible = buttonsVisible,
-                        isOver = war.tracks.size == 12
-                    )
-                }
-            }
-            .onEach { _state.value = it }
-            .launchIn(viewModelScope)
-
     }
 
 

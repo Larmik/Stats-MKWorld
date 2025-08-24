@@ -60,7 +60,7 @@ fun StatsRankingScreen(
                 else -> R.string.rechercher_un_circuit
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                MKTextField(baseModifier = Modifier.weight(1f), value = searchValue.value, onValueChange = {
+                MKTextField(baseModifier = Modifier.weight(1f), value = searchValue.value, backgroundColor = Colors.blackAlphaed, onValueChange = {
                     searchValue.value = it
                     viewModel.onSearch(it)
                 }, placeHolderRes = placeHolder)

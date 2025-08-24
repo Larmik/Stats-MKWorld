@@ -46,12 +46,9 @@ fun SignupScreen(
     val pagerState = rememberPagerState()
     val state = viewModel.state.collectAsState()
 
-    LaunchedEffect(state.value) {
-        state.value.currentPage?.let { page ->
-            selectedIndex.intValue = page
-            scope.launch { pagerState.animateScrollToPage(selectedIndex.intValue) }
-        }
-
+    LaunchedEffect(state.value.currentPage) {
+        selectedIndex.intValue = state.value.currentPage
+        scope.launch { pagerState.animateScrollToPage(selectedIndex.intValue) }
     }
 
     LaunchedEffect(Unit) {
