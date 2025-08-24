@@ -120,7 +120,11 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 showMenu = id == "me",
                 lastUpdate = lastUpdate,
                 adminButtonLabel = role.takeIf { role ->
-                    role != R.string.leader && isLeader == true && id != "me" && id != _state.value.currentPlayer?.id.toString() && it.rosters?.any { it.teamID.toString() == team?.id.toString() } == true
+                    role != R.string.leader
+                            && isLeader == true
+                            && id != "me"
+                            && id != _state.value.currentPlayer?.id.toString()
+                            && it.rosters?.filter { it.game == "mkworld" }?.any { it.teamID.toString() == team?.id.toString() } == true
                 }?.let {
                     when (it) {
                         R.string.admin -> R.string.basculer_en_tant_que_membre
@@ -182,7 +186,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     country = it.country,
                     role = newRole,
                     currentWar = it.currentWar,
-                    isAlly = it.isAlly
+                    isAlly = it.isAlly,
+                    discordId = it.discordId
                 )
                 databaseRepository.writePlayer(updatedPlayer)
             }

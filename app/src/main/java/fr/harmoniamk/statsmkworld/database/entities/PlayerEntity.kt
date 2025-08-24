@@ -16,6 +16,7 @@ class PlayerEntity(
     @ColumnInfo(name = "role") val role: Int,
     @ColumnInfo(name = "currentWar") val currentWar: String,
     @ColumnInfo(name = "isAlly") val isAlly: Boolean,
+    @ColumnInfo(name = "discordId") val discordId: String,
 ) {
     constructor(player: MKCPlayer, role: Int = 0, isAlly: Boolean = false) : this(
         id = player.id.toString(),
@@ -23,15 +24,17 @@ class PlayerEntity(
         country = player.countryCode,
         role = role,
         currentWar = "",
-        isAlly = isAlly
+        isAlly = isAlly,
+        discordId = player.discord?.discordID.orEmpty()
     )
 
-    constructor(player: MKCTeamPlayer, role: Int = 0, currentWar: String = "", isAlly: Boolean = false) : this(
+    constructor(player: MKCTeamPlayer, role: Int = 0, currentWar: String = "", isAlly: Boolean = false, discordId: String = "") : this(
         id = player.playerId,
         name = player.name,
         country = player.countryCode,
         role = role,
         currentWar = currentWar,
-        isAlly = isAlly
+        isAlly = isAlly,
+        discordId = discordId
     )
 }

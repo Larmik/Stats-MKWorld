@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -54,12 +55,27 @@ class CurrentWarViewModel @Inject constructor(
     val state = _state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
+    init {
+        dataStoreRepository.mkcTeam
+            .flatMapLatest { firebaseRepository.listenToCurrentWar(it.id.toString()) }
+            .filterNotNull()
+            .onEach {
+                _state.value = state.value.copy(
+                    details = WarDetails(it),
+                    players = it.withPlayersList(databaseRepository, firebaseRepository),
+                    isOver = it.tracks.size == 12
+                )
+            }.launchIn(viewModelScope)
+    }
+
+
     fun onResume() {
         dataStoreRepository.mkcTeam
             .mapNotNull { it.id }
             .mapNotNull {
                 val datastoreWar = dataStoreRepository.war.firstOrNull()
-                (datastoreWar ?: firebaseRepository.getCurrentWar(it.toString()).firstOrNull())?.let { war ->
+                (datastoreWar ?: firebaseRepository.getCurrentWar(it.toString())
+                    .firstOrNull())?.let { war ->
                     val teamHost = databaseRepository.getTeam(war.teamHost).firstOrNull()
                     val teamOpponent = databaseRepository.getTeam(war.teamOpponent).firstOrNull()
                     val buttonsVisible = datastoreWar != null
@@ -92,7 +108,9 @@ class CurrentWarViewModel @Inject constructor(
                             user = User(
                                 id = it.id,
                                 currentWar = "",
-                                role = it.role
+                                role = it.role,
+                                name = it.name,
+                                discordId = it.discordId
                             )
                         ).firstOrNull()
                     }

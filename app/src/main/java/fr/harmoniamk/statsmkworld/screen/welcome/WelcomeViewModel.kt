@@ -3,19 +3,26 @@ package fr.harmoniamk.statsmkworld.screen.welcome
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, databaseRepository: DatabaseRepositoryInterface) : ViewModel() {
 
@@ -28,6 +35,15 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
         val currentWar: War? = null,
         var wars: List<WarDetails> = listOf()
     )
+
+    init {
+        dataStoreRepository.mkcTeam
+            .flatMapLatest { firebaseRepository.listenToCurrentWar(it.id.toString()) }
+            .onEach { _state.value = state.value.copy(currentWar = it) }
+            .launchIn(viewModelScope)
+    }
+
+    private val _state = MutableStateFlow(State())
 
     val state = dataStoreRepository.mkcPlayer
         .mapNotNull { player ->
@@ -56,6 +72,7 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
                 )
             }
         }
+        .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
 }

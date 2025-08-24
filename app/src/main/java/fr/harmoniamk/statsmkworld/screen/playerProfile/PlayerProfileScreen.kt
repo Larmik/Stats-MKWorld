@@ -195,7 +195,7 @@ fun PlayerProfileScreen(viewModel: PlayerProfileViewModel, onBack: () -> Unit, o
                         modifier = Modifier.padding(top = 10.dp)
                     )
                 }
-                state.value.adminButtonLabel?.let {
+                state.value.adminButtonLabel?.takeIf { state.value.role != null }?.let {
                     MKButton(text = stringResource(it), style = MKButtonStyle.Gradient, onClick = viewModel::onSwitchRole)
                 }
                 if (state.value.showMenu) {

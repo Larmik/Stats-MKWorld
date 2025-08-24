@@ -87,7 +87,7 @@ class FetchUseCase @Inject constructor(
             databaseRepository.clearPlayers().firstOrNull()
             it.rosters.firstOrNull { it.game == "mkworld" }?.players?.forEach { player ->
                 val user = firebaseRepository.getUser(teamId, player.playerId).firstOrNull()
-                val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty())
+                val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty())
                 databaseRepository.writePlayer(playerEntity).firstOrNull()
             }
         }

@@ -114,7 +114,9 @@ class AddWarViewModel @Inject constructor(
                         user = User(
                             id = it.player.id,
                             currentWar = war.id.toString(),
-                            role = it.player.role
+                            role = it.player.role,
+                            name = it.player.name,
+                            discordId = it.player.discordId
                         )
                     ).firstOrNull()
                     databaseRepository.updateUser(it.player.id, war.id.toString()).firstOrNull()

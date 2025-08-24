@@ -152,7 +152,9 @@ class CurrentWarActionsViewModel @Inject constructor(
                         user = User(
                             id = it.id,
                             currentWar = "",
-                            role = it.role
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
                         )
                     ).firstOrNull()
                 }
@@ -163,7 +165,9 @@ class CurrentWarActionsViewModel @Inject constructor(
                         user = User(
                             id = it.id,
                             currentWar = state.value.war?.id.toString(),
-                            role = it.role
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
                         )
                     ).firstOrNull()
                 }
@@ -187,7 +191,9 @@ class CurrentWarActionsViewModel @Inject constructor(
                             user = User(
                                 id = it.id,
                                 currentWar = "",
-                                role = it.role
+                                role = it.role,
+                                name = it.name,
+                                discordId = it.discordId
                             )
                         ).firstOrNull()
                     }

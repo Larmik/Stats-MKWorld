@@ -178,7 +178,8 @@ fun PlayerCellPreview() {
             country = "FR",
             role = 0,
             currentWar = "",
-            isAlly = false
+            isAlly = false,
+            discordId = ""
         ),
         position = null,
         shocksEnabled = false,
@@ -193,7 +194,8 @@ fun PlayerCellPreview() {
                 country = "FR",
                 role = 0,
                 currentWar = "",
-                isAlly = false
+                isAlly = false,
+                discordId = ""
             ),
             stats = Stats(
                 WarStats(listOf()),
