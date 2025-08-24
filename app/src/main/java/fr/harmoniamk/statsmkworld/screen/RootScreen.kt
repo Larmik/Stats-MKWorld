@@ -18,7 +18,6 @@ import fr.harmoniamk.statsmkworld.screen.addWar.AddWarScreen
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarActionsScreen
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarScreen
 import fr.harmoniamk.statsmkworld.screen.debug.DebugScreen
-import fr.harmoniamk.statsmkworld.screen.editTab.EditTabScreen
 import fr.harmoniamk.statsmkworld.screen.editTrack.EditTrackScreen
 import fr.harmoniamk.statsmkworld.screen.editTrack.EditTrackViewModel
 import fr.harmoniamk.statsmkworld.screen.home.HomeScreen
@@ -38,7 +37,7 @@ import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
 
 @Composable
-fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, onBack: () -> Unit) {
+fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) {
     val navController = rememberNavController()
     NavHost(
         modifier = Modifier.fillMaxSize(),
@@ -69,7 +68,6 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                         factory.create(code)
                     }
                 ),
-                currentPage = currentPage,
                 onBack = onBack,
                 onNext = { navController.navigate("Home") }
             )
@@ -177,7 +175,6 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
                     navController.navigate("Home/TrackDetails/true")
                 },
                 onWarValidated = { navController.navigate("Home") },
-                onEditTab = { navController.navigate("Home/CurrentWar/EditTab")}
             )
         }
 
@@ -248,8 +245,6 @@ fun RootScreen(startDestination: String, code: String = "", currentPage: Int?, o
         composable("Player/Profile/Debug") {
             DebugScreen { navController.popBackStack() }
         }
-        composable("Home/CurrentWar/EditTab") {
-            EditTabScreen { navController.popBackStack() }
-        }
+
     }
 }

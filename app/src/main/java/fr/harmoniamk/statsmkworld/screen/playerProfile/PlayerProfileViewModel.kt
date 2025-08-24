@@ -253,7 +253,6 @@ class PlayerProfileViewModel @AssistedInject constructor(
             .onEach {
                 dataStoreRepository.clearPlayer()
                 dataStoreRepository.clearTeam()
-                dataStoreRepository.setPage(3)
                 _state.value = state.value.copy(confirmDialog = null)
                 _backToLogin.emit(Unit)
             }.launchIn(viewModelScope)

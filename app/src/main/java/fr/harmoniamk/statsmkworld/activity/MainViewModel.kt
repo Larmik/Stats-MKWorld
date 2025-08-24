@@ -31,7 +31,6 @@ class MainViewModel @Inject constructor(
     data class State(
         val startDestination: String? = null,
         val code: String = "",
-        val currentPage: Int? = null,
         val needUpdate: Boolean = false
     )
 
@@ -40,11 +39,10 @@ class MainViewModel @Inject constructor(
     val state = flowOf(Unit)
         .map {
             val player = dataStoreRepository.mkcPlayer.firstOrNull()
-            val currentPage = dataStoreRepository.page.firstOrNull()
             when {
                 remoteConfigRepository.minimumVersion > BuildConfig.VERSION_CODE -> _state.value.copy(needUpdate = true)
                 player?.id != 0L  -> _state.value.copy(startDestination = "Home")
-                else -> _state.value.copy(currentPage = currentPage, startDestination = "Signup")
+                else -> _state.value.copy(startDestination = "Signup")
             }
         }
         .mergeWith(_state)

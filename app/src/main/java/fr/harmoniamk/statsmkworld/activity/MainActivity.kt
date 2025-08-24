@@ -63,7 +63,6 @@ class MainActivity : AppCompatActivity() {
                         RootScreen(
                             startDestination = destination,
                             code = it.code,
-                            currentPage = it.currentPage
                         ) { finish() }
                     }
                     splashscreen.setKeepOnScreenCondition { false }

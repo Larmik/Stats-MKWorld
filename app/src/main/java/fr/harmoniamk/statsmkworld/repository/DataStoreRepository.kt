@@ -34,7 +34,6 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "da
 
 interface DataStoreRepositoryInterface {
     suspend fun setAccessToken(token: String)
-    suspend fun setPage(page: Int)
     suspend fun setLastUpdate(lastUpdate: Long)
     suspend fun setMatrixMode(active: Boolean)
 
@@ -47,7 +46,6 @@ interface DataStoreRepositoryInterface {
     suspend fun clearTeam()
 
     val accessToken: Flow<String>
-    val page: Flow<Int>
     val matrixMode: Flow<Boolean>
     val mkcPlayer: Flow<MKCPlayer>
     val mkcTeam: Flow<MKCTeam>
@@ -72,12 +70,7 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
-    override suspend fun setPage(page: Int) {
-        val key = intPreferencesKey("page")
-        context.dataStore.edit {
-            it[key] = page
-        }
-    }
+
 
     override suspend fun setMKCPlayer(player: MKCPlayer) {
         context.mkcPlayerDataStore.updateData {
@@ -135,11 +128,6 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
             return context.dataStore.data.map { it[key].orEmpty() }
         }
 
-    override val page: Flow<Int>
-        get() {
-            val key = intPreferencesKey("page")
-            return context.dataStore.data.map { it[key]?.toInt() ?: 0 }
-        }
     override val matrixMode: Flow<Boolean>
         get() {
             val key = booleanPreferencesKey("matrixMode")

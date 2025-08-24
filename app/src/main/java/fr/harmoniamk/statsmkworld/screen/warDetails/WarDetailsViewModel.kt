@@ -9,11 +9,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
+import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +29,8 @@ import kotlinx.coroutines.flow.stateIn
 @HiltViewModel(assistedFactory = WarDetailsViewModel.Factory::class)
 class WarDetailsViewModel @AssistedInject constructor(
     @Assisted val warDetails: WarDetails?,
-    private val databaseRepository: DatabaseRepositoryInterface
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val firebaseRepository: FirebaseRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -51,62 +54,13 @@ class WarDetailsViewModel @AssistedInject constructor(
             val teamOpponent = databaseRepository.getTeam(details.war.teamOpponent).firstOrNull()
             State(
                 details = details,
-                players = initPlayersList(details.war),
+                players = details.war.withPlayersList(databaseRepository, firebaseRepository),
                 teamHost = teamHost,
                 teamOpponent = teamOpponent,
             )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
-    private suspend fun initPlayersList(war: War): List<PlayerScore> {
-        val players = databaseRepository.getPlayers().firstOrNull()
-            ?.filter { player -> war.tracks.any { it.positions.any { it.playerId == player.id } } }
-            ?.map { PlayerScore(it, 0, 0, 0) }
-            .orEmpty()
-        val trackList = war.tracks
-        val finalList = mutableListOf<PlayerScore>()
-        val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
-        val shocks = trackList.flatMap { it.shocks.orEmpty() }
-        trackList.forEach {
-            it.positions.takeIf { it.isNotEmpty() }?.let { warPositions ->
-                val trackPositions = mutableListOf<PlayerPosition>()
-                warPositions.forEach { position ->
-                    trackPositions.add(
-                        PlayerPosition(
-                            position = position,
-                            player = players.map { it.player }
-                                .singleOrNull { it?.id == position.playerId }
-                        )
-                    )
 
-                }
-                trackPositions.groupBy { it.player }.entries.forEach { entry ->
-                    positions.add(
-                        Pair(
-                            entry.key,
-                            entry.value.sumOf { playerPos -> playerPos.position.position.positionToPoints() }
-                        )
-                    )
-                }
-            }
-        }
-        val temp = positions.groupBy { it.first }
-            .map { Pair(it.key, it.value.sumOf { it.second }) }
-            .sortedByDescending { it.second }
-        temp.forEach { pair ->
-            finalList.add(
-                PlayerScore(
-                    player = pair.first,
-                    score = pair.second,
-                    trackPlayed = trackList.filter { it.positions.any { it.playerId == pair.first?.id } }.size,
-                    shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
-                )
-            )
-        }
-        players
-            .filter { !finalList.map { it.player?.id }.contains(it.player?.id) }
-            .forEach { finalList.add(it) }
-        return finalList
-    }
 
 }

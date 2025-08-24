@@ -34,7 +34,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun SignupScreen(
     viewModel: SignupViewModel,
-    currentPage: Int?,
     onBack: () -> Unit,
     onNext: () -> Unit
 ) {
@@ -43,7 +42,7 @@ fun SignupScreen(
     val activity = (context.getActivity() as MainActivity)
 
     val scope = rememberCoroutineScope()
-    val selectedIndex = remember { mutableIntStateOf(currentPage ?: 0) }
+    val selectedIndex = remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState()
     val state = viewModel.state.collectAsState()
 

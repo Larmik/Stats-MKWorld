@@ -7,6 +7,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
+import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
@@ -64,7 +65,7 @@ class CurrentWarViewModel @Inject constructor(
                     val buttonsVisible = datastoreWar != null
                     State(
                         details = WarDetails(war),
-                        players = initPlayersList(war),
+                        players = war.withPlayersList(databaseRepository, firebaseRepository),
                         teamHost = teamHost,
                         teamOpponent = teamOpponent,
                         buttonsVisible = buttonsVisible,
@@ -77,68 +78,6 @@ class CurrentWarViewModel @Inject constructor(
 
     }
 
-    private suspend fun initPlayersList(war: War): List<PlayerScore> {
-
-        val localPlayers = databaseRepository.getPlayers().firstOrNull()
-
-        val currentLocalPlayers = localPlayers
-            ?.filter { player -> war.tracks.flatMap { it.positions }.any { it.playerId == player.id  } || player.currentWar == war.id.toString() }
-            ?.map { PlayerScore(it, 0, 0, 0) }
-            .orEmpty()
-
-
-        val players = when (currentLocalPlayers.isEmpty()) {
-            true -> firebaseRepository.getUsers(war.teamHost)
-                .firstOrNull()
-                ?.filter { player -> war.tracks.flatMap { it.positions }.any { it.playerId == player.id  } ||  player.currentWar == war.id.toString()}
-                ?.map { user -> localPlayers?.firstOrNull { it.id == user.id } }
-                ?.map { PlayerScore(it, 0, 0, 0) }
-                .orEmpty()
-
-            else -> currentLocalPlayers
-        }
-
-        val trackList = war.tracks
-        val finalList = mutableListOf<PlayerScore>()
-        val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
-        val shocks =  trackList.flatMap { it.shocks.orEmpty() }
-        trackList.forEach {
-            it.positions.takeIf { it.isNotEmpty() }?.let { warPositions ->
-                val trackPositions = mutableListOf<PlayerPosition>()
-                warPositions.forEach { position ->
-                        trackPositions.add(
-                            PlayerPosition(
-                                position = position,
-                                player = players.map { it.player }.singleOrNull { it?.id == position.playerId }
-                            )
-                        )
-                }
-                trackPositions.groupBy { it.player }.entries.forEach { entry ->
-                    positions.add(
-                        Pair(
-                            entry.key,
-                            entry.value.sumOf { playerPos -> playerPos.position.position.positionToPoints() }
-                        )
-                    )
-                }
-            }
-        }
-        val temp = positions.groupBy { it.first }
-            .map { Pair(it.key, it.value.sumOf { it.second }) }
-            .sortedByDescending { it.second }
-        temp.forEach { pair ->
-            finalList.add(PlayerScore(
-                player = pair.first,
-                score = pair.second,
-                trackPlayed = trackList.filter { it.positions.any { it.playerId == pair.first?.id } }.size,
-                shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
-            ))
-        }
-        players
-            .filter { !finalList.map { it.player?.id }.contains(it.player?.id) }
-            .forEach { finalList.add(it) }
-        return finalList
-    }
 
     fun onValidateWar() {
         _state.value.details?.war?.let { war ->

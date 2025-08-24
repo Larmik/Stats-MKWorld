@@ -2,8 +2,11 @@ package fr.harmoniamk.statsmkworld.screen.stats
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -13,11 +16,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
+import fr.harmoniamk.statsmkworld.ui.cells.WarCell
+import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 import fr.harmoniamk.statsmkworld.ui.stats.MKMapsStatsCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKPlayerScoreCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKTeamStatsView
@@ -50,6 +58,23 @@ fun StatsScreen(viewModel: StatsViewModel) {
                 MKWarDetailsStatsView(state.value.stats, state.value.mapStats, type = viewModel.type)
                 if (viewModel.type !is StatsType.MapStats)
                     MKPlayerScoreCell(stats = state.value.stats, type = viewModel.type)
+                if (viewModel.type is StatsType.OpponentStats) {
+                    MKText(text = "Historique des wars")
+                    state.value.stats?.warStats?.list?.safeSubList(0, 5)?.map {
+                        WarCell(
+                            modifier = Modifier.padding(vertical = 5.dp),
+                            viewModel = hiltViewModel(
+                                key = it.war.id.toString(),
+                                creationCallback = { factory: WarCellViewModel.Factory ->
+                                    factory.create(it)
+                                }
+                            ),
+                            onClick = { }
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+
                 if (viewModel.type is StatsType.PlayerStats || viewModel.type is StatsType.TeamStats)
                     MKTeamStatsView(state.value.stats)
                 if (viewModel.type !is StatsType.MapStats)

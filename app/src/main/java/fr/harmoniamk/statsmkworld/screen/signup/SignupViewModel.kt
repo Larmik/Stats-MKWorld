@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -66,14 +65,6 @@ class SignupViewModel @AssistedInject constructor(
 
     private var currentPage: Int? = null
 
-    init {
-        dataStoreRepository.page
-            .distinctUntilChanged()
-            .onEach {
-                _state.value = _state.value.copy(currentPage = it)
-                currentPage = it
-            }.launchIn(viewModelScope)
-    }
 
     val state = when {
         code.isNotEmpty() ->
@@ -83,17 +74,16 @@ class SignupViewModel @AssistedInject constructor(
                 .filterNot { it.isEmpty() }
                 .onEach {
                     dataStoreRepository.setAccessToken(it)
-                    dataStoreRepository.setPage(4)
+                    currentPage = 4
 
                 }
         //Récupération du token en local (user déjà connecté)
         else -> dataStoreRepository.accessToken.filterNot { it.isEmpty() }
     }
-        .onEach { currentPage = dataStoreRepository.page.firstOrNull() }
         .flatMapLatest { authDataSource.getUser(it) }
         .mapNotNull {
             if (it.successResponse == null)
-                 dataStoreRepository.setPage(6)
+                 currentPage = 6
             it.successResponse?.id
         }
         //On recherche dans le registre avec l'ID Discord, puis on récupère le fullPlayer avec l'ID du résultat
@@ -116,7 +106,7 @@ class SignupViewModel @AssistedInject constructor(
                 .flatMapLatest { fetchUseCase.fetchWars(teamId.toString()) }
                 .onEach {
                     dataStoreRepository.setLastUpdate(Date().time)
-                    dataStoreRepository.setPage(5)
+                    currentPage = 5
                     delay(2000)
                     _onNext.emit(Unit)
                 }.launchIn(viewModelScope)
@@ -138,7 +128,7 @@ class SignupViewModel @AssistedInject constructor(
     fun onRetry() {
         viewModelScope.launch {
             dataStoreRepository.setAccessToken("")
-            dataStoreRepository.setPage(3)
+            currentPage = 3
         }
     }
 }
