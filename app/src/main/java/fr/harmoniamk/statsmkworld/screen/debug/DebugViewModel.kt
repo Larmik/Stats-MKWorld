@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
+import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -84,6 +85,17 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
             .flatMapLatest { fetchUseCase.manageTransferts() }
             .onEach {
                 _sharedLoading.emit(null)
+            }.launchIn(viewModelScope)
+    }
+
+    fun migrateAllies() {
+        dataStoreRepository.mkcTeam
+            .onEach { team ->
+                firebaseRepository.getOldAllies(team.id.toString()).firstOrNull()?.forEach { allyId ->
+                    val player = mkCentralDataSource.getPlayer(allyId).firstOrNull()?.successResponse
+                    val user = User(player)
+                    firebaseRepository.writeAlly(team.id.toString(), user).firstOrNull()
+                }
             }.launchIn(viewModelScope)
     }
 

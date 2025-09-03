@@ -140,7 +140,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
 
     fun onAddAlly() {
         dataStoreRepository.mkcTeam
-            .flatMapLatest { firebaseRepository.writeAlly(it.id.toString(), id) }
+            .flatMapLatest { firebaseRepository.writeOldAlly(it.id.toString(), id) }
             .mapNotNull { state.value.player }
             .map { PlayerEntity(player = it, isAlly = true) }
             .flatMapLatest { databaseRepository.addAlly(it) }

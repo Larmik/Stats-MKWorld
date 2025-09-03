@@ -17,10 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKButton
+import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.WarScoreView
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
@@ -30,7 +33,8 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
 fun WarDetailsScreen(
     viewModel: WarDetailsViewModel,
     onBack: () -> Unit,
-    onTrackClick: (WarTrackDetails) -> Unit
+    onTrackClick: (WarTrackDetails) -> Unit,
+    onTab: (WarDetails) -> Unit
 ) {
     val state = viewModel.state.collectAsState()
 
@@ -51,7 +55,9 @@ fun WarDetailsScreen(
                 Modifier.padding(vertical = 5.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-
+                MKButton(style = MKButtonStyle.Minor(Colors.black), text = "Tab") {
+                    viewModel.warDetails?.let { onTab(it) }
+                }
             }
             Spacer((Modifier
                 .fillMaxWidth()

@@ -18,6 +18,8 @@ import fr.harmoniamk.statsmkworld.screen.addWar.AddWarScreen
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarActionsScreen
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarScreen
 import fr.harmoniamk.statsmkworld.screen.debug.DebugScreen
+import fr.harmoniamk.statsmkworld.screen.editTab.EditTabScreen
+import fr.harmoniamk.statsmkworld.screen.editTab.EditTabViewModel
 import fr.harmoniamk.statsmkworld.screen.editTrack.EditTrackScreen
 import fr.harmoniamk.statsmkworld.screen.editTrack.EditTrackViewModel
 import fr.harmoniamk.statsmkworld.screen.home.HomeScreen
@@ -201,7 +203,23 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onTrackClick = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
                     navController.navigate("Home/TrackDetails/false")
+                },
+                onTab = {
+                    navController.currentBackStackEntry?.savedStateHandle?.set("details", it)
+                    navController.navigate("Home/WarDetails/Tab")
                 }
+            )
+        }
+
+        composable("Home/WarDetails/Tab") {
+            val details = navController.previousBackStackEntry?.savedStateHandle?.get<WarDetails>("details")
+            EditTabScreen(
+                viewModel = hiltViewModel(
+                    key = details?.war?.id.toString(),
+                    creationCallback = { factory: EditTabViewModel.Factory ->
+                        factory.create(details)
+                    }
+                ), onBack = { navController.popBackStack() }
             )
         }
 

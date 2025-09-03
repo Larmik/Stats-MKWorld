@@ -13,11 +13,11 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.view.View
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import androidx.core.view.isVisible
+import com.github.mikephil.charting.charts.LineChart
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -25,6 +25,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.setData
+import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerScoreForTab
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +43,15 @@ import javax.inject.Singleton
 interface PDFRepositoryInterface {
     fun write(pdfDocument: PdfDocument, fileName: String): Flow<Uri?>
     fun generatePdf(details: WarDetails, teamWin: TeamEntity?, teamLose: TeamEntity?, hostScores: List<PlayerScoreForTab>, opponentScores: List<PlayerScoreForTab>): PdfDocument
+    fun generateDetailedPdf(
+        details: WarDetails,
+        teamHost: TeamEntity?,
+        teamOpponent: TeamEntity?,
+        hostScores: List<PlayerScoreForTab>,
+        opponentScores: List<PlayerScoreForTab>,
+        teamHostLogo: Bitmap?,
+        teamOpponentLogo: Bitmap?
+    ): PdfDocument
 }
 
 
@@ -102,7 +113,6 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
             allScores.size == 18 -> 1390
             else -> 970
         }
-
         details.war.penalties.filter { it.teamId == teamWin?.id }.sumOf { it.amount }.takeIf { it > 0 }?.let {
             winHasPena = true
             pdfView.findViewById<TextView>(R.id.tab_winner_team_penalty_layout).isVisible = true
@@ -135,16 +145,14 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
                 pair.second == teamLose?.id -> playersLose.add(Pair(pair.first, rank))
             }
         }
+        val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.let { Maps.entries[it] }
+        pdfView.findViewById<ImageView>(R.id.tab_bg).setImageResource(bestTrack?.background ?: R.drawable.rsl)
         pdfView.findViewById<TextView>(R.id.tab_war_date).text = details.date
         pdfView.findViewById<TextView>(R.id.tab_war_diff).text = details.displayedDiff
         pdfView.findViewById<TextView>(R.id.tab_winner_team_tag).text = teamWin?.tag
         pdfView.findViewById<TextView>(R.id.tab_winner_team_name).text = teamWin?.name
         pdfView.findViewById<TextView>(R.id.tab_loser_team_tag).text = teamLose?.tag
         pdfView.findViewById<TextView>(R.id.tab_loser_team_name).text = teamLose?.name
-        if (teamWin?.id == details.war.teamHost)
-            pdfView.findViewById<LinearLayout>(R.id.tab_winner_team_layout).setBackgroundColor(context.getColor(R.color.blue_hr))
-        if (teamLose?.id == details.war.teamHost)
-            pdfView.findViewById<LinearLayout>(R.id.tab_loser_team_layout).setBackgroundColor(context.getColor(R.color.blue_hr))
         pdfView.findViewById<TextView>(R.id.tab_winner_team_score).text = when {
             teamWin?.id == details.war.teamHost -> details.scoreHostWithPenalties.toString()
             teamWin?.id == details.war.teamOpponent -> details.scoreOpponentWithPenalties.toString()
@@ -353,6 +361,328 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
             pdfView.findViewById<TextView>(R.id.tab_loser_team_ninth_player_name).text =  it.first.player
             pdfView.findViewById<TextView>(R.id.tab_loser_team_ninth_player_score).text = it.first.score.toString()
             pdfView.findViewById<TextView>(R.id.tab_loser_team_ninth_player_rank).text = it.second.toString() + "th"
+        }
+        pdfView.measure(measureWidth, measuredHeight)
+        pdfView.layout(0, 0, pageWidth, pageHeight)
+        pdfView.draw(pageCanvas)
+        doc.finishPage(page)
+        return doc
+    }
+
+    override fun generateDetailedPdf(
+        details: WarDetails,
+        teamHost: TeamEntity?,
+        teamOpponent: TeamEntity?,
+        hostScores: List<PlayerScoreForTab>,
+        opponentScores: List<PlayerScoreForTab>,
+        teamHostLogo: Bitmap?,
+        teamOpponentLogo: Bitmap?
+    ): PdfDocument {
+        val pdfView: View = View.inflate(context, R.layout.detailed_tab_pdf, null)
+        val allScores = (hostScores.map { Pair(it, details.war.teamHost) } + opponentScores.map { Pair(it, details.war.teamOpponent) }).sortedByDescending { it.first.score }
+        val playersHost: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
+        val playersOpponent: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
+        val doc = PdfDocument()
+        var hostHasPena = false
+        var opponentHasPena = false
+        var height = when  {
+            allScores.size == 13 -> 1040
+            allScores.size == 14 -> 1110
+            allScores.size == 15 -> 1180
+            allScores.size == 16 -> 1250
+            allScores.size == 17 -> 1320
+            allScores.size == 18 -> 1390
+            else -> 970
+        }
+        pdfView.findViewById<LineChart>(R.id.tab_graph).setData(details)
+        val maps = Maps.entries
+        pdfView.findViewById<ImageView>(R.id.tab_first_map).setImageResource(maps[details.warTracks[0].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_second_map).setImageResource(maps[details.warTracks[1].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_third_map).setImageResource(maps[details.warTracks[2].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_fourth_map).setImageResource(maps[details.warTracks[3].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_fifth_map).setImageResource(maps[details.warTracks[4].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_sixth_map).setImageResource(maps[details.warTracks[5].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_seventh_map).setImageResource(maps[details.warTracks[6].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_eighth_map).setImageResource(maps[details.warTracks[7].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_ninth_map).setImageResource(maps[details.warTracks[8].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_tenth_map).setImageResource(maps[details.warTracks[9].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_eleventh_map).setImageResource(maps[details.warTracks[10].track.index].picture)
+        pdfView.findViewById<ImageView>(R.id.tab_last_map).setImageResource(maps[details.warTracks[11].track.index].picture)
+
+        details.war.penalties.filter { it.teamId == teamHost?.id }.sumOf { it.amount }.takeIf { it > 0 }?.let {
+            hostHasPena = true
+            pdfView.findViewById<TextView>(R.id.tab_home_team_penalty_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_home_team_penalty_score).text =  "-$it"
+        }
+        details.war.penalties.filter { it.teamId == teamOpponent?.id }.sumOf { it.amount }.takeIf { it > 0 }?.let {
+            opponentHasPena = true
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_penalty_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_penalty_score).text =  "-$it"
+        }
+        when {
+            hostHasPena && opponentHasPena -> height += 140
+            hostHasPena || opponentHasPena -> height += 70
+        }
+        val pageInfo = PdfDocument.PageInfo.Builder(1630, 1250, 1).create()
+        val page = doc.startPage(pageInfo)
+        val pageCanvas: Canvas = page.canvas
+        pageCanvas.scale(1f, 1f)
+        val pageWidth: Int = pageCanvas.width
+        val pageHeight: Int = pageCanvas.height
+        val measureWidth: Int = View.MeasureSpec.makeMeasureSpec(pageWidth, View.MeasureSpec.EXACTLY)
+        val measuredHeight: Int = View.MeasureSpec.makeMeasureSpec(pageHeight, View.MeasureSpec.EXACTLY)
+        allScores.forEachIndexed { index, pair ->
+            val rank = when (pair.first.score == allScores.getOrNull(index-1)?.first?.score) {
+                true -> index
+                else -> index + 1
+            }
+            when {
+                pair.second == teamHost?.id -> playersHost.add(Pair(pair.first, rank))
+                pair.second == teamOpponent?.id -> playersOpponent.add(Pair(pair.first, rank))
+            }
+        }
+        val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.let { maps[it] }
+
+        pdfView.findViewById<ImageView>(R.id.tab_bg).setImageResource(bestTrack?.background ?: R.drawable.rsl)
+        pdfView.findViewById<TextView>(R.id.tab_war_date).text = details.date
+        pdfView.findViewById<TextView>(R.id.tab_war_diff).text = details.displayedDiff
+        pdfView.findViewById<TextView>(R.id.tab_war_shocks).text = "x${playersHost.sumOf { it.first.shockCount }}"
+        pdfView.findViewById<TextView>(R.id.tab_home_team_tag).text = teamHost?.tag
+        pdfView.findViewById<TextView>(R.id.tab_home_team_name).text = teamHost?.name
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_tag).text = teamOpponent?.tag
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_name).text = teamOpponent?.name
+        pdfView.findViewById<TextView>(R.id.tab_home_team_score).text =  details.scoreHostWithPenalties.toString()
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_score).text  = details.scoreOpponentWithPenalties.toString()
+
+        pdfView.findViewById<ImageView>(R.id.tab_first_map_shock).takeIf { details.warTracks[0].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_second_map_shock).takeIf { details.warTracks[1].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_third_map_shock).takeIf { details.warTracks[2].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_fourth_map_shock).takeIf { details.warTracks[3].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_fifth_map_shock).takeIf { details.warTracks[4].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_sixth_map_shock).takeIf { details.warTracks[5].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_seventh_map_shock).takeIf { details.warTracks[6].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_eighth_map_shock).takeIf { details.warTracks[7].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_ninth_map_shock).takeIf { details.warTracks[8].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_tenth_map_shock).takeIf { details.warTracks[9].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_eleventh_map_shock).takeIf { details.warTracks[10].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+        pdfView.findViewById<ImageView>(R.id.tab_last_map_shock).takeIf { details.warTracks[11].track.shocks.orEmpty().sumOf { it.count } > 0 }?.isVisible = true
+
+        teamHostLogo?.let {
+            pdfView.findViewById<ImageView>(R.id.tab_home_team_logo).setImageBitmap(it)
+        }
+        teamOpponentLogo?.let {
+            pdfView.findViewById<ImageView>(R.id.tab_opponent_team_logo).setImageBitmap(it)
+        }
+
+        pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_name).text = playersHost[0].first.player
+        pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_score).text = playersHost[0].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_shocks).text = "x${playersHost[0].first.shockCount}"
+        when (playersHost[0].second) {
+            1 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_first_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_first_player_asset).setImageResource(R.drawable.couronne)
+            }
+            2 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_first_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_first_player_asset).setImageResource(R.drawable.silver)
+            }
+            3 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_first_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_first_player_asset).setImageResource(R.drawable.bronze)
+            }
+            else -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_rank).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_first_player_asset).isVisible = false
+                pdfView.findViewById<TextView>(R.id.tab_home_team_first_player_rank).text = playersHost[0].second.toString() + "th"
+            }
+        }
+        when (playersHost[1].second) {
+            1 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_second_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_second_player_asset).setImageResource(R.drawable.couronne)
+            }
+            2 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_second_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_second_player_asset).setImageResource(R.drawable.silver)
+            }
+            3 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_second_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_second_player_asset).setImageResource(R.drawable.bronze)
+            }
+            else -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_rank).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_second_player_asset).isVisible = false
+                pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_rank).text = playersHost[1].second.toString() + "th"
+            }
+        }
+        when (playersHost[2].second) {
+            1 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_third_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_third_player_asset).setImageResource(R.drawable.couronne)
+            }
+            2 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_third_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_third_player_asset).setImageResource(R.drawable.silver)
+            }
+            3 -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_third_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_third_player_asset).setImageResource(R.drawable.bronze)
+            }
+            else -> {
+                pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_rank).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_home_team_third_player_asset).isVisible = false
+                pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_rank).text = playersHost[2].second.toString() + "th"
+            }
+        }
+        pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_name).text =  playersHost[1].first.player
+        pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_score).text = playersHost[1].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_home_team_second_player_shocks).text = "x${playersHost[1].first.shockCount}"
+
+        pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_name).text =  playersHost[2].first.player
+        pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_score).text = playersHost[2].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_home_team_third_player_shocks).text = "x${playersHost[2].first.shockCount}"
+
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fourth_player_name).text =  playersHost[3].first.player
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fourth_player_score).text = playersHost[3].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fourth_player_shocks).text = "x${playersHost[3].first.shockCount}"
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fourth_player_rank).text = playersHost[3].second.toString() + "th"
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fifth_player_name).text =  playersHost[4].first.player
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fifth_player_score).text = playersHost[4].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fifth_player_shocks).text = "x${playersHost[4].first.shockCount}"
+
+        pdfView.findViewById<TextView>(R.id.tab_home_team_fifth_player_rank).text = playersHost[4].second.toString() + "th"
+        pdfView.findViewById<TextView>(R.id.tab_home_team_sixth_player_name).text =  playersHost[5].first.player
+        pdfView.findViewById<TextView>(R.id.tab_home_team_sixth_player_score).text = playersHost[5].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_home_team_sixth_player_shocks).text = "x${playersHost[5].first.shockCount}"
+        pdfView.findViewById<TextView>(R.id.tab_home_team_sixth_player_rank).text = playersHost[5].second.toString() + "th"
+        playersHost.getOrNull(6)?.let {
+            pdfView.findViewById<TextView>(R.id.tab_home_team_seventh_player_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_home_team_seventh_player_name).text =  it.first.player
+            pdfView.findViewById<TextView>(R.id.tab_home_team_seventh_player_score).text = it.first.score.toString()
+            pdfView.findViewById<TextView>(R.id.tab_home_team_seventh_player_shocks).text = "x${it.first.shockCount}"
+            pdfView.findViewById<TextView>(R.id.tab_home_team_seventh_player_rank).text = it.second.toString() + "th"
+        }
+        playersHost.getOrNull(7)?.let {
+            pdfView.findViewById<TextView>(R.id.tab_home_team_eighth_player_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_home_team_eighth_player_name).text =  it.first.player
+            pdfView.findViewById<TextView>(R.id.tab_home_team_eighth_player_score).text = it.first.score.toString()
+            pdfView.findViewById<TextView>(R.id.tab_home_team_eighth_player_shocks).text = "x${it.first.shockCount}"
+            pdfView.findViewById<TextView>(R.id.tab_home_team_eighth_player_rank).text = it.second.toString() + "th"
+        }
+        playersHost.getOrNull(8)?.let {
+            pdfView.findViewById<TextView>(R.id.tab_home_team_ninth_player_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_home_team_ninth_player_name).text =  it.first.player
+            pdfView.findViewById<TextView>(R.id.tab_home_team_ninth_player_score).text = it.first.score.toString()
+            pdfView.findViewById<TextView>(R.id.tab_home_team_ninth_player_shocks).text = "x${it.first.shockCount}"
+            pdfView.findViewById<TextView>(R.id.tab_home_team_ninth_player_rank).text = it.second.toString() + "th"
+        }
+        when (playersOpponent[0].second) {
+            1 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_first_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_first_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_first_player_asset).setImageResource(R.drawable.couronne)
+            }
+            2 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_first_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_first_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_first_player_asset).setImageResource(R.drawable.silver)
+            }
+            3 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_first_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_first_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_first_player_asset).setImageResource(R.drawable.bronze)
+            }
+            else -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_first_player_rank).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_first_player_asset).isVisible = false
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_first_player_rank).text = playersOpponent[0].second.toString() + "th"
+            }
+        }
+        when (playersOpponent[1].second) {
+            1 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_second_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_second_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_second_player_asset).setImageResource(R.drawable.couronne)
+            }
+            2 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_second_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_second_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_second_player_asset).setImageResource(R.drawable.silver)
+            }
+            3 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_second_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_second_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_second_player_asset).setImageResource(R.drawable.bronze)
+            }
+            else -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_second_player_rank).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_second_player_asset).isVisible = false
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_second_player_rank).text = playersOpponent[1].second.toString() + "th"
+            }
+        }
+        when (playersOpponent[2].second) {
+            1 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_third_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_third_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_third_player_asset).setImageResource(R.drawable.couronne)
+            }
+            2 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_third_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_third_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_third_player_asset).setImageResource(R.drawable.silver)
+            }
+            3 -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_third_player_rank).isVisible = false
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_third_player_asset).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_third_player_asset).setImageResource(R.drawable.bronze)
+            }
+            else -> {
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_third_player_rank).isVisible = true
+                pdfView.findViewById<ImageView>(R.id.tab_opponent_team_third_player_asset).isVisible = false
+                pdfView.findViewById<TextView>(R.id.tab_opponent_team_third_player_rank).text = playersOpponent[2].second.toString() + "th"
+            }
+        }
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_first_player_name).text = playersOpponent[0].first.player
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_first_player_score).text = playersOpponent[0].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_second_player_name).text =  playersOpponent[1].first.player
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_second_player_score).text = playersOpponent[1].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_third_player_name).text =  playersOpponent[2].first.player
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_third_player_score).text = playersOpponent[2].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_fourth_player_name).text =  playersOpponent[3].first.player
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_fourth_player_score).text = playersOpponent[3].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_fourth_player_rank).text = playersOpponent[3].second.toString() + "th"
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_fifth_player_name).text =  playersOpponent[4].first.player
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_fifth_player_score).text = playersOpponent[4].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_fifth_player_rank).text = playersOpponent[4].second.toString() + "th"
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_sixth_player_name).text =  playersOpponent[5].first.player
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_sixth_player_score).text = playersOpponent[5].first.score.toString()
+        pdfView.findViewById<TextView>(R.id.tab_opponent_team_sixth_player_rank).text = playersOpponent[5].second.toString() + "th"
+        playersOpponent.getOrNull(6)?.let {
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_seventh_player_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_seventh_player_name).text =  it.first.player
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_seventh_player_score).text = it.first.score.toString()
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_seventh_player_rank).text = it.second.toString() + "th"
+        }
+        playersOpponent.getOrNull(7)?.let {
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_eighth_player_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_eighth_player_name).text =  it.first.player
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_eighth_player_score).text = it.first.score.toString()
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_eighth_player_rank).text = it.second.toString() + "th"
+        }
+        playersOpponent.getOrNull(8)?.let {
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_ninth_player_layout).isVisible = true
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_ninth_player_name).text =  it.first.player
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_ninth_player_score).text = it.first.score.toString()
+            pdfView.findViewById<TextView>(R.id.tab_opponent_team_ninth_player_rank).text = it.second.toString() + "th"
         }
         pdfView.measure(measureWidth, measuredHeight)
         pdfView.layout(0, 0, pageWidth, pageHeight)

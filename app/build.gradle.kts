@@ -153,6 +153,7 @@ dependencies {
 
     // Splashscreen
     implementation(libs.androidx.core.splashscreen)
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }
 protobuf {
     protoc {

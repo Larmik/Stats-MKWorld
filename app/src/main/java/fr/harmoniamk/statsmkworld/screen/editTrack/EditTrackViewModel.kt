@@ -113,7 +113,7 @@ class EditTrackViewModel @AssistedInject constructor(
             dataStoreRepository.war.firstOrNull()?.let { war ->
                 val tracks = war.tracks.toMutableList()
                 details?.track?.let { track ->
-                    war.tracks.indexOf(track).takeIf { it != -1 }?.let { index ->
+                    war.tracks.map { it.id }.indexOf(track.id).takeIf { it != -1 }?.let { index ->
                         val shocks = state.value.shocks.map { Shock(it.key, it.value) }
                         val trackWithShock = when (shocks.isEmpty()) {
                             true -> track

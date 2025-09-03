@@ -6,6 +6,14 @@ plugins {
     id("com.google.protobuf") version "0.9.4" apply false
 }
 
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+
 buildscript {
     repositories {
         google()

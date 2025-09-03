@@ -50,9 +50,12 @@ interface FirebaseRepositoryInterface {
     fun writeCurrentWar(war: War): Flow<Unit>
     fun deleteCurrentWar(teamId: String): Flow<Unit>
 
-    fun getAllies(teamId: String): Flow<List<String>>
-    fun writeAlly(teamId: String, ally: String): Flow<Unit>
+    fun getOldAllies(teamId: String): Flow<List<String>>
+    fun writeOldAlly(teamId: String, ally: String): Flow<Unit>
     fun deleteAlly(teamId: String, ally: String): Flow<Unit>
+
+    fun getAllies(teamId: String): Flow<List<User>>
+    fun writeAlly(teamId: String, user: User): Flow<Unit>
 
     fun log(message: String, type: String): Flow<Unit>
     fun writeTags(tags: List<Tag>) : Flow<Unit>
@@ -185,7 +188,7 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         emit(Unit)
     }
 
-    override fun getAllies(teamId: String): Flow<List<String>> = callbackFlow {
+    override fun getOldAllies(teamId: String): Flow<List<String>> = callbackFlow {
         Log.d("MKDebugOnly", "FirebaseRepository getAllies")
         database.child("allies").child(teamId).get().addOnSuccessListener { snapshot ->
             val teams: List<String> = snapshot.children.map { it.value as String }
@@ -193,6 +196,14 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         }
         awaitClose { }
     }.flowOn(Dispatchers.IO)
+
+    override fun writeAlly(
+        teamId: String,
+        user: User
+    ): Flow<Unit> = flow {
+        database.child("newAllies").child(teamId).child(user.id).setValue(user)
+        emit(Unit)
+    }
 
     override fun getUsers(teamId: String): Flow<List<User>> = callbackFlow {
         database.child("users").child(teamId).get().addOnSuccessListener { snapshot ->
@@ -212,13 +223,31 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    override fun writeAlly(teamId: String, ally: String): Flow<Unit> =
-        getAllies(teamId)
+    override fun writeOldAlly(teamId: String, ally: String): Flow<Unit> =
+        getOldAllies(teamId)
             .map { database.child("allies").child(teamId).child(it.size.toString()).setValue(ally) }
 
     override fun deleteAlly(teamId: String, ally: String): Flow<Unit> = flow {
         database.child("allies").child(teamId).child(ally).removeValue()
     }
+
+    override fun getAllies(teamId: String): Flow<List<User>> = callbackFlow {
+        database.child("newAllies").child(teamId).get().addOnSuccessListener { snapshot ->
+            val wars: List<User> = snapshot.children
+                .map { it.value as Map<*, *> }
+                .map { map ->
+                    User(
+                        id = map["id"].toString(),
+                        currentWar = map["currentWar"].toString(),
+                        role = map["role"].toString().toIntOrNull() ?: 0,
+                        name = map["name"].toString(),
+                        discordId = map["discordId"].toString()
+                    )
+                }
+            if (isActive) trySend(wars)
+        }
+        awaitClose { }
+    }.flowOn(Dispatchers.IO)
 
     override fun log(message: String, type: String): Flow<Unit> = flow {
         database.child("debug").child(Date().displayedString("dd-MM-yyyy")).child(type)

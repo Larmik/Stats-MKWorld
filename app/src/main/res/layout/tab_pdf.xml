@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="@color/white"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical">
@@ -18,25 +18,37 @@
             android:text="N° 52 - 18 Août 2025"
             android:textColor="#FFFFFF"
             android:textAlignment="center"
-            android:fontFamily="@font/bungee"
+            android:fontFamily="@font/nunito_bd"
             android:gravity="center"/>
 
     </LinearLayout>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:background="#AA0A0A0A"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.5"
+            android:id="@+id/tab_bg"
+            android:scaleType="fitXY"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:src="@drawable/rsl"/>
 
         <RelativeLayout
             android:layout_width="match_parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             android:layout_height="wrap_content">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center"
                 android:orientation="vertical">
                 <LinearLayout
                     android:id="@+id/tab_winner_team_layout"
@@ -53,8 +65,9 @@
                         android:layout_weight="1"
                         android:layout_height="wrap_content">
                         <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:translationY="14dp"
                             android:padding="5dp"
                             android:src="@drawable/couronne"/>
 
@@ -64,9 +77,9 @@
                             android:gravity="center"
                             android:orientation="vertical">
                             <TextView
-                                android:textSize="36sp"
+                                android:textSize="46sp"
                                 android:id="@+id/tab_winner_team_tag"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
                                 android:textAlignment="center"
                                 android:fontFamily="@font/nunito_bd"
                                 android:layout_width="match_parent"
@@ -75,8 +88,9 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:id="@+id/tab_winner_team_name"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
                                 android:textAlignment="center"
+                                android:textSize="20sp"
                                 android:fontFamily="@font/nunito_bd"
                                 android:layout_height="wrap_content"
                                 android:text="Hoop"/>
@@ -94,7 +108,7 @@
                         android:orientation="vertical">
 
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -107,7 +121,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -121,7 +137,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:layout_marginEnd="15dp"
@@ -139,7 +155,7 @@
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
                                     android:gravity="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textAlignment="center"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -147,7 +163,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -160,8 +176,10 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
                                 android:fontFamily="@font/nunito_bd"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:text="toto"/>
                             <LinearLayout
                                 android:layout_width="0dp"
@@ -173,7 +191,7 @@
                                     android:id="@+id/tab_winner_team_second_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -192,7 +210,7 @@
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:gravity="center"
                                     android:textAlignment="center"
                                     android:text="1er"/>
@@ -200,7 +218,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -213,7 +231,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -226,7 +246,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:id="@+id/tab_winner_team_third_player_score"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -243,7 +263,7 @@
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
                                     android:gravity="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textAlignment="center"
                                     android:textSize="9sp"
                                     android:id="@+id/tab_winner_team_third_player_rank"
@@ -253,7 +273,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -266,7 +286,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -279,7 +301,7 @@
                                     android:id="@+id/tab_winner_team_fourth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -290,7 +312,7 @@
                                     android:id="@+id/tab_winner_team_fourth_player_rank"
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:gravity="center"
                                     android:textAlignment="center"
                                     android:textSize="9sp"
@@ -300,7 +322,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -313,7 +335,9 @@
                                 android:id="@+id/tab_winner_team_fifth_player_name"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -326,7 +350,7 @@
                                     android:id="@+id/tab_winner_team_fifth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -336,7 +360,7 @@
                                     android:id="@+id/tab_winner_team_fifth_player_rank"
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:gravity="center"
                                     android:textAlignment="center"
                                     android:textSize="9sp"
@@ -346,7 +370,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -359,7 +383,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -372,7 +398,7 @@
                                     android:id="@+id/tab_winner_team_sixth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -384,7 +410,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -392,7 +418,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -407,7 +433,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -420,7 +448,7 @@
                                     android:id="@+id/tab_winner_team_seventh_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -432,7 +460,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -440,7 +468,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -455,7 +483,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -468,7 +498,7 @@
                                     android:id="@+id/tab_winner_team_eighth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -480,7 +510,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -488,7 +518,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -503,7 +533,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -516,7 +548,7 @@
                                     android:id="@+id/tab_winner_team_ninth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -528,7 +560,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -536,7 +568,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -550,7 +582,7 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="Pénalité"/>
                             <LinearLayout
@@ -563,7 +595,7 @@
                                     android:id="@+id/tab_winner_team_penalty_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -582,10 +614,10 @@
                         android:layout_weight="1"
                         android:id="@+id/tab_winner_team_score"
                         android:layout_height="wrap_content"
-                        android:textColor="#000000"
-                        android:fontFamily="@font/bungee"
+                        android:textColor="#FFFFFF"
+                        android:fontFamily="@font/nunito_bd"
                         android:textAlignment="center"
-                        android:textSize="36sp"
+                        android:textSize="56sp"
                         android:text="520"/>
 
                 </LinearLayout>
@@ -605,8 +637,9 @@
                         android:gravity="center"
                         android:orientation="horizontal">
                         <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:translationY="14dp"
                             android:padding="5dp"
                             android:src="@drawable/silver"/>
 
@@ -617,8 +650,8 @@
                             android:orientation="vertical">
                             <TextView
                                 android:id="@+id/tab_loser_team_tag"
-                                android:textSize="36sp"
-                                android:textColor="#000000"
+                                android:textSize="46sp"
+                                android:textColor="#FFFFFF"
                                 android:fontFamily="@font/nunito_bd"
                                 android:layout_width="match_parent"
                                 android:textAlignment="center"
@@ -629,8 +662,8 @@
                                 android:textAlignment="center"
                                 android:layout_height="wrap_content"
                                 android:id="@+id/tab_loser_team_name"
-
-                                android:textColor="#000000"
+                                android:textSize="20dp"
+                                android:textColor="#FFFFFF"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="Hoop"/>
                         </LinearLayout>
@@ -648,7 +681,7 @@
                         android:orientation="vertical">
 
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -661,7 +694,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -674,7 +709,7 @@
                                     android:id="@+id/tab_loser_team_first_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:layout_marginEnd="15dp"
@@ -691,7 +726,7 @@
                                     android:id="@+id/tab_loser_team_first_player_rank"
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:gravity="center"
                                     android:textAlignment="center"
                                     android:textSize="9sp"
@@ -701,7 +736,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -714,7 +749,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -727,7 +764,7 @@
                                     android:id="@+id/tab_loser_team_second_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:layout_marginEnd="15dp"
@@ -746,7 +783,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -754,7 +791,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -767,7 +804,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -780,7 +819,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:id="@+id/tab_loser_team_third_player_score"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:layout_marginEnd="15dp"
@@ -798,7 +837,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:id="@+id/tab_loser_team_third_player_rank"
                                     android:fontFamily="@font/nunito_bd_it"
@@ -807,7 +846,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -820,7 +859,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -833,7 +874,7 @@
                                     android:id="@+id/tab_loser_team_fourth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:layout_marginEnd="15dp"
@@ -844,7 +885,7 @@
                                     android:id="@+id/tab_loser_team_fourth_player_rank"
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:gravity="center"
                                     android:textAlignment="center"
                                     android:textSize="9sp"
@@ -854,7 +895,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingHorizontal="10dp"
@@ -867,7 +908,9 @@
                                 android:id="@+id/tab_loser_team_fifth_player_name"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -880,7 +923,7 @@
                                     android:id="@+id/tab_loser_team_fifth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -891,7 +934,7 @@
                                     android:layout_width="25dp"
                                     android:layout_height="20dp"
                                     android:gravity="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textAlignment="center"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
@@ -900,7 +943,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -913,7 +956,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -926,7 +971,7 @@
                                     android:id="@+id/tab_loser_team_sixth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -940,13 +985,13 @@
                                     android:textAlignment="center"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:textSize="9sp"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:text="1er"/>
                             </LinearLayout>
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -961,7 +1006,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -974,7 +1021,7 @@
                                     android:id="@+id/tab_loser_team_seventh_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -986,7 +1033,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -994,7 +1041,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -1009,7 +1056,9 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="toto"/>
                             <LinearLayout
@@ -1022,7 +1071,7 @@
                                     android:id="@+id/tab_loser_team_eighth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -1034,7 +1083,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -1042,7 +1091,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -1057,9 +1106,11 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
+                                android:maxLines="1"
+                                android:ellipsize="end"
                                 android:fontFamily="@font/nunito_bd"
-                                android:text="toto"/>
+                                />
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
@@ -1070,7 +1121,7 @@
                                     android:id="@+id/tab_loser_team_ninth_player_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -1082,7 +1133,7 @@
                                     android:layout_height="20dp"
                                     android:gravity="center"
                                     android:textAlignment="center"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:fontFamily="@font/nunito_bd_it"
                                     android:text="1er"/>
@@ -1090,7 +1141,7 @@
 
                         </LinearLayout>
                         <LinearLayout
-                            android:background="#33000000"
+                            android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
@@ -1104,7 +1155,7 @@
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
                                 android:layout_weight="3"
-                                android:textColor="#000000"
+                                android:textColor="#FFFFFF"
                                 android:fontFamily="@font/nunito_bd"
                                 android:text="Pénalité"/>
                             <LinearLayout
@@ -1117,7 +1168,7 @@
                                     android:id="@+id/tab_loser_team_penalty_score"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:textColor="#000000"
+                                    android:textColor="#FFFFFF"
                                     android:fontFamily="@font/nunito_bd"
                                     android:gravity="center"
                                     android:textAlignment="center"
@@ -1137,9 +1188,9 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:textAlignment="center"
-                        android:fontFamily="@font/bungee"
-                        android:textColor="#000000"
-                        android:textSize="36sp"
+                        android:fontFamily="@font/nunito_bd"
+                        android:textColor="#FFFFFF"
+                        android:textSize="56sp"
                         android:text="520"/>
 
                 </LinearLayout>
@@ -1159,25 +1210,18 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:text="+46"
+                    android:textSize="20sp"
                     android:textAlignment="center"
                     android:layout_weight="1"
-                    android:textColor="#000000"
-                    android:fontFamily="@font/bungee"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="@font/nunito_bd"
                     android:id="@+id/tab_war_diff"/>
 
             </LinearLayout>
 
         </RelativeLayout>
 
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scaleType="fitXY"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:src="@drawable/dotted_bg"/>
+   
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

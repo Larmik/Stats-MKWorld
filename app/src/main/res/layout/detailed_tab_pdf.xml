@@ -1,0 +1,1712 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#AA0A0A0A">
+
+    <ImageView
+        android:id="@+id/tab_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.5"
+        android:scaleType="fitXY"
+        android:src="@drawable/rsl" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tab_war_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#000000"
+            android:fontFamily="@font/nunito_bd"
+            android:text="Vendredi 29 Août 2025"
+            android:textAlignment="center"
+            android:textColor="#FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <!--home team result layout-->
+
+            <TextView
+                android:id="@+id/tab_home_team_score"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/nunito_bd"
+                android:text="209"
+                android:textAlignment="center"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/tab_home_team_logo"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp" />
+
+                <TextView
+                    android:id="@+id/tab_home_team_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_bd"
+                    android:text="Harmonia"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tab_home_team_tag"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_bd"
+                    android:text="HR"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp" />
+            </LinearLayout>
+            <!--vs layout-->
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tab_war_diff"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_bd"
+                    android:text="-150"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_war_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+
+            <!--opponent team result layout-->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/tab_opponent_team_logo"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp" />
+
+                <TextView
+                    android:id="@+id/tab_opponent_team_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_bd"
+                    android:text="Alliance Rainbow"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tab_opponent_team_tag"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_bd"
+                    android:text="AR"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tab_opponent_team_score"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/nunito_bd"
+                android:text="359"
+                android:textAlignment="center"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_first_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_first_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+
+                        android:textColor="@color/white"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_first_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <ImageView
+                            android:id="@+id/tab_home_team_first_player_asset"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:padding="2dp"
+                            android:src="@drawable/silver" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_first_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_second_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_second_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_second_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <ImageView
+                            android:id="@+id/tab_home_team_second_player_asset"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:padding="2dp"
+                            android:src="@drawable/silver" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_second_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_third_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_third_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_third_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <ImageView
+                            android:id="@+id/tab_home_team_third_player_asset"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:padding="2dp"
+                            android:src="@drawable/silver" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_third_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_fourth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_fourth_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_fourth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_fourth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_fifth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_fifth_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_fifth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_fifth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_sixth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_sixth_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white"
+                        android:textSize="10sp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_sixth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_sixth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_home_team_seventh_player_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_seventh_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_seventh_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_seventh_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_seventh_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_home_team_eighth_player_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_eighth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_eighth_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_eighth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_eighth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_home_team_ninth_player_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tab_home_team_ninth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/shock" />
+
+                    <TextView
+                        android:id="@+id/tab_home_team_ninth_player_shocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_bd"
+                        android:text="x0"
+                        android:textColor="@color/white" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_ninth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_home_team_ninth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_home_team_penalty_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:text="Pénalité"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_home_team_penalty_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_first_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_first_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <ImageView
+                            android:id="@+id/tab_opponent_team_first_player_asset"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:padding="2dp"
+                            android:src="@drawable/silver" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_first_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_second_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_second_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <ImageView
+                            android:id="@+id/tab_opponent_team_second_player_asset"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:padding="2dp"
+                            android:src="@drawable/silver" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_second_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_third_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_third_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <ImageView
+                            android:id="@+id/tab_opponent_team_third_player_asset"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:padding="2dp"
+                            android:src="@drawable/silver" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_third_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_fourth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_fourth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_fourth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_fifth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_fifth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_fifth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_sixth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_sixth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_sixth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_opponent_team_seventh_player_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_seventh_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_seventh_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_seventh_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_opponent_team_eighth_player_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_eighth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_eighth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_eighth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_opponent_team_ninth_player_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tab_opponent_team_ninth_player_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:maxLines="1"
+                        android:text="toto"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_ninth_player_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_ninth_player_rank"
+                            android:layout_width="25dp"
+                            android:layout_height="20dp"
+                            android:fontFamily="@font/nunito_bd_it"
+                            android:gravity="center"
+                            android:text="1er"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab_opponent_team_penalty_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="2dp"
+                    android:background="#BB000000"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:fontFamily="@font/nunito_bd"
+                        android:gravity="center"
+                        android:text="Pénalité"
+                        android:textColor="#FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tab_opponent_team_penalty_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="15dp"
+                            android:fontFamily="@font/nunito_bd"
+                            android:gravity="center"
+                            android:text="100"
+                            android:textAlignment="center"
+                            android:textColor="#FFFFFF" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="#AAFFFFFF"
+            android:orientation="vertical"
+            android:paddingBottom="10dp">
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/tab_graph"
+                android:layout_width="match_parent"
+                android:layout_height="120dp" />
+            <!--maps layout-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:translationY="-10dp">
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_first_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_first_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_second_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_second_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_third_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_third_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_fourth_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_fourth_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_fifth_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_fifth_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_sixth_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_sixth_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_seventh_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_seventh_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_eighth_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_eighth_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_ninth_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_ninth_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_tenth_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_tenth_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_eleventh_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_eleventh_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tab_last_map_shock"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:src="@drawable/shock"
+                        android:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/tab_last_map"
+                        android:layout_width="50dp"
+                        android:layout_height="30dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ah" />
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+
+</RelativeLayout>

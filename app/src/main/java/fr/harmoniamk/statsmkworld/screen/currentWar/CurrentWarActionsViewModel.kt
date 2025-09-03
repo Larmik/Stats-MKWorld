@@ -1,32 +1,24 @@
 package fr.harmoniamk.statsmkworld.screen.currentWar
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
-import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
-import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
-import fr.harmoniamk.statsmkworld.model.local.PlayerScoreForTab
-import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltySelector
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltyType
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
-import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -34,33 +26,20 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import java.util.Date
 import javax.inject.Inject
-import kotlin.collections.minusAssign
-import kotlin.collections.plusAssign
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CurrentWarActionsViewModel @Inject constructor(
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val firebaseRepository: FirebaseRepositoryInterface,
-    private val pdfRepository: PDFRepositoryInterface
+    private val firebaseRepository: FirebaseRepositoryInterface
 ) : ViewModel() {
 
     private val _backToWelcome = MutableSharedFlow<Unit>()
     private val _onBack = MutableSharedFlow<Unit>()
     val backToWelcome = _backToWelcome.asSharedFlow()
     val onBack = _onBack.asSharedFlow()
-
-    private val _rows = MutableStateFlow(6)
-    private val _uri = MutableSharedFlow<Uri?>()
-    private val _toast = MutableSharedFlow<String?>()
-
-    val rows = _rows.asStateFlow()
-    val uri = _uri.asSharedFlow()
-    val toast = _toast.asSharedFlow()
-
 
     data class State(
         val war: War? = null,
@@ -207,49 +186,6 @@ class CurrentWarActionsViewModel @Inject constructor(
             .launchIn(viewModelScope)
 
 
-    }
-
-
-    fun onManageRows(isAdding: Boolean) {
-        when (isAdding) {
-            true -> _rows.value += 1
-            else -> _rows.value -= 1
-        }
-    }
-
-    fun onGenerate(players: List<String>, scores: List<String>) {
-        val filename = "war_" + Date().time.toString()
-        dataStoreRepository.war
-            .filterNotNull()
-            .mapNotNull {
-                val details = WarDetails(it)
-                if (scores.mapNotNull { it.toIntOrNull() }.sum() == details.scoreOpponent) {
-                    var teamWin: TeamEntity? = null
-                    var teamLose: TeamEntity? = null
-                    val playerScores = it.withPlayersList(databaseRepository, firebaseRepository).map { PlayerScoreForTab(it) }
-                    val opponentScores = players.mapIndexed { index, player -> PlayerScoreForTab(player, scores[index].toInt()) }
-                    if (details.scoreHostWithPenalties >= details.scoreOpponentWithPenalties) {
-                        teamWin = databaseRepository.getTeam(it.teamHost).firstOrNull()
-                        teamLose = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
-                    }
-                    else {
-                        teamWin = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
-                        teamLose = databaseRepository.getTeam(it.teamHost).firstOrNull()
-                    }
-                    pdfRepository.generatePdf(details, teamWin, teamLose, playerScores, opponentScores)
-                } else {
-                    val diff = scores.mapNotNull { it.toIntOrNull() }.sum() - details.scoreOpponent
-                    val secondaryLabel = when  {
-                        diff > 0 -> "$diff points en trop"
-                        else -> "${0-diff} points manquants"
-                    }
-                    _toast.emit("Les scores des joueurs sont incorrects ($secondaryLabel)")
-                    null
-                }
-            }
-            .flatMapLatest { pdfRepository.write(it, filename) }
-            .onEach { uri -> _uri.emit(uri) }
-            .launchIn(scope = viewModelScope)
     }
 
 }

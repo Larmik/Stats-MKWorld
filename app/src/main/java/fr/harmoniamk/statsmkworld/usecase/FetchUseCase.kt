@@ -9,7 +9,6 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.model.firebase.Tag
-import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -93,7 +92,7 @@ class FetchUseCase @Inject constructor(
         }
 
     override fun fetchAllies(teamId: String): Flow<Unit> = dataStoreRepository.mkcTeam
-        .flatMapLatest { firebaseRepository.getAllies(it.id.toString()) }
+        .flatMapLatest { firebaseRepository.getOldAllies(it.id.toString()) }
         .map { allies ->
             val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
             allies.forEach { allyId ->
@@ -192,7 +191,7 @@ class FetchUseCase @Inject constructor(
                         val fbUser = firebaseRepository.getUser(team.id.toString(), player.id).firstOrNull()
                         fbUser?.let {
                             firebaseRepository.writeUser(mkcPlayer.rosters?.firstOrNull { it.game == "mkworld" }?.teamID.toString(), it).firstOrNull()
-                            firebaseRepository.writeAlly(team.id.toString(), it.id).firstOrNull()
+                            firebaseRepository.writeOldAlly(team.id.toString(), it.id).firstOrNull()
                             databaseRepository.updateUser(it.id, isAlly = true).firstOrNull()
                             firebaseRepository.deleteUser(team.id.toString(), it.id).firstOrNull()
                         }
