@@ -51,7 +51,6 @@ interface FirebaseRepositoryInterface {
     fun deleteCurrentWar(teamId: String): Flow<Unit>
 
     fun getOldAllies(teamId: String): Flow<List<String>>
-    fun writeOldAlly(teamId: String, ally: String): Flow<Unit>
     fun deleteAlly(teamId: String, ally: String): Flow<Unit>
 
     fun getAllies(teamId: String): Flow<List<User>>
@@ -169,7 +168,7 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
                             teamOpponent = value["teamOpponent"].toString(),
                             teamHost = value["teamHost"].toString(),
                             tracks = value["tracks"].toMapList().parseTracks().orEmpty(),
-                            penalties = listOf()
+                            penalties = value["penalties"].toMapList().parsePenalties().orEmpty()
                         )
                     }
                     if (isActive) trySend(war)
@@ -223,12 +222,8 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    override fun writeOldAlly(teamId: String, ally: String): Flow<Unit> =
-        getOldAllies(teamId)
-            .map { database.child("allies").child(teamId).child(it.size.toString()).setValue(ally) }
-
     override fun deleteAlly(teamId: String, ally: String): Flow<Unit> = flow {
-        database.child("allies").child(teamId).child(ally).removeValue()
+        database.child("newAllies").child(teamId).child(ally).removeValue()
     }
 
     override fun getAllies(teamId: String): Flow<List<User>> = callbackFlow {

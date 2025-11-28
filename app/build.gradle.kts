@@ -134,15 +134,12 @@ dependencies {
     implementation(dependencyNotation = libs.moshi.kotlin)
     implementation(dependencyNotation = libs.moshi.adapters)
     implementation(dependencyNotation = libs.converter.moshi)
-    kapt(dependencyNotation = libs.moshi.kotlin.codegen)
 
     //Room
     implementation( libs.androidx.room.runtime)
     implementation( libs.androidx.work.runtime)
     implementation( libs.androidx.room.ktx)
-    annotationProcessor( libs.androidx.room.compiler)
     kapt(libs.androidx.room.compiler)
-    kapt(libs.sqlite.jdbc)
     implementation(dependencyNotation = libs.work.runtime)
 
     implementation(libs.accompanist.pager)
@@ -154,6 +151,7 @@ dependencies {
     // Splashscreen
     implementation(libs.androidx.core.splashscreen)
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("org.jsoup:jsoup:1.21.2")
 }
 protobuf {
     protoc {
@@ -172,7 +170,6 @@ protobuf {
                         option("lite")
                     }
                 }
-
             }
         }
     }

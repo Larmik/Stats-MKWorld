@@ -92,20 +92,20 @@ class FetchUseCase @Inject constructor(
         }
 
     override fun fetchAllies(teamId: String): Flow<Unit> = dataStoreRepository.mkcTeam
-        .flatMapLatest { firebaseRepository.getOldAllies(it.id.toString()) }
+        .flatMapLatest { firebaseRepository.getAllies(it.id.toString()) }
         .map { allies ->
             val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
-            allies.forEach { allyId ->
-                when (players.map { it.id }.contains(allyId)) {
+            allies.forEach { ally ->
+                when (players.map { it.id }.contains(ally.id)) {
                     true -> {
-                        databaseRepository.getPlayer(allyId).firstOrNull()?.let { player ->
-                            firebaseRepository.deleteAlly(teamId, allyId).firstOrNull()
-                            databaseRepository.updateUser(allyId, false).firstOrNull()
+                        databaseRepository.getPlayer(ally.id).firstOrNull()?.let { player ->
+                            firebaseRepository.deleteAlly(teamId, ally.id).firstOrNull()
+                            databaseRepository.updateUser(ally.id, false).firstOrNull()
                         }
                     }
 
                     else -> {
-                        mkCentralDataSource.getPlayer(allyId).firstOrNull()?.let { response ->
+                        mkCentralDataSource.getPlayer(ally.id).firstOrNull()?.let { response ->
                             response.successResponse?.let {
                                 databaseRepository.addAlly(PlayerEntity(player = it, isAlly = true))
                                     .firstOrNull()
@@ -191,7 +191,7 @@ class FetchUseCase @Inject constructor(
                         val fbUser = firebaseRepository.getUser(team.id.toString(), player.id).firstOrNull()
                         fbUser?.let {
                             firebaseRepository.writeUser(mkcPlayer.rosters?.firstOrNull { it.game == "mkworld" }?.teamID.toString(), it).firstOrNull()
-                            firebaseRepository.writeOldAlly(team.id.toString(), it.id).firstOrNull()
+                            firebaseRepository.writeAlly(team.id.toString(), it).firstOrNull()
                             databaseRepository.updateUser(it.id, isAlly = true).firstOrNull()
                             firebaseRepository.deleteUser(team.id.toString(), it.id).firstOrNull()
                         }

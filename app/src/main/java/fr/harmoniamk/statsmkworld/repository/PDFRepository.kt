@@ -12,6 +12,7 @@ import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.FileProvider
@@ -96,45 +97,11 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
     }.flowOn(context = Dispatchers.IO)
 
 
-    override fun generatePdf(details: WarDetails, teamWin: TeamEntity?, teamLose: TeamEntity?, hostScores: List<PlayerScoreForTab>, opponentScores: List<PlayerScoreForTab>): PdfDocument {
-        val pdfView: View = View.inflate(context, R.layout.tab_pdf, null)
-        val allScores = (hostScores.map { Pair(it, details.war.teamHost) } + opponentScores.map { Pair(it, details.war.teamOpponent) }).sortedByDescending { it.first.score }
+    private fun setPdfData(pdfView: View, details: WarDetails, teamWin: TeamEntity?, teamLose: TeamEntity?, allScores: List<Pair<PlayerScoreForTab, String>>) {
         val playersWin: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
         val playersLose: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
-        val doc = PdfDocument()
-        var winHasPena = false
-        var loseHasPena = false
-        var height = when  {
-            allScores.size == 13 -> 1040
-            allScores.size == 14 -> 1110
-            allScores.size == 15 -> 1180
-            allScores.size == 16 -> 1250
-            allScores.size == 17 -> 1320
-            allScores.size == 18 -> 1390
-            else -> 970
-        }
-        details.war.penalties.filter { it.teamId == teamWin?.id }.sumOf { it.amount }.takeIf { it > 0 }?.let {
-            winHasPena = true
-            pdfView.findViewById<TextView>(R.id.tab_winner_team_penalty_layout).isVisible = true
-            pdfView.findViewById<TextView>(R.id.tab_winner_team_penalty_score).text =  "-$it"
-        }
-        details.war.penalties.filter { it.teamId == teamLose?.id }.sumOf { it.amount }.takeIf { it > 0 }?.let {
-            loseHasPena = true
-            pdfView.findViewById<TextView>(R.id.tab_loser_team_penalty_layout).isVisible = true
-            pdfView.findViewById<TextView>(R.id.tab_loser_team_penalty_score).text =  "-$it"
-        }
-        when {
-            winHasPena && loseHasPena -> height += 140
-            winHasPena || loseHasPena -> height += 70
-        }
-        val pageInfo = PdfDocument.PageInfo.Builder(1630, height, 1).create()
-        val page = doc.startPage(pageInfo)
-        val pageCanvas: Canvas = page.canvas
-        pageCanvas.scale(1f, 1f)
-        val pageWidth: Int = pageCanvas.width
-        val pageHeight: Int = pageCanvas.height
-        val measureWidth: Int = View.MeasureSpec.makeMeasureSpec(pageWidth, View.MeasureSpec.EXACTLY)
-        val measuredHeight: Int = View.MeasureSpec.makeMeasureSpec(pageHeight, View.MeasureSpec.EXACTLY)
+        val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.let { Maps.entries[it] }
+
         allScores.forEachIndexed { index, pair ->
             val rank = when (pair.first.score == allScores.getOrNull(index-1)?.first?.score) {
                 true -> index
@@ -145,7 +112,6 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
                 pair.second == teamLose?.id -> playersLose.add(Pair(pair.first, rank))
             }
         }
-        val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.let { Maps.entries[it] }
         pdfView.findViewById<ImageView>(R.id.tab_bg).setImageResource(bestTrack?.background ?: R.drawable.rsl)
         pdfView.findViewById<TextView>(R.id.tab_war_date).text = details.date
         pdfView.findViewById<TextView>(R.id.tab_war_diff).text = details.displayedDiff
@@ -362,9 +328,50 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
             pdfView.findViewById<TextView>(R.id.tab_loser_team_ninth_player_score).text = it.first.score.toString()
             pdfView.findViewById<TextView>(R.id.tab_loser_team_ninth_player_rank).text = it.second.toString() + "th"
         }
-        pdfView.measure(measureWidth, measuredHeight)
-        pdfView.layout(0, 0, pageWidth, pageHeight)
-        pdfView.draw(pageCanvas)
+    }
+
+    override fun generatePdf(
+        details: WarDetails,
+        teamWin: TeamEntity?,
+        teamLose: TeamEntity?,
+        hostScores: List<PlayerScoreForTab>,
+        opponentScores: List<PlayerScoreForTab>
+    ): PdfDocument {
+
+        val allScores = (hostScores.map { Pair(it, details.war.teamHost) } +
+                opponentScores.map { Pair(it, details.war.teamOpponent) })
+            .sortedByDescending { it.first.score }
+
+        val doc = PdfDocument()
+        val winHasPena = details.war.penalties.any { it.teamId == teamWin?.id && it.amount > 0 }
+        val loseHasPena = details.war.penalties.any { it.teamId == teamLose?.id && it.amount > 0 }
+        var height = scale(when (allScores.size) {
+            13 -> 1040
+            14 -> 1110
+            15 -> 1180
+            16 -> 1250
+            17 -> 1320
+            18 -> 1390
+            else -> 970
+        })
+        when {
+            winHasPena && loseHasPena -> height += scale(140)
+            winHasPena || loseHasPena -> height += scale(70)
+        }
+
+        val pageWidthPx = scale(1630)
+        val pageHeightPx = height
+        //val pdfContext = PdfTools.getPdfContext(context, pageWidthPx, pageHeightPx)
+        val pdfView: View = View.inflate(context, R.layout.tab_pdf, null)
+        pdfView.layoutParams = ViewGroup.LayoutParams(pageWidthPx, pageHeightPx)
+        val widthSpec = View.MeasureSpec.makeMeasureSpec(pageWidthPx, View.MeasureSpec.EXACTLY)
+        val heightSpec = View.MeasureSpec.makeMeasureSpec(pageHeightPx, View.MeasureSpec.EXACTLY)
+        pdfView.measure(widthSpec, heightSpec)
+        pdfView.layout(0, 0, pageWidthPx, pageHeightPx)
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidthPx, pageHeightPx, 1).create()
+        val page = doc.startPage(pageInfo)
+        setPdfData(pdfView, details, teamWin, teamLose, allScores)
+        pdfView.draw(page.canvas)
         doc.finishPage(page)
         return doc
     }
@@ -385,15 +392,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         val doc = PdfDocument()
         var hostHasPena = false
         var opponentHasPena = false
-        var height = when  {
-            allScores.size == 13 -> 1040
-            allScores.size == 14 -> 1110
-            allScores.size == 15 -> 1180
-            allScores.size == 16 -> 1250
-            allScores.size == 17 -> 1320
-            allScores.size == 18 -> 1390
-            else -> 970
-        }
+
         pdfView.findViewById<LineChart>(R.id.tab_graph).setData(details)
         val maps = Maps.entries
         pdfView.findViewById<ImageView>(R.id.tab_first_map).setImageResource(maps[details.warTracks[0].track.index].picture)
@@ -419,10 +418,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
             pdfView.findViewById<TextView>(R.id.tab_opponent_team_penalty_layout).isVisible = true
             pdfView.findViewById<TextView>(R.id.tab_opponent_team_penalty_score).text =  "-$it"
         }
-        when {
-            hostHasPena && opponentHasPena -> height += 140
-            hostHasPena || opponentHasPena -> height += 70
-        }
+
         val pageInfo = PdfDocument.PageInfo.Builder(1630, 1250, 1).create()
         val page = doc.startPage(pageInfo)
         val pageCanvas: Canvas = page.canvas
@@ -705,6 +701,12 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         pdfRenderer.close()
         fileDescriptor.close()
         tempFile.delete()
+    }
+
+    private fun scale(value: Int): Int {
+        val targetDpi = context.resources.displayMetrics.densityDpi
+        val referenceDpi = 440f
+        return (value * (targetDpi / referenceDpi)).toInt()
     }
 
 }

@@ -8,6 +8,8 @@ import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.WorldRecordsRepositoryInterface
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,11 +25,10 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
-import kotlin.collections.firstOrNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseInterface, private val mkCentralDataSource: MKCentralDataSourceInterface, private val firebaseRepository: FirebaseRepositoryInterface, private val dataStoreRepository: DataStoreRepositoryInterface, private val databaseRepository: DatabaseRepositoryInterface): ViewModel() {
+class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseInterface, private val mkCentralDataSource: MKCentralDataSourceInterface, private val firebaseRepository: FirebaseRepositoryInterface, private val dataStoreRepository: DataStoreRepositoryInterface, private val databaseRepository: DatabaseRepositoryInterface, private val worldRecordsRepository: WorldRecordsRepositoryInterface, private val pdfRepository: PDFRepositoryInterface): ViewModel() {
 
     private val _sharedToast = MutableSharedFlow<String>()
     private val _sharedLoading = MutableStateFlow<String?>(null)
@@ -86,6 +87,12 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
             .onEach {
                 _sharedLoading.emit(null)
             }.launchIn(viewModelScope)
+    }
+
+    fun loadWRs() {
+        viewModelScope.launch {
+            worldRecordsRepository.getCurrentWRs()
+        }
     }
 
     fun migrateAllies() {

@@ -13,6 +13,7 @@ import fr.harmoniamk.statsmkworld.datasource.network.DiscordDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -140,7 +141,12 @@ class PlayerProfileViewModel @AssistedInject constructor(
 
     fun onAddAlly() {
         dataStoreRepository.mkcTeam
-            .flatMapLatest { firebaseRepository.writeOldAlly(it.id.toString(), id) }
+            .onEach { team ->
+                state.value.player?.let {
+                    val user = User(it)
+                    firebaseRepository.writeAlly(team.id.toString(), user).firstOrNull()
+                }
+            }
             .mapNotNull { state.value.player }
             .map { PlayerEntity(player = it, isAlly = true) }
             .flatMapLatest { databaseRepository.addAlly(it) }
