@@ -67,7 +67,7 @@ class FetchUseCase @Inject constructor(
 ) : FetchUseCaseInterface, CoroutineScope {
     override fun fetchData(playerId: String): Flow<Unit> = fetchPlayer(playerId)
             .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" } }
-            .flatMapLatest {fetchTeam(it.teamID.toString()) }
+            .flatMapLatest { fetchTeam(it.teamID.toString()) }
             .flatMapLatest { fetchAllies(it.id.toString()) }
             .flatMapLatest { fetchTeams() }
             .flatMapLatest { dataStoreRepository.mkcTeam }
@@ -167,6 +167,15 @@ class FetchUseCase @Inject constructor(
             }.orEmpty())
         }
         databaseRepository.writeTeams(teams).firstOrNull()
+        databaseRepository.writeTeams(listOf(
+            TeamEntity(
+                name = "6v6 Squad",
+                tag = "SQ",
+                id = "123456789",
+                color = null,
+                logo = null
+            )
+        )).firstOrNull()
         emit(dataStoreRepository.mkcTeam.firstOrNull()?.id.toString())
     }
 

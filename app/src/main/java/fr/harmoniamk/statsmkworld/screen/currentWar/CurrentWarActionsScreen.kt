@@ -138,20 +138,28 @@ fun CurrentWarActionsScreen(
                                            .heightIn(min = 120.dp)
                                            .fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                                            val text = when (it.penalty) {
-                                               PenaltyType.REPICK_HOST -> context.getString(
-                                                   R.string.repick_placeholder,
+                                               PenaltyType.HOST_MINUS_10 -> "-10 " + context.getString(
+                                                   R.string.penalty_placeholder,
                                                    state.value.teamHost
                                                )
-                                               PenaltyType.INTERMISSION_HOST -> context.getString(
-                                                   R.string.intermission_placeholder,
+                                               PenaltyType.HOST_MINUS_15 -> "-15 " + context.getString(
+                                                   R.string.penalty_placeholder,
                                                    state.value.teamHost
                                                )
-                                               PenaltyType.REPICK_OPPONENT ->  context.getString(
-                                                   R.string.repick_placeholder,
+                                               PenaltyType.HOST_MINUS_20 ->  "-20 " + context.getString(
+                                                   R.string.penalty_placeholder,
+                                                   state.value.teamHost
+                                               )
+                                               PenaltyType.OPPONENT_MINUS_10 ->"-10 " +  context.getString(
+                                                   R.string.penalty_placeholder,
                                                    state.value.teamOpponent
                                                )
-                                               PenaltyType.INTERMISSION_OPPONENT -> context.getString(
-                                                   R.string.intermission_placeholder,
+                                               PenaltyType.OPPONENT_MINUS_15 -> "-15 " +  context.getString(
+                                                   R.string.penalty_placeholder,
+                                                   state.value.teamOpponent
+                                               )
+                                               PenaltyType.OPPONENT_MINUS_20 -> "-20 " +  context.getString(
+                                                   R.string.penalty_placeholder,
                                                    state.value.teamOpponent
                                                )
                                            }

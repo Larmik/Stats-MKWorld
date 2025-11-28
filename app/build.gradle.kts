@@ -134,6 +134,7 @@ dependencies {
     implementation(dependencyNotation = libs.moshi.kotlin)
     implementation(dependencyNotation = libs.moshi.adapters)
     implementation(dependencyNotation = libs.converter.moshi)
+    kapt(dependencyNotation = libs.moshi.kotlin.codegen)
 
     //Room
     implementation( libs.androidx.room.runtime)

@@ -44,7 +44,7 @@
     <string name="allies">Allies</string>
     <string name="roster">Roster</string>
     <string name="actions">Actions</string>
-    <string name="repick_placeholder">Repick by %1$s</string>
+    <string name="penalty_placeholder">to %1$s</string>
     <string name="intermission_placeholder">Intermission picked by %1$s</string>
     <string name="current_race">Race %1$s/12</string>
     <string name="remaining_courses">Races left: %1$s</string>
@@ -175,4 +175,6 @@
     <string name="joueur_entrant">Incoming</string>
     <string name="id_joueur">Player ID</string>
     <string name="rsl">Royaume Sorbet</string>
+    <string name="see_more">See more</string>
+    <string name="all_wars">All wars</string>
 </resources>

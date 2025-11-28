@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.safeSubList
+import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
@@ -37,7 +38,7 @@ import kotlinx.coroutines.FlowPreview
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
-fun StatsScreen(viewModel: StatsViewModel) {
+fun StatsScreen(viewModel: StatsViewModel, onWarDetailsClick: (WarDetails) -> Unit) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = stringResource(viewModel.type?.title ?: R.string.statistiques)) {
         when (state.value.mapStats == null && state.value.stats == null) {
@@ -69,7 +70,7 @@ fun StatsScreen(viewModel: StatsViewModel) {
                                     factory.create(it)
                                 }
                             ),
-                            onClick = { }
+                            onClick = onWarDetailsClick
                         )
                     }
                     Spacer(Modifier.height(10.dp))

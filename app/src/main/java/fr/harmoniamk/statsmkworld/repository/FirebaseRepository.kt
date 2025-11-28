@@ -50,11 +50,9 @@ interface FirebaseRepositoryInterface {
     fun writeCurrentWar(war: War): Flow<Unit>
     fun deleteCurrentWar(teamId: String): Flow<Unit>
 
-    fun getOldAllies(teamId: String): Flow<List<String>>
-    fun deleteAlly(teamId: String, ally: String): Flow<Unit>
-
     fun getAllies(teamId: String): Flow<List<User>>
     fun writeAlly(teamId: String, user: User): Flow<Unit>
+    fun deleteAlly(teamId: String, ally: String): Flow<Unit>
 
     fun log(message: String, type: String): Flow<Unit>
     fun writeTags(tags: List<Tag>) : Flow<Unit>
@@ -187,14 +185,6 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         emit(Unit)
     }
 
-    override fun getOldAllies(teamId: String): Flow<List<String>> = callbackFlow {
-        Log.d("MKDebugOnly", "FirebaseRepository getAllies")
-        database.child("allies").child(teamId).get().addOnSuccessListener { snapshot ->
-            val teams: List<String> = snapshot.children.map { it.value as String }
-            if (isActive) trySend(teams)
-        }
-        awaitClose { }
-    }.flowOn(Dispatchers.IO)
 
     override fun writeAlly(
         teamId: String,

@@ -37,6 +37,7 @@ import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
+import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
 
 @Composable
 fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) {
@@ -93,6 +94,16 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onRanking = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
                     navController.navigate("Stats/Ranking")
+                },
+                onWarListClick = { navController.navigate("Home/WarList") }
+            )
+        }
+
+        composable(route = "Home/WarList") {
+            WarListScreen(
+                onWarDetailsClick = {
+                    navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
+                    navController.navigate("Home/WarDetails")
                 }
             )
         }
@@ -105,7 +116,12 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     creationCallback = { factory: fr.harmoniamk.statsmkworld.screen.stats.StatsViewModel.Factory ->
                         factory.create(type)
                     }
-                ))
+                ),
+                onWarDetailsClick = {
+                    navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
+                    navController.navigate("Home/WarDetails")
+                }
+            )
         }
 
         composable("Stats/Ranking") {

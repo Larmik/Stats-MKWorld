@@ -43,7 +43,8 @@ fun HomeScreen(
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
     onStats: (StatsType) -> Unit,
-    onRanking: (StatsType?) -> Unit
+    onRanking: (StatsType?) -> Unit,
+    onWarListClick: () -> Unit
 ) {
     val navController = rememberNavController()
 
@@ -86,7 +87,7 @@ fun HomeScreen(
         content = {
             NavHost(navController = navController, startDestination = "Home/Welcome") {
                 composable(route = "Home/Welcome") {
-                   WelcomeScreen(onTeamProfile = { onTeamProfile("me") }, onPlayerProfile = { onPlayerProfile("me") }, onAddWar = onAddWar, onCurrentWar = onCurrentWar, onWarDetailsClick = onWarDetailsClick)
+                   WelcomeScreen(onTeamProfile = { onTeamProfile("me") }, onPlayerProfile = { onPlayerProfile("me") }, onAddWar = onAddWar, onCurrentWar = onCurrentWar, onWarDetailsClick = onWarDetailsClick, onWarListClick = onWarListClick)
                 }
                 composable(route = "Home/Stats") {
                     StatsMenuScreen(

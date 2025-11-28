@@ -44,7 +44,7 @@
     <string name="allies">Allies</string>
     <string name="roster">Roster</string>
     <string name="actions">Actions</string>
-    <string name="repick_placeholder">Repick de %1$s</string>
+    <string name="penalty_placeholder">pour %1$s</string>
     <string name="intermission_placeholder">Intermission votée par %1$s</string>
     <string name="current_race">Course %1$s/12</string>
     <string name="remaining_courses">Courses restantes: %1$s</string>
@@ -174,4 +174,6 @@
     <string name="remplacer">Remplacer</string>
     <string name="joueur_entrant">Joueur entrant</string>
     <string name="id_joueur">ID joueur</string>
+    <string name="see_more">Voir plus</string>
+    <string name="all_wars">Toutes les wars</string>
 </resources>

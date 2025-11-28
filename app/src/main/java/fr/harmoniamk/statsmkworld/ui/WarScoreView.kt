@@ -3,6 +3,8 @@ package fr.harmoniamk.statsmkworld.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -116,19 +118,20 @@ fun WarScoreView(
         penalties.takeIf { it.isNotEmpty() }?.let {
             Row(Modifier
                 .wrapContentHeight()
-                .padding(horizontal = 40.dp)) {
+                .fillMaxWidth()) {
                 penalties.filter { it.teamId == teamHost?.id }.takeIf { it.isNotEmpty() }?.let {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         MKText(text = stringResource(R.string.penalty))
                         MKText(text = "-${it.sumOf { it.amount }}")
                     }
-                }
+                } ?: Spacer(Modifier.weight(1f))
+                Spacer(Modifier.weight(1f))
                 penalties.filter { it.teamId == teamOpponent?.id }.takeIf { it.isNotEmpty() }?.let {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         MKText(text = stringResource(R.string.penalty))
                         MKText(text = "-${it.sumOf { it.amount }}")
                     }
-                }
+                } ?: Spacer(Modifier.weight(1f))
             }
         }
     }

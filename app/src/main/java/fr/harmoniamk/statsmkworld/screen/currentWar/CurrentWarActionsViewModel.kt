@@ -89,10 +89,12 @@ class CurrentWarActionsViewModel @Inject constructor(
     fun onPenaltyValidated() {
         state.value.penalties?.singleOrNull { it.isSelected }?.penalty?.let { penaltyType ->
             val penalty = when (penaltyType) {
-                PenaltyType.REPICK_HOST -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 20)
-                PenaltyType.INTERMISSION_HOST -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 15)
-                PenaltyType.REPICK_OPPONENT -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 20)
-                PenaltyType.INTERMISSION_OPPONENT -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 15)
+                PenaltyType.HOST_MINUS_10 -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 10)
+                PenaltyType.HOST_MINUS_15 -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 15)
+                PenaltyType.HOST_MINUS_20 -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 20)
+                PenaltyType.OPPONENT_MINUS_10 -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 10)
+                PenaltyType.OPPONENT_MINUS_15 -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 15)
+                PenaltyType.OPPONENT_MINUS_20 -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 20)
             }
             state.value.war?.let {
                 val penalties = mutableListOf<WarPenalty>()

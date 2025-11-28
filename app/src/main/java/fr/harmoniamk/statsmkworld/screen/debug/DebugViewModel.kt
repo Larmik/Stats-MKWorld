@@ -95,17 +95,6 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
         }
     }
 
-    fun migrateAllies() {
-        dataStoreRepository.mkcTeam
-            .onEach { team ->
-                firebaseRepository.getOldAllies(team.id.toString()).firstOrNull()?.forEach { allyId ->
-                    val player = mkCentralDataSource.getPlayer(allyId).firstOrNull()?.successResponse
-                    val user = User(player)
-                    firebaseRepository.writeAlly(team.id.toString(), user).firstOrNull()
-                }
-            }.launchIn(viewModelScope)
-    }
-
     fun onUpdateBotData() {
         dataStoreRepository.mkcTeam
             .onEach {

@@ -46,7 +46,8 @@ fun WelcomeScreen(
     onPlayerProfile: () -> Unit,
     onAddWar: () -> Unit,
     onCurrentWar: () -> Unit,
-    onWarDetailsClick: (WarDetails) -> Unit
+    onWarDetailsClick: (WarDetails) -> Unit,
+    onWarListClick: () -> Unit
 ) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = stringResource(R.string.accueil), modifier = Modifier.padding(bottom = 90.dp)) {
@@ -125,6 +126,10 @@ fun WelcomeScreen(
                     }
                 }
                 Spacer(Modifier.height(10.dp))
+
+                if (state.value.currentWar == null && state.value.buttonVisible)
+                    MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.nouvelle_war), onClick = onAddWar, modifier = Modifier.padding(bottom = 5.dp))
+
                 Spacer((Modifier
                     .fillMaxWidth()
                     .height(1.dp)
@@ -161,12 +166,15 @@ fun WelcomeScreen(
                                     ),
                                     onClick = onWarDetailsClick)
                             }
+                            item {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                    MKButton(style = MKButtonStyle.Minor(Colors.black), text = stringResource(R.string.see_more), onClick = onWarListClick)
+                                }
+                            }
                         }
                     }
                 }
-                if (state.value.currentWar == null)
-                    MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.nouvelle_war), onClick = onAddWar, modifier = Modifier.padding(bottom = 5.dp), enabled = state.value.buttonVisible)
-            }
+                }
         }
 
     }
