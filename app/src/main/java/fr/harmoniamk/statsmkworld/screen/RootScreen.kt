@@ -4,7 +4,9 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -38,10 +40,17 @@ import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
+import fr.harmoniamk.statsmkworld.worker.MKWorkerBuilder
+import fr.harmoniamk.statsmkworld.worker.UpdateDataWorker
 
 @Composable
 fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+
+    LaunchedEffect(key1 = Unit) {
+        MKWorkerBuilder.enqueueUniquePeriodicWork<UpdateDataWorker>(context = context)
+    }
     NavHost(
         modifier = Modifier.fillMaxSize(),
         navController = navController,

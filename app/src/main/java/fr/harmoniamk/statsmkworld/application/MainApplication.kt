@@ -5,10 +5,7 @@ import android.app.Application
 import android.os.Bundle
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.WorkManager
 import dagger.hilt.android.HiltAndroidApp
-import fr.harmoniamk.statsmkworld.worker.UpdateDataWorker
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -20,14 +17,8 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks, C
         var instance: MainApplication? = null
     }
 
-    override fun onCreate() {
-        super.onCreate()
+    init {
         instance = this
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            uniqueWorkName = "UpdateDataWorker",
-            existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
-            request = UpdateDataWorker.work
-        )
     }
 
     @Inject

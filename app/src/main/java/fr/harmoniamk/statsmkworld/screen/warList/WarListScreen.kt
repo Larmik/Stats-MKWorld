@@ -9,11 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,7 +41,17 @@ fun WarListScreen(
             state.value.wars.forEach { pair ->
                 stickyHeader {
                     Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth().background(
-                         color = Colors.white).border(2.dp, Colors.black)) {
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Colors.green,
+                                Colors.blue,
+                                Colors.blue,
+                                Colors.blue,
+                                Colors.green
+                            ),
+                            start = Offset(0f, 0f),
+                            end = Offset.Infinite
+                        )).border(2.dp, Colors.black)) {
                         MKText(text = pair.first + " (${pair.second.size})", font = Fonts.NunitoBD, fontSize = 16, modifier = Modifier.padding(vertical = 10.dp))
                     }
                 }
