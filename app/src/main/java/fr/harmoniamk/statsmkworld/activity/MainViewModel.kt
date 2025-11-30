@@ -40,7 +40,7 @@ class MainViewModel @Inject constructor(
         .map {
             val player = dataStoreRepository.mkcPlayer.firstOrNull()
             when {
-                remoteConfigRepository.minimumVersion > BuildConfig.VERSION_CODE -> _state.value.copy(needUpdate = true)
+                remoteConfigRepository.minimumVersion() > BuildConfig.VERSION_CODE -> _state.value.copy(needUpdate = true)
                 player?.id != 0L  -> _state.value.copy(startDestination = "Home")
                 else -> _state.value.copy(startDestination = "Signup")
             }
