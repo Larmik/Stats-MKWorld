@@ -177,4 +177,6 @@
     <string name="rsl">Royaume Sorbet</string>
     <string name="see_more">See more</string>
     <string name="all_wars">All wars</string>
+    <string name="notif_enabled">Notifications enabled</string>
+    <string name="notif_disabled">Notifications disabled</string>
 </resources>

@@ -32,6 +32,9 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
 
     private val _sharedToast = MutableSharedFlow<String>()
     private val _sharedLoading = MutableStateFlow<String?>(null)
+
+    private val _sendNotif = MutableSharedFlow<Unit>()
+    val sendNotif = _sendNotif.asSharedFlow()
     val sharedToast = _sharedToast.asSharedFlow()
     val sharedLoading = _sharedLoading.asStateFlow()
 
@@ -80,6 +83,13 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
             .launchIn(viewModelScope)
     }
 
+    fun onNotif() {
+        viewModelScope.launch {
+            if (dataStoreRepository.notifEnabled.firstOrNull() == true)
+                _sendNotif.emit(Unit)
+        }
+
+    }
     fun onManageTransferts() {
         flowOf(Unit)
             .onEach { _sharedLoading.emit("Transferts en cours...") }

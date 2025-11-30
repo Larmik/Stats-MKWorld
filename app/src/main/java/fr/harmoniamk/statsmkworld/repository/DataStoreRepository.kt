@@ -36,6 +36,9 @@ interface DataStoreRepositoryInterface {
     suspend fun setAccessToken(token: String)
     suspend fun setLastUpdate(lastUpdate: Long)
     suspend fun setMatrixMode(active: Boolean)
+    suspend fun setNotificationsEnabled(enabled: Boolean)
+
+    suspend fun setNotifAlreadyRequested()
 
     suspend fun setMKCPlayer(player: MKCPlayer)
     suspend fun setMKCTeam(team: MKCTeam)
@@ -51,6 +54,9 @@ interface DataStoreRepositoryInterface {
     val mkcTeam: Flow<MKCTeam>
     val war: Flow<War?>
     val lastUpdate: Flow<Long>
+    val notifEnabled: Flow<Boolean>
+
+    val notifAlreadyRequested: Flow<Boolean>
 }
 
 @Module
@@ -122,6 +128,20 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
+    override suspend fun setNotificationsEnabled(enabled: Boolean) {
+        val keyMode = booleanPreferencesKey("notificationsEnabled")
+        context.dataStore.edit {
+            it[keyMode] = enabled
+        }
+    }
+
+    override suspend fun setNotifAlreadyRequested() {
+        val keyMode = booleanPreferencesKey("firstTimeAskingNotifications")
+        context.dataStore.edit {
+            it[keyMode] = true
+        }
+    }
+
     override val accessToken: Flow<String>
         get() {
             val key = stringPreferencesKey("access_token")
@@ -153,5 +173,16 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
             val key = longPreferencesKey("lastUpdate")
             return context.dataStore.data.map { it[key] ?: 0 }
         }
+    override val notifEnabled: Flow<Boolean>
+        get() {
+            val key = booleanPreferencesKey("notificationsEnabled")
+            return context.dataStore.data.map { it[key] == true || it[key] == null }
+        }
+    override val notifAlreadyRequested: Flow<Boolean>
+        get() {
+            val key = booleanPreferencesKey("firstTimeAskingNotifications")
+            return context.dataStore.data.map { it[key] == true }
+        }
+
 
 }

@@ -176,4 +176,6 @@
     <string name="id_joueur">ID joueur</string>
     <string name="see_more">Voir plus</string>
     <string name="all_wars">Toutes les wars</string>
+    <string name="notif_enabled">Notifications activées</string>
+    <string name="notif_disabled">Notifications désactivées</string>
 </resources>

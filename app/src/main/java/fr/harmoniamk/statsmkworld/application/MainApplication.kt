@@ -27,16 +27,17 @@ class MainApplication : Application(), Application.ActivityLifecycleCallbacks, C
     private var activityReference = WeakReference<Activity?>(null)
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        activityReference = WeakReference(activity)
     }
 
     override fun onActivityStarted(activity: Activity) {
     }
 
     override fun onActivityResumed(activity: Activity) {
+        activityReference = WeakReference(activity)
     }
 
     override fun onActivityPaused(activity: Activity) {
+        activityReference.clear()
     }
 
     override fun onActivityStopped(activity: Activity) {

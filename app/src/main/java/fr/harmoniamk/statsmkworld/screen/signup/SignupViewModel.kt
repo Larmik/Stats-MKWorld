@@ -116,9 +116,11 @@ class SignupViewModel @AssistedInject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
     fun requestNotifications() {
-        if (!notificationRepository.requestAuthorization) _state.value =
-            _state.value.copy(currentPage = 3)
-        else _showNotif.emit(Unit, viewModelScope)
+        viewModelScope.launch {
+            if (!notificationRepository.requestAuthorization()) _state.value =
+                _state.value.copy(currentPage = 3)
+            else _showNotif.emit(Unit, viewModelScope)
+        }
     }
 
 

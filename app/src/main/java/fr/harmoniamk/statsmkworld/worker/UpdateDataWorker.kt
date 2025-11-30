@@ -26,7 +26,10 @@ class UpdateDataWorker @AssistedInject constructor(
     override suspend fun task() {
         dataStoreRepository.mkcPlayer.firstOrNull()?.id?.let {
            fetchUseCase.fetchData(it.toString())
-               .onEach { context.sendDebugNotification("Données mises à jour") }
+               .onEach {
+                   if (dataStoreRepository.notifEnabled.firstOrNull() == true)
+                    context.sendDebugNotification("Données mises à jour")
+               }
                .first()
         }
     }

@@ -18,6 +18,7 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.NotificationRepositoryInterface
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -46,6 +47,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
     private val fetchUseCase: FetchUseCaseInterface,
     private val authDataSource: DiscordDataSourceInterface,
     private val mkCentralDataSource: MKCentralDataSourceInterface,
+    private val notificationRepository: NotificationRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -65,14 +67,15 @@ class PlayerProfileViewModel @AssistedInject constructor(
         @StringRes val confirmDialog: Int? = null,
         @StringRes val adminButtonLabel: Int? = null,
         val teamId: String? = null,
-        val isMatrixMode: Boolean = false
+        val isMatrixMode: Boolean = false,
+        val notificationsEnabled: Boolean? = null
     )
 
     private val _state = MutableStateFlow(State())
     private val _backToLogin = MutableSharedFlow<Unit>()
-
+    private val _showNotif = MutableSharedFlow<Unit>()
     val backToLogin = _backToLogin.asSharedFlow()
-
+    val showNotif = _showNotif.asSharedFlow()
 
 
 
@@ -113,6 +116,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 } }.firstOrNull()
             val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { id == "me" && it?.startsWith("01/01/1970") != true }
             val matrixMode = dataStoreRepository.matrixMode.firstOrNull()
+            val notificationsActivated = dataStoreRepository.notifEnabled.firstOrNull() == true
             State(
                 player = it,
                 buttonVisible = canAlly && isAlly != true,
@@ -133,7 +137,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     }
                 },
                 teamId = team?.id.toString(),
-                isMatrixMode = matrixMode == true
+                isMatrixMode = matrixMode == true,
+                notificationsEnabled = notificationRepository.notificationsEnabled && notificationsActivated
             )
         }
         .mergeWith(_state)
@@ -213,31 +218,16 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 _state.value = state.value.copy(dialogTitle = R.string.fetch_player)
                 fetchUseCase.fetchPlayer(it.toString())
                     .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" } }
-                    .onEach {
-                       _state.value = state.value.copy(dialogTitle = R.string.fetch_team)
-
-                    }
+                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_team) }
                     .flatMapLatest { fetchUseCase.fetchTeam(it.teamID.toString()) }
-                    .onEach {
-                        _state.value = state.value.copy(dialogTitle = R.string.fetch_allies)
-
-                    }
+                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_allies) }
                     .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
-                    .onEach {
-                        _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents)
-
-                    }
+                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents) }
                     .flatMapLatest { fetchUseCase.fetchTeams() }
                     .flatMapLatest { dataStoreRepository.mkcTeam }
-                    .onEach {
-                        _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars)
-
-                    }
+                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars) }
                     .flatMapLatest { fetchUseCase.fetchWars(it.id.toString()) }
-                    .onEach {
-                        _state.value = state.value.copy(dialogTitle = null)
-
-                    }
+                    .onEach { _state.value = state.value.copy(dialogTitle = null) }
                     .onEach { dataStoreRepository.setLastUpdate(Date().time) }
                     .launchIn(this)
             }
@@ -267,7 +257,27 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 _state.value = state.value.copy(confirmDialog = null)
                 _backToLogin.emit(Unit)
             }.launchIn(viewModelScope)
+    }
 
+    fun onNotification() {
+        viewModelScope.launch {
+            when {
+                notificationRepository.requestAuthorization() -> _showNotif.emit(Unit)
+                notificationRepository.notificationsEnabled && dataStoreRepository.notifEnabled.firstOrNull() != true -> {
+                    dataStoreRepository.setNotificationsEnabled(true)
+                    _state.value = state.value.copy(notificationsEnabled = true)
+                }
+                notificationRepository.notificationsEnabled && dataStoreRepository.notifEnabled.firstOrNull() == true -> {
+                    dataStoreRepository.setNotificationsEnabled(false)
+                    _state.value = state.value.copy(notificationsEnabled = false)
+                }
+            }
+        }
+    }
 
+    fun onResume() {
+        viewModelScope.launch {
+            _state.value = state.value.copy(notificationsEnabled = notificationRepository.notificationsEnabled && dataStoreRepository.notifEnabled.firstOrNull() == true)
+        }
     }
 }

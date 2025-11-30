@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.sendDebugNotification
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -42,6 +43,12 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
     LaunchedEffect(Unit) {
         viewModel.sharedToast.collect {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.sendNotif.collect {
+            context.sendDebugNotification("Test notification")
         }
     }
 
@@ -113,6 +120,28 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
                         }) {
                             MKText(
                                 text = "Test MKWR",
+                                font = Fonts.Urbanist,
+                                modifier = Modifier.padding(vertical = 20.dp)
+                            )
+                        }
+                    }
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Colors.blackAlphaed)
+                    )
+                }
+            }
+
+            item {
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(Modifier.weight(1f).clickable {
+                            viewModel.onNotif()
+                        }) {
+                            MKText(
+                                text = "Test notif",
                                 font = Fonts.Urbanist,
                                 modifier = Modifier.padding(vertical = 20.dp)
                             )
