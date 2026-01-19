@@ -89,12 +89,12 @@ class SignupViewModel @AssistedInject constructor(
         .flatMapLatest { mkCentralDataSource.getPlayer(it.id.toString()) }
         .mapNotNull { it.successResponse }
         .map {
-            val teamId = it.rosters?.firstOrNull()?.teamID
+            val teamId = it.rosters?.firstOrNull { it.game == "mkworld" }?.teamID
             //Set player dans datastore puis écriture sur Firebase (si non existant)
             dataStoreRepository.setMKCPlayer(it)
             if (firebaseRepository.getUser(teamId.toString(), it.id.toString()).firstOrNull() == null) {
                 val user = User(it.id.toString(), discordId = it.discord?.discordID.orEmpty(), name = it.name)
-                firebaseRepository.writeUser(teamId.toString(), user)
+                firebaseRepository.writeUser(teamId.toString(), user).firstOrNull()
             }
             //Fetch classique, puis affichage du succès, MAJ de la date et redirection home
             fetchUseCase.fetchTeam(teamId.toString())

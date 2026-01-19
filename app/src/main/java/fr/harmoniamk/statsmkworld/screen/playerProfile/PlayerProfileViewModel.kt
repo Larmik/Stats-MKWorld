@@ -224,6 +224,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
                     .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents) }
                     .flatMapLatest { fetchUseCase.fetchTeams() }
+                    .flatMapLatest { databaseRepository.clearWars() }
                     .flatMapLatest { dataStoreRepository.mkcTeam }
                     .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars) }
                     .flatMapLatest { fetchUseCase.fetchWars(it.id.toString()) }

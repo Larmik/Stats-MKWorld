@@ -41,8 +41,11 @@ data class MKCTeam(
                 .setCreationDate(creationDate)
                 .setLanguage(language)
                 .setColor(color)
-                .setLogo(logo)
                 .setApprovalStatus(approvalStatus)
+
+            logo?.let {
+                builder.setLogo(it)
+            }
 
             rosters.forEach {
                 builder.addRosters(it.proto)
