@@ -21,9 +21,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.zip
@@ -40,7 +40,7 @@ class AddWarViewModel @Inject constructor(
 
     data class State(
         val teamList: List<TeamEntity> = listOf(),
-        val playerList: List<PlayerSelector> = listOf(),
+        val playerList: Map<String, List<PlayerSelector>> = mapOf(),
         val teamSelected: TeamEntity? = null,
         val buttonEnabled: Boolean = false,
         val warName: String? = null
@@ -50,18 +50,23 @@ class AddWarViewModel @Inject constructor(
     private var teams = listOf<TeamEntity>()
     private var players = listOf<PlayerEntity>()
     private var currentTeam: MKCTeam? = null
+    private var rosterId: String? = null
 
     private val _goToCurrent = MutableSharedFlow<Unit>()
     val goToCurrent = _goToCurrent.asSharedFlow()
 
     val state = databaseRepository.getTeams()
         .zip(databaseRepository.getPlayers()) { teams, players ->
+            val team = dataStoreRepository.mkcTeam.firstOrNull()
             this.teams = teams
             this.players = players
-            this.currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
+            this.currentTeam = team
             State(
                 teamList = teams,
-                playerList = players.map { PlayerSelector(it, false) }
+                playerList = players.map { PlayerSelector(it, false) }.groupBy { selector ->
+                    val roster = team?.rosters?.firstOrNull { it.id.toString() == selector.player.rosterId }
+                    roster?.name.orEmpty()
+                }
             )
         }
         .mergeWith(_state)
@@ -82,44 +87,52 @@ class AddWarViewModel @Inject constructor(
     }
 
     fun onPlayerSelected(player: PlayerEntity) {
-        val newValues = mutableListOf<PlayerSelector>()
-        state.value.playerList.forEach {
-            when (it.player.id == player.id) {
-                true -> newValues.add(it.copy(isSelected = !it.isSelected))
-                else -> newValues.add(it)
+        val newValues = mutableMapOf<String, List<PlayerSelector>>()
+        state.value.playerList.forEach { pair ->
+            val newList = mutableListOf<PlayerSelector>()
+            pair.value.forEach {
+                when (it.player.id == player.id) {
+                    true -> newList.add(it.copy(isSelected = !it.isSelected))
+                    else -> newList.add(it)
+                }
             }
+            newValues[pair.key] = newList
         }
         _state.value = state.value.copy(
             playerList = newValues,
-            buttonEnabled = newValues.filter { it.isSelected }.size == 6
+            buttonEnabled = newValues.flatMap { it.value }.filter { it.isSelected }.size == 6
         )
     }
 
     fun createWar() {
-        flowOf(currentTeam?.id)
+        dataStoreRepository.mkcPlayer
+            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
             .filterNotNull()
             .map {
+                this.rosterId = it
                 War(
                     id = System.currentTimeMillis(),
-                    teamHost = it.toString(),
+                    teamHost = it,
                     teamOpponent = _state.value.teamSelected?.id.orEmpty(),
                     tracks = listOf(),
                     penalties = listOf()
                 )
             }
             .onEach { war ->
-                _state.value.playerList.filter { it.isSelected }.forEach {
-                    firebaseRepository.writeUser(
-                        teamId = currentTeam?.id.toString(),
-                        user = User(
-                            id = it.player.id,
-                            currentWar = war.id.toString(),
-                            role = it.player.role,
-                            name = it.player.name,
-                            discordId = it.player.discordId
-                        )
-                    ).firstOrNull()
-                    databaseRepository.updateUser(it.player.id, war.id.toString()).firstOrNull()
+                _state.value.playerList.flatMap { it.value }.filter { it.isSelected }.forEach {
+                    rosterId?.let { id ->
+                        firebaseRepository.writeUser(
+                            teamId = id,
+                            user = User(
+                                id = it.player.id,
+                                currentWar = war.id.toString(),
+                                role = it.player.role,
+                                name = it.player.name,
+                                discordId = it.player.discordId
+                            )
+                        ).firstOrNull()
+                        databaseRepository.updateUser(it.player.id, war.id.toString()).firstOrNull()
+                    }
                 }
             }
             .onEach {  dataStoreRepository.setCurrentWar(it) }

@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.screen.welcome
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -69,9 +71,16 @@ fun WelcomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
-                            state.value.teamLogo?.let {
-                                AsyncImage(
-                                    model = state.value.teamLogo,
+                            when (val logo = state.value.teamLogo) {
+                                null -> Image(
+                                    painter = painterResource(R.drawable.default_logo),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .clip(CircleShape)
+                                )
+                                else -> AsyncImage(
+                                    model = logo,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(50.dp)
@@ -111,9 +120,16 @@ fun WelcomeScreen(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.clickable { onPlayerProfile() }) {
-                        state.value.playerLogo?.let {
-                            AsyncImage(
-                                model = state.value.playerLogo,
+                        when (val logo = state.value.playerLogo) {
+                            null -> Image(
+                                painter = painterResource(R.drawable.default_logo),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(CircleShape)
+                            )
+                            else -> AsyncImage(
+                                model = logo,
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(50.dp)

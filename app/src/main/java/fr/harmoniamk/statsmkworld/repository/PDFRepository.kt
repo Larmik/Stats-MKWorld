@@ -40,6 +40,7 @@ import java.io.IOException
 import java.io.OutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.roundToInt
 
 interface PDFRepositoryInterface {
     fun write(pdfDocument: PdfDocument, fileName: String): Flow<Uri?>
@@ -361,7 +362,6 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
 
         val pageWidthPx = scale(1630)
         val pageHeightPx = height
-        //val pdfContext = PdfTools.getPdfContext(context, pageWidthPx, pageHeightPx)
         val pdfView: View = View.inflate(context, R.layout.tab_pdf, null)
         pdfView.layoutParams = ViewGroup.LayoutParams(pageWidthPx, pageHeightPx)
         val widthSpec = View.MeasureSpec.makeMeasureSpec(pageWidthPx, View.MeasureSpec.EXACTLY)
@@ -706,7 +706,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
     private fun scale(value: Int): Int {
         val targetDpi = context.resources.displayMetrics.densityDpi
         val referenceDpi = 440f
-        return (value * (targetDpi / referenceDpi)).toInt()
+        return (value * targetDpi / referenceDpi).roundToInt()
     }
 
 }

@@ -46,9 +46,14 @@ class InitStatsWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
-        databaseRepository.getWars().firstOrNull()?.let { warList ->
+        val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
+        val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
+        val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
+
+        databaseRepository.getWars().firstOrNull()
+            ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+            ?.let { warList ->
             val currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
-            val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
 
             //Fetch tracks stats
             statsRepository.trackRankList = warList.withTrackStats().map { RankingItem.TrackRanking(it) }
@@ -58,6 +63,7 @@ class InitStatsWorker @AssistedInject constructor(
             databaseRepository.getPlayers()
                 .mapNotNull { it.sortedBy { it.name } }
                 .onEach { userList ->
+                    val rosters = dataStoreRepository.mkcTeam.firstOrNull()?.rosters
                     val players = mutableListOf<RankingItem>()
                     userList.forEach { user ->
                         warList
@@ -68,6 +74,8 @@ class InitStatsWorker @AssistedInject constructor(
                             .firstOrNull()
                     }
                     statsRepository.playersRankList = players
+                        .mapNotNull { it as? RankingItem.PlayerRanking }
+                        .groupBy { ranking -> rosters?.firstOrNull { it.id.toString() == ranking.player.rosterId }?.name ?: "Allies" }
                 }.launchIn(this)
 
             //Fetch opponent stats

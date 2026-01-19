@@ -25,6 +25,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -77,7 +78,6 @@ sealed interface RankingItem {
 @HiltViewModel(assistedFactory = StatsRankingViewModel.Factory::class)
 class StatsRankingViewModel @AssistedInject constructor(
     @Assisted val type: StatsType?,
-    databaseRepository: DatabaseRepositoryInterface,
     dataStoreRepository: DataStoreRepositoryInterface,
     private val statsRepository: StatsRepositoryInterface,
     @ApplicationContext private val context: Context
@@ -93,6 +93,7 @@ class StatsRankingViewModel @AssistedInject constructor(
         val userId: String? = null,
         val teamId: String? = null,
         val list: List<RankingItem> = listOf(),
+        val playerList: Map<String, List<RankingItem.PlayerRanking>> = mapOf(),
         val index: Int = 0,
         val currentUserId: String? = null,
         val sortItems: List<Pair<SortType, Boolean>> = listOf(
@@ -107,8 +108,8 @@ class StatsRankingViewModel @AssistedInject constructor(
     private var currentUser: MKCPlayer? = null
 
 
-    val state = databaseRepository.getWars()
-        .map { warList ->
+    val state = flowOf(Unit)
+        .map {
             val title = when (type) {
                 is StatsType.TeamStats -> R.string.statistiques_des_joueurs
                 is StatsType.OpponentStats -> R.string.statistiques_des_adversaires
@@ -118,7 +119,7 @@ class StatsRankingViewModel @AssistedInject constructor(
             when (type) {
                 is StatsType.TeamStats -> _state.value.copy(
                     title = title,
-                    list = statsRepository.playersRankList
+                    playerList = statsRepository.playersRankList
                 )
 
                 is StatsType.OpponentStats -> _state.value.copy(

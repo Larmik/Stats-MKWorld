@@ -94,7 +94,7 @@ fun AddWarScreen(
                     MKText(text = it, fontSize = 18)
                 }
                 LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    state.value.playerList.groupBy { it.player.isAlly }.forEach { (isAlly, list) ->
+                    state.value.playerList.forEach { (rosterName, list) ->
                         stickyHeader {
                             Box(Modifier
                                 .fillMaxWidth()
@@ -107,9 +107,9 @@ fun AddWarScreen(
                                     fontSize = 18,
                                     font = Fonts.NunitoBD,
                                     textColor = Colors.white,
-                                    text = when (isAlly) {
+                                    text = when (rosterName.isEmpty()) {
                                         true -> stringResource(R.string.allies)
-                                        else -> stringResource(R.string.roster)
+                                        else -> rosterName
                                     }
                                 )
                             }

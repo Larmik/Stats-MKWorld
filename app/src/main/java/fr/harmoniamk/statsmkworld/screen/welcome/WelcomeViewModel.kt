@@ -37,8 +37,9 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
     )
 
     init {
-        dataStoreRepository.mkcTeam
-            .flatMapLatest { firebaseRepository.listenToCurrentWar(it.id.toString()) }
+        dataStoreRepository.mkcPlayer
+            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
+            .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
             .onEach { _state.value = state.value.copy(currentWar = it) }
             .launchIn(viewModelScope)
     }
@@ -47,6 +48,8 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
 
     val state = dataStoreRepository.mkcPlayer
         .mapNotNull { player ->
+            val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
+            val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
                 val buttonVisible = firebaseRepository
                     .getUser(team.id.toString(), player.id.toString())
@@ -56,18 +59,22 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
 
                 val wars = databaseRepository.getWars()
                     .firstOrNull()
+                    ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
                     ?.map { War(it) }
                     ?.map { WarDetails(it) }
                     ?.sortedByDescending { it.war.id }
                     ?.safeSubList(0, 5)
                     .orEmpty()
+
+                val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID.toString()
+
                 State(
                     teamName = team.name,
-                    teamLogo = team.logo?.let { "https://mkcentral.com$it" },
+                    teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     playerName = player.name,
-                    playerLogo = player.userSettings?.avatar?.let { "https://mkcentral.com$it" },
-                    buttonVisible = buttonVisible == true,
-                    currentWar = firebaseRepository.getCurrentWar(team.id.toString()).firstOrNull(),
+                    playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
+                    buttonVisible = buttonVisible == true || dataStoreRepository.matrixMode.firstOrNull() == true,
+                    currentWar = firebaseRepository.getCurrentWar(rosterId).firstOrNull(),
                     wars = wars
                 )
             }

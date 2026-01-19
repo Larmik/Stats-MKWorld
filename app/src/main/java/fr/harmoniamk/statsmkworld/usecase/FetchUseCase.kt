@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.zip
@@ -71,7 +72,11 @@ class FetchUseCase @Inject constructor(
             .flatMapLatest { fetchAllies(it.id.toString()) }
             .flatMapLatest { fetchTeams() }
             .flatMapLatest { dataStoreRepository.mkcTeam }
-            .flatMapLatest { fetchWars(it.id.toString()) }
+            .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
+            .flatMapLatest { ids ->
+                val flows = ids.map { fetchWars(it) }
+                merge(*flows.toTypedArray())
+            }
             .onEach { dataStoreRepository.setLastUpdate(Date().time) }
 
     override fun fetchPlayer(playerId: String): Flow<MKCPlayer> =
@@ -84,10 +89,12 @@ class FetchUseCase @Inject constructor(
         .onEach {
             dataStoreRepository.setMKCTeam(it)
             databaseRepository.clearPlayers().firstOrNull()
-            it.rosters.firstOrNull { it.game == "mkworld" }?.players?.forEach { player ->
-                val user = firebaseRepository.getUser(teamId, player.playerId).firstOrNull()
-                val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty())
-                databaseRepository.writePlayer(playerEntity).firstOrNull()
+            it.rosters.filter { it.game == "mkworld" }.forEach { roster ->
+                roster.players.forEach { player ->
+                    val user = firebaseRepository.getUser(teamId, player.playerId).firstOrNull()
+                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString())
+                    databaseRepository.writePlayer(playerEntity).firstOrNull()
+                }
             }
         }
 
@@ -100,7 +107,7 @@ class FetchUseCase @Inject constructor(
                     true -> {
                         databaseRepository.getPlayer(ally.id).firstOrNull()?.let { player ->
                             firebaseRepository.deleteAlly(teamId, ally.id).firstOrNull()
-                            databaseRepository.updateUser(ally.id, false).firstOrNull()
+                            databaseRepository.updateUserRoster(ally.id, player.rosterId).firstOrNull()
                         }
                     }
 
@@ -201,7 +208,7 @@ class FetchUseCase @Inject constructor(
                         fbUser?.let {
                             firebaseRepository.writeUser(mkcPlayer.rosters?.firstOrNull { it.game == "mkworld" }?.teamID.toString(), it).firstOrNull()
                             firebaseRepository.writeAlly(team.id.toString(), it).firstOrNull()
-                            databaseRepository.updateUser(it.id, isAlly = true).firstOrNull()
+                            databaseRepository.updateUserRoster(it.id, rosterId = "-1").firstOrNull()
                             firebaseRepository.deleteUser(team.id.toString(), it.id).firstOrNull()
                         }
                     }

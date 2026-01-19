@@ -37,6 +37,7 @@ interface DataStoreRepositoryInterface {
     suspend fun setLastUpdate(lastUpdate: Long)
     suspend fun setMatrixMode(active: Boolean)
     suspend fun setNotificationsEnabled(enabled: Boolean)
+    suspend fun setMultiRosterEnabled(enabled: Boolean)
 
     suspend fun setNotifAlreadyRequested()
 
@@ -55,6 +56,7 @@ interface DataStoreRepositoryInterface {
     val war: Flow<War?>
     val lastUpdate: Flow<Long>
     val notifEnabled: Flow<Boolean>
+    val multiRosterEnabled: Flow<Boolean>
 
     val notifAlreadyRequested: Flow<Boolean>
 }
@@ -135,6 +137,13 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
+    override suspend fun setMultiRosterEnabled(enabled: Boolean) {
+        val keyMode = booleanPreferencesKey("multiRosterEnabled")
+        context.dataStore.edit {
+            it[keyMode] = enabled
+        }
+    }
+
     override suspend fun setNotifAlreadyRequested() {
         val keyMode = booleanPreferencesKey("firstTimeAskingNotifications")
         context.dataStore.edit {
@@ -178,6 +187,12 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
             val key = booleanPreferencesKey("notificationsEnabled")
             return context.dataStore.data.map { it[key] == true || it[key] == null }
         }
+    override val multiRosterEnabled: Flow<Boolean>
+        get() {
+            val key = booleanPreferencesKey("multiRosterEnabled")
+            return context.dataStore.data.map { it[key] == true || it[key] == null }
+        }
+
     override val notifAlreadyRequested: Flow<Boolean>
         get() {
             val key = booleanPreferencesKey("firstTimeAskingNotifications")

@@ -77,7 +77,7 @@ fun RegistryScreen(
                         LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
                             items(state.value.playerList) {
                                 PlayerCell(
-                                    player = PlayerEntity(it),
+                                    player = PlayerEntity(it, isAlly = false),
                                     onClick = { onPlayerProfile(it.id) })
                             }
                         }

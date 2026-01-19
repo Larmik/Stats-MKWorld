@@ -15,26 +15,29 @@ class PlayerEntity(
     //si is_manager ou is_leader -> role = 2
     @ColumnInfo(name = "role") val role: Int,
     @ColumnInfo(name = "currentWar") val currentWar: String,
-    @ColumnInfo(name = "isAlly") val isAlly: Boolean,
+    @ColumnInfo(name = "rosterId") val rosterId: String,
     @ColumnInfo(name = "discordId") val discordId: String,
 ) {
-    constructor(player: MKCPlayer, role: Int = 0, isAlly: Boolean = false) : this(
+    constructor(player: MKCPlayer, role: Int = 0, isAlly: Boolean) : this(
         id = player.id.toString(),
         name = player.name,
         country = player.countryCode,
         role = role,
         currentWar = "",
-        isAlly = isAlly,
+        rosterId = when (isAlly) {
+            true -> "-1"
+            else -> player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString().orEmpty()
+        },
         discordId = player.discord?.discordID.orEmpty()
     )
 
-    constructor(player: MKCTeamPlayer, role: Int = 0, currentWar: String = "", isAlly: Boolean = false, discordId: String = "") : this(
+    constructor(player: MKCTeamPlayer, role: Int = 0, currentWar: String = "", rosterId: String, discordId: String = "") : this(
         id = player.playerId,
         name = player.name,
         country = player.countryCode,
         role = role,
         currentWar = currentWar,
-        isAlly = isAlly,
+        rosterId = rosterId,
         discordId = discordId
     )
 }

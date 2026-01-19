@@ -178,4 +178,6 @@
     <string name="all_wars">Toutes les wars</string>
     <string name="notif_enabled">Notifications activées</string>
     <string name="notif_disabled">Notifications désactivées</string>
+    <string name="multi_roster_enabled">Multi-roster activé</string>
+    <string name="multi_roster_disabled">Multi-roster désactivé</string>
 </resources>

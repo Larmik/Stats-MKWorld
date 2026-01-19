@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,7 +23,8 @@ import kotlinx.coroutines.flow.stateIn
 @HiltViewModel(assistedFactory = CurrentWarCellViewModel.Factory::class)
 class CurrentWarCellViewModel @AssistedInject constructor(
     @Assisted val currentWar: War?,
-    databaseRepository: DatabaseRepositoryInterface
+    databaseRepository: DatabaseRepositoryInterface,
+    dataStoreRepository: DataStoreRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -42,7 +44,7 @@ class CurrentWarCellViewModel @AssistedInject constructor(
             .filterNotNull()
             .map { war ->
                 val details = WarDetails(war)
-                val teamHost = databaseRepository.getTeam(details.war.teamHost).firstOrNull()
+                val teamHost = dataStoreRepository.mkcTeam.map { TeamEntity(it) }.firstOrNull()
                 val teamOpponent =
                     databaseRepository.getTeam(details.war.teamOpponent).firstOrNull()
                 State(

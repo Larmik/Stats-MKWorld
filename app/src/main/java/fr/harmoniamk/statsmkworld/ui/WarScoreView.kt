@@ -66,13 +66,22 @@ fun WarScoreView(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AsyncImage(
-                    model = "https://mkcentral.com${teamHost?.logo}",
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(logoSize)
-                        .clip(CircleShape)
-                )
+                when (val logo = teamHost?.logo) {
+                    null -> Image(
+                        painter = painterResource(R.drawable.default_logo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(logoSize)
+                            .clip(CircleShape)
+                    )
+                    else -> AsyncImage(
+                        model = "https://mkcentral.com$logo",
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(logoSize)
+                            .clip(CircleShape)
+                    )
+                }
                 MKText(text = teamHost?.name.orEmpty(), fontSize = teamNameSize, maxLines = 1)
             }
 
@@ -82,8 +91,11 @@ fun WarScoreView(
             ) {
                 MKText(text = score, fontSize = scoreSize, font = Fonts.NunitoBD, maxLines = 1)
                 MKText(text = diff, fontSize = diffSize, font = Fonts.NunitoBD)
-                shockCount.takeIf { it > 0  }?.let {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 5.dp)) {
+                shockCount.takeIf { it > 0 }?.let {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 5.dp)
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.shock),
                             contentDescription = null,
@@ -100,13 +112,23 @@ fun WarScoreView(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AsyncImage(
-                    model = "https://mkcentral.com${teamOpponent?.logo}",
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(logoSize)
-                        .clip(CircleShape)
-                )
+                when (val logo = teamOpponent?.logo) {
+                    null -> Image(
+                        painter = painterResource(R.drawable.default_logo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(logoSize)
+                            .clip(CircleShape)
+                    )
+                    else ->  AsyncImage(
+                        model = "https://mkcentral.com$logo",
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(logoSize)
+                            .clip(CircleShape)
+                    )
+                }
+
                 MKText(
                     text = teamOpponent?.name.orEmpty(),
                     textColor = Colors.black,
@@ -116,18 +138,26 @@ fun WarScoreView(
             }
         }
         penalties.takeIf { it.isNotEmpty() }?.let {
-            Row(Modifier
-                .wrapContentHeight()
-                .fillMaxWidth()) {
+            Row(
+                Modifier
+                    .wrapContentHeight()
+                    .fillMaxWidth()
+            ) {
                 penalties.filter { it.teamId == teamHost?.id }.takeIf { it.isNotEmpty() }?.let {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
                         MKText(text = stringResource(R.string.penalty))
                         MKText(text = "-${it.sumOf { it.amount }}")
                     }
                 } ?: Spacer(Modifier.weight(1f))
                 Spacer(Modifier.weight(1f))
                 penalties.filter { it.teamId == teamOpponent?.id }.takeIf { it.isNotEmpty() }?.let {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
                         MKText(text = stringResource(R.string.penalty))
                         MKText(text = "-${it.sumOf { it.amount }}")
                     }

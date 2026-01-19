@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,7 +18,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Switch
@@ -29,7 +32,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -127,9 +132,17 @@ fun PlayerProfileScreen(
     }
 
     BaseScreen(title = stringResource(R.string.profil_joueur)) {
-        state.value.player?.userSettings?.avatar?.let {
-            AsyncImage(model = "https://mkcentral.com$it", contentDescription = null)
+        when (val avatar = state.value.player?.userSettings?.avatar) {
+            null -> Image(
+                painter = painterResource(R.drawable.default_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(35.dp)
+                    .clip(CircleShape)
+            )
+            else -> AsyncImage(model = "https://mkcentral.com$avatar", contentDescription = null)
         }
+
         when (val player = state.value.player) {
             null -> CircularProgressIndicator()
             else -> {
@@ -326,6 +339,42 @@ fun PlayerProfileScreen(
                                 )
                                 Switch(
                                     checked = state.value.notificationsEnabled == true, onCheckedChange = { viewModel.onNotification() }, colors = SwitchDefaults.colors(
+                                        checkedTrackColor = Colors.black.copy(alpha = 0.3f),
+                                        checkedThumbColor = Colors.black,
+                                        uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),
+                                        uncheckedThumbColor = Colors.blackAlphaed,
+                                        uncheckedBorderColor = Colors.transparent,
+                                        checkedBorderColor = Colors.transparent
+                                    )
+                                )
+                            }
+                            Spacer(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(Colors.blackAlphaed)
+                            )
+
+                        }
+                        if (state.value.hasMultiRoster)
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.onNotification() },
+                                horizontalArrangement = Arrangement.SpaceBetween) {
+                                MKText(
+                                    text = stringResource(
+                                        when (state.value.multiRosterEnabled) {
+                                            true -> R.string.multi_roster_enabled
+                                            else -> R.string.multi_roster_disabled
+                                        }
+                                    ),
+                                    font = Fonts.Urbanist,
+                                    modifier = Modifier.padding(vertical = 20.dp)
+                                )
+                                Switch(
+                                    checked = state.value.multiRosterEnabled, onCheckedChange = { viewModel.onMultiRoster() }, colors = SwitchDefaults.colors(
                                         checkedTrackColor = Colors.black.copy(alpha = 0.3f),
                                         checkedThumbColor = Colors.black,
                                         uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),

@@ -22,7 +22,7 @@ interface PlayerLocalDataSourceInterface {
     fun upsert(player: PlayerEntity): Flow<Unit>
     fun setCurrentWar(id: String, currentWar: String): Flow<Unit>
     fun setRole(id: String, role: Int): Flow<Unit>
-    fun setAlly(id: String, isAlly: Boolean): Flow<Unit>
+    fun setRosterId(id: String, rosterId: String): Flow<Unit>
     fun clear(): Flow<Unit>
 }
 
@@ -49,7 +49,7 @@ class PlayerLocalDataSource @Inject constructor(@ApplicationContext private val 
     override fun upsert(player: PlayerEntity): Flow<Unit> = flow { emit(dao.upsert(player)) }
     override fun setCurrentWar(id: String, currentWar: String): Flow<Unit> = flow { emit(dao.setCurrentWar(id, currentWar)) }
     override fun setRole(id: String, role: Int): Flow<Unit> = flow { emit(dao.setRole(id, role)) }
-    override fun setAlly(id: String, isAlly: Boolean): Flow<Unit> = flow { emit(dao.setAlly(id, isAlly)) }
+    override fun setRosterId(id: String, rosterId: String): Flow<Unit> = flow { emit(dao.setRosterId(id, rosterId)) }
 
     override fun clear(): Flow<Unit> = flow { emit(dao.clear())}
 

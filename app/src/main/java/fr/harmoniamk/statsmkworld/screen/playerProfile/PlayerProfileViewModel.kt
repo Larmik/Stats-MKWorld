@@ -32,10 +32,13 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
+import kotlin.collections.map
+import kotlin.collections.toTypedArray
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = PlayerProfileViewModel.Factory::class)
@@ -68,7 +71,9 @@ class PlayerProfileViewModel @AssistedInject constructor(
         @StringRes val adminButtonLabel: Int? = null,
         val teamId: String? = null,
         val isMatrixMode: Boolean = false,
-        val notificationsEnabled: Boolean? = null
+        val notificationsEnabled: Boolean? = null,
+        val hasMultiRoster: Boolean = false,
+        val multiRosterEnabled: Boolean = false
     )
 
     private val _state = MutableStateFlow(State())
@@ -97,16 +102,19 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 .map { it == 2 }
                 .firstOrNull()
 
-            val roster = team
-                ?.rosters
-                ?.firstOrNull { it.game == "mkworld" }
-                ?.players.orEmpty()
+            val hasMultiRoster = team?.rosters?.filter { it.game == "mkworld" }?.size?.let { it > 1 } ?: false
 
-            val canAlly = !roster.map { it.playerId }.contains(id) && id != "me"
+            val players = team
+                ?.rosters
+                ?.filter { it.game == "mkworld" }
+                ?.flatMap { it.players }
+                .orEmpty()
+
+            val canAlly = !players.map { it.playerId }.contains(id) && id != "me"
 
             val isAlly = databaseRepository.getPlayers().firstOrNull()
                 ?.singleOrNull { it.id == id }
-                ?.isAlly
+                ?.rosterId == "-1"
 
             val role = firebaseRepository.getUser(team?.id.toString(), it.id.toString())
                 .map { when (it?.role) {
@@ -117,6 +125,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
             val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { id == "me" && it?.startsWith("01/01/1970") != true }
             val matrixMode = dataStoreRepository.matrixMode.firstOrNull()
             val notificationsActivated = dataStoreRepository.notifEnabled.firstOrNull() == true
+            val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             State(
                 player = it,
                 buttonVisible = canAlly && isAlly != true,
@@ -138,6 +147,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 },
                 teamId = team?.id.toString(),
                 isMatrixMode = matrixMode == true,
+                hasMultiRoster = hasMultiRoster,
+                multiRosterEnabled = multiRosterEnabled,
                 notificationsEnabled = notificationRepository.notificationsEnabled && notificationsActivated
             )
         }
@@ -197,7 +208,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     country = it.country,
                     role = newRole,
                     currentWar = it.currentWar,
-                    isAlly = it.isAlly,
+                    rosterId = it.rosterId,
                     discordId = it.discordId
                 )
                 databaseRepository.writePlayer(updatedPlayer)
@@ -227,7 +238,11 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     .flatMapLatest { databaseRepository.clearWars() }
                     .flatMapLatest { dataStoreRepository.mkcTeam }
                     .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars) }
-                    .flatMapLatest { fetchUseCase.fetchWars(it.id.toString()) }
+                    .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
+                    .flatMapLatest { ids ->
+                        val flows = ids.map { fetchUseCase.fetchWars(it) }
+                        merge(*flows.toTypedArray())
+                    }
                     .onEach { _state.value = state.value.copy(dialogTitle = null) }
                     .onEach { dataStoreRepository.setLastUpdate(Date().time) }
                     .launchIn(this)
@@ -273,6 +288,23 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     _state.value = state.value.copy(notificationsEnabled = false)
                 }
             }
+        }
+    }
+
+    fun onMultiRoster() {
+        viewModelScope.launch {
+            when (dataStoreRepository.multiRosterEnabled.firstOrNull()) {
+                true -> {
+                    dataStoreRepository.setMultiRosterEnabled(false)
+                    _state.value = state.value.copy(multiRosterEnabled = false)
+                }
+                else -> {
+                    dataStoreRepository.setMultiRosterEnabled(true)
+                    _state.value = state.value.copy(multiRosterEnabled = true)
+                }
+
+            }
+
         }
     }
 

@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.ui.cells
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,13 +56,22 @@ fun TeamCell(
             }, horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(Modifier.padding(15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            AsyncImage(
-                model = "https://mkcentral.com${finalTeam?.logo}",
-                contentDescription = null,
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-            )
+            when (val logo = finalTeam?.logo) {
+                null -> Image(
+                    painter = painterResource(R.drawable.default_logo),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                )
+                else -> AsyncImage(
+                    model = "https://mkcentral.com$logo",
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                )
+            }
             Spacer(Modifier.height(10.dp))
             MKText(
                 text = finalTeam?.name.orEmpty(),

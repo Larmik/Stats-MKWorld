@@ -35,7 +35,7 @@ class TeamProfileViewModel @AssistedInject constructor(@Assisted val id: String,
     }
         .map {
             val allyList = when (id) {
-                "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.isAlly }.orEmpty()
+                "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()
                 else -> listOf()
             }
             State(team = it, allyList = allyList)

@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.ui.cells
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -35,13 +37,22 @@ fun WarCell(modifier: Modifier = Modifier, viewModel: WarCellViewModel, onClick:
         MKText(text = state.value.date.orEmpty(), modifier = Modifier.padding(top = 5.dp), fontSize = 12, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                AsyncImage(
-                    model =  "https://mkcentral.com${state.value.teamHost?.logo}",
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(35.dp)
-                        .clip(CircleShape)
-                )
+                when (val logo = state.value.teamHost?.logo) {
+                    null -> Image(
+                        painter = painterResource(R.drawable.default_logo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(35.dp)
+                            .clip(CircleShape)
+                    )
+                    else -> AsyncImage(
+                        model =  "https://mkcentral.com$logo",
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(35.dp)
+                            .clip(CircleShape)
+                    )
+                }
                 MKText(text = state.value.teamHost?.name.orEmpty(), maxLines = 1, fontSize = 12)
             }
 
@@ -53,13 +64,23 @@ fun WarCell(modifier: Modifier = Modifier, viewModel: WarCellViewModel, onClick:
                 }
             }
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                AsyncImage(
-                    model =  "https://mkcentral.com${state.value.teamOpponent?.logo}",
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(35.dp)
-                        .clip(CircleShape)
-                )
+                when (val logo = state.value.teamOpponent?.logo) {
+                    null -> Image(
+                        painter = painterResource(R.drawable.default_logo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(35.dp)
+                            .clip(CircleShape)
+                    )
+                    else ->  AsyncImage(
+                        model = "https://mkcentral.com$logo",
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(35.dp)
+                            .clip(CircleShape)
+                    )
+                }
+
                 MKText(text = state.value.teamOpponent?.name.orEmpty(), textColor = Colors.black, maxLines = 1, fontSize = 12)
             }
         }

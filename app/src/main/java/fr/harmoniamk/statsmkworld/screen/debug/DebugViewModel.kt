@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -63,7 +65,11 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
                 .flatMapLatest { fetchUseCase.fetchTeams() }
                 .flatMapLatest { databaseRepository.clearWars() }
                 .flatMapLatest { dataStoreRepository.mkcTeam }
-                .flatMapLatest { fetchUseCase.fetchWars(it.id.toString()) }
+                .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
+                .flatMapLatest { ids ->
+                    val flows = ids.map { fetchUseCase.fetchWars(it) }
+                    merge(*flows.toTypedArray())
+                }
                 .onEach { dataStoreRepository.setLastUpdate(Date().time) }
                 .onEach {
                     dataStoreRepository.setMatrixMode(true)

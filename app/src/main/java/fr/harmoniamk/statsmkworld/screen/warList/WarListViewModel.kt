@@ -11,7 +11,9 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.zip
 import java.util.Calendar
@@ -19,16 +21,20 @@ import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
-class WarListViewModel @Inject constructor(databaseRepository: DatabaseRepositoryInterface) :
+class WarListViewModel @Inject constructor(databaseRepository: DatabaseRepositoryInterface, dataStoreRepository: DataStoreRepositoryInterface) :
     ViewModel() {
 
     data class State(
         val wars: List<Pair<String, List<WarDetails>>> = listOf()
     )
 
-    val state = databaseRepository.getWars()
-        .map {
-            it.map { War(it) }
+    val state = dataStoreRepository.mkcPlayer
+        .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld"}?.rosterID?.toString() }
+        .zip(databaseRepository.getWars()) { rosterId, wars ->
+            val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
+            wars
+                .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+                .map { War(it) }
                 .map { WarDetails(it) }
                 .sortedByDescending { it.war.id }
                 .groupBy { war ->
@@ -43,6 +49,8 @@ class WarListViewModel @Inject constructor(databaseRepository: DatabaseRepositor
                     }
                 }
         }
+
+
         .map { State(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 

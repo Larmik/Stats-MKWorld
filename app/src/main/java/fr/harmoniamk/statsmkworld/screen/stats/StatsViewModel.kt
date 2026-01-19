@@ -75,9 +75,12 @@ class StatsViewModel @AssistedInject constructor(
     val state = databaseRepository.getWars()
         .map {
             team = dataStoreRepository.mkcTeam.firstOrNull()
+            val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
+            val rosterId = dataStoreRepository.mkcPlayer.firstOrNull()?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
+
             when {
                 type is StatsType.PlayerStats -> it.filter { war -> war.hasPlayer(type.userId) }
-                type is StatsType.TeamStats -> it.filter { war -> war.hasTeam(team?.id.toString()) }
+                type is StatsType.TeamStats -> it.filter { war -> (!multiRosterEnabled && war.hasTeam(rosterId)) || multiRosterEnabled }
                 type is StatsType.OpponentStats -> it
                     .filter { war -> war.hasTeam(type.teamId) }
                     .filter { war -> (type.userId != null && war.hasPlayer(type.userId)) || type.userId == null }

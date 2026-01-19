@@ -21,16 +21,20 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
+import kotlin.collections.map
+import kotlin.collections.toTypedArray
 
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,18 +93,26 @@ class SignupViewModel @AssistedInject constructor(
         .flatMapLatest { mkCentralDataSource.getPlayer(it.id.toString()) }
         .mapNotNull { it.successResponse }
         .map {
-            val teamId = it.rosters?.firstOrNull { it.game == "mkworld" }?.teamID
+            val teamId = it.rosters?.firstOrNull { it.game == "mkworld" }?.teamID?.toString()
+            val rosterId = it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             //Set player dans datastore puis écriture sur Firebase (si non existant)
             dataStoreRepository.setMKCPlayer(it)
-            if (firebaseRepository.getUser(teamId.toString(), it.id.toString()).firstOrNull() == null) {
+            if (firebaseRepository.getUser(rosterId.toString(), it.id.toString()).firstOrNull() == null) {
                 val user = User(it.id.toString(), discordId = it.discord?.discordID.orEmpty(), name = it.name)
-                firebaseRepository.writeUser(teamId.toString(), user).firstOrNull()
+                firebaseRepository.writeUser(rosterId.toString(), user).firstOrNull()
             }
             //Fetch classique, puis affichage du succès, MAJ de la date et redirection home
             fetchUseCase.fetchTeam(teamId.toString())
                 .flatMapLatest { fetchUseCase.fetchAllies(teamId.toString()) }
                 .flatMapLatest { fetchUseCase.fetchTeams() }
-                .flatMapLatest { fetchUseCase.fetchWars(teamId.toString()) }
+                .flatMapLatest { dataStoreRepository.mkcTeam }
+                .mapNotNull {
+                    it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() }
+                }
+                .flatMapLatest { ids ->
+                    val flows = ids.map { fetchUseCase.fetchWars(it) }
+                    merge(*flows.toTypedArray())
+                }
                 .onEach {
                     dataStoreRepository.setLastUpdate(Date().time)
                     _state.value = _state.value.copy(currentPage = 5)

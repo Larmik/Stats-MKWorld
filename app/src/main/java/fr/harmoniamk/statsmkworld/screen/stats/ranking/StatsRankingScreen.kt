@@ -50,7 +50,10 @@ fun StatsRankingScreen(
     BaseScreen(title = stringResource(state.value.title ?: R.string.statistiques)) {
         if (viewModel.type is StatsType.OpponentStats || viewModel.type is StatsType.MapStats) {
             MKSegmentedSelector(
-                items = listOf(stringResource(R.string.individuel), stringResource(R.string.equipe)),
+                items = listOf(
+                    stringResource(R.string.individuel),
+                    stringResource(R.string.equipe)
+                ),
                 page = state.value.index,
                 onClick = viewModel::onIndivSwitch
             )
@@ -60,17 +63,25 @@ fun StatsRankingScreen(
                 else -> R.string.rechercher_un_circuit
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                MKTextField(baseModifier = Modifier.weight(1f), value = searchValue.value, backgroundColor = Colors.blackAlphaed, onValueChange = {
-                    searchValue.value = it
-                    viewModel.onSearch(it)
-                }, placeHolderRes = placeHolder)
+                MKTextField(
+                    baseModifier = Modifier.weight(1f),
+                    value = searchValue.value,
+                    backgroundColor = Colors.blackAlphaed,
+                    onValueChange = {
+                        searchValue.value = it
+                        viewModel.onSearch(it)
+                    },
+                    placeHolderRes = placeHolder
+                )
                 Box(Modifier.padding(start = 5.dp)) {
                     Image(
                         painter = painterResource(R.drawable.sort),
                         contentDescription = null,
-                        modifier = Modifier.size(30.dp).clickable {
-                            expanded.value = true
-                        }
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clickable {
+                                expanded.value = true
+                            }
                     )
                     MKDropdownMenu(
                         expanded = expanded.value,
@@ -79,12 +90,11 @@ fun StatsRankingScreen(
                         onSelectValue = viewModel::onSortItemSelected
                     )
                 }
-
             }
             Spacer(Modifier.height(10.dp))
         }
 
-        when (state.value.list.mapNotNull { it as? RankingItem.PlayerRanking }.isEmpty()) {
+        when (state.value.playerList.isEmpty()) {
             true -> VerticalGrid(Modifier.verticalScroll(rememberScrollState())) {
                 state.value.list.forEach {
                     when (it) {
@@ -93,48 +103,62 @@ fun StatsRankingScreen(
                                 .padding(5.dp)
                                 .fillMaxWidth(0.48f),
                             teamRanking = it,
-                            onClick = { onStats(StatsType.OpponentStats(teamId = it.id, userId = state.value.currentUserId)) },
+                            onClick = {
+                                onStats(
+                                    StatsType.OpponentStats(
+                                        teamId = it.id,
+                                        userId = state.value.currentUserId
+                                    )
+                                )
+                            },
                             userId = state.value.currentUserId,
                             team = null
                         )
+
                         is RankingItem.TrackRanking -> MapCell(
                             modifier = Modifier
                                 .padding(5.dp)
                                 .fillMaxWidth(0.48f),
                             trackRanking = it,
                             userId = state.value.currentUserId,
-                            onClick = { onStats(StatsType.MapStats(userId = state.value.currentUserId, trackIndex = it.ordinal))}
+                            onClick = {
+                                onStats(
+                                    StatsType.MapStats(
+                                        userId = state.value.currentUserId,
+                                        trackIndex = it.ordinal
+                                    )
+                                )
+                            }
                         )
+
                         else -> {}
                     }
                 }
             }
 
             else -> LazyColumn {
-                item {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                            .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
-                    ) {
-                        MKText(
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .align(Alignment.Center),
-                            fontSize = 18,
-                            font = Fonts.NunitoBD,
-                            textColor = Colors.white,
-                            text = stringResource(R.string.roster)
-                        )
+                state.value.playerList.forEach {
+                    item {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+                                .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
+                        ) {
+                            MKText(
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .align(Alignment.Center),
+                                fontSize = 18,
+                                font = Fonts.NunitoBD,
+                                textColor = Colors.white,
+                                text = it.key
+                            )
+                        }
                     }
-                }
-                item {
-                    VerticalGrid {
-                        state.value.list
-                            .mapNotNull { (it as? RankingItem.PlayerRanking) }
-                            .filterNot { it.player.isAlly }
-                            .forEach {
+                    item {
+                        VerticalGrid {
+                            it.value.forEach {
                                 PlayerCell(
                                     modifier = Modifier
                                         .padding(5.dp)
@@ -146,43 +170,10 @@ fun StatsRankingScreen(
                                     player = null
                                 )
                             }
+                        }
                     }
                 }
-                item {
-                    Box(Modifier
-                        .fillMaxWidth()
-                        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                        .border(1.dp, Colors.white, RoundedCornerShape(5.dp))) {
-                        MKText(
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .align(Alignment.Center),
-                            fontSize = 18,
-                            font = Fonts.NunitoBD,
-                            textColor = Colors.white,
-                            text = stringResource(R.string.allies)
-                        )
-                    }
-                }
-                item {
-                    VerticalGrid {
-                        state.value.list
-                            .mapNotNull { (it as? RankingItem.PlayerRanking) }
-                            .filter { it.player.isAlly }
-                            .forEach {
-                                PlayerCell(
-                                    modifier = Modifier
-                                        .padding(5.dp)
-                                        .fillMaxWidth(0.48f),
-                                    textColor = Colors.white,
-                                    backgroundColor = Colors.blackAlphaed,
-                                    onClick = { onStats(StatsType.PlayerStats(it.id)) },
-                                    playerRanking = it,
-                                    player = null
-                                )
-                            }
-                    }
-                }
+
             }
         }
     }

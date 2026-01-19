@@ -24,8 +24,8 @@ interface PlayerDao {
     @Query("UPDATE PlayerEntity SET role=(:role) WHERE id=(:id)")
     suspend fun setRole(id: String, role: Int)
 
-    @Query("UPDATE PlayerEntity SET isAlly=(:ally) WHERE id=(:id)")
-    suspend fun setAlly(id: String, ally: Boolean)
+    @Query("UPDATE PlayerEntity SET rosterId=(:rosterId) WHERE id=(:id)")
+    suspend fun setRosterId(id: String, rosterId: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(player: PlayerEntity)

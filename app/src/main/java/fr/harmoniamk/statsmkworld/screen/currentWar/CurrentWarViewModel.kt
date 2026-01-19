@@ -3,14 +3,10 @@ package fr.harmoniamk.statsmkworld.screen.currentWar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
-import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
-import fr.harmoniamk.statsmkworld.model.firebase.War
-import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -25,6 +21,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -56,11 +53,12 @@ class CurrentWarViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
     init {
-        dataStoreRepository.mkcTeam
-            .flatMapLatest { firebaseRepository.listenToCurrentWar(it.id.toString()) }
+        dataStoreRepository.mkcPlayer
+            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
+            .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
             .filterNotNull()
             .onEach {
-                val teamHost = databaseRepository.getTeam(it.teamHost).firstOrNull()
+                val teamHost = dataStoreRepository.mkcTeam.map { TeamEntity(it) }.firstOrNull()
                 val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
                 val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
 

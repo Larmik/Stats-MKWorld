@@ -106,17 +106,15 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    override fun writeWar(war: War): Flow<Unit> = dataStoreRepository.mkcTeam
-        .mapNotNull { it.id }
-        .onEach {
-            database.child("newWars").child(it.toString()).child(war.id.toString()).setValue(war)
-        }
-        .mapNotNull { }
+    override fun writeWar(war: War): Flow<Unit> = dataStoreRepository.mkcPlayer
+        .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
+        .onEach { database.child("newWars").child(it).child(war.id.toString()).setValue(war) }
+        .map { }
 
-    override fun writeCurrentWar(war: War): Flow<Unit> = flow {
-        database.child("currentWars").child(war.teamHost).setValue(war)
-        emit(Unit)
-    }
+    override fun writeCurrentWar(war: War): Flow<Unit> = dataStoreRepository.mkcPlayer
+        .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
+        .onEach { database.child("currentWars").child(it).setValue(war) }
+        .map { }
 
     override fun getWars(teamId: String): Flow<List<War>> = callbackFlow {
         database.child("newWars").child(teamId).get().addOnSuccessListener { snapshot ->

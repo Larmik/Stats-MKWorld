@@ -27,7 +27,7 @@ interface DatabaseRepositoryInterface {
 
     fun updateUser(id: String, currentWar: String): Flow<Unit>
     fun updateUser(id: String, role: Int): Flow<Unit>
-    fun updateUser(id: String, isAlly: Boolean): Flow<Unit>
+    fun updateUserRoster(id: String, rosterId: String): Flow<Unit>
 
     fun addAlly(entity: PlayerEntity): Flow<Unit>
 
@@ -68,7 +68,7 @@ class DatabaseRepository @Inject constructor(
 
     override fun updateUser(id: String, currentWar: String): Flow<Unit> = playerLocalDataSource.setCurrentWar(id, currentWar)
     override fun updateUser(id: String, role: Int): Flow<Unit> = playerLocalDataSource.setRole(id, role)
-    override fun updateUser(id: String, isAlly: Boolean): Flow<Unit> = playerLocalDataSource.setAlly(id, isAlly)
+    override fun updateUserRoster(id: String, rosterId: String): Flow<Unit> = playerLocalDataSource.setRosterId(id, rosterId)
 
     override fun addAlly(entity: PlayerEntity): Flow<Unit> = playerLocalDataSource.upsert(entity)
 
