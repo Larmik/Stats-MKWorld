@@ -193,6 +193,28 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
                     )
                 }
             }
+            item {
+                Column {
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(Modifier.weight(1f).clickable {
+                            throw RuntimeException("Test crash")
+                        }) {
+                            MKText(
+                                text = "Test crash",
+                                font = Fonts.Urbanist,
+                                modifier = Modifier.padding(vertical = 20.dp)
+                            )
+                        }
+                    }
+                    Spacer(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Colors.blackAlphaed)
+                    )
+                }
+            }
         }
     }
 }

@@ -48,7 +48,7 @@ fun CurrentWarCell(modifier: Modifier = Modifier, viewModel: CurrentWarCellViewM
                     )
                 }
 
-                MKText(text = state.value.teamHost?.name.orEmpty(), textColor = Colors.white, fontSize = 16, font = Fonts.NunitoRG, maxLines = 1)
+                MKText(text = state.value.rosterName.orEmpty(), textColor = Colors.white, fontSize = 16, font = Fonts.NunitoRG, maxLines = 1)
             }
 
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {

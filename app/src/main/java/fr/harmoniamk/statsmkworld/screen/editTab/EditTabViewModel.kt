@@ -14,6 +14,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.local.PlayerScoreForTab
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import java.net.URL
@@ -37,7 +39,8 @@ class EditTabViewModel @AssistedInject constructor(
     @Assisted val details: WarDetails?,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
-    private val pdfRepository: PDFRepositoryInterface
+    private val pdfRepository: PDFRepositoryInterface,
+    private val dataStoreRepository: DataStoreRepositoryInterface
 ): ViewModel() {
 
     @AssistedFactory
@@ -65,21 +68,24 @@ class EditTabViewModel @AssistedInject constructor(
         val filename = "war_" + Date().time.toString()
         flowOf(details)
             .mapNotNull { it?.war }
-            .mapNotNull {
+            .mapNotNull { war ->
                 if (scores.mapNotNull { it.toIntOrNull() }.sum() == details?.scoreOpponent) {
                     var teamWin: TeamEntity? = null
                     var teamLose: TeamEntity? = null
-                    val playerScores = it.withPlayersList(databaseRepository, firebaseRepository).map { PlayerScoreForTab(it) }
+                    val playerScores = war.withPlayersList(databaseRepository, firebaseRepository).map { PlayerScoreForTab(it) }
                     val opponentScores = players.mapIndexed { index, player -> PlayerScoreForTab(player, scores[index].toInt(), 0) }
-                    val teamHost = databaseRepository.getTeam(it.teamHost).firstOrNull()
-                    val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
-                    if (details.scoreHostWithPenalties >= details.scoreOpponentWithPenalties) {
-                        teamWin = teamHost
-                        teamLose = teamOpponent
-                    }
-                    else {
-                        teamWin = teamOpponent
-                        teamLose = teamHost
+                    val teamHost = dataStoreRepository.mkcTeam.firstOrNull()
+                    val teamOpponent = databaseRepository.getTeam(war.teamOpponent).firstOrNull()
+                    teamHost?.let {
+                        val roster = teamHost.rosters.singleOrNull { roster -> roster.id.toString() == war.teamHost }
+                        if (details.scoreHostWithPenalties >= details.scoreOpponentWithPenalties) {
+                            teamWin = TeamEntity(teamHost).copy(name = roster?.name.orEmpty(), id = roster?.id.toString())
+                            teamLose = teamOpponent
+                        }
+                        else {
+                            teamWin = teamOpponent
+                            teamLose = TeamEntity(teamHost).copy(name = roster?.name.orEmpty(), id = roster?.id.toString())
+                        }
                     }
                     pdfRepository.generatePdf(details, teamWin, teamLose, playerScores, opponentScores)
                 } else {
@@ -107,7 +113,7 @@ class EditTabViewModel @AssistedInject constructor(
                 if (scores.mapNotNull { it.toIntOrNull() }.sum() == details.scoreOpponent) {
                     val playerScores = it.withPlayersList(databaseRepository, firebaseRepository).map { PlayerScoreForTab(it) }
                     val opponentScores = players.mapIndexed { index, player -> PlayerScoreForTab(player, scores[index].toInt(), 0) }
-                    val teamHost = databaseRepository.getTeam(it.teamHost).firstOrNull()
+                    val teamHost = dataStoreRepository.mkcTeam.map { TeamEntity(it) }.firstOrNull()
                     val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
 
                     val policy = ThreadPolicy.Builder().permitAll().build()

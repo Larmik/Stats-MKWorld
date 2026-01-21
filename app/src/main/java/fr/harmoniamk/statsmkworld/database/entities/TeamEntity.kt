@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 
 @Entity
-class TeamEntity(
+data class TeamEntity(
     @PrimaryKey
     @ColumnInfo(name = "id") val id: String,
     @ColumnInfo(name = "name") val name: String,

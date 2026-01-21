@@ -110,7 +110,8 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                         teamOpponent = state.value.teamOpponent,
                         score = state.value.score.orEmpty(),
                         diff = state.value.diff.orEmpty(),
-                        penalties = listOf()
+                        penalties = listOf(),
+                        rosterName = state.value.rosterName
                     )
                     state.value.mapSelected?.let {
                         MapCell(map = it, onClick =  { })

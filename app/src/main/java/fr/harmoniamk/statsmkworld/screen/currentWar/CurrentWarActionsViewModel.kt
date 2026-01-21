@@ -57,8 +57,7 @@ class CurrentWarActionsViewModel @Inject constructor(
         .mapNotNull {
             val war = dataStoreRepository.war.firstOrNull()
             val players = databaseRepository.getPlayers().firstOrNull()
-            val teamHost =
-                databaseRepository.getTeam(war?.teamHost.orEmpty()).firstOrNull()?.name.orEmpty()
+            val teamHost = dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }?.name
             val teamOpponent = databaseRepository.getTeam(war?.teamOpponent.orEmpty())
                 .firstOrNull()?.name.orEmpty()
             State(
@@ -122,14 +121,14 @@ class CurrentWarActionsViewModel @Inject constructor(
     }
 
     fun onSub() {
-        flowOf(Unit)
-            .mapNotNull {
+        dataStoreRepository.mkcTeam
+            .mapNotNull { team ->
                 val oldPlayer = state.value.currentPlayers?.singleOrNull { it.isSelected }
                 val newPlayer = state.value.otherPlayers?.singleOrNull { it.isSelected }
                 oldPlayer?.player?.let {
                     databaseRepository.updateUser(it.id, "").firstOrNull()
                     firebaseRepository.writeUser(
-                        teamId = state.value.war?.teamHost.orEmpty(),
+                        teamId = team.id.toString(),
                         user = User(
                             id = it.id,
                             currentWar = "",
@@ -142,7 +141,7 @@ class CurrentWarActionsViewModel @Inject constructor(
                 newPlayer?.player?.let {
                     databaseRepository.updateUser(it.id, state.value.war?.id.toString()).firstOrNull()
                     firebaseRepository.writeUser(
-                        teamId = state.value.war?.teamHost.orEmpty(),
+                        teamId = team.id.toString(),
                         user = User(
                             id = it.id,
                             currentWar = state.value.war?.id.toString(),

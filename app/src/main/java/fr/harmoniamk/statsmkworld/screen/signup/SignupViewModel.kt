@@ -99,7 +99,7 @@ class SignupViewModel @AssistedInject constructor(
             dataStoreRepository.setMKCPlayer(it)
             if (firebaseRepository.getUser(rosterId.toString(), it.id.toString()).firstOrNull() == null) {
                 val user = User(it.id.toString(), discordId = it.discord?.discordID.orEmpty(), name = it.name)
-                firebaseRepository.writeUser(rosterId.toString(), user).firstOrNull()
+                firebaseRepository.writeUser(teamId.toString(), user).firstOrNull()
             }
             //Fetch classique, puis affichage du succès, MAJ de la date et redirection home
             fetchUseCase.fetchTeam(teamId.toString())

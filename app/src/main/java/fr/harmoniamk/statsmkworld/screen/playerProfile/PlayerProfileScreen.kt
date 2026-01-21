@@ -68,6 +68,7 @@ fun PlayerProfileScreen(
     val context = LocalContext.current
     val activity = context.getActivity() as? MainActivity
     val showPopup = remember { mutableStateOf(false) }
+    val showHelpPopup = remember { mutableStateOf(false) }
     BackHandler { onBack() }
 
     LaunchedEffect(Unit) {
@@ -128,6 +129,17 @@ fun PlayerProfileScreen(
                 )
             },
             onDismiss = { showPopup.value = false }
+        )
+    }
+  if (showHelpPopup.value) {
+        MKDialog(
+            title = "Multi-roster",
+            message = "Activé: Statistiques calculées sur l'activité de tous les rosters de l'équipe \n \n Désactivé: Statistiques calculées sur l'activité de votre roster uniquement. \n \n Un redémarrage de l'application est nécessaire pour prendre en compte le changement de ce paramètre.",
+            buttonText = "OK",
+            onButtonClick = {
+                showHelpPopup.value = false
+            },
+            onDismiss = { showHelpPopup.value = false }
         )
     }
 
@@ -357,22 +369,28 @@ fun PlayerProfileScreen(
 
                         }
                         if (state.value.hasMultiRoster)
-                        item {
+                            item {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { viewModel.onNotification() },
                                 horizontalArrangement = Arrangement.SpaceBetween) {
-                                MKText(
-                                    text = stringResource(
-                                        when (state.value.multiRosterEnabled) {
-                                            true -> R.string.multi_roster_enabled
-                                            else -> R.string.multi_roster_disabled
-                                        }
-                                    ),
-                                    font = Fonts.Urbanist,
-                                    modifier = Modifier.padding(vertical = 20.dp)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    MKText(
+                                        text = stringResource(
+                                            when (state.value.multiRosterEnabled) {
+                                                true -> R.string.multi_roster_enabled
+                                                else -> R.string.multi_roster_disabled
+                                            }
+                                        ),
+                                        font = Fonts.Urbanist,
+                                        modifier = Modifier.padding(vertical = 20.dp)
+                                    )
+                                    Image(painter = painterResource(R.drawable.help), contentDescription = null, modifier = Modifier.size(25.dp).clickable {
+                                        showHelpPopup.value = true
+                                    })
+                                }
+
                                 Switch(
                                     checked = state.value.multiRosterEnabled, onCheckedChange = { viewModel.onMultiRoster() }, colors = SwitchDefaults.colors(
                                         checkedTrackColor = Colors.black.copy(alpha = 0.3f),

@@ -60,7 +60,9 @@ fun CurrentWarScreen(
                     score = state.value.details?.displayedScore.orEmpty(),
                     diff = state.value.details?.displayedDiff.orEmpty(),
                     penalties = state.value.details?.war?.penalties.orEmpty(),
-                    shockCount = state.value.details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } }
+                    shockCount = state.value.details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } },
+                    rosterName = state.value.roster?.name,
+                    rosterId = state.value.roster?.id?.toString()
                 )
                 Spacer(Modifier.height(20.dp))
                 WarPlayersCell(players = state.value.players, trackCount = state.value.details?.warTracks.orEmpty().size)

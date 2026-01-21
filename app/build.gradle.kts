@@ -8,6 +8,8 @@ plugins {
     alias(notation = libs.plugins.kotlin.compose.compiler)
     id("com.google.gms.google-services")
     id("com.google.protobuf") version "0.9.4"
+    id("com.google.firebase.crashlytics")
+
 }
 
 android {

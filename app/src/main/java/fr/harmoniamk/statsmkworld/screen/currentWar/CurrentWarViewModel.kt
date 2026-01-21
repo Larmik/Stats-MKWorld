@@ -9,6 +9,7 @@ import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -41,7 +41,8 @@ class CurrentWarViewModel @Inject constructor(
         val teamOpponent: TeamEntity? = null,
         val players: List<PlayerScore> = listOf(),
         val isOver: Boolean = false,
-        val buttonsVisible: Boolean = false
+        val buttonsVisible: Boolean = false,
+        val roster: MKCTeamRoster? = null
     )
 
     private val _state = MutableStateFlow(State())
@@ -58,19 +59,23 @@ class CurrentWarViewModel @Inject constructor(
             .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
             .filterNotNull()
             .onEach {
-                val teamHost = dataStoreRepository.mkcTeam.map { TeamEntity(it) }.firstOrNull()
-                val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
-                val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
+                dataStoreRepository.mkcTeam.firstOrNull()?.let { teamHost ->
+                    val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
+                    val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
+                    val roster = teamHost.rosters.singleOrNull { roster -> roster.id.toString() == it.teamHost }
 
-                _state.value = state.value.copy(
-                    details = WarDetails(it),
-                    players = it.withPlayersList(databaseRepository, firebaseRepository),
-                    teamHost = teamHost,
-                    teamOpponent = teamOpponent,
-                    buttonsVisible = buttonsVisible,
-                    isOver = it.tracks.size == 12
-                )
-            }.launchIn(viewModelScope)
+                    _state.value = state.value.copy(
+                        details = WarDetails(it),
+                        players = it.withPlayersList(databaseRepository, firebaseRepository),
+                        teamHost = TeamEntity(teamHost),
+                        teamOpponent = teamOpponent,
+                        buttonsVisible = buttonsVisible,
+                        isOver = it.tracks.size == 12,
+                        roster = roster
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
 

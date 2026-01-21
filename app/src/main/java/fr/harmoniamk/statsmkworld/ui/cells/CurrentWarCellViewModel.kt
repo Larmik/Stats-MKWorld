@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.zip
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = CurrentWarCellViewModel.Factory::class)
@@ -37,22 +37,24 @@ class CurrentWarCellViewModel @AssistedInject constructor(
         val teamOpponent: TeamEntity? = null,
         val score: String? = null,
         val diff: String? = null,
-        val remaining: Int? = null
+        val remaining: Int? = null,
+        val rosterName: String? = null
     )
 
     val state = flowOf(currentWar)
             .filterNotNull()
-            .map { war ->
+            .zip(dataStoreRepository.mkcTeam) { war, teamHost ->
                 val details = WarDetails(war)
-                val teamHost = dataStoreRepository.mkcTeam.map { TeamEntity(it) }.firstOrNull()
                 val teamOpponent =
                     databaseRepository.getTeam(details.war.teamOpponent).firstOrNull()
+                val rosterName = teamHost.rosters.singleOrNull { it.id.toString() == war.teamHost }?.name ?: teamHost.name
                 State(
-                    teamHost = teamHost,
+                    teamHost = TeamEntity(teamHost),
                     teamOpponent = teamOpponent,
                     score = details.displayedScore,
                     diff = details.displayedDiff,
-                    remaining = 12 - war.tracks.size
+                    remaining = 12 - war.tracks.size,
+                    rosterName = rosterName
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 

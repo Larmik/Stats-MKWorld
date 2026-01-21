@@ -36,7 +36,9 @@ fun WarScoreView(
     score: String,
     diff: String,
     penalties: List<WarPenalty>,
-    shockCount: Int = 0
+    shockCount: Int = 0,
+    rosterId: String? = null,
+    rosterName: String? = null
 ) {
 
     val teamNameSize: Int
@@ -82,7 +84,7 @@ fun WarScoreView(
                             .clip(CircleShape)
                     )
                 }
-                MKText(text = teamHost?.name.orEmpty(), fontSize = teamNameSize, maxLines = 1)
+                MKText(text = rosterName.orEmpty(), fontSize = teamNameSize, maxLines = 1)
             }
 
             Column(
@@ -143,7 +145,7 @@ fun WarScoreView(
                     .wrapContentHeight()
                     .fillMaxWidth()
             ) {
-                penalties.filter { it.teamId == teamHost?.id }.takeIf { it.isNotEmpty() }?.let {
+                penalties.filter { it.teamId == (rosterId ?: teamHost?.id) }.takeIf { it.isNotEmpty() }?.let {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)

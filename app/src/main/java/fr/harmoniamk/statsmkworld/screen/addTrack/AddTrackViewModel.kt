@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.collections.set
@@ -53,7 +54,8 @@ class AddTrackViewModel @Inject constructor(
         val trackScore: String? = null,
         val trackDiff: String? = null,
         val trackOrder: Int? = null,
-        val shocks: Map<String, Int> = mutableMapOf()
+        val shocks: Map<String, Int> = mutableMapOf(),
+        val rosterName: String? = null
     )
 
     private val _state = MutableStateFlow(State())
@@ -70,20 +72,21 @@ class AddTrackViewModel @Inject constructor(
     val state = dataStoreRepository.war
         .filterNotNull()
         .map { WarDetails(it) }
-        .map { details ->
+        .zip(dataStoreRepository.mkcTeam) { details, teamHost  ->
             this.details = details
-            val teamHost = databaseRepository.getTeam(details.war.teamHost).firstOrNull()
             val teamOpponent = databaseRepository.getTeam(details.war.teamOpponent).firstOrNull()
+            val rosterName = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.name ?: teamHost.name
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == details.war.id.toString() }?.sortedBy { it.name }.orEmpty()
             _state.value.copy(
-                teamHost = teamHost,
+                teamHost = TeamEntity(teamHost),
                 teamOpponent = teamOpponent,
                 score = details.displayedScore,
                 diff = details.displayedDiff,
                 players = players,
                 currentPlayer = players.firstOrNull(),
-                trackOrder = details.warTracks.size + 1
+                trackOrder = details.warTracks.size + 1,
+                rosterName = rosterName
             )
         }
         .onEach { _state.value = it }

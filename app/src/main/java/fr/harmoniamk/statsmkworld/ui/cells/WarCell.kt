@@ -53,7 +53,7 @@ fun WarCell(modifier: Modifier = Modifier, viewModel: WarCellViewModel, onClick:
                             .clip(CircleShape)
                     )
                 }
-                MKText(text = state.value.teamHost?.name.orEmpty(), maxLines = 1, fontSize = 12)
+                MKText(text = state.value.rosterName.orEmpty(), maxLines = 1, fontSize = 12)
             }
 
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {

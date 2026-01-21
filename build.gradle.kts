@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.google.services) apply false
     id("com.google.protobuf") version "0.9.4" apply false
+    id("com.google.firebase.crashlytics") version "3.0.6" apply false
+
 }
 
 allprojects {

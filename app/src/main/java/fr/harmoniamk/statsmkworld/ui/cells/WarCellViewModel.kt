@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -18,7 +19,8 @@ import java.util.Date
 @HiltViewModel(assistedFactory = WarCellViewModel.Factory::class)
 class WarCellViewModel @AssistedInject constructor(
     @Assisted val details: WarDetails,
-    databaseRepository: DatabaseRepositoryInterface
+    databaseRepository: DatabaseRepositoryInterface,
+    dataStoreRepository: DataStoreRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -32,21 +34,24 @@ class WarCellViewModel @AssistedInject constructor(
         val score: String? = null,
         val diff: String? = null,
         val date: String? = null,
-        val mapsWon: Int? = null
+        val mapsWon: Int? = null,
+        val rosterName: String? = null
     )
 
-    val state = databaseRepository.getTeam(details.war.teamHost)
+    val state = dataStoreRepository.mkcTeam
         .zip(databaseRepository.getTeam(details.war.teamOpponent)) { host, opponent ->
 
             val mapsWon = details.warTracks.filter { it.displayedDiff.startsWith("+") }.size
+            val rosterName = host.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.name ?: host.name
 
             State(
-                teamHost = host,
+                teamHost = TeamEntity(host),
                 teamOpponent = opponent,
                 score = details.displayedScore,
                 diff = details.displayedDiff,
                 date = Date(details.war.id).displayedString("dd/MM/yyyy"),
-                mapsWon = mapsWon
+                mapsWon = mapsWon,
+                rosterName = rosterName
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
