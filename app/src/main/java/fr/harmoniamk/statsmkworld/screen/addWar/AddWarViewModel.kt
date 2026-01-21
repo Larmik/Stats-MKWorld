@@ -120,7 +120,8 @@ class AddWarViewModel @Inject constructor(
             }
             .zip(dataStoreRepository.mkcTeam) { war, team ->
                 _state.value.playerList.flatMap { it.value }.filter { it.isSelected }.forEach {
-                        firebaseRepository.writeUser(
+                    when (it.player.rosterId) {
+                        "-1" -> firebaseRepository.writeAlly(
                             teamId = team.id.toString(),
                             user = User(
                                 id = it.player.id,
@@ -130,7 +131,18 @@ class AddWarViewModel @Inject constructor(
                                 discordId = it.player.discordId
                             )
                         ).firstOrNull()
-                        databaseRepository.updateUser(it.player.id, war.id.toString()).firstOrNull()
+                        else -> firebaseRepository.writeUser(
+                            teamId = team.id.toString(),
+                            user = User(
+                                id = it.player.id,
+                                currentWar = war.id.toString(),
+                                role = it.player.role,
+                                name = it.player.name,
+                                discordId = it.player.discordId
+                            )
+                        ).firstOrNull()
+                    }
+                    databaseRepository.updateUser(it.player.id, war.id.toString()).firstOrNull()
                 }
                 war
             }

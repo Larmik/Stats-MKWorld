@@ -87,16 +87,28 @@ class CurrentWarViewModel @Inject constructor(
                     val players = databaseRepository.getPlayers().firstOrNull()
                     players?.filter { it.currentWar == war.id.toString() }?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
-                        firebaseRepository.writeUser(
-                            teamId = state.value.details?.war?.teamHost.orEmpty(),
-                            user = User(
-                                id = it.id,
-                                currentWar = "",
-                                role = it.role,
-                                name = it.name,
-                                discordId = it.discordId
-                            )
-                        ).firstOrNull()
+                        when (it.rosterId) {
+                            "-1" ->  firebaseRepository.writeAlly(
+                                teamId = state.value.details?.war?.teamHost.orEmpty(),
+                                user = User(
+                                    id = it.id,
+                                    currentWar = "",
+                                    role = it.role,
+                                    name = it.name,
+                                    discordId = it.discordId
+                                )
+                            ).firstOrNull()
+                            else ->  firebaseRepository.writeUser(
+                                teamId = state.value.details?.war?.teamHost.orEmpty(),
+                                user = User(
+                                    id = it.id,
+                                    currentWar = "",
+                                    role = it.role,
+                                    name = it.name,
+                                    discordId = it.discordId
+                                )
+                            ).firstOrNull()
+                        }
                     }
                     dataStoreRepository.deleteCurrentWar()
                 }

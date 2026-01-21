@@ -127,29 +127,54 @@ class CurrentWarActionsViewModel @Inject constructor(
                 val newPlayer = state.value.otherPlayers?.singleOrNull { it.isSelected }
                 oldPlayer?.player?.let {
                     databaseRepository.updateUser(it.id, "").firstOrNull()
-                    firebaseRepository.writeUser(
-                        teamId = team.id.toString(),
-                        user = User(
-                            id = it.id,
-                            currentWar = "",
-                            role = it.role,
-                            name = it.name,
-                            discordId = it.discordId
-                        )
-                    ).firstOrNull()
+                    when (it.rosterId) {
+                        "-1" -> firebaseRepository.writeAlly(
+                            teamId = team.id.toString(),
+                            user = User(
+                                id = it.id,
+                                currentWar = "",
+                                role = it.role,
+                                name = it.name,
+                                discordId = it.discordId
+                            )
+                        ).firstOrNull()
+                        else -> firebaseRepository.writeUser(
+                            teamId = team.id.toString(),
+                            user = User(
+                                id = it.id,
+                                currentWar = "",
+                                role = it.role,
+                                name = it.name,
+                                discordId = it.discordId
+                            )
+                        ).firstOrNull()
+                    }
+
                 }
                 newPlayer?.player?.let {
                     databaseRepository.updateUser(it.id, state.value.war?.id.toString()).firstOrNull()
-                    firebaseRepository.writeUser(
-                        teamId = team.id.toString(),
-                        user = User(
-                            id = it.id,
-                            currentWar = state.value.war?.id.toString(),
-                            role = it.role,
-                            name = it.name,
-                            discordId = it.discordId
-                        )
-                    ).firstOrNull()
+                    when (it.rosterId) {
+                        "-1" ->  firebaseRepository.writeAlly(
+                            teamId = team.id.toString(),
+                            user = User(
+                                id = it.id,
+                                currentWar = state.value.war?.id.toString(),
+                                role = it.role,
+                                name = it.name,
+                                discordId = it.discordId
+                            )
+                        ).firstOrNull()
+                        else -> firebaseRepository.writeUser(
+                            teamId = team.id.toString(),
+                            user = User(
+                                id = it.id,
+                                currentWar = state.value.war?.id.toString(),
+                                role = it.role,
+                                name = it.name,
+                                discordId = it.discordId
+                            )
+                        ).firstOrNull()
+                    }
                 }
             }
             .onEach { _onBack.emit(Unit) }
@@ -166,16 +191,28 @@ class CurrentWarActionsViewModel @Inject constructor(
                 state.value.players?.filter { it.currentWar == state.value.war?.id.toString() }
                     ?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
-                        firebaseRepository.writeUser(
-                            teamId = state.value.war?.teamHost.orEmpty(),
-                            user = User(
-                                id = it.id,
-                                currentWar = "",
-                                role = it.role,
-                                name = it.name,
-                                discordId = it.discordId
-                            )
-                        ).firstOrNull()
+                        when (it.rosterId) {
+                            "-1" -> firebaseRepository.writeAlly(
+                                teamId = state.value.war?.teamHost.orEmpty(),
+                                user = User(
+                                    id = it.id,
+                                    currentWar = "",
+                                    role = it.role,
+                                    name = it.name,
+                                    discordId = it.discordId
+                                )
+                            ).firstOrNull()
+                            else -> firebaseRepository.writeUser(
+                                teamId = state.value.war?.teamHost.orEmpty(),
+                                user = User(
+                                    id = it.id,
+                                    currentWar = "",
+                                    role = it.role,
+                                    name = it.name,
+                                    discordId = it.discordId
+                                )
+                            ).firstOrNull()
+                        }
                     }
                 state.value.war
             }
