@@ -1,7 +1,9 @@
 package fr.harmoniamk.statsmkworld.activity
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,7 +55,14 @@ class MainActivity : AppCompatActivity() {
                             message = stringResource(R.string.force_update_message),
                             buttonText = stringResource(R.string.force_update_button),
                             secondButtonText = stringResource(R.string.close),
-                            onButtonClick = {},
+                            onButtonClick = {
+                                startActivity(
+                                    Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
+                                    )
+                                )
+                            },
                             onSecondButtonClick = { finish() }
                         )
                     }
