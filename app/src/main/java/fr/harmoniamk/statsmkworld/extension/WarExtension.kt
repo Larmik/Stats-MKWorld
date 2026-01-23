@@ -1,7 +1,7 @@
 package fr.harmoniamk.statsmkworld.extension
 
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
-import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -12,7 +12,7 @@ import kotlin.collections.forEach
 import kotlin.collections.map
 import kotlin.collections.orEmpty
 
-suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface): List<PlayerScore> {
+suspend fun OldWar.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface): List<PlayerScore> {
     val localPlayers = databaseRepository.getPlayers().firstOrNull()
 
     val currentLocalPlayers = localPlayers

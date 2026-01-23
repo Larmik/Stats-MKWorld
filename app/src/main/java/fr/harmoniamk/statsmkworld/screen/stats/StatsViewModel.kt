@@ -11,7 +11,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.withFullStats
-import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
 import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Maps
@@ -72,7 +72,7 @@ class StatsViewModel @AssistedInject constructor(
 
     private val _state = MutableStateFlow(State())
 
-    val state = databaseRepository.getWars()
+    val state = databaseRepository.getOldWars()
         .map {
             team = dataStoreRepository.mkcTeam.firstOrNull()
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
@@ -91,7 +91,7 @@ class StatsViewModel @AssistedInject constructor(
             }
         }
         .filterNot { it.isEmpty() }
-        .map { it.map { WarDetails(War(it)) } }
+        .map { it.map { WarDetails(OldWar(it)) } }
         .flatMapLatest { wars ->
             this.wars.clear()
             this.wars.addAll(wars)

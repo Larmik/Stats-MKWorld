@@ -6,7 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
-import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltySelector
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltyType
@@ -42,7 +42,7 @@ class CurrentWarActionsViewModel @Inject constructor(
     val onBack = _onBack.asSharedFlow()
 
     data class State(
-        val war: War? = null,
+        val war: OldWar? = null,
         val players: List<PlayerEntity>? = null,
         val penalties: List<PenaltySelector>? = null,
         val teamHost: String? = null,
@@ -55,7 +55,7 @@ class CurrentWarActionsViewModel @Inject constructor(
 
     val state = flowOf(Unit)
         .mapNotNull {
-            val war = dataStoreRepository.war.firstOrNull()
+            val war = dataStoreRepository.oldWar.firstOrNull()
             val players = databaseRepository.getPlayers().firstOrNull()
             val teamHost = dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }?.name
             val teamOpponent = databaseRepository.getTeam(war?.teamOpponent.orEmpty())
@@ -100,9 +100,9 @@ class CurrentWarActionsViewModel @Inject constructor(
                 penalties.addAll(it.penalties)
                 penalties.add(penalty)
                 val war = it.copy(penalties = penalties)
-                firebaseRepository.writeCurrentWar(war)
+                firebaseRepository.writeOldCurrentWar(war)
                     .onEach {
-                        dataStoreRepository.setCurrentWar(war)
+                        dataStoreRepository.setOldCurrentWar(war)
                         clearPenalties()
                         _state.value = state.value.copy(war = war)
                     }.launchIn(viewModelScope)
@@ -216,9 +216,9 @@ class CurrentWarActionsViewModel @Inject constructor(
                     }
                 state.value.war
             }
-            .flatMapLatest { firebaseRepository.deleteCurrentWar(it.teamHost) }
+            .flatMapLatest { firebaseRepository.deleteOldCurrentWar(it.teamHost) }
             .onEach {
-                dataStoreRepository.deleteCurrentWar()
+                dataStoreRepository.deleteOldCurrentWar()
                 _backToWelcome.emit(Unit)
             }
             .launchIn(viewModelScope)

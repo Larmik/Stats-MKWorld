@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
-import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.database.entities.OldWarEntity
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
@@ -56,12 +56,12 @@ class CurrentWarViewModel @Inject constructor(
     init {
         dataStoreRepository.mkcPlayer
             .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
-            .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
+            .flatMapLatest { firebaseRepository.listenToOldCurrentWar(it) }
             .filterNotNull()
             .onEach {
                 dataStoreRepository.mkcTeam.firstOrNull()?.let { teamHost ->
                     val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
-                    val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
+                    val buttonsVisible = dataStoreRepository.oldWar.firstOrNull() != null
                     val roster = teamHost.rosters.singleOrNull { roster -> roster.id.toString() == it.teamHost }
 
                     _state.value = state.value.copy(
@@ -81,9 +81,9 @@ class CurrentWarViewModel @Inject constructor(
 
     fun onValidateWar() {
         _state.value.details?.war?.let { war ->
-            firebaseRepository.writeWar(war)
+            firebaseRepository.writeOldWar(war)
                 .onEach {
-                    databaseRepository.writeWar(WarEntity(war)).firstOrNull()
+                    databaseRepository.writeOldWar(OldWarEntity(war)).firstOrNull()
                     val players = databaseRepository.getPlayers().firstOrNull()
                     players?.filter { it.currentWar == war.id.toString() }?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
@@ -110,9 +110,9 @@ class CurrentWarViewModel @Inject constructor(
                             ).firstOrNull()
                         }
                     }
-                    dataStoreRepository.deleteCurrentWar()
+                    dataStoreRepository.deleteOldCurrentWar()
                 }
-                .flatMapLatest { firebaseRepository.deleteCurrentWar(war.teamHost) }
+                .flatMapLatest { firebaseRepository.deleteOldCurrentWar(war.teamHost) }
                 .onEach { _backToHome.emit(Unit) }
                 .launchIn(viewModelScope)
         }

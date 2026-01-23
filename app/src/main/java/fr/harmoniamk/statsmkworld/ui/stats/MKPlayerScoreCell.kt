@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
-import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.database.entities.OldWarEntity
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -37,7 +37,7 @@ fun MKPlayerScoreCell(stats: Stats?, type: StatsType?) {
                 font = Fonts.Urbanist
             )
             MKText(text = when (userId) {
-                null -> (stats?.warStats?.highestVictory?.war)?.let { WarEntity(it).createdDate }.orEmpty()
+                null -> (stats?.warStats?.highestVictory?.war)?.let { OldWarEntity(it).createdDate }.orEmpty()
                 else -> stats?.lowestScore?.war?.date.orEmpty()
             }, fontSize = 12)
         }
@@ -59,7 +59,7 @@ fun MKPlayerScoreCell(stats: Stats?, type: StatsType?) {
                 font = Fonts.Urbanist
             )
             MKText(text = when (userId) {
-                null -> (stats?.warStats?.loudestDefeat?.war)?.let { WarEntity(it).createdDate }.orEmpty()
+                null -> (stats?.warStats?.loudestDefeat?.war)?.let { OldWarEntity(it).createdDate }.orEmpty()
                 else -> stats?.highestScore?.war?.date.orEmpty()
             }, fontSize = 12)
         }

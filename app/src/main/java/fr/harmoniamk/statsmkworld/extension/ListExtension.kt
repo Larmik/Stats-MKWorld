@@ -1,12 +1,12 @@
 package fr.harmoniamk.statsmkworld.extension
 
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
-import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.database.entities.OldWarEntity
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
-import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
-import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TeamStats
@@ -25,9 +25,9 @@ import kotlinx.coroutines.flow.map
 @Suppress("UNCHECKED_CAST")
 fun Any?.toMapList(): List<Map<*, *>>? = this as? List<Map<*, *>>
 
-fun List<Map<*, *>>?.parseTracks(): List<WarTrack>? =
+fun List<Map<*, *>>?.parseTracks(): List<OldWarTrack>? =
     this?.map { track ->
-        WarTrack(
+        OldWarTrack(
             id = track["id"].toString().toLong(),
             index = track["index"].toString().toInt(),
             positions = (track["positions"]?.toMapList())
@@ -128,17 +128,17 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
         }
 
     val maps = when  {
-        userId != null && teamId != null -> this.map { WarEntity(it.war) }
+        userId != null && teamId != null -> this.map { OldWarEntity(it.war) }
             .filter { it.hasTeam(teamId) }
             .filter { it.hasPlayer(userId) }
             .withTrackStats(teamId = teamId, userId = userId)
-        userId != null -> this.map { WarEntity(it.war) }
+        userId != null -> this.map { OldWarEntity(it.war) }
             .filter { it.hasPlayer(userId) }
             .withTrackStats(userId = userId)
-        teamId != null -> this.map { WarEntity(it.war) }
+        teamId != null -> this.map { OldWarEntity(it.war) }
             .filter { it.hasTeam(teamId) }
             .withTrackStats(teamId = teamId)
-        else -> this.map { WarEntity(it.war) }
+        else -> this.map { OldWarEntity(it.war) }
             .withTrackStats(userId = userId)
 
     }
@@ -167,7 +167,7 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 }
 
 fun List<TeamEntity>.withFullTeamStats(
-    wars: List<WarEntity>,
+    wars: List<OldWarEntity>,
     databaseRepository: DatabaseRepositoryInterface,
     userId: String? = null
 ) = flow {
@@ -176,7 +176,7 @@ fun List<TeamEntity>.withFullTeamStats(
         wars
             .filter { it.hasTeam(team.id) }
             .filter { (userId != null && it.hasPlayer(userId)) || userId == null }
-            .map { WarDetails(War(it)) }
+            .map { WarDetails(OldWar(it)) }
             .withFullStats(databaseRepository, userId)
             .firstOrNull()
             ?.let {
@@ -187,7 +187,7 @@ fun List<TeamEntity>.withFullTeamStats(
     emit(temp)
 }
 
-fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = null): List<TrackStats> = this
+fun List<OldWarEntity>.withTrackStats(userId: String? = null, teamId: String? = null): List<TrackStats> = this
     .filter { (teamId != null && it.hasTeam(teamId) || teamId == null) }
     .filter { (userId != null && it.hasPlayer(userId) || userId == null) }
     .flatMap { it.warTracks.orEmpty() }

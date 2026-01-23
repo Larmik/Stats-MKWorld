@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -16,9 +15,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.debug.MKCPlayerProto
 import fr.harmoniamk.statsmkworld.debug.MKCTeamProto
-import fr.harmoniamk.statsmkworld.debug.WarProto
-import fr.harmoniamk.statsmkworld.model.firebase.War
-import fr.harmoniamk.statsmkworld.model.local.DatastoreWar
+import fr.harmoniamk.statsmkworld.debug.OldWarProto
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.local.DatastoreOldWar
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.serializers.mkcPlayerDataStore
@@ -43,9 +42,10 @@ interface DataStoreRepositoryInterface {
 
     suspend fun setMKCPlayer(player: MKCPlayer)
     suspend fun setMKCTeam(team: MKCTeam)
-    suspend fun setCurrentWar(war: War)
-
-    suspend fun deleteCurrentWar()
+    @Deprecated("24 players")
+    suspend fun setOldCurrentWar(war: OldWar)
+    @Deprecated("24 players")
+    suspend fun deleteOldCurrentWar()
     suspend fun clearPlayer()
     suspend fun clearTeam()
 
@@ -53,7 +53,8 @@ interface DataStoreRepositoryInterface {
     val matrixMode: Flow<Boolean>
     val mkcPlayer: Flow<MKCPlayer>
     val mkcTeam: Flow<MKCTeam>
-    val war: Flow<War?>
+    @Deprecated("24 players")
+    val oldWar: Flow<OldWar?>
     val lastUpdate: Flow<Long>
     val notifEnabled: Flow<Boolean>
     val multiRosterEnabled: Flow<Boolean>
@@ -92,15 +93,17 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
-    override suspend fun setCurrentWar(war: War) {
+    @Deprecated("24 players")
+    override suspend fun setOldCurrentWar(war: OldWar) {
         context.warDataStore.updateData {
-            DatastoreWar(war).proto
+            DatastoreOldWar(war).proto
         }
     }
 
-    override suspend fun deleteCurrentWar() {
+    @Deprecated("24 players")
+    override suspend fun deleteOldCurrentWar() {
         context.warDataStore.updateData {
-            WarProto.newBuilder().build()
+            OldWarProto.newBuilder().build()
         }
     }
 
@@ -172,10 +175,11 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         get() = context.mkcTeamDataStore.data
             .map { MKCTeam(it) }
 
-    override val war: Flow<War?>
+    @Deprecated("24 players")
+    override val oldWar: Flow<OldWar?>
         get() = context.warDataStore.data
-            .map { DatastoreWar(it) }
-            .map { War(it).takeIf { it.id != 0L } }
+            .map { DatastoreOldWar(it) }
+            .map { OldWar(it).takeIf { it.id != 0L } }
 
     override val lastUpdate: Flow<Long>
         get() {

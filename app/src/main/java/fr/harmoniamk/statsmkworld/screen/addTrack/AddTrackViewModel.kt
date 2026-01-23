@@ -10,7 +10,7 @@ import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
-import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
@@ -69,7 +69,7 @@ class AddTrackViewModel @Inject constructor(
     val backToWar = _backToWar.asSharedFlow()
     private var details: WarDetails? = null
 
-    val state = dataStoreRepository.war
+    val state = dataStoreRepository.oldWar
         .filterNotNull()
         .map { WarDetails(it) }
         .zip(dataStoreRepository.mkcTeam) { details, teamHost  ->
@@ -187,19 +187,19 @@ class AddTrackViewModel @Inject constructor(
     fun onValidate() {
         details?.war?.let {
             val shockList = state.value.shocks.map { Shock(it.key, it.value) }
-            val track = WarTrack(
+            val track = OldWarTrack(
                 id = System.currentTimeMillis(),
                 index = _state.value.mapSelected?.ordinal ?: 0,
                 positions = _state.value.selectedPositions.map { it.position },
                 shocks = shockList
             )
-            val tracks = mutableListOf<WarTrack>()
+            val tracks = mutableListOf<OldWarTrack>()
             tracks.addAll(it.tracks)
             tracks.add(track)
             val newWar = it.copy(tracks = tracks)
-            firebaseRepository.writeCurrentWar(newWar)
+            firebaseRepository.writeOldCurrentWar(newWar)
                 .onEach {
-                    dataStoreRepository.setCurrentWar(newWar)
+                    dataStoreRepository.setOldCurrentWar(newWar)
                     _backToWar.emit(Unit)
                 }
                 .launchIn(viewModelScope)

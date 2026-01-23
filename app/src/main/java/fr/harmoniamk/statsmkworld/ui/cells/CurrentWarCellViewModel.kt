@@ -7,7 +7,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
-import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -22,14 +22,14 @@ import kotlinx.coroutines.flow.zip
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = CurrentWarCellViewModel.Factory::class)
 class CurrentWarCellViewModel @AssistedInject constructor(
-    @Assisted val currentWar: War?,
+    @Assisted val currentWar: OldWar?,
     databaseRepository: DatabaseRepositoryInterface,
     dataStoreRepository: DataStoreRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
-        fun create(currentWar: War?): CurrentWarCellViewModel
+        fun create(currentWar: OldWar?): CurrentWarCellViewModel
     }
 
     data class State(

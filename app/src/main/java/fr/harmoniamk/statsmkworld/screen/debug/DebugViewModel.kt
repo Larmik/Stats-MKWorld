@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
-import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -63,11 +62,11 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
                 .flatMapLatest { fetchUseCase.fetchTeam(it?.teamID.toString()) }
                 .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
                 .flatMapLatest { fetchUseCase.fetchTeams() }
-                .flatMapLatest { databaseRepository.clearWars() }
+                .flatMapLatest { databaseRepository.clearOldWars() }
                 .flatMapLatest { dataStoreRepository.mkcTeam }
                 .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
                 .flatMapLatest { ids ->
-                    val flows = ids.map { fetchUseCase.fetchWars(it) }
+                    val flows = ids.map { fetchUseCase.fetchOldWars(it) }
                     merge(*flows.toTypedArray())
                 }
                 .onEach { dataStoreRepository.setLastUpdate(Date().time) }
@@ -79,7 +78,7 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
     }
 
     fun onMatrixEnd() {
-        databaseRepository.clearWars()
+        databaseRepository.clearOldWars()
             .onEach { _sharedLoading.emit("Sortie de la matrice...") }
             .map { "18595" }
             .flatMapLatest { fetchUseCase.fetchData(it) }

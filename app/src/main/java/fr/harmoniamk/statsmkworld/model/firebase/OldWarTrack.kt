@@ -1,16 +1,18 @@
 package fr.harmoniamk.statsmkworld.model.firebase
 
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
-import fr.harmoniamk.statsmkworld.model.local.DatastoreWarTrack
+import fr.harmoniamk.statsmkworld.model.local.DatastoreOldWarTrack
 
-data class WarTrack(
+@Deprecated("24 players")
+data class OldWarTrack(
     val id: Long,
     val index: Int,
     val positions: List<WarPosition>,
     var shocks: List<Shock>? = null
 
 ) {
-    constructor(track: DatastoreWarTrack) : this(
+    @Deprecated("24 players")
+    constructor(track: DatastoreOldWarTrack) : this(
         id = track.id,
         index = track.index,
         positions = track.positions,

@@ -4,22 +4,24 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import fr.harmoniamk.statsmkworld.extension.displayedString
-import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
-import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import java.util.Date
 
 @Entity
-data class WarEntity(
+@Deprecated("24 players")
+data class OldWarEntity(
     @PrimaryKey
     @ColumnInfo(name = "id") val id: String,
     @ColumnInfo(name = "teamHost") val teamHost: String?,
     @ColumnInfo(name = "teamOpponent") val teamOpponent: String?,
     @ColumnInfo(name = "createdDate") val createdDate: String?,
-    @ColumnInfo(name = "warTracks") val warTracks: List<WarTrack>?,
+    @ColumnInfo(name = "warTracks") val warTracks: List<OldWarTrack>?,
     @ColumnInfo(name = "penalties") val penalties: List<WarPenalty>?,
 ) {
-    constructor(war: War): this(
+    @Deprecated("24 players")
+    constructor(war: OldWar): this(
         id = war.id.toString(),
         teamHost = war.teamHost,
         teamOpponent = war.teamOpponent,

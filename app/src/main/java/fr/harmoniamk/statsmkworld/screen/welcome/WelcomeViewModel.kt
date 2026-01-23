@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.safeSubList
-import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -32,14 +32,14 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
         val playerName: String? = null,
         val playerLogo: String? = null,
         val buttonVisible: Boolean = false,
-        val currentWar: War? = null,
+        val currentWar: OldWar? = null,
         var wars: List<WarDetails> = listOf()
     )
 
     init {
         dataStoreRepository.mkcPlayer
             .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
-            .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
+            .flatMapLatest { firebaseRepository.listenToOldCurrentWar(it) }
             .onEach { _state.value = state.value.copy(currentWar = it) }
             .launchIn(viewModelScope)
     }
@@ -57,10 +57,10 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
                     .map { it > 0 }
                     .firstOrNull()
 
-                val wars = databaseRepository.getWars()
+                val wars = databaseRepository.getOldWars()
                     .firstOrNull()
                     ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-                    ?.map { War(it) }
+                    ?.map { OldWar(it) }
                     ?.map { WarDetails(it) }
                     ?.sortedByDescending { it.war.id }
                     ?.safeSubList(0, 5)
@@ -74,7 +74,7 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     buttonVisible = buttonVisible == true || dataStoreRepository.matrixMode.firstOrNull() == true,
-                    currentWar = firebaseRepository.getCurrentWar(rosterId).firstOrNull(),
+                    currentWar = firebaseRepository.getOldCurrentWar(rosterId).firstOrNull(),
                     wars = wars
                 )
             }

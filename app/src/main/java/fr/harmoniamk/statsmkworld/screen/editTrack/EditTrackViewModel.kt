@@ -9,8 +9,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
-import fr.harmoniamk.statsmkworld.model.firebase.War
-import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
@@ -61,7 +61,7 @@ class EditTrackViewModel @AssistedInject constructor(
     private val _backToCurrent = MutableSharedFlow<Unit>()
     val backToCurrent = _backToCurrent.asSharedFlow()
 
-    val state = dataStoreRepository.war
+    val state = dataStoreRepository.oldWar
         .filterNotNull()
         .map { war ->
             val players = databaseRepository.getPlayers().firstOrNull()
@@ -110,7 +110,7 @@ class EditTrackViewModel @AssistedInject constructor(
 
     fun onValidate() {
         viewModelScope.launch {
-            dataStoreRepository.war.firstOrNull()?.let { war ->
+            dataStoreRepository.oldWar.firstOrNull()?.let { war ->
                 val tracks = war.tracks.toMutableList()
                 details?.track?.let { track ->
                     war.tracks.map { it.id }.indexOf(track.id).takeIf { it != -1 }?.let { index ->
@@ -178,12 +178,12 @@ class EditTrackViewModel @AssistedInject constructor(
         )
     }
 
-    private fun updateWar(war: War, tracks: List<WarTrack>) {
+    private fun updateWar(war: OldWar, tracks: List<OldWarTrack>) {
         val warToUpdate = war.copy(tracks = tracks)
         _state.value = State()
-        firebaseRepository.writeCurrentWar(warToUpdate)
+        firebaseRepository.writeOldCurrentWar(warToUpdate)
             .onEach {
-                dataStoreRepository.setCurrentWar(warToUpdate)
+                dataStoreRepository.setOldCurrentWar(warToUpdate)
                 _backToCurrent.emit(Unit)
             }
             .launchIn(viewModelScope)

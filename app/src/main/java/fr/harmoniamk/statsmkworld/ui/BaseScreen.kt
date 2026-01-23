@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.BuildConfig
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -29,8 +30,8 @@ import javax.inject.Inject
 class BaseViewModel @Inject constructor(dataStoreRepository: DataStoreRepositoryInterface): ViewModel() {
     val colors = dataStoreRepository.matrixMode
         .map {
-            when (it) {
-                true -> listOf(
+            when  {
+                it -> listOf(
                     Colors.grey90,
                     Colors.grey70,
                     Colors.grey50,
@@ -40,6 +41,15 @@ class BaseViewModel @Inject constructor(dataStoreRepository: DataStoreRepository
                     Colors.grey50,
                     Colors.grey70,
                     Colors.grey90
+                )
+                BuildConfig.DEBUG -> listOf(
+                    Colors.black,
+                    Colors.purple,
+                    Colors.red,
+                    Colors.yellow,
+                    Colors.green,
+                    Colors.blue,
+                    Colors.black
                 )
                 else -> listOf(
                     Colors.black,

@@ -1,18 +1,20 @@
 package fr.harmoniamk.statsmkworld.model.firebase
 
-import fr.harmoniamk.statsmkworld.database.entities.WarEntity
-import fr.harmoniamk.statsmkworld.model.local.DatastoreWar
+import fr.harmoniamk.statsmkworld.database.entities.OldWarEntity
+import fr.harmoniamk.statsmkworld.model.local.DatastoreOldWar
 
-data class War(
+@Deprecated("24 players")
+data class OldWar(
     val id: Long,
     val teamHost: String,
     val teamOpponent: String,
-    val tracks: List<WarTrack>,
+    val tracks: List<OldWarTrack>,
     val penalties: List<WarPenalty>
 ) {
     var name: String? = null
 
-    constructor(war: DatastoreWar) : this(
+    @Deprecated("24 players")
+    constructor(war: DatastoreOldWar) : this(
         id = war.id,
         teamHost = war.teamHost,
         teamOpponent = war.teamOpponent,
@@ -20,7 +22,7 @@ data class War(
         penalties = war.penalties
     )
 
-    constructor(entity: WarEntity): this(
+    constructor(entity: OldWarEntity): this(
         id = entity.id.toLong(),
         teamHost = entity.teamHost.orEmpty(),
         teamOpponent = entity.teamOpponent.orEmpty(),

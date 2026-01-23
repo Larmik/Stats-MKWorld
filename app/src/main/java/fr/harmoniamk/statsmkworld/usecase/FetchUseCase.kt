@@ -6,7 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
-import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.database.entities.OldWarEntity
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.model.firebase.Tag
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
@@ -42,7 +42,8 @@ interface FetchUseCaseInterface {
     fun fetchTeam(teamId: String): Flow<MKCTeam>
     fun fetchAllies(teamId: String): Flow<Unit>
     fun fetchTeams(): Flow<String>
-    fun fetchWars(teamId: String): Flow<Unit>
+    @Deprecated("24 players")
+    fun fetchOldWars(teamId: String): Flow<Unit>
     fun fetchTags(): Flow<Unit>
 
     fun manageTransferts(): Flow<Unit>
@@ -74,7 +75,7 @@ class FetchUseCase @Inject constructor(
             .flatMapLatest { dataStoreRepository.mkcTeam }
             .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
             .flatMapLatest { ids ->
-                val flows = ids.map { fetchWars(it) }
+                val flows = ids.map { fetchOldWars(it) }
                 merge(*flows.toTypedArray())
             }
             .onEach { dataStoreRepository.setLastUpdate(Date().time) }
@@ -186,12 +187,13 @@ class FetchUseCase @Inject constructor(
         emit(dataStoreRepository.mkcTeam.firstOrNull()?.id.toString())
     }
 
-    override fun fetchWars(teamId: String): Flow<Unit> = firebaseRepository.getWars(teamId)
+    @Deprecated("24 players")
+    override fun fetchOldWars(teamId: String): Flow<Unit> = firebaseRepository.getOldWars(teamId)
         .map {
-            val existingWars = databaseRepository.getWars().firstOrNull().orEmpty()
+            val existingWars = databaseRepository.getOldWars().firstOrNull().orEmpty()
             it.forEach { war ->
                 if (!existingWars.map { it.id }.contains(war.id.toString()))
-                    databaseRepository.writeWar(WarEntity(war)).firstOrNull()
+                    databaseRepository.writeOldWar(OldWarEntity(war)).firstOrNull()
             }
         }
     override fun fetchTags(): Flow<Unit> = databaseRepository.getTeams()

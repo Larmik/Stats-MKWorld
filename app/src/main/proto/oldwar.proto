@@ -4,15 +4,15 @@ option java_package = "fr.harmoniamk.statsmkworld.debug";
 option java_multiple_files = true;
 
 
-message WarProto {
+message OldWarProto {
     int64 id = 1;
     string team_host = 2;
     string team_opponent = 3;
-    repeated WarTrackProto tracks = 4;
+    repeated OldWarTrackProto tracks = 4;
     repeated WarPenaltyProto penalties = 5;
 }
 
-message WarTrackProto {
+message OldWarTrackProto {
     int64 id = 1;
     int32 index = 2;
     repeated WarPositionProto positions = 3;

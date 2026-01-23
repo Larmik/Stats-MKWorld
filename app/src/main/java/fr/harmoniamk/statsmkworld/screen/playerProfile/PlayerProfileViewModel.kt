@@ -235,12 +235,12 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
                     .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents) }
                     .flatMapLatest { fetchUseCase.fetchTeams() }
-                    .flatMapLatest { databaseRepository.clearWars() }
+                    .flatMapLatest { databaseRepository.clearOldWars() }
                     .flatMapLatest { dataStoreRepository.mkcTeam }
                     .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars) }
                     .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
                     .flatMapLatest { ids ->
-                        val flows = ids.map { fetchUseCase.fetchWars(it) }
+                        val flows = ids.map { fetchUseCase.fetchOldWars(it) }
                         merge(*flows.toTypedArray())
                     }
                     .onEach { _state.value = state.value.copy(dialogTitle = null) }
@@ -264,7 +264,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
 
         databaseRepository.clearTeams()
             .flatMapLatest { databaseRepository.clearPlayers() }
-            .flatMapLatest { databaseRepository.clearWars() }
+            .flatMapLatest { databaseRepository.clearOldWars() }
             .flatMapLatest { dataStoreRepository.accessToken }
             .flatMapLatest { authDataSource.revokeToken(it) }
             .onEach {

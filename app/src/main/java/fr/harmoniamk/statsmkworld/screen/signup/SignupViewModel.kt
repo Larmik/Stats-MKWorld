@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -110,7 +109,7 @@ class SignupViewModel @AssistedInject constructor(
                     it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() }
                 }
                 .flatMapLatest { ids ->
-                    val flows = ids.map { fetchUseCase.fetchWars(it) }
+                    val flows = ids.map { fetchUseCase.fetchOldWars(it) }
                     merge(*flows.toTypedArray())
                 }
                 .onEach {
