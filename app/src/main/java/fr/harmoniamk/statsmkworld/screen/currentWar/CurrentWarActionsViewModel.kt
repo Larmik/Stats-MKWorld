@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltySelector
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltyType
@@ -42,11 +44,11 @@ class CurrentWarActionsViewModel @Inject constructor(
     val onBack = _onBack.asSharedFlow()
 
     data class State(
-        val war: OldWar? = null,
+        val war: War? = null,
         val players: List<PlayerEntity>? = null,
         val penalties: List<PenaltySelector>? = null,
-        val teamHost: String? = null,
-        val teamOpponent: String? = null,
+        val teamHost: TeamEntity? = null,
+        val teamOpponent: List<TeamEntity>? = null,
         val currentPlayers: List<PlayerSelector>? = null,
         val otherPlayers: List<PlayerSelector>? = null,
     )
@@ -55,17 +57,24 @@ class CurrentWarActionsViewModel @Inject constructor(
 
     val state = flowOf(Unit)
         .mapNotNull {
-            val war = dataStoreRepository.oldWar.firstOrNull()
+            val war = dataStoreRepository.war.firstOrNull()
             val players = databaseRepository.getPlayers().firstOrNull()
-            val teamHost = dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }?.name
-            val teamOpponent = databaseRepository.getTeam(war?.teamOpponent.orEmpty())
-                .firstOrNull()?.name.orEmpty()
+            val teamHost = dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }?.let { TeamEntity(it) }
+            val teamOpponents = war?.teamOpponent.orEmpty().mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
+
             State(
                 war = war,
                 players = players,
-                penalties = PenaltyType.entries.map { PenaltySelector(it, false) },
+                penalties = (listOf(teamHost) + teamOpponents)
+                    .filterNotNull()
+                    .flatMap { team -> listOf(
+                        PenaltyType.Minus10(team.id),
+                        PenaltyType.Minus15(team.id),
+                        PenaltyType.Minus20(team.id)
+                    ) }
+                    .map { PenaltySelector(it, false) },
                 teamHost = teamHost,
-                teamOpponent = teamOpponent,
+                teamOpponent = teamOpponents,
                 currentPlayers = players?.filter { it.currentWar == war?.id.toString() }?.map { PlayerSelector(it, false) },
                 otherPlayers = players?.filterNot { it.currentWar == war?.id.toString() }?.map { PlayerSelector(it, false) }
             )
@@ -88,21 +97,18 @@ class CurrentWarActionsViewModel @Inject constructor(
     fun onPenaltyValidated() {
         state.value.penalties?.singleOrNull { it.isSelected }?.penalty?.let { penaltyType ->
             val penalty = when (penaltyType) {
-                PenaltyType.HOST_MINUS_10 -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 10)
-                PenaltyType.HOST_MINUS_15 -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 15)
-                PenaltyType.HOST_MINUS_20 -> WarPenalty(teamId = state.value.war?.teamHost.orEmpty(), 20)
-                PenaltyType.OPPONENT_MINUS_10 -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 10)
-                PenaltyType.OPPONENT_MINUS_15 -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 15)
-                PenaltyType.OPPONENT_MINUS_20 -> WarPenalty(teamId = state.value.war?.teamOpponent.orEmpty(), 20)
-            }
+                is PenaltyType.Minus10 -> WarPenalty(teamId = penaltyType.teamId, 10)
+                is PenaltyType.Minus15 -> WarPenalty(teamId = penaltyType.teamId, 15)
+                is PenaltyType.Minus20 -> WarPenalty(teamId = penaltyType.teamId, 20)
+             }
             state.value.war?.let {
                 val penalties = mutableListOf<WarPenalty>()
                 penalties.addAll(it.penalties)
                 penalties.add(penalty)
                 val war = it.copy(penalties = penalties)
-                firebaseRepository.writeOldCurrentWar(war)
+                firebaseRepository.writeCurrentWar(war)
                     .onEach {
-                        dataStoreRepository.setOldCurrentWar(war)
+                        dataStoreRepository.setCurrentWar(war)
                         clearPenalties()
                         _state.value = state.value.copy(war = war)
                     }.launchIn(viewModelScope)
@@ -182,7 +188,15 @@ class CurrentWarActionsViewModel @Inject constructor(
     }
 
     fun clearPenalties() {
-        _state.value = state.value.copy(penalties = PenaltyType.entries.map { PenaltySelector(it, false) })
+        _state.value = state.value.copy(
+            penalties = (listOf(state.value.teamHost) + state.value.teamOpponent.orEmpty())
+            .filterNotNull()
+            .flatMap { team -> listOf(
+                PenaltyType.Minus10(team.id),
+                PenaltyType.Minus15(team.id),
+                PenaltyType.Minus20(team.id)
+            ) }
+            .map { PenaltySelector(it, false) })
     }
 
     fun cancelWar() {
@@ -216,9 +230,9 @@ class CurrentWarActionsViewModel @Inject constructor(
                     }
                 state.value.war
             }
-            .flatMapLatest { firebaseRepository.deleteOldCurrentWar(it.teamHost) }
+            .flatMapLatest { firebaseRepository.deleteCurrentWar(it.teamHost) }
             .onEach {
-                dataStoreRepository.deleteOldCurrentWar()
+                dataStoreRepository.deleteCurrentWar()
                 _backToWelcome.emit(Unit)
             }
             .launchIn(viewModelScope)

@@ -5,20 +5,20 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 
-@Deprecated("24 players")
-class OldWarTrackConverter {
+class StringConverter {
 
     private val adapter = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
-        .adapter<List<OldWarTrack>>(Types.newParameterizedType(List::class.java, OldWarTrack::class.java))
+        .adapter<List<String>>(Types.newParameterizedType(List::class.java, String::class.java))
 
     @TypeConverter
-    fun fromWarTrackList(value: List<OldWarTrack>?): String = adapter.toJson(value)
+    fun fromStringList(value: List<String>?): String = adapter.toJson(value)
 
     @TypeConverter
-    fun toWarTrackList(value: String?) =
+    fun toStringList(value: String?) =
         try {
             value?.let { adapter.fromJson(it) }
         } catch (e: Exception) {

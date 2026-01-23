@@ -11,11 +11,13 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.parsePenalties
+import fr.harmoniamk.statsmkworld.extension.parseOldTracks
 import fr.harmoniamk.statsmkworld.extension.parseTracks
 import fr.harmoniamk.statsmkworld.extension.toMapList
 import fr.harmoniamk.statsmkworld.model.firebase.Tag
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -42,19 +44,17 @@ interface FirebaseRepositoryInterface {
     fun deleteUser(teamId: String, id: String): Flow<Unit>
 
     @Deprecated("24 players")
-
     fun getOldWars(teamId: String): Flow<List<OldWar>>
-    @Deprecated("24 players")
-    fun writeOldWar(war: OldWar): Flow<Unit>
 
-    @Deprecated("24 players")
-    fun getOldCurrentWar(teamId: String): Flow<OldWar?>
-    @Deprecated("24 players")
-    fun listenToOldCurrentWar(teamId: String): Flow<OldWar?>
-    @Deprecated("24 players")
-    fun writeOldCurrentWar(war: OldWar): Flow<Unit>
-    @Deprecated("24 players")
-    fun deleteOldCurrentWar(teamId: String): Flow<Unit>
+    fun migrateWar(teamId: String, war: War): Flow<Unit>
+
+    fun getWars(teamId: String): Flow<List<War>>
+    fun writeWar(war: War): Flow<Unit>
+
+    fun getCurrentWar(teamId: String): Flow<War?>
+    fun listenToCurrentWar(teamId: String): Flow<War?>
+    fun writeCurrentWar(war: War): Flow<Unit>
+    fun deleteCurrentWar(teamId: String): Flow<Unit>
 
     fun getAllies(teamId: String): Flow<List<User>>
     fun writeAlly(teamId: String, user: User): Flow<Unit>
@@ -62,6 +62,8 @@ interface FirebaseRepositoryInterface {
 
     fun log(message: String, type: String): Flow<Unit>
     fun writeTags(tags: List<Tag>) : Flow<Unit>
+
+    fun getWarIndexes(): Flow<List<String>>
 
 }
 
@@ -112,14 +114,12 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    @Deprecated("24 players")
-    override fun writeOldWar(war: OldWar): Flow<Unit> = dataStoreRepository.mkcPlayer
+    override fun writeWar(war: War): Flow<Unit> = dataStoreRepository.mkcPlayer
         .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
-        .onEach { database.child("newWars").child(it).child(war.id.toString()).setValue(war) }
+        .onEach { database.child("wars").child(it).child(war.id.toString()).setValue(war) }
         .map { }
 
-    @Deprecated("24 players")
-    override fun writeOldCurrentWar(war: OldWar): Flow<Unit> = dataStoreRepository.mkcPlayer
+    override fun writeCurrentWar(war: War): Flow<Unit> = dataStoreRepository.mkcPlayer
         .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
         .onEach { database.child("currentWars").child(it).setValue(war) }
         .map { }
@@ -134,6 +134,33 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
                         id = map["id"].toString().toLong(),
                         teamHost = map["teamHost"].toString(),
                         teamOpponent = map["teamOpponent"].toString(),
+                        tracks = map["tracks"].toMapList().parseOldTracks().orEmpty(),
+                        penalties = map["penalties"].toMapList().parsePenalties().orEmpty()
+                    )
+                }
+            if (isActive) trySend(wars)
+        }
+        awaitClose { }
+    }.flowOn(Dispatchers.IO)
+
+    override fun migrateWar(
+        teamId: String,
+        war: War
+    ) =  dataStoreRepository.mkcPlayer
+    .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
+    .onEach { database.child("wars").child(teamId).child(war.id.toString()).setValue(war) }
+    .map { }
+
+
+    override fun getWars(teamId: String): Flow<List<War>> = callbackFlow {
+        database.child("wars").child(teamId).get().addOnSuccessListener { snapshot ->
+            val wars: List<War> = snapshot.children
+                .map { it.value as Map<*, *> }
+                .map { map ->
+                    War(
+                        id = map["id"].toString().toLong(),
+                        teamHost = map["teamHost"].toString(),
+                        teamOpponent = map["teamOpponent"] as List<String>,
                         tracks = map["tracks"].toMapList().parseTracks().orEmpty(),
                         penalties = map["penalties"].toMapList().parsePenalties().orEmpty()
                     )
@@ -143,14 +170,13 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    @Deprecated("24 players")
-    override fun getOldCurrentWar(teamId: String): Flow<OldWar?> = callbackFlow {
+    override fun getCurrentWar(teamId: String): Flow<War?> = callbackFlow {
         database.child("currentWars").child(teamId).get().addOnSuccessListener { snapshot ->
             (snapshot.value as? Map<*, *>)?.let { value ->
                 launch {
-                    val war = OldWar(
+                    val war = War(
                         id = value["id"].toString().toLong(),
-                        teamOpponent = value["teamOpponent"].toString(),
+                        teamOpponent = value["teamOpponent"] as List<String>,
                         teamHost = value["teamHost"].toString(),
                         tracks = value["tracks"].toMapList().parseTracks().orEmpty(),
                         penalties = value["penalties"].toMapList().parsePenalties().orEmpty()
@@ -162,17 +188,16 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         awaitClose { }
     }.flowOn(Dispatchers.IO)
 
-    @Deprecated("24 players")
-    override fun listenToOldCurrentWar(teamId: String): Flow<OldWar?> = callbackFlow {
+    override fun listenToCurrentWar(teamId: String): Flow<War?> = callbackFlow {
         val postListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 launch {
                     val war = when (val value =
                         dataSnapshot.child("currentWars").child(teamId).value as? Map<*, *>) {
                         null -> null
-                        else -> OldWar(
+                        else -> War(
                             id = value["id"].toString().toLong(),
-                            teamOpponent = value["teamOpponent"].toString(),
+                            teamOpponent = value["teamOpponent"] as List<String>,
                             teamHost = value["teamHost"].toString(),
                             tracks = value["tracks"].toMapList().parseTracks().orEmpty(),
                             penalties = value["penalties"].toMapList().parsePenalties().orEmpty()
@@ -189,8 +214,7 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         awaitClose { database.removeEventListener(postListener) }
     }.flowOn(Dispatchers.IO)
 
-    @Deprecated("24 players")
-    override fun deleteOldCurrentWar(teamId: String) = flow {
+    override fun deleteCurrentWar(teamId: String) = flow {
         database.child("currentWars").child(teamId).removeValue()
         emit(Unit)
     }
@@ -253,5 +277,14 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         database.child("tags").setValue(tags)
         emit(Unit)
     }
+
+    override fun getWarIndexes(): Flow<List<String>>  = callbackFlow {
+        database.child("newWars").get().addOnSuccessListener { snapshot ->
+            val indexes: List<String> = snapshot.children
+                .mapNotNull { it.key }
+            if (isActive) trySend(indexes)
+        }
+        awaitClose { }
+    }.flowOn(Dispatchers.IO)
 
 }

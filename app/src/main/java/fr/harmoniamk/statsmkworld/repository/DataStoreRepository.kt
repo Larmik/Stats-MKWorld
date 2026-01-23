@@ -15,9 +15,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.debug.MKCPlayerProto
 import fr.harmoniamk.statsmkworld.debug.MKCTeamProto
-import fr.harmoniamk.statsmkworld.debug.OldWarProto
-import fr.harmoniamk.statsmkworld.model.firebase.OldWar
-import fr.harmoniamk.statsmkworld.model.local.DatastoreOldWar
+import fr.harmoniamk.statsmkworld.debug.WarProto
+import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.local.DatastoreWar
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.serializers.mkcPlayerDataStore
@@ -42,10 +42,8 @@ interface DataStoreRepositoryInterface {
 
     suspend fun setMKCPlayer(player: MKCPlayer)
     suspend fun setMKCTeam(team: MKCTeam)
-    @Deprecated("24 players")
-    suspend fun setOldCurrentWar(war: OldWar)
-    @Deprecated("24 players")
-    suspend fun deleteOldCurrentWar()
+    suspend fun setCurrentWar(war: War)
+    suspend fun deleteCurrentWar()
     suspend fun clearPlayer()
     suspend fun clearTeam()
 
@@ -53,8 +51,7 @@ interface DataStoreRepositoryInterface {
     val matrixMode: Flow<Boolean>
     val mkcPlayer: Flow<MKCPlayer>
     val mkcTeam: Flow<MKCTeam>
-    @Deprecated("24 players")
-    val oldWar: Flow<OldWar?>
+    val war: Flow<War?>
     val lastUpdate: Flow<Long>
     val notifEnabled: Flow<Boolean>
     val multiRosterEnabled: Flow<Boolean>
@@ -93,17 +90,16 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
-    @Deprecated("24 players")
-    override suspend fun setOldCurrentWar(war: OldWar) {
+    override suspend fun setCurrentWar(war: War) {
         context.warDataStore.updateData {
-            DatastoreOldWar(war).proto
+            DatastoreWar(war).proto
         }
     }
 
     @Deprecated("24 players")
-    override suspend fun deleteOldCurrentWar() {
+    override suspend fun deleteCurrentWar() {
         context.warDataStore.updateData {
-            OldWarProto.newBuilder().build()
+            WarProto.newBuilder().build()
         }
     }
 
@@ -176,10 +172,10 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
             .map { MKCTeam(it) }
 
     @Deprecated("24 players")
-    override val oldWar: Flow<OldWar?>
+    override val war: Flow<War?>
         get() = context.warDataStore.data
-            .map { DatastoreOldWar(it) }
-            .map { OldWar(it).takeIf { it.id != 0L } }
+            .map { DatastoreWar(it) }
+            .map { War(it).takeIf { it.id != 0L } }
 
     override val lastUpdate: Flow<Long>
         get() {

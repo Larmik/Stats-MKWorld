@@ -1,28 +1,27 @@
 package fr.harmoniamk.statsmkworld.model.local
 
-import fr.harmoniamk.statsmkworld.debug.OldWarTrackProto
+import fr.harmoniamk.statsmkworld.debug.WarTrackProto
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
-import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 
-@Deprecated("24 players")
-data class DatastoreOldWarTrack(
+data class DatastoreWarTrack(
     val id: Long,
-    val index: Int,
+    val index: List<Int>,
     val positions: List<WarPosition>,
     var shocks: List<Shock>? = null
 ) {
 
-    constructor(track: OldWarTrack) : this(
+    constructor(track: WarTrack) : this(
         id = track.id,
-        index = track.index,
+        index = track.index.map { it.toInt() },
         positions = track.positions,
         shocks = track.shocks
     )
 
-    constructor(proto: OldWarTrackProto) : this(
+    constructor(proto: WarTrackProto) : this(
         id = proto.id,
-        index = proto.index,
+        index = proto.indexList,
         positions = proto.positionsList
             .map { DatastoreWarPosition(it) }
             .map { WarPosition(it) },
@@ -31,11 +30,13 @@ data class DatastoreOldWarTrack(
             .map { Shock(it) }
     )
 
-    val proto: OldWarTrackProto
+    val proto: WarTrackProto
         get()  {
-            val builder = OldWarTrackProto.newBuilder()
+            val builder = WarTrackProto.newBuilder()
                 .setId(id)
-                .setIndex(index)
+            index.forEach {
+                builder.addIndex(it)
+            }
             positions.forEach {
                 builder.addPositions(DatastoreWarPosition(it).proto)
             }

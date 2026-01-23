@@ -6,29 +6,28 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
 import com.google.protobuf.InvalidProtocolBufferException
-import fr.harmoniamk.statsmkworld.debug.OldWarProto
+import fr.harmoniamk.statsmkworld.debug.WarProto
 import java.io.InputStream
 import java.io.OutputStream
 
-@Deprecated("24 players")
-object OldWarSerializer : Serializer<OldWarProto> {
-    override val defaultValue: OldWarProto = OldWarProto.getDefaultInstance()
+object WarSerializer : Serializer<WarProto> {
+    override val defaultValue: WarProto = WarProto.getDefaultInstance()
 
-    override suspend fun readFrom(input: InputStream): OldWarProto {
+    override suspend fun readFrom(input: InputStream): WarProto {
         try {
-            return OldWarProto.parseFrom(input)
+            return WarProto.parseFrom(input)
         } catch (exception: InvalidProtocolBufferException) {
             throw CorruptionException("Cannot read proto.", exception)
         }
     }
 
     override suspend fun writeTo(
-        t: OldWarProto,
+        t: WarProto,
         output: OutputStream
     ) = t.writeTo(output)
 }
 
-val Context.warDataStore: DataStore<OldWarProto> by dataStore(
-    fileName = "oldwar.pb",
-    serializer = OldWarSerializer
+val Context.warDataStore: DataStore<WarProto> by dataStore(
+    fileName = "war.pb",
+    serializer = WarSerializer
 )

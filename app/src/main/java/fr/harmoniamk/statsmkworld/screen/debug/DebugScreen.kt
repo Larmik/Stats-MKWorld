@@ -198,10 +198,10 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Row(Modifier.weight(1f).clickable {
-                            throw RuntimeException("Test crash")
+                            viewModel.migrateWars()
                         }) {
                             MKText(
-                                text = "Test crash",
+                                text = "Migration des wars",
                                 font = Fonts.Urbanist,
                                 modifier = Modifier.padding(vertical = 20.dp)
                             )

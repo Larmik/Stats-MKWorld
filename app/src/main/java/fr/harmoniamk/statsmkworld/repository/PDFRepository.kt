@@ -45,6 +45,7 @@ import kotlin.math.roundToInt
 interface PDFRepositoryInterface {
     fun write(pdfDocument: PdfDocument, fileName: String): Flow<Uri?>
     fun generatePdf(details: WarDetails, teamWin: TeamEntity?, teamLose: TeamEntity?, hostScores: List<PlayerScoreForTab>, opponentScores: List<PlayerScoreForTab>): PdfDocument
+    /*
     fun generateDetailedPdf(
         details: WarDetails,
         teamHost: TeamEntity?,
@@ -54,6 +55,8 @@ interface PDFRepositoryInterface {
         teamHostLogo: Bitmap?,
         teamOpponentLogo: Bitmap?
     ): PdfDocument
+
+     */
 }
 
 
@@ -101,7 +104,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
     private fun setPdfData(pdfView: View, details: WarDetails, teamWin: TeamEntity?, teamLose: TeamEntity?, allScores: List<Pair<PlayerScoreForTab, String>>) {
         val playersWin: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
         val playersLose: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
-        val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.let { Maps.entries[it] }
+        val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.lastOrNull()?.let { Maps.entries[it.toInt()] }
 
         allScores.forEachIndexed { index, pair ->
             val rank = when (pair.first.score == allScores.getOrNull(index-1)?.first?.score) {
@@ -122,12 +125,12 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         pdfView.findViewById<TextView>(R.id.tab_loser_team_name).text = teamLose?.name
         pdfView.findViewById<TextView>(R.id.tab_winner_team_score).text = when {
             teamWin?.id == details.war.teamHost -> details.scoreHostWithPenalties.toString()
-            teamWin?.id == details.war.teamOpponent -> details.scoreOpponentWithPenalties.toString()
+            details.war.teamOpponent.contains(teamWin?.id) -> details.scoreOpponentWithPenalties.toString()
             else -> ""
         }
         pdfView.findViewById<TextView>(R.id.tab_loser_team_score).text  = when {
             teamLose?.id == details.war.teamHost -> details.scoreHostWithPenalties.toString()
-            teamLose?.id == details.war.teamOpponent -> details.scoreOpponentWithPenalties.toString()
+            details.war.teamOpponent.contains(teamLose?.id) -> details.scoreOpponentWithPenalties.toString()
             else -> ""
         }
 
@@ -340,7 +343,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
     ): PdfDocument {
 
         val allScores = (hostScores.map { Pair(it, details.war.teamHost) } +
-                opponentScores.map { Pair(it, details.war.teamOpponent) })
+                opponentScores.map { Pair(it, details.war.teamOpponent.first()) })
             .sortedByDescending { it.first.score }
 
         val doc = PdfDocument()
@@ -376,6 +379,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         return doc
     }
 
+    /*
     override fun generateDetailedPdf(
         details: WarDetails,
         teamHost: TeamEntity?,
@@ -686,6 +690,8 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         doc.finishPage(page)
         return doc
     }
+
+     */
 
     private fun pdfToJpg(pdfDocument: PdfDocument, outputStream: OutputStream) {
         val tempFile = File(context.cacheDir, "temp_doc.pdf")

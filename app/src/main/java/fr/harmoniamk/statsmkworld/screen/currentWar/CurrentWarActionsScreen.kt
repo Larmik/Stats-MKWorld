@@ -137,30 +137,19 @@ fun CurrentWarActionsScreen(
                                            .clickable { viewModel.onPenaltySelected(it) }
                                            .heightIn(min = 120.dp)
                                            .fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                           val text = when (it.penalty) {
-                                               PenaltyType.HOST_MINUS_10 -> "-10 " + context.getString(
+                                           val teamsList = listOf(state.value.teamHost) + state.value.teamOpponent.orEmpty()
+                                           val text = when (val penalty = it.penalty) {
+                                               is PenaltyType.Minus10 -> "-10 " + context.getString(
                                                    R.string.penalty_placeholder,
-                                                   state.value.teamHost
+                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name.orEmpty()
                                                )
-                                               PenaltyType.HOST_MINUS_15 -> "-15 " + context.getString(
+                                               is PenaltyType.Minus15 -> "-15 " + context.getString(
                                                    R.string.penalty_placeholder,
-                                                   state.value.teamHost
+                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name.orEmpty()
                                                )
-                                               PenaltyType.HOST_MINUS_20 ->  "-20 " + context.getString(
+                                               is PenaltyType.Minus20 -> "-20 " + context.getString(
                                                    R.string.penalty_placeholder,
-                                                   state.value.teamHost
-                                               )
-                                               PenaltyType.OPPONENT_MINUS_10 ->"-10 " +  context.getString(
-                                                   R.string.penalty_placeholder,
-                                                   state.value.teamOpponent
-                                               )
-                                               PenaltyType.OPPONENT_MINUS_15 -> "-15 " +  context.getString(
-                                                   R.string.penalty_placeholder,
-                                                   state.value.teamOpponent
-                                               )
-                                               PenaltyType.OPPONENT_MINUS_20 -> "-20 " +  context.getString(
-                                                   R.string.penalty_placeholder,
-                                                   state.value.teamOpponent
+                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name.orEmpty()
                                                )
                                            }
                                            MKText(modifier = Modifier.padding(5.dp), text = text, font = Fonts.NunitoBD, textColor = textColor)

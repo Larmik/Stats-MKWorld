@@ -32,7 +32,7 @@ fun WarScoreView(
     modifier: Modifier = Modifier,
     style: WarScoreStyle = WarScoreStyle.Normal,
     teamHost: TeamEntity?,
-    teamOpponent: TeamEntity?,
+    teamOpponent: List<TeamEntity>?,
     score: String,
     diff: String,
     penalties: List<WarPenalty>,
@@ -114,29 +114,32 @@ fun WarScoreView(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                when (val logo = teamOpponent?.logo) {
-                    null -> Image(
-                        painter = painterResource(R.drawable.default_logo),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(logoSize)
-                            .clip(CircleShape)
-                    )
-                    else ->  AsyncImage(
-                        model = "https://mkcentral.com$logo",
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(logoSize)
-                            .clip(CircleShape)
+                teamOpponent?.forEach {
+                    when (val logo = it.logo) {
+                        null -> Image(
+                            painter = painterResource(R.drawable.default_logo),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(logoSize)
+                                .clip(CircleShape)
+                        )
+                        else ->  AsyncImage(
+                            model = "https://mkcentral.com$logo",
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(logoSize)
+                                .clip(CircleShape)
+                        )
+                    }
+
+                    MKText(
+                        text = it.name,
+                        textColor = Colors.black,
+                        fontSize = teamNameSize,
+                        maxLines = 1
                     )
                 }
 
-                MKText(
-                    text = teamOpponent?.name.orEmpty(),
-                    textColor = Colors.black,
-                    fontSize = teamNameSize,
-                    maxLines = 1
-                )
             }
         }
         penalties.takeIf { it.isNotEmpty() }?.let {
@@ -155,15 +158,18 @@ fun WarScoreView(
                     }
                 } ?: Spacer(Modifier.weight(1f))
                 Spacer(Modifier.weight(1f))
-                penalties.filter { it.teamId == teamOpponent?.id }.takeIf { it.isNotEmpty() }?.let {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        MKText(text = stringResource(R.string.penalty))
-                        MKText(text = "-${it.sumOf { it.amount }}")
-                    }
-                } ?: Spacer(Modifier.weight(1f))
+                teamOpponent?.forEach { team ->
+                    penalties.filter { it.teamId == team.id }.takeIf { it.isNotEmpty() }?.let {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            MKText(text = stringResource(R.string.penalty))
+                            MKText(text = "-${it.sumOf { it.amount }}")
+                        }
+                    } ?: Spacer(Modifier.weight(1f))
+                }
+
             }
         }
     }

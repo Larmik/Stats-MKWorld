@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
 import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
@@ -43,9 +44,9 @@ class AddTrackViewModel @Inject constructor(
 
     data class State(
         val mapList: List<Maps> = Maps.entries,
-        val mapSelected: Maps? = null,
+        val mapSelected: List<Maps>? = null,
         val teamHost: TeamEntity? = null,
-        val teamOpponent: TeamEntity? = null,
+        val teamOpponent: List<TeamEntity>? = null,
         val players: List<PlayerEntity> = listOf(),
         val currentPlayer: PlayerEntity? = null,
         val selectedPositions: List<PlayerPosition> = listOf(),
@@ -69,18 +70,18 @@ class AddTrackViewModel @Inject constructor(
     val backToWar = _backToWar.asSharedFlow()
     private var details: WarDetails? = null
 
-    val state = dataStoreRepository.oldWar
+    val state = dataStoreRepository.war
         .filterNotNull()
         .map { WarDetails(it) }
         .zip(dataStoreRepository.mkcTeam) { details, teamHost  ->
             this.details = details
-            val teamOpponent = databaseRepository.getTeam(details.war.teamOpponent).firstOrNull()
+            val teamOpponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
             val rosterName = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.name ?: teamHost.name
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == details.war.id.toString() }?.sortedBy { it.name }.orEmpty()
             _state.value.copy(
                 teamHost = TeamEntity(teamHost),
-                teamOpponent = teamOpponent,
+                teamOpponent = teamOpponents,
                 score = details.displayedScore,
                 diff = details.displayedDiff,
                 players = players,
@@ -102,7 +103,7 @@ class AddTrackViewModel @Inject constructor(
         })
     }
 
-    fun onMapSelected(map: Maps) {
+    fun onMapSelected(map: List<Maps>) {
         _state.value = _state.value.copy(mapSelected = map)
     }
 
@@ -187,19 +188,19 @@ class AddTrackViewModel @Inject constructor(
     fun onValidate() {
         details?.war?.let {
             val shockList = state.value.shocks.map { Shock(it.key, it.value) }
-            val track = OldWarTrack(
+            val track = WarTrack(
                 id = System.currentTimeMillis(),
-                index = _state.value.mapSelected?.ordinal ?: 0,
+                index = _state.value.mapSelected?.map { it.ordinal.toString() } ?: listOf(),
                 positions = _state.value.selectedPositions.map { it.position },
                 shocks = shockList
             )
-            val tracks = mutableListOf<OldWarTrack>()
+            val tracks = mutableListOf<WarTrack>()
             tracks.addAll(it.tracks)
             tracks.add(track)
             val newWar = it.copy(tracks = tracks)
-            firebaseRepository.writeOldCurrentWar(newWar)
+            firebaseRepository.writeCurrentWar(newWar)
                 .onEach {
-                    dataStoreRepository.setOldCurrentWar(newWar)
+                    dataStoreRepository.setCurrentWar(newWar)
                     _backToWar.emit(Unit)
                 }
                 .launchIn(viewModelScope)

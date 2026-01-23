@@ -8,6 +8,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -110,10 +111,10 @@ class AddWarViewModel @Inject constructor(
             .filterNotNull()
             .map {
                 this.rosterId = it
-                OldWar(
+                War(
                     id = System.currentTimeMillis(),
                     teamHost = it,
-                    teamOpponent = _state.value.teamSelected?.id.orEmpty(),
+                    teamOpponent = listOf(_state.value.teamSelected?.id.orEmpty()),
                     tracks = listOf(),
                     penalties = listOf()
                 )
@@ -146,8 +147,8 @@ class AddWarViewModel @Inject constructor(
                 }
                 war
             }
-            .onEach {  dataStoreRepository.setOldCurrentWar(it) }
-            .flatMapLatest { firebaseRepository.writeOldCurrentWar(it) }
+            .onEach {  dataStoreRepository.setCurrentWar(it) }
+            .flatMapLatest { firebaseRepository.writeCurrentWar(it) }
             .onEach { _goToCurrent.emit(Unit) }
             .launchIn(viewModelScope)
     }

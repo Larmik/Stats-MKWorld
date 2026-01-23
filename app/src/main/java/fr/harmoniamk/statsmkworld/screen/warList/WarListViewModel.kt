@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.extension.format
 import fr.harmoniamk.statsmkworld.extension.get
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -29,11 +30,11 @@ class WarListViewModel @Inject constructor(databaseRepository: DatabaseRepositor
 
     val state = dataStoreRepository.mkcPlayer
         .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld"}?.rosterID?.toString() }
-        .zip(databaseRepository.getOldWars()) { rosterId, wars ->
+        .zip(databaseRepository.getWars()) { rosterId, wars ->
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             wars
                 .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-                .map { OldWar(it) }
+                .map { War(it) }
                 .map { WarDetails(it) }
                 .sortedByDescending { it.war.id }
                 .groupBy { war ->

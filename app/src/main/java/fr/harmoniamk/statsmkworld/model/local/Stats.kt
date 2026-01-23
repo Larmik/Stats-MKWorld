@@ -54,7 +54,7 @@ class WarScore(
 data class TrackStats(
     val stats: Stats? = null,
     val map: Maps? = null,
-    val trackIndex: Int? = null,
+    val trackIndex: List<Int>? = null,
     val teamScore: Int? = null,
     val playerScore: Int? = null,
     val totalPlayed: Int = 0,

@@ -7,21 +7,21 @@ import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import java.util.Date
 
 @Entity
-@Deprecated("24 players")
-data class OldWarEntity(
+data class WarEntity(
     @PrimaryKey
     @ColumnInfo(name = "id") val id: String,
     @ColumnInfo(name = "teamHost") val teamHost: String?,
-    @ColumnInfo(name = "teamOpponent") val teamOpponent: String?,
+    @ColumnInfo(name = "teamOpponent") val teamOpponent: List<String>,
     @ColumnInfo(name = "createdDate") val createdDate: String?,
-    @ColumnInfo(name = "warTracks") val warTracks: List<OldWarTrack>?,
+    @ColumnInfo(name = "warTracks") val warTracks: List<WarTrack>?,
     @ColumnInfo(name = "penalties") val penalties: List<WarPenalty>?,
 ) {
-    @Deprecated("24 players")
-    constructor(war: OldWar): this(
+    constructor(war: War): this(
         id = war.id.toString(),
         teamHost = war.teamHost,
         teamOpponent = war.teamOpponent,
@@ -34,6 +34,6 @@ data class OldWarEntity(
         return warTracks?.size == warTracks?.filter { it.positions.any { pos -> pos.playerId == playerId } }?.size
     }
     fun hasTeam(teamId: String?): Boolean {
-        return teamHost == teamId || teamOpponent == teamId
+        return teamHost == teamId || teamOpponent.contains(teamId)
     }
 }

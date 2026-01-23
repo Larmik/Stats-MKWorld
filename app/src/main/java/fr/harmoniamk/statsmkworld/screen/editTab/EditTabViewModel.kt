@@ -75,15 +75,15 @@ class EditTabViewModel @AssistedInject constructor(
                     val playerScores = war.withPlayersList(databaseRepository, firebaseRepository).map { PlayerScoreForTab(it) }
                     val opponentScores = players.mapIndexed { index, player -> PlayerScoreForTab(player, scores[index].toInt(), 0) }
                     val teamHost = dataStoreRepository.mkcTeam.firstOrNull()
-                    val teamOpponent = databaseRepository.getTeam(war.teamOpponent).firstOrNull()
+                    val teamOpponents = war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
                     teamHost?.let {
                         val roster = teamHost.rosters.singleOrNull { roster -> roster.id.toString() == war.teamHost }
                         if (details.scoreHostWithPenalties >= details.scoreOpponentWithPenalties) {
                             teamWin = TeamEntity(teamHost).copy(name = roster?.name.orEmpty(), id = roster?.id.toString())
-                            teamLose = teamOpponent
+                            teamLose = teamOpponents.firstOrNull()
                         }
                         else {
-                            teamWin = teamOpponent
+                            teamWin = teamOpponents.firstOrNull()
                             teamLose = TeamEntity(teamHost).copy(name = roster?.name.orEmpty(), id = roster?.id.toString())
                         }
                     }
@@ -103,6 +103,7 @@ class EditTabViewModel @AssistedInject constructor(
             .launchIn(scope = viewModelScope)
     }
 
+    /*
     fun generateDetailedPdf(players: List<String>, scores: List<String>) {
         val filename = "war_" + Date().time.toString()
 
@@ -144,5 +145,7 @@ class EditTabViewModel @AssistedInject constructor(
             .onEach { uri -> _uri.emit(uri) }
             .launchIn(scope = viewModelScope)
     }
+
+     */
 
 }

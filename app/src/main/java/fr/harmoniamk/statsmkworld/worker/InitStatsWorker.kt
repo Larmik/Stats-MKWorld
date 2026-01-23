@@ -11,7 +11,7 @@ import dagger.assisted.AssistedInject
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.extension.withTrackStats
-import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -50,7 +50,7 @@ class InitStatsWorker @AssistedInject constructor(
         val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
         val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
 
-        databaseRepository.getOldWars().firstOrNull()
+        databaseRepository.getWars().firstOrNull()
             ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
             ?.let { warList ->
             val currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
@@ -68,7 +68,7 @@ class InitStatsWorker @AssistedInject constructor(
                     userList.forEach { user ->
                         warList
                             .filter { war -> war.hasPlayer(user.id) }
-                            .map { WarDetails(OldWar(it)) }
+                            .map { WarDetails(War(it)) }
                             .withFullStats(databaseRepository, userId = user.id)
                             .map { players.add(RankingItem.PlayerRanking(user, it)) }
                             .firstOrNull()

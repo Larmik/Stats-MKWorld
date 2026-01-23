@@ -40,7 +40,7 @@ class WarDetailsViewModel @AssistedInject constructor(
     data class State(
         val details: WarDetails? = null,
         val teamHost: TeamEntity? = null,
-        val teamOpponent: TeamEntity? = null,
+        val teamOpponent: List<TeamEntity>? = null,
         val players: List<PlayerScore> = listOf(),
         val roster: MKCTeamRoster? = null
     )
@@ -50,13 +50,13 @@ class WarDetailsViewModel @AssistedInject constructor(
     val state = flowOf(warDetails)
         .filterNotNull()
         .zip(dataStoreRepository.mkcTeam) { details, teamHost ->
-            val teamOpponent = databaseRepository.getTeam(details.war.teamOpponent).firstOrNull()
+            val teamOpponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
             val roster = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }
             State(
                 details = details,
                 players = details.war.withPlayersList(databaseRepository, firebaseRepository),
                 teamHost = TeamEntity(teamHost),
-                teamOpponent = teamOpponent,
+                teamOpponent = teamOpponents,
                 roster = roster
             )
         }

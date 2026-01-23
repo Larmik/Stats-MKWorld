@@ -125,7 +125,7 @@ fun StatsRankingScreen(
                                 onStats(
                                     StatsType.MapStats(
                                         userId = state.value.currentUserId,
-                                        trackIndex = it.ordinal
+                                        trackIndex = it.map { it.ordinal }
                                     )
                                 )
                             }

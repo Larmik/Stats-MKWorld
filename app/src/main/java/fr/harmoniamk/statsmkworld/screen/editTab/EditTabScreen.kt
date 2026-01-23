@@ -141,6 +141,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                                 players = valuesListName.toList().filterNot { it.isEmpty() },
                                 scores = valuesListScore.toList().filterNot { it.isEmpty() })
                         })
+                    /*
                     Spacer(Modifier.width(10.dp))
                     MKButton(
                         style = MKButtonStyle.Gradient,
@@ -150,6 +151,8 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                                 players = valuesListName.toList().filterNot { it.isEmpty() },
                                 scores = valuesListScore.toList().filterNot { it.isEmpty() })
                         })
+
+                     */
                 }
             }
         }

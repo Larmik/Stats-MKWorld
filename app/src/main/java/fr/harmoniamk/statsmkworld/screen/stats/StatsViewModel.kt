@@ -12,6 +12,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
 import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Maps
@@ -42,7 +43,7 @@ sealed class StatsType(val title: Int): Serializable {
     class MapStats(
         val userId: String? = null,
         val teamId: String? = null,
-        val trackIndex: Int? = null
+        val trackIndex: List<Int>? = null
     ) : StatsType(R.string.statistiques_du_circuit)
 }
 
@@ -64,7 +65,7 @@ class StatsViewModel @AssistedInject constructor(
         val mapStats: MapStats? = null,
         val team: TeamEntity? = null,
         val player: PlayerEntity? = null,
-        val map: Maps? = null
+        val map: List<Maps>? = null
     )
 
     private val wars = mutableListOf<WarDetails>()
@@ -72,7 +73,7 @@ class StatsViewModel @AssistedInject constructor(
 
     private val _state = MutableStateFlow(State())
 
-    val state = databaseRepository.getOldWars()
+    val state = databaseRepository.getWars()
         .map {
             team = dataStoreRepository.mkcTeam.firstOrNull()
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
@@ -91,7 +92,7 @@ class StatsViewModel @AssistedInject constructor(
             }
         }
         .filterNot { it.isEmpty() }
-        .map { it.map { WarDetails(OldWar(it)) } }
+        .map { it.map { WarDetails(War(it)) } }
         .flatMapLatest { wars ->
             this.wars.clear()
             this.wars.addAll(wars)
@@ -119,7 +120,7 @@ class StatsViewModel @AssistedInject constructor(
                 is StatsType.MapStats -> {
                     val finalList = mutableListOf<MapDetails>()
                     wars.forEach { mkWar ->
-                        mkWar.warTracks.filter { track -> track.index == type.trackIndex }.forEach { track ->
+                        mkWar.warTracks.filter { track -> track.index == type.trackIndex?.map { it.toString() } }.forEach { track ->
                             val position = track.track.positions.singleOrNull { it.playerId == type.userId }?.position?.takeIf { type.userId != null }
                             finalList.add(
                                 MapDetails(
@@ -137,7 +138,7 @@ class StatsViewModel @AssistedInject constructor(
                             list = mapDetailsList,
                             userId = type.userId
                         ),
-                        map = Maps.entries[mapDetailsList.first().warTrack.track.index]
+                        map = mapDetailsList.first().warTrack.track.index.map { Maps.entries[it.toInt()] }
                     )
                 }
                 else -> {}

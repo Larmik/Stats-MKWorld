@@ -12,6 +12,8 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.zip
 import java.util.Date
@@ -30,7 +32,7 @@ class WarCellViewModel @AssistedInject constructor(
 
     data class State(
         val teamHost: TeamEntity? = null,
-        val teamOpponent: TeamEntity? = null,
+        val teamOpponent: List<TeamEntity>? = null,
         val score: String? = null,
         val diff: String? = null,
         val date: String? = null,
@@ -39,14 +41,14 @@ class WarCellViewModel @AssistedInject constructor(
     )
 
     val state = dataStoreRepository.mkcTeam
-        .zip(databaseRepository.getTeam(details.war.teamOpponent)) { host, opponent ->
-
+        .map { host ->
+            val opponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
             val mapsWon = details.warTracks.filter { it.displayedDiff.startsWith("+") }.size
             val rosterName = host.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.name ?: host.name
 
             State(
                 teamHost = TeamEntity(host),
-                teamOpponent = opponent,
+                teamOpponent = opponents,
                 score = details.displayedScore,
                 diff = details.displayedDiff,
                 date = Date(details.war.id).displayedString("dd/MM/yyyy"),

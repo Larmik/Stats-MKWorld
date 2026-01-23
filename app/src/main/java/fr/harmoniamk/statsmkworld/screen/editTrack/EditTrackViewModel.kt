@@ -11,6 +11,8 @@ import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
@@ -46,7 +48,7 @@ class EditTrackViewModel @AssistedInject constructor(
 
     data class State(
         val mapList: List<Maps> = Maps.entries,
-        val mapSelected: Maps? = null,
+        val mapSelected: List<Maps>? = null,
         val players: List<PlayerEntity> = listOf(),
         val currentPlayer: PlayerEntity? = null,
         val selectedPositions: List<PlayerPosition> = listOf(),
@@ -61,7 +63,7 @@ class EditTrackViewModel @AssistedInject constructor(
     private val _backToCurrent = MutableSharedFlow<Unit>()
     val backToCurrent = _backToCurrent.asSharedFlow()
 
-    val state = dataStoreRepository.oldWar
+    val state = dataStoreRepository.war
         .filterNotNull()
         .map { war ->
             val players = databaseRepository.getPlayers().firstOrNull()
@@ -84,7 +86,7 @@ class EditTrackViewModel @AssistedInject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
-    fun onMapSelected(map: Maps) {
+    fun onMapSelected(map: List<Maps>) {
         _state.value = state.value.copy(
             mapSelected = map,
             buttonEnabled = positions.isEmpty() || positions.size == 6
@@ -110,7 +112,7 @@ class EditTrackViewModel @AssistedInject constructor(
 
     fun onValidate() {
         viewModelScope.launch {
-            dataStoreRepository.oldWar.firstOrNull()?.let { war ->
+            dataStoreRepository.war.firstOrNull()?.let { war ->
                 val tracks = war.tracks.toMutableList()
                 details?.track?.let { track ->
                     war.tracks.map { it.id }.indexOf(track.id).takeIf { it != -1 }?.let { index ->
@@ -123,7 +125,7 @@ class EditTrackViewModel @AssistedInject constructor(
                             _state.value.mapSelected != null && _state.value.selectedPositions.isEmpty() -> {
                                 tracks.add(
                                     index, trackWithShock.copy(
-                                        index = _state.value.mapSelected?.ordinal ?: track.index,
+                                        index = _state.value.mapSelected?.map { it.ordinal.toString() } ?: track.index,
                                     )
                                 )
                                 tracks.removeAt(index+1)
@@ -132,7 +134,7 @@ class EditTrackViewModel @AssistedInject constructor(
                             _state.value.mapSelected != null && _state.value.selectedPositions.size == 6 -> {
                                 tracks.add(
                                     index, trackWithShock.copy(
-                                        index = _state.value.mapSelected?.ordinal ?: track.index,
+                                        index = _state.value.mapSelected?.map { it.ordinal.toString() } ?: track.index,
                                         positions = _state.value.selectedPositions.map { it.position }
                                     )
                                 )
@@ -178,12 +180,12 @@ class EditTrackViewModel @AssistedInject constructor(
         )
     }
 
-    private fun updateWar(war: OldWar, tracks: List<OldWarTrack>) {
+    private fun updateWar(war: War, tracks: List<WarTrack>) {
         val warToUpdate = war.copy(tracks = tracks)
         _state.value = State()
-        firebaseRepository.writeOldCurrentWar(warToUpdate)
+        firebaseRepository.writeCurrentWar(warToUpdate)
             .onEach {
-                dataStoreRepository.setOldCurrentWar(warToUpdate)
+                dataStoreRepository.setCurrentWar(warToUpdate)
                 _backToCurrent.emit(Unit)
             }
             .launchIn(viewModelScope)

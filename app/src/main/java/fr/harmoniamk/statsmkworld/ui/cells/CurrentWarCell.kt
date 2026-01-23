@@ -56,24 +56,27 @@ fun CurrentWarCell(modifier: Modifier = Modifier, viewModel: CurrentWarCellViewM
                 MKText(text = state.value.diff.orEmpty(), textColor = Colors.white, fontSize = 20, font = Fonts.NunitoBD, maxLines = 1)
             }
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                when (val logo = state.value.teamOpponent?.logo) {
-                    null -> Image(
-                        painter = painterResource(R.drawable.default_logo),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(CircleShape)
-                    )
-                    else -> AsyncImage(
-                        model =  "https://mkcentral.com${state.value.teamOpponent?.logo}",
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(CircleShape)
-                    )
+                state.value.teamOpponent?.forEach {
+                    when (val logo = it.logo) {
+                        null -> Image(
+                            painter = painterResource(R.drawable.default_logo),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                        )
+                        else -> AsyncImage(
+                            model =  "https://mkcentral.com$logo",
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                        )
+                    }
+                    MKText(text = it.name, textColor = Colors.white, fontSize = 16, font = Fonts.NunitoRG, maxLines = 1)
+
                 }
-                MKText(text = state.value.teamOpponent?.name.orEmpty(), textColor = Colors.white, fontSize = 16, font = Fonts.NunitoRG, maxLines = 1)
-            }
+                }
 
         }
         MKText(text = stringResource(R.string.remaining_courses, state.value.remaining.toString()), textColor = Colors.white, modifier = Modifier.padding(bottom = 5.dp))

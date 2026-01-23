@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
-import fr.harmoniamk.statsmkworld.database.entities.OldWarEntity
+import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
@@ -38,7 +38,7 @@ class CurrentWarViewModel @Inject constructor(
     data class State(
         val details: WarDetails? = null,
         val teamHost: TeamEntity? = null,
-        val teamOpponent: TeamEntity? = null,
+        val teamOpponent: List<TeamEntity>? = null,
         val players: List<PlayerScore> = listOf(),
         val isOver: Boolean = false,
         val buttonsVisible: Boolean = false,
@@ -56,19 +56,19 @@ class CurrentWarViewModel @Inject constructor(
     init {
         dataStoreRepository.mkcPlayer
             .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
-            .flatMapLatest { firebaseRepository.listenToOldCurrentWar(it) }
+            .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
             .filterNotNull()
             .onEach {
                 dataStoreRepository.mkcTeam.firstOrNull()?.let { teamHost ->
-                    val teamOpponent = databaseRepository.getTeam(it.teamOpponent).firstOrNull()
-                    val buttonsVisible = dataStoreRepository.oldWar.firstOrNull() != null
+                    val teamOpponents = it.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
+                    val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
                     val roster = teamHost.rosters.singleOrNull { roster -> roster.id.toString() == it.teamHost }
 
                     _state.value = state.value.copy(
                         details = WarDetails(it),
                         players = it.withPlayersList(databaseRepository, firebaseRepository),
                         teamHost = TeamEntity(teamHost),
-                        teamOpponent = teamOpponent,
+                        teamOpponent = teamOpponents,
                         buttonsVisible = buttonsVisible,
                         isOver = it.tracks.size == 12,
                         roster = roster
@@ -81,9 +81,9 @@ class CurrentWarViewModel @Inject constructor(
 
     fun onValidateWar() {
         _state.value.details?.war?.let { war ->
-            firebaseRepository.writeOldWar(war)
+            firebaseRepository.writeWar(war)
                 .onEach {
-                    databaseRepository.writeOldWar(OldWarEntity(war)).firstOrNull()
+                    databaseRepository.writeWar(WarEntity(war)).firstOrNull()
                     val players = databaseRepository.getPlayers().firstOrNull()
                     players?.filter { it.currentWar == war.id.toString() }?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
@@ -110,9 +110,9 @@ class CurrentWarViewModel @Inject constructor(
                             ).firstOrNull()
                         }
                     }
-                    dataStoreRepository.deleteOldCurrentWar()
+                    dataStoreRepository.deleteCurrentWar()
                 }
-                .flatMapLatest { firebaseRepository.deleteOldCurrentWar(war.teamHost) }
+                .flatMapLatest { firebaseRepository.deleteCurrentWar(war.teamHost) }
                 .onEach { _backToHome.emit(Unit) }
                 .launchIn(viewModelScope)
         }

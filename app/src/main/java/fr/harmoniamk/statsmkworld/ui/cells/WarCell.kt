@@ -64,25 +64,28 @@ fun WarCell(modifier: Modifier = Modifier, viewModel: WarCellViewModel, onClick:
                 }
             }
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                when (val logo = state.value.teamOpponent?.logo) {
-                    null -> Image(
-                        painter = painterResource(R.drawable.default_logo),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(35.dp)
-                            .clip(CircleShape)
-                    )
-                    else ->  AsyncImage(
-                        model = "https://mkcentral.com$logo",
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(35.dp)
-                            .clip(CircleShape)
-                    )
-                }
+                state.value.teamOpponent?.forEach {
+                    when (val logo = it.logo) {
+                        null -> Image(
+                            painter = painterResource(R.drawable.default_logo),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(35.dp)
+                                .clip(CircleShape)
+                        )
+                        else ->  AsyncImage(
+                            model = "https://mkcentral.com$logo",
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(35.dp)
+                                .clip(CircleShape)
+                        )
+                    }
 
-                MKText(text = state.value.teamOpponent?.name.orEmpty(), textColor = Colors.black, maxLines = 1, fontSize = 12)
-            }
+                    MKText(text = it.name, textColor = Colors.black, maxLines = 1, fontSize = 12)
+
+                }
+                }
         }
     }
 

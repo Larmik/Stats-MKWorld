@@ -6,10 +6,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
-import fr.harmoniamk.statsmkworld.database.entities.OldWarEntity
+import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.datasource.local.PlayerLocalDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.local.TeamLocalDataSourceInterface
-import fr.harmoniamk.statsmkworld.datasource.local.OldWarLocalDataSourceInterface
+import fr.harmoniamk.statsmkworld.datasource.local.WarLocalDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -36,16 +36,11 @@ interface DatabaseRepositoryInterface {
     fun writeTeams(list: List<TeamEntity>): Flow<Unit>
     fun clearTeams(): Flow<Unit>
 
-    @Deprecated("24 players")
-    fun getOldWars(): Flow<List<OldWarEntity>>
-    @Deprecated("24 players")
-    fun getOldWar(id: String?): Flow<OldWarEntity?>
-    @Deprecated("24 players")
-    fun writeOldWars(list: List<OldWarEntity>): Flow<Unit>
-    @Deprecated("24 players")
-    fun writeOldWar(war: OldWarEntity): Flow<Unit>
-    @Deprecated("24 players")
-    fun clearOldWars(): Flow<Unit>
+    fun getWars(): Flow<List<WarEntity>>
+    fun getWar(id: String?): Flow<WarEntity?>
+    fun writeWars(list: List<WarEntity>): Flow<Unit>
+    fun writeWar(war: WarEntity): Flow<Unit>
+    fun clearWars(): Flow<Unit>
 }
 
 @FlowPreview
@@ -63,7 +58,7 @@ interface DatabaseRepositoryModule {
 class DatabaseRepository @Inject constructor(
     private val playerLocalDataSource: PlayerLocalDataSourceInterface,
     private val teamLocalDataSource: TeamLocalDataSourceInterface,
-    private val warLocalDataSource: OldWarLocalDataSourceInterface,
+    private val warLocalDataSource: WarLocalDataSource,
 ) : DatabaseRepositoryInterface {
 
     override fun getPlayers(): Flow<List<PlayerEntity>> = playerLocalDataSource.getAll().flowOn(Dispatchers.IO)
@@ -82,15 +77,10 @@ class DatabaseRepository @Inject constructor(
     override fun writeTeams(list: List<TeamEntity>): Flow<Unit> = teamLocalDataSource.bulkInsert(list).flowOn(Dispatchers.IO)
     override fun clearTeams(): Flow<Unit> = teamLocalDataSource.clear()
 
-    @Deprecated("24 players")
-    override fun getOldWars(): Flow<List<OldWarEntity>> = warLocalDataSource.getAll().flowOn(Dispatchers.IO)
-    @Deprecated("24 players")
-    override fun getOldWar(id: String?): Flow<OldWarEntity?> = id?.let { warLocalDataSource.getById(it).flowOn(Dispatchers.IO) } ?: flowOf(null)
-    @Deprecated("24 players")
-    override fun writeOldWars(list: List<OldWarEntity>) = warLocalDataSource.insert(list).flowOn(Dispatchers.IO)
-    @Deprecated("24 players")
-    override fun writeOldWar(war: OldWarEntity) = warLocalDataSource.insert(war).flowOn(Dispatchers.IO)
-    @Deprecated("24 players")
-    override fun clearOldWars(): Flow<Unit> = warLocalDataSource.clear()
+    override fun getWars(): Flow<List<WarEntity>> = warLocalDataSource.getAll().flowOn(Dispatchers.IO)
+    override fun getWar(id: String?): Flow<WarEntity?> = id?.let { warLocalDataSource.getById(it).flowOn(Dispatchers.IO) } ?: flowOf(null)
+    override fun writeWars(list: List<WarEntity>) = warLocalDataSource.insert(list).flowOn(Dispatchers.IO)
+    override fun writeWar(war: WarEntity) = warLocalDataSource.insert(war).flowOn(Dispatchers.IO)
+    override fun clearWars(): Flow<Unit> = warLocalDataSource.clear()
 
 }

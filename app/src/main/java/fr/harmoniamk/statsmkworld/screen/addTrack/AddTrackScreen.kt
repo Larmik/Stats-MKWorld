@@ -91,7 +91,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                 )
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
                     items(state.value.mapList) {
-                        MapCell(Modifier.padding(5.dp), map = it, onClick = {
+                        MapCell(Modifier.padding(5.dp), map = listOf(it), onClick = {
                             viewModel.onMapSelected(it)
                             scope.launch { pagerState.animateScrollToPage(1) }
                         })

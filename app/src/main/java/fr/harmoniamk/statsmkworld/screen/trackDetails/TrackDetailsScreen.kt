@@ -32,7 +32,7 @@ fun TrackDetailsScreen(viewModel: TrackDetailsViewModel,
     BackHandler { onBack() }
     BaseScreen(title = stringResource(R.string.resume)) {
         state.value.track?.let {
-            MapCell(map = Maps.entries[it.index], backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = {})
+            MapCell(map = it.index.map { Maps.entries[it.toInt()] }, backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = {})
         }
         MKText(text = state.value.score.orEmpty(), fontSize = 32)
         MKText(text = state.value.diff.orEmpty(), fontSize = 24)

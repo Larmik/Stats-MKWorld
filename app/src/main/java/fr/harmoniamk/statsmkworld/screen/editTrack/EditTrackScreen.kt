@@ -115,17 +115,17 @@ fun EditTrackScreen(
                             true -> CircularProgressIndicator()
                             else -> LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
                                 items(state.value.mapList) {
-                                    val backgroundColor = when (state.value.mapSelected == it) {
+                                    val backgroundColor = when (state.value.mapSelected?.contains(it)) {
                                         true -> Colors.whiteAlphaed
                                         else -> Colors.blackAlphaed
                                     }
-                                    val textColor = when (state.value.mapSelected == it) {
+                                    val textColor = when (state.value.mapSelected?.contains(it)) {
                                         true -> Colors.black
                                         else -> Colors.white
                                     }
                                     MapCell(
                                         Modifier.padding(5.dp),
-                                        map = it,
+                                        map = listOf(it),
                                         textColor = textColor,
                                         backgroundColor = backgroundColor,
                                         onClick = viewModel::onMapSelected

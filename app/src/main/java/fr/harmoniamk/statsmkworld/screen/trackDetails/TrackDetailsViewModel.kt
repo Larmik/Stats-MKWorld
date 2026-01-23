@@ -42,7 +42,7 @@ class TrackDetailsViewModel @AssistedInject constructor(
     val state = flowOf(details)
         .filterNotNull()
         .map {
-            val buttonsVisible = dataStoreRepository.oldWar.firstOrNull() != null
+            val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
             val scoreHost = it.track.positions.map { it.position }.sumOf { it.positionToPoints() }
             val scoreOpponent = 82 - scoreHost
             val players = mutableListOf<PlayerPosition>()

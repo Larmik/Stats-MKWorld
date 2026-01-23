@@ -1,22 +1,20 @@
 package fr.harmoniamk.statsmkworld.model.local
 
-import fr.harmoniamk.statsmkworld.debug.OldWarProto
-import fr.harmoniamk.statsmkworld.model.firebase.OldWar
+import fr.harmoniamk.statsmkworld.debug.WarProto
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
-import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 
-@Deprecated("24 players")
-data class DatastoreOldWar(
+data class DatastoreWar(
     val id: Long,
     val teamHost: String,
-    val teamOpponent: String,
-    val tracks: List<OldWarTrack>,
+    val teamOpponent: List<String>,
+    val tracks: List<WarTrack>,
     val penalties: List<WarPenalty>
 ) {
     var name: String? = null
 
-    @Deprecated("24 players")
-    constructor(war: OldWar) : this(
+    constructor(war: War) : this(
         id = war.id,
         teamHost = war.teamHost,
         teamOpponent = war.teamOpponent,
@@ -24,28 +22,28 @@ data class DatastoreOldWar(
         penalties = war.penalties
     )
 
-    @Deprecated("24 players")
-    constructor(proto: OldWarProto) : this(
+    constructor(proto: WarProto) : this(
         id = proto.id,
         teamHost = proto.teamHost,
-        teamOpponent = proto.teamOpponent,
+        teamOpponent = proto.teamOpponentList,
         tracks = proto.tracksList
-            .map { DatastoreOldWarTrack(it) }
-            .map { OldWarTrack(it) },
+            .map { DatastoreWarTrack(it) }
+            .map { WarTrack(it) },
         penalties = proto.penaltiesList
             .map { DatastoreWarPenalty(it) }
             .map { WarPenalty(it) }
     )
 
-    @Deprecated("24 players")
-    val proto: OldWarProto
+    val proto: WarProto
         get()  {
-            val builder = OldWarProto.newBuilder()
+            val builder = WarProto.newBuilder()
                 .setId(id)
                 .setTeamHost(teamHost)
-                .setTeamOpponent(teamOpponent)
+            teamOpponent.forEach {
+                builder.addTeamOpponent(it)
+            }
             tracks.forEach {
-                builder.addTracks(DatastoreOldWarTrack(it).proto)
+                builder.addTracks(DatastoreWarTrack(it).proto)
             }
             penalties.forEach {
                 builder.addPenalties(DatastoreWarPenalty(it).proto)

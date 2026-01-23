@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 
 @Entity
 data class TeamEntity(
@@ -20,5 +21,13 @@ data class TeamEntity(
         tag = team.tag,
         color = team.color.toInt(),
         logo = team.logo
+    )
+
+    constructor(roster: MKCTeamRoster): this(
+        id = roster.teamId.toString(),
+        name = roster.name,
+        tag = roster.tag,
+        color = roster.color.toInt(),
+        logo = null
     )
 }

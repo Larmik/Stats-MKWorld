@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
+import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -62,11 +65,11 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
                 .flatMapLatest { fetchUseCase.fetchTeam(it?.teamID.toString()) }
                 .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
                 .flatMapLatest { fetchUseCase.fetchTeams() }
-                .flatMapLatest { databaseRepository.clearOldWars() }
+                .flatMapLatest { databaseRepository.clearWars() }
                 .flatMapLatest { dataStoreRepository.mkcTeam }
                 .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
                 .flatMapLatest { ids ->
-                    val flows = ids.map { fetchUseCase.fetchOldWars(it) }
+                    val flows = ids.map { fetchUseCase.fetchWars(it) }
                     merge(*flows.toTypedArray())
                 }
                 .onEach { dataStoreRepository.setLastUpdate(Date().time) }
@@ -78,7 +81,7 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
     }
 
     fun onMatrixEnd() {
-        databaseRepository.clearOldWars()
+        databaseRepository.clearWars()
             .onEach { _sharedLoading.emit("Sortie de la matrice...") }
             .map { "18595" }
             .flatMapLatest { fetchUseCase.fetchData(it) }
@@ -108,6 +111,32 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
         viewModelScope.launch {
             worldRecordsRepository.getCurrentWRs()
         }
+    }
+
+    fun migrateWars() {
+        firebaseRepository.getWarIndexes()
+            .onEach {
+                it.forEach { index ->
+                    val wars = firebaseRepository.getOldWars(index).firstOrNull()
+                    wars?.forEach { war ->
+                        val warTracks = war.tracks.map { track -> WarTrack(
+                            id = track.id,
+                            index = listOf(track.index.toString()),
+                            positions = track.positions,
+                            shocks = track.shocks
+                        ) }
+                        val newWar = War(
+                            id = war.id,
+                            teamHost = war.teamHost,
+                            teamOpponent = listOf(war.teamOpponent),
+                            tracks = warTracks,
+                            penalties = war.penalties
+                        )
+                        firebaseRepository.migrateWar(index, newWar).firstOrNull()
+                    }
+                }
+                _sharedToast.emit("Wars migrées avec succès")
+            }.launchIn(viewModelScope)
     }
 
     fun onUpdateBotData() {

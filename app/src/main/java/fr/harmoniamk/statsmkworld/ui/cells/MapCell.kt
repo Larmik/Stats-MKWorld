@@ -35,19 +35,19 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 @Composable
 fun MapCell(
     modifier: Modifier = Modifier,
-    map: Maps? = null,
+    map: List<Maps>? = null,
     track: WarTrackDetails? = null,
     backgroundColor: Color = Colors.blackAlphaed,
     textColor: Color = Colors.white,
     borderColor: Color = Colors.white,
-    onClick: (Maps) -> Unit,
+    onClick: (List<Maps>) -> Unit,
     trackRanking: RankingItem.TrackRanking? = null,
     userId: String? = null,
     onTrackDetails: (WarTrackDetails) -> Unit = {}
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val mapToDisplay = map ?: trackRanking?.stats?.map ?: Maps.entries[track?.index ?: 0]
+    val mapToDisplay = map ?: trackRanking?.stats?.map?.let { listOf(it) } ?: track?.index?.map { Maps.entries[it.toInt()] }.orEmpty()
 
     Column(
         modifier
@@ -59,31 +59,35 @@ fun MapCell(
             }, horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(mapToDisplay.cup),
-                modifier = Modifier.size(25.dp),
-                contentDescription = null
-            )
-            Image(
-                painter = painterResource(mapToDisplay.picture),
-                modifier = Modifier
-                    .width(90.dp)
-                    .height(50.dp),
-                contentDescription = null
-            )
-            Spacer(Modifier.height(10.dp))
-            MKText(
-                text = stringResource(mapToDisplay.label),
-                font = Fonts.NunitoBD,
-                textColor = textColor,
-                maxLines = 1
-            )
-            MKText(
-                text = mapToDisplay.name,
-                fontSize = 10,
-                textColor = textColor,
-                font = Fonts.NunitoIT
-            )
+            mapToDisplay.forEach {
+                Image(
+                    painter = painterResource(it.cup),
+                    modifier = Modifier.size(25.dp),
+                    contentDescription = null
+                )
+                Image(
+                    painter = painterResource(it.picture),
+                    modifier = Modifier
+                        .width(90.dp)
+                        .height(50.dp),
+                    contentDescription = null
+                )
+                Spacer(Modifier.height(10.dp))
+                MKText(
+                    text = stringResource(it.label),
+                    font = Fonts.NunitoBD,
+                    textColor = textColor,
+                    maxLines = 1
+                )
+                MKText(
+                    text = it.name,
+                    fontSize = 10,
+                    textColor = textColor,
+                    font = Fonts.NunitoIT
+                )
+            }
+
+
         }
 
         when (val total = track?.track?.shocks?.takeIf { it.isNotEmpty() }.orEmpty().sumOf { it.count }) {
@@ -168,7 +172,7 @@ fun MapCell(
 @Preview
 @Composable
 fun MapCellPreview() {
-    MapCell(map = Maps.MBC, onClick = {}) {
+    MapCell(map = listOf(Maps.MBC), onClick = {}) {
 
     }
 }

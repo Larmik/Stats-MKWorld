@@ -109,7 +109,7 @@ class SignupViewModel @AssistedInject constructor(
                     it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() }
                 }
                 .flatMapLatest { ids ->
-                    val flows = ids.map { fetchUseCase.fetchOldWars(it) }
+                    val flows = ids.map { fetchUseCase.fetchWars(it) }
                     merge(*flows.toTypedArray())
                 }
                 .onEach {

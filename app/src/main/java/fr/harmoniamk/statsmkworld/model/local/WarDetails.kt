@@ -4,10 +4,12 @@ import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
+import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import java.io.Serializable
 import java.util.Date
 
-data class WarDetails(val war: OldWar): Serializable {
+data class WarDetails(val war: War): Serializable {
 
     val date = Date(war.id).displayedString("dd/MM/yyyy")
 
@@ -16,7 +18,7 @@ data class WarDetails(val war: OldWar): Serializable {
     val scoreHost = warTracks.sumOf { it.teamScore }
     val scoreOpponent = (82 * warTracks.size) - scoreHost
     val scoreHostWithPenalties = scoreHost - war.penalties.filter { it.teamId == war.teamHost }.sumOf { it.amount }
-    val scoreOpponentWithPenalties = scoreOpponent - war.penalties.filter { it.teamId == war.teamOpponent }.sumOf { it.amount }
+    val scoreOpponentWithPenalties = scoreOpponent - war.penalties.filter { war.teamOpponent.contains(it.teamId) }.sumOf { it.amount }
 
     val displayedScore: String
         get() = "$scoreHostWithPenalties - $scoreOpponentWithPenalties"
@@ -28,7 +30,7 @@ data class WarDetails(val war: OldWar): Serializable {
         }
 }
 
-data class WarTrackDetails(val track: OldWarTrack): Serializable {
+data class WarTrackDetails(val track: WarTrack): Serializable {
 
     val index
         get() = track.index
