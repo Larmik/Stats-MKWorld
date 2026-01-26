@@ -49,18 +49,20 @@ fun MKTextField(
     keyboardActions: KeyboardActions = KeyboardActions(),
     imeAction: ImeAction = ImeAction.Unspecified,
     backgroundColor: Color = Colors.transparent,
+    borderColor: Color = Colors.white,
+    textColor: Color = Colors.white,
     errorMessage: String? = null
 ) {
 
     val borderColor = when (errorMessage.isNullOrEmpty()) {
-        true -> Colors.white
+        true -> borderColor
         else -> Colors.red
     }
     val interactionSource = remember { MutableInteractionSource() }
     val colors = TextFieldDefaults.colors(
-        unfocusedTextColor = Colors.white,
-        focusedTextColor = Colors.white,
-        disabledTextColor = Colors.white,
+        unfocusedTextColor = textColor,
+        focusedTextColor = textColor,
+        disabledTextColor = textColor,
         unfocusedContainerColor = backgroundColor,
         focusedContainerColor = backgroundColor,
         disabledContainerColor = backgroundColor,
@@ -82,11 +84,11 @@ fun MKTextField(
             enabled = true,
             readOnly = false,
             textStyle = TextStyle(
-                color = Colors.white,
+                color = textColor,
                 fontFamily = FontFamily(Fonts.NunitoRG),
                 fontSize = TextUnit(14f, TextUnitType.Sp)
             ),
-            cursorBrush = SolidColor(Colors.white),
+            cursorBrush = SolidColor(textColor),
             visualTransformation = when (keyboardType) {
                 KeyboardType.Password -> PasswordVisualTransformation()
                 else -> VisualTransformation.None

@@ -10,6 +10,8 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.screen.stats.StatsType
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.SortType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import kotlin.Int
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -33,8 +36,11 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
         val playerLogo: String? = null,
         val buttonVisible: Boolean = false,
         val currentWar: War? = null,
-        var wars: List<WarDetails> = listOf()
+        var wars: List<WarDetails> = listOf(),
+        val index: Int = 0
     )
+
+    private var wars: List<WarDetails> = listOf()
 
     init {
         dataStoreRepository.mkcPlayer
@@ -63,23 +69,37 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
                     ?.map { War(it) }
                     ?.map { WarDetails(it) }
                     ?.sortedByDescending { it.war.id }
-                    ?.safeSubList(0, 5)
                     .orEmpty()
 
                 val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID.toString()
+                this.wars = wars
 
                 State(
                     teamName = team.name,
                     teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
-                    buttonVisible = buttonVisible == true || dataStoreRepository.matrixMode.firstOrNull() == true,
+                    buttonVisible =  buttonVisible == true || dataStoreRepository.matrixMode.firstOrNull() == true,
                     currentWar = firebaseRepository.getCurrentWar(rosterId).firstOrNull(),
                     wars = wars
+                        .filter { it.war.teamOpponent.size == 1 }
+                        .safeSubList(0, 5)
+
                 )
             }
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
+
+    fun onWarTypeSwitch(index: Int) {
+        val is24p = index == 1
+        _state.value = state.value.copy(
+            wars = this.wars.filter {
+                (is24p && it.war.teamOpponent.size > 1)
+                        || (!is24p && it.war.teamOpponent.size == 1)
+            }.safeSubList(0, 5),
+            index = index
+        )
+    }
 
 }

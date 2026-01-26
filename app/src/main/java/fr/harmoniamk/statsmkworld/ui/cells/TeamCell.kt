@@ -41,6 +41,7 @@ fun TeamCell(
     teamRanking: RankingItem.OpponentRanking? = null,
     teamStatsLabel: String? = null,
     userId: String? = null,
+    tagVisible: Boolean = true,
     onClick: (TeamEntity) -> Unit
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -61,15 +62,14 @@ fun TeamCell(
                     painter = painterResource(R.drawable.default_logo),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(50.dp)
                         .clip(CircleShape)
                 )
                 else -> AsyncImage(
                     model = "https://mkcentral.com$logo",
                     contentDescription = null,
                     modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
+                        .size(50.dp)
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -79,24 +79,25 @@ fun TeamCell(
                 textColor = Colors.white,
                 maxLines = 1
             )
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .defaultMinSize(minWidth = 70.dp)
-                    .background(
-                        color = finalTeam?.color.toTeamColor(),
-                        shape = RoundedCornerShape(5.dp)
-                    )
-            )
-            {
-                MKText(
-                    text = finalTeam?.tag.orEmpty(),
-                    fontSize = 16,
-                    font = Fonts.NunitoBD,
-                    textColor = Colors.white,
-                    modifier = Modifier.padding(5.dp)
+            if (tagVisible)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 60.dp)
+                        .background(
+                            color = finalTeam?.color.toTeamColor(),
+                            shape = RoundedCornerShape(5.dp)
+                        )
                 )
-            }
+                {
+                    MKText(
+                        text = finalTeam?.tag.orEmpty(),
+                        fontSize = 12,
+                        font = Fonts.NunitoBD,
+                        textColor = Colors.white,
+                        modifier = Modifier.padding(5.dp)
+                    )
+                }
 
             teamRanking?.let {
                 Row(Modifier.padding(vertical = 10.dp)) {

@@ -8,10 +8,12 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
@@ -36,6 +38,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel(assistedFactory = EditTrackViewModel.Factory::class)
 class EditTrackViewModel @AssistedInject constructor(
     @Assisted val details: WarTrackDetails?,
+    @Assisted val is24p: Boolean,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
@@ -43,7 +46,7 @@ class EditTrackViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(details: WarTrackDetails?): EditTrackViewModel
+        fun create(details: WarTrackDetails?, is24p: Boolean): EditTrackViewModel
     }
 
     data class State(
@@ -54,7 +57,8 @@ class EditTrackViewModel @AssistedInject constructor(
         val selectedPositions: List<PlayerPosition> = listOf(),
         val initialPositions: List<PlayerPosition> = listOf(),
         val buttonEnabled: Boolean = false,
-        val shocks: Map<String, Int> = mutableMapOf()
+        val shocks: Map<String, Int> = mutableMapOf(),
+        val is24p: Boolean = false
     )
 
     private val positions = mutableListOf<PlayerPosition>()
@@ -80,7 +84,8 @@ class EditTrackViewModel @AssistedInject constructor(
             State(
                 players = players,
                 currentPlayer = players.firstOrNull(),
-                initialPositions = positions.filterNotNull().sortedBy { it.position.position }
+                initialPositions = positions.filterNotNull().sortedBy { it.position.position },
+                is24p = is24p
             )
         }
         .mergeWith(_state)
@@ -181,7 +186,12 @@ class EditTrackViewModel @AssistedInject constructor(
     }
 
     private fun updateWar(war: War, tracks: List<WarTrack>) {
-        val warToUpdate = war.copy(tracks = tracks)
+        val is24p = war.teamOpponent.size > 1
+        val scores = listOf(WarScore(
+            teamId = war.teamHost,
+            score = tracks.flatMap { it.positions }.sumOf { it.position.positionToPoints(is24p) }
+        ))
+        val warToUpdate = war.copy(tracks = tracks, scores = scores)
         _state.value = State()
         firebaseRepository.writeCurrentWar(warToUpdate)
             .onEach {

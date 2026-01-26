@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
+import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -130,7 +132,11 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
                             teamHost = war.teamHost,
                             teamOpponent = listOf(war.teamOpponent),
                             tracks = warTracks,
-                            penalties = war.penalties
+                            penalties = war.penalties,
+                            scores = listOf(
+                                WarScore(teamId = index, score = WarDetails(war).scoreHostWithPenalties),
+                                WarScore(teamId = war.teamOpponent, score = WarDetails(war).scoreOpponentWithPenalties)
+                            )
                         )
                         firebaseRepository.migrateWar(index, newWar).firstOrNull()
                     }

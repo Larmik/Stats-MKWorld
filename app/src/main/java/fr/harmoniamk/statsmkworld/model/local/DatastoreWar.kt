@@ -3,6 +3,7 @@ package fr.harmoniamk.statsmkworld.model.local
 import fr.harmoniamk.statsmkworld.debug.WarProto
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 
 data class DatastoreWar(
@@ -10,7 +11,8 @@ data class DatastoreWar(
     val teamHost: String,
     val teamOpponent: List<String>,
     val tracks: List<WarTrack>,
-    val penalties: List<WarPenalty>
+    val penalties: List<WarPenalty>,
+    val scores: List<WarScore>
 ) {
     var name: String? = null
 
@@ -19,7 +21,8 @@ data class DatastoreWar(
         teamHost = war.teamHost,
         teamOpponent = war.teamOpponent,
         tracks = war.tracks,
-        penalties = war.penalties
+        penalties = war.penalties,
+        scores = war.scores
     )
 
     constructor(proto: WarProto) : this(
@@ -31,7 +34,10 @@ data class DatastoreWar(
             .map { WarTrack(it) },
         penalties = proto.penaltiesList
             .map { DatastoreWarPenalty(it) }
-            .map { WarPenalty(it) }
+            .map { WarPenalty(it) },
+        scores = proto.scoresList
+            .map { DatastoreWarScore(it) }
+            .map { WarScore(it) }
     )
 
     val proto: WarProto
@@ -47,6 +53,9 @@ data class DatastoreWar(
             }
             penalties.forEach {
                 builder.addPenalties(DatastoreWarPenalty(it).proto)
+            }
+            scores.forEach {
+                builder.addScores(DatastoreWarScore(it).proto)
             }
             return builder.build()
         }

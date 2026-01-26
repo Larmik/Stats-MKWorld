@@ -36,6 +36,7 @@ class TrackDetailsViewModel @AssistedInject constructor(
         val positions: List<PlayerPosition> = listOf(),
         val score: String? = null,
         val diff: String? = null,
+        val trackScore: Int? = null,
         val buttonVisible: Boolean = false
 
         )
@@ -43,7 +44,7 @@ class TrackDetailsViewModel @AssistedInject constructor(
         .filterNotNull()
         .map {
             val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
-            val scoreHost = it.track.positions.map { it.position }.sumOf { it.positionToPoints() }
+            val scoreHost = it.track.positions.map { it.position }.sumOf { pos -> pos.positionToPoints(details?.is24p == true) }
             val scoreOpponent = 82 - scoreHost
             val players = mutableListOf<PlayerPosition>()
             it.track.positions.forEach { pos ->
@@ -59,7 +60,8 @@ class TrackDetailsViewModel @AssistedInject constructor(
                     else -> "${scoreHost - scoreOpponent}"
                 },
                 positions = players,
-                buttonVisible = buttonsVisible && editing
+                buttonVisible = buttonsVisible && editing,
+                trackScore = scoreHost.takeIf { details?.is24p == true }
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 

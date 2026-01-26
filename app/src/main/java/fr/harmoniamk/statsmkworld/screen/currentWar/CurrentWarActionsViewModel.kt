@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
+import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltySelector
 import fr.harmoniamk.statsmkworld.model.selectors.PenaltyType
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
@@ -59,18 +60,18 @@ class CurrentWarActionsViewModel @Inject constructor(
         .mapNotNull {
             val war = dataStoreRepository.war.firstOrNull()
             val players = databaseRepository.getPlayers().firstOrNull()
-            val teamHost = dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }?.let { TeamEntity(it) }
+            val roster = dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }
+            val teamHost = roster?.let { TeamEntity(it) }
             val teamOpponents = war?.teamOpponent.orEmpty().mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
 
             State(
                 war = war,
                 players = players,
-                penalties = (listOf(teamHost) + teamOpponents)
-                    .filterNotNull()
+                penalties = (listOfNotNull(roster?.id).map { it.toString() } + teamOpponents.map { it.id })
                     .flatMap { team -> listOf(
-                        PenaltyType.Minus10(team.id),
-                        PenaltyType.Minus15(team.id),
-                        PenaltyType.Minus20(team.id)
+                        PenaltyType.Minus10(team),
+                        PenaltyType.Minus15(team),
+                        PenaltyType.Minus20(team)
                     ) }
                     .map { PenaltySelector(it, false) },
                 teamHost = teamHost,
@@ -103,9 +104,17 @@ class CurrentWarActionsViewModel @Inject constructor(
              }
             state.value.war?.let {
                 val penalties = mutableListOf<WarPenalty>()
+                val scores = mutableListOf<WarScore>()
                 penalties.addAll(it.penalties)
                 penalties.add(penalty)
-                val war = it.copy(penalties = penalties)
+                it.scores.forEach { score ->
+                    when (score.teamId == penalty.teamId) {
+                        true -> scores.add(score.copy(score = score.score - penalty.amount))
+                        else -> scores.add(score)
+                    }
+                }
+
+                val war = it.copy(penalties = penalties, scores = scores)
                 firebaseRepository.writeCurrentWar(war)
                     .onEach {
                         dataStoreRepository.setCurrentWar(war)
@@ -202,8 +211,7 @@ class CurrentWarActionsViewModel @Inject constructor(
     fun cancelWar() {
         flowOf(Unit)
             .mapNotNull {
-                state.value.players?.filter { it.currentWar == state.value.war?.id.toString() }
-                    ?.forEach {
+                state.value.players?.filter { it.currentWar == state.value.war?.id.toString() }?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
                         when (it.rosterId) {
                             "-1" -> firebaseRepository.writeAlly(

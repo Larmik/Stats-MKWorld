@@ -94,7 +94,7 @@ class MapStats(
         .filter { pair -> pair.war.warTracks?.any { it.track.hasPlayer(userId) } == true }
         .map { it.warTrack.track.positions }
         .map { it.singleOrNull { it.playerId == userId } }
-        .mapNotNull { it?.position.positionToPoints() }
+        .mapNotNull { it?.position.positionToPoints(false) }
     val trackPlayed =
         list.filter { (isIndiv && it.war.warTracks?.any { it.track.hasPlayer(userId) } == true) || !isIndiv }.size
     val trackWon = list

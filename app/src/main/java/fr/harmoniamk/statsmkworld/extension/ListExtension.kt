@@ -80,6 +80,13 @@ fun List<Map<*, *>>?.parsePenalties(): List<WarPenalty>? =
             amount = item["amount"].toString().toInt()
         )
     }
+fun List<Map<*, *>>?.parseScores(): List<fr.harmoniamk.statsmkworld.model.firebase.WarScore>? =
+    this?.map { item ->
+        fr.harmoniamk.statsmkworld.model.firebase.WarScore(
+            teamId = item["teamId"].toString(),
+            score = item["score"].toString().toInt()
+        )
+    }
 
 fun <T> List<T>.safeSubList(from: Int, to: Int): List<T> = when {
     this.size < to -> this
@@ -151,12 +158,13 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
         .map { Pair(it, it.warTracks) }
         .forEach {
             var currentPoints = 0
+            val is24p = it.first.war.teamOpponent.size > 1
             it.second.forEach { track ->
                 val playerScoreForTrack = track.track.positions
                     .singleOrNull { pos -> pos.playerId == userId }
-                    ?.position.positionToPoints()
+                    ?.position.positionToPoints(is24p)
                 var teamScoreForTrack = 0
-                track.track.positions.map { it.position.positionToPoints() }.forEach {
+                track.track.positions.map { it.position.positionToPoints(is24p) }.forEach {
                     teamScoreForTrack += it
                 }
                 currentPoints += when (userId != null) {
@@ -241,41 +249,50 @@ fun List<TeamEntity>.withFullTeamStats(
     emit(temp)
 }
 
-fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = null): List<TrackStats> = this
-    .filter { (teamId != null && it.hasTeam(teamId) || teamId == null) }
-    .filter { (userId != null && it.hasPlayer(userId) || userId == null) }
-    .flatMap { it.warTracks.orEmpty() }
-    .groupBy { it.index }.toList()
-    .sortedByDescending { it.second.size }
-    .mapNotNull {
-        var teamScoreForTrack = 0
-        var playerScoreForTrack = 0
-        var shockCount = 0
-        it.second.forEach { track ->
-            playerScoreForTrack += track.positions
-                .singleOrNull { pos -> pos.playerId == userId }
-                ?.position.positionToPoints()
-            track.positions.map { it.position.positionToPoints() }.forEach {
-                teamScoreForTrack += it
-            }
-            track.shocks?.map { it.count }?.forEach {
-                shockCount += it
-            }
+fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = null): List<TrackStats> {
+    var is24p = false
+    return this
+        .filter { (teamId != null && it.hasTeam(teamId) || teamId == null) }
+        .filter { (userId != null && it.hasPlayer(userId) || userId == null) }
+        .flatMap {
+            is24p = it.teamOpponent.size > 1
+            it.warTracks.orEmpty()
         }
-        //Map classique trois tours
-        it.first.singleOrNull()?.let { index ->
-            TrackStats(
-                stats = null,
-                map = Maps.entries[index.toInt()],
-                trackIndex = listOf(index.toInt()),
-                totalPlayed = it.second.size,
-                winRate = (it.second.filter { it.displayedDiff.contains('+') }.size * 100) / it.second.size,
-                teamScore = teamScoreForTrack / it.second.size,
-                shockCount = shockCount,
-                playerScore = playerScoreForTrack / it.second.size
-            )
+        .groupBy { it.index }.toList()
+        .sortedByDescending { it.second.size }
+        .mapNotNull {
+            var teamScoreForTrack = 0
+            var playerScoreForTrack = 0
+            var shockCount = 0
+
+            it.second.forEach { track ->
+                playerScoreForTrack += track.positions
+                    .singleOrNull { pos -> pos.playerId == userId }
+                    ?.position.positionToPoints(is24p)
+                track.positions.map { it.position.positionToPoints(is24p) }.forEach {
+                    teamScoreForTrack += it
+                }
+                track.shocks?.map { it.count }?.forEach {
+                    shockCount += it
+                }
+            }
+            //Map classique trois tours
+            it.first.singleOrNull()?.let { index ->
+
+                TrackStats(
+                    stats = null,
+                    map = Maps.entries[index.toInt()],
+                    trackIndex = listOf(index.toInt()),
+                    totalPlayed = it.second.size,
+                    winRate = (it.second.filter { it.diffScore > 0 }.size * 100) / it.second.size,
+                    teamScore = teamScoreForTrack / it.second.size,
+                    shockCount = shockCount,
+                    playerScore = playerScoreForTrack / it.second.size
+                )
+            }
+
         }
 
-    }
+}
 
 

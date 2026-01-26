@@ -141,8 +141,8 @@ fun EditTrackScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.weight(1f)
                         ) {
-                            when (state.value.players.isEmpty()) {
-                                true -> CircularProgressIndicator()
+                            when  {
+                                state.value.players.isEmpty() -> CircularProgressIndicator()
                                 else -> {
                                     state.value.currentPlayer?.let {
                                         MKText(
@@ -152,12 +152,20 @@ fun EditTrackScreen(
                                             modifier = Modifier.padding(bottom = 10.dp)
                                         )
                                     }
-                                    LazyVerticalGrid(columns = GridCells.Adaptive(120.dp)) {
-                                        items(12) {
+                                    val size = when (state.value.is24p) {
+                                        true -> 80.dp
+                                        else -> 120.dp
+                                    }
+                                    LazyVerticalGrid(columns = GridCells.Adaptive(size)) {
+                                        items(when (state.value.is24p) {
+                                            true -> 24
+                                            else -> 12
+                                        }) {
                                             PositionCell(
                                                 position = it + 1,
+                                                is24p = state.value.is24p,
                                                 modifier = Modifier
-                                                    .size(120.dp)
+                                                    .size(size)
                                                     .padding(5.dp),
                                                 isVisible = !state.value.selectedPositions.map { it.position.position }
                                                     .contains(it + 1),
@@ -178,7 +186,7 @@ fun EditTrackScreen(
                         ) {
                             VerticalGrid {
                                 state.value.initialPositions.forEach {
-                                    PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock, onClick = {})
+                                    PlayerCell(player = it.player, position = it.position.position, is24p = state.value.is24p, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock, onClick = {})
                                 }
                             }
 

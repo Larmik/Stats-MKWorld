@@ -4,7 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -20,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,8 +38,6 @@ import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.VerticalGrid
-import fr.harmoniamk.statsmkworld.ui.WarScoreStyle
-import fr.harmoniamk.statsmkworld.ui.WarScoreView
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
@@ -45,6 +46,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () -> Unit) {
+    val context = LocalContext.current
     val search = remember { mutableStateOf("") }
     val pagerState = rememberPagerState()
     val scope = rememberCoroutineScope()
@@ -55,13 +57,13 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
             when (pagerState.currentPage) {
                 0 -> onBack()
                 1 -> scope.launch { pagerState.animateScrollToPage(0) }
-                2 -> scope.launch { pagerState.animateScrollToPage(1) }
+                2, 3 -> scope.launch { pagerState.animateScrollToPage(1) }
             }
         }
     }
     LaunchedEffect(Unit) {
         viewModel.onNext.collect {
-           scope.launch { pagerState.animateScrollToPage(2) }
+           scope.launch { pagerState.animateScrollToPage(it) }
         }
     }
     LaunchedEffect(Unit) {
@@ -69,6 +71,8 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
            onBack()
         }
     }
+
+
     BackHandler {
       viewModel.onBack()
     }
@@ -103,16 +107,6 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                 R.string.current_race, state.value.trackOrder.toString()
             )) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    WarScoreView(
-                        modifier = Modifier.weight(1f),
-                        style = WarScoreStyle.Small,
-                        teamHost = state.value.teamHost,
-                        teamOpponent = state.value.teamOpponent,
-                        score = state.value.score.orEmpty(),
-                        diff = state.value.diff.orEmpty(),
-                        penalties = listOf(),
-                        rosterName = state.value.rosterName
-                    )
                     state.value.mapSelected?.let {
                         MapCell(map = it, onClick =  { })
                     }
@@ -122,30 +116,53 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                         MKText(text = it.name, fontSize = 24, font = Fonts.NunitoBD, modifier = Modifier.padding(bottom = 10.dp))
                     }
 
-                    LazyVerticalGrid(columns = GridCells.Adaptive(120.dp)) {
-                        items(12) {
-                            PositionCell(position = it+1, modifier = Modifier
-                                .size(120.dp)
-                                .padding(5.dp), isVisible = !state.value.selectedPositions.map { it.position.position }.contains(it+1), onClick = viewModel::onPositionClick)
+                    state.value.totalPositions?.let { total ->
+                        val size = when (total) {
+                            12 -> 120.dp
+                            else -> 80.dp
+                        }
+                        LazyVerticalGrid(columns = GridCells.Adaptive(size)) {
+                            items(total) {
+                                PositionCell(
+                                    position = it+1,
+                                    is24p = total == 24,
+                                    modifier = Modifier
+                                        .size(size)
+                                        .padding(5.dp), isVisible = !state.value.selectedPositions.map { it.position.position }.contains(it+1), onClick = viewModel::onPositionClick)
+                            }
                         }
                     }
                 }
 
             }
-            else -> BaseScreen(title = stringResource(R.string.resume), modifier = Modifier.verticalScroll(rememberScrollState())) {
+            2 -> BaseScreen(title = stringResource(R.string.resume), modifier = Modifier.verticalScroll(rememberScrollState())) {
                 state.value.mapSelected?.let {
                     MapCell(map = it, backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = { })
                 }
                 VerticalGrid {
                     state.value.selectedPositions.forEach {
-                        PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock, onClick = {} )
-
+                        PlayerCell(player = it.player, position = it.position.position, modifier = Modifier.padding(5.dp), shocksEnabled = true, shockCount = state.value.shocks[it.player?.id], is24p = state.value.teamOpponent.orEmpty().size > 1, onAddShock = viewModel::onAddShock, onRemoveShock = viewModel::onRemoveShock, onClick = {} )
                     }
                 }
 
-                MKText(text = state.value.trackScore.orEmpty(), fontSize = 32)
-                MKText(text = state.value.trackDiff.orEmpty(), fontSize = 24)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    when (state.value.totalPositions) {
+                        12 -> {
+                            MKText(text = state.value.trackScore.orEmpty(), fontSize = 32)
+                            MKText(text = state.value.trackDiff.orEmpty(), fontSize = 24)
+                        }
+                        24 -> {
+                            Row {
+                                val score = state.value.scores.orEmpty().firstOrNull { it.teamId == state.value.rosterId }?.score ?: 0
+                                MKText(text = score.toString(), fontSize = 32)
+                                MKText(text = "  ->  ", fontSize = 32, font = Fonts.NunitoBD)
+                                MKText(text = "${score + (state.value.teamHostTrackScore ?: 0)}", fontSize = 32, font = Fonts.NunitoBD)
+                            }
+                        }
+                    }
+                }
                 MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.confirmer), onClick = viewModel::onValidate)
+                Spacer(Modifier.height(40.dp))
             }
         }
     }

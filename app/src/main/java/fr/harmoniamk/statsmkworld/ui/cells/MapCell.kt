@@ -43,6 +43,7 @@ fun MapCell(
     onClick: (List<Maps>) -> Unit,
     trackRanking: RankingItem.TrackRanking? = null,
     userId: String? = null,
+    is24p: Boolean = false,
     onTrackDetails: (WarTrackDetails) -> Unit = {}
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -109,17 +110,21 @@ fun MapCell(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 MKText(
-                    text = it.displayedResult,
+                    text = when (is24p) {
+                        true -> it.teamScore.toString()
+                        else -> it.displayedResult
+                    },
                     fontSize = 24,
                     font = Fonts.NunitoBD,
                     textColor = textColor
                 )
-                MKText(
-                    text = it.displayedDiff,
-                    fontSize = 18,
-                    font = Fonts.NunitoBD,
-                    textColor = textColor
-                )
+                if (!is24p)
+                    MKText(
+                        text = it.displayedDiff,
+                        fontSize = 18,
+                        font = Fonts.NunitoBD,
+                        textColor = textColor
+                    )
             }
         }
         trackRanking?.let {

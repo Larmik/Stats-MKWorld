@@ -37,6 +37,7 @@ suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface,
     val finalList = mutableListOf<PlayerScore>()
     val positions = mutableListOf<Pair<PlayerEntity?, Int>>()
     val shocks =  trackList.flatMap { it.shocks.orEmpty() }
+    val is24p = this.teamOpponent.size > 1
     trackList.forEach {
         it.positions.takeIf { it.isNotEmpty() }?.let { warPositions ->
             val trackPositions = mutableListOf<PlayerPosition>()
@@ -52,7 +53,7 @@ suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface,
                 positions.add(
                     Pair(
                         entry.key,
-                        entry.value.sumOf { playerPos -> playerPos.position.position.positionToPoints() }
+                        entry.value.sumOf { playerPos -> playerPos.position.position.positionToPoints(is24p) }
                     )
                 )
             }

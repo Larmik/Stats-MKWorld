@@ -16,7 +16,9 @@ import androidx.navigation.navArgument
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.screen.addTrack.AddTrackScreen
+import fr.harmoniamk.statsmkworld.screen.addTrack.AddTrackViewModel
 import fr.harmoniamk.statsmkworld.screen.addWar.AddWarScreen
+import fr.harmoniamk.statsmkworld.screen.addWar.AddWarViewModel
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarActionsScreen
 import fr.harmoniamk.statsmkworld.screen.currentWar.CurrentWarScreen
 import fr.harmoniamk.statsmkworld.screen.debug.DebugScreen
@@ -90,7 +92,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onBack = onBack,
                 onTeamProfile = { navController.navigate("Team/Profile/$it") },
                 onPlayerProfile = { navController.navigate("Player/Profile/$it") },
-                onAddWar = { navController.navigate("Home/AddWar") },
+                onAddWar = { navController.navigate("Home/AddWar/$it") },
                 onCurrentWar = { navController.navigate("Home/CurrentWar") },
                 onWarDetailsClick = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
@@ -183,8 +185,18 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        composable(route = "Home/AddWar") {
-            AddWarScreen(onBack = {
+        composable(
+            route = "Home/AddWar/{is24p}",
+            arguments = listOf(navArgument("is24p") { type = NavType.BoolType })
+
+        ) {
+            val is24p = it.arguments?.getBoolean("is24p")
+            AddWarScreen(
+                viewModel = hiltViewModel(
+                    creationCallback = { factory: AddWarViewModel.Factory -> factory.create(is24p = is24p == true) }
+                ),
+                is24p = is24p == true,
+                onBack = {
                 navController.popBackStack()
             }, onCurrentWar = {
                 navController.popBackStack()
@@ -195,7 +207,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
         composable(route = "Home/CurrentWar") {
             CurrentWarScreen(
                 onBack = { navController.popBackStack() },
-                onAddTrack = { navController.navigate(route = "Home/CurrentWar/AddTrack") },
+                onAddTrack = { navController.navigate(route = "Home/CurrentWar/AddTrack/$it") },
                 onActions = { navController.navigate("Home/CurrentWar/Actions") },
                 onTrackDetails = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
@@ -205,8 +217,19 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        composable(route = "Home/CurrentWar/AddTrack") {
-            AddTrackScreen(onBack = { navController.popBackStack() })
+        composable(
+            route = "Home/CurrentWar/AddTrack/{is24p}",
+            arguments = listOf(navArgument("is24p") { type = NavType.BoolType })
+
+        ) {
+            val is24p = it.arguments?.getBoolean("is24p")
+
+            AddTrackScreen(
+                viewModel = hiltViewModel { factory: AddTrackViewModel.Factory ->
+                    factory.create(is24p = is24p == true)
+                },
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(route = "Home/CurrentWar/Actions") {
@@ -264,21 +287,25 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     }
                 ),
                 onBack = { navController.popBackStack() },
-                onEditTrack = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
-                    navController.navigate("Home/EditTrack")
+                onEditTrack = { details, is24p ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("track", details)
+                    navController.navigate("Home/EditTrack/$is24p")
                 }
             )
         }
 
-        composable(route = "Home/EditTrack") {
-            val track =
-                navController.previousBackStackEntry?.savedStateHandle?.get<WarTrackDetails>("track")
+        composable(
+            route = "Home/EditTrack/{is24p}",
+            arguments = listOf(navArgument("is24p") { type = NavType.BoolType })
+
+        ) {
+            val track = navController.previousBackStackEntry?.savedStateHandle?.get<WarTrackDetails>("track")
+            val is24p = it.arguments?.getBoolean("is24p")
             EditTrackScreen(
                 viewModel = hiltViewModel(
                     key = track?.track?.id.toString(),
                     creationCallback = { factory: EditTrackViewModel.Factory ->
-                        factory.create(track)
+                        factory.create(track, is24p == true)
                     }
                 ),
                 onBack = { navController.popBackStack() },

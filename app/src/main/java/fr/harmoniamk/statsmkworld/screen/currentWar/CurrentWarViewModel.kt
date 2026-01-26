@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.extension.sum
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
+import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
@@ -25,7 +27,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.mapNotNull
+import kotlin.collections.orEmpty
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -42,13 +47,21 @@ class CurrentWarViewModel @Inject constructor(
         val players: List<PlayerScore> = listOf(),
         val isOver: Boolean = false,
         val buttonsVisible: Boolean = false,
-        val roster: MKCTeamRoster? = null
+        val roster: MKCTeamRoster? = null,
+        val opponentsScores: Map<String, Int> = mutableMapOf()
+
     )
 
     private val _state = MutableStateFlow(State())
     private val _backToHome = MutableSharedFlow<Unit>()
 
+    private val _onPage = MutableSharedFlow<Int>()
+    private val _onToast = MutableSharedFlow<String>()
+
     val backToHome = _backToHome.asSharedFlow()
+
+    val onPage = _onPage.asSharedFlow()
+    val onToast = _onToast.asSharedFlow()
 
     val state = _state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
@@ -76,6 +89,60 @@ class CurrentWarViewModel @Inject constructor(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    fun onPageChange(index: Int) {
+        viewModelScope.launch {
+            _onPage.emit(index)
+        }
+    }
+
+    fun onValueChange(key: String, value: String) {
+        val scoreMap = mutableMapOf<String, Int>()
+        if (!state.value.opponentsScores.map { it.key }.contains(key))
+            value.toIntOrNull()?.let {
+                scoreMap[key] = it
+            }
+        state.value.opponentsScores.forEach {
+            if (it.key == key) {
+              value.toIntOrNull()?.let {
+                  scoreMap[key] = it
+              }
+            } else scoreMap[it.key] = it.value
+        }
+
+        _state.value = state.value.copy(opponentsScores = scoreMap)
+    }
+
+    fun onValidateScore() {
+        state.value.details?.scoreHost?.let {
+            viewModelScope.launch {
+                val scores = state.value.opponentsScores
+                val totalOpponentScore = scores.mapNotNull { it.value }.sum()
+                val total = it + totalOpponentScore
+                val totalTracksPlayed = state.value.details?.war?.tracks.orEmpty().size + 1
+                val totalPoints = totalTracksPlayed * 144
+                if (total != totalPoints) {
+                    val diff = when (total < totalPoints) {
+                        true -> "${totalPoints - total} points manquants"
+                        else -> "${total - totalPoints} points en trop"
+                    }
+                    _onToast.emit("Scores incorrects : $diff")
+                } else {
+                    val warScores = scores.map { WarScore(teamId = it.key, score = it.value) } +
+                           listOf(
+                               WarScore(
+                                   teamId = state.value.roster?.id.toString(),
+                                   score = state.value.details?.scoreHostWithPenalties ?: 0
+                               )
+                           )
+                    state.value.details?.war?.copy(scores = warScores)?.let {
+                        _state.value = state.value.copy(details = WarDetails(it))
+                        onValidateWar()
+                    }
+                }
+            }
+        }
     }
 
 

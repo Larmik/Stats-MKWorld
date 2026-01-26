@@ -4,9 +4,13 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -42,7 +46,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalPagerApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AddWarScreen(
-    viewModel: AddWarViewModel = hiltViewModel(),
+    viewModel: AddWarViewModel,
+    is24p: Boolean,
     onBack: () -> Unit,
     onCurrentWar: () -> Unit
 ) {
@@ -57,8 +62,9 @@ fun AddWarScreen(
     }
 
     BackHandler {
-        when (pagerState.currentPage) {
-            1 -> scope.launch { pagerState.animateScrollToPage(0) }
+        when  {
+            pagerState.currentPage == 1 -> scope.launch { pagerState.animateScrollToPage(0) }
+            state.value.teamSelected?.isNotEmpty() == true -> { viewModel.onRemoveTeam() }
             else -> onBack()
         }
     }
@@ -70,22 +76,45 @@ fun AddWarScreen(
     ) {
         when (it) {
             0 -> BaseScreen(title = stringResource(R.string.pick_opponent)) {
-                MKTextField(
-                    value = searchTeam.value,
-                    onValueChange = {
-                        searchTeam.value = it
-                        viewModel.onSearchTeam(it)
-                    },
-                    placeHolderRes = R.string.search_team,
-                    backgroundColor = Colors.blackAlphaed
-                )
-                LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(state.value.teamList) {
-                        TeamCell(modifier = Modifier.padding(5.dp), team = it, onClick = {
-                            viewModel.onTeamSelected(it)
-                            scope.launch { pagerState.animateScrollToPage(1) }
-                        })
+                if (is24p)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        state.value.teamSelected?.getOrNull(0)?.let {
+                            TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
+                        } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
+                        state.value.teamSelected?.getOrNull(1)?.let {
+                            TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
+                        } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
+                        state.value.teamSelected?.getOrNull(2)?.let {
+                            TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
+                        } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
                     }
+                else
+                    state.value.teamSelected?.getOrNull(0)?.let {
+                        TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
+                    } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
+
+
+
+                state.value.teamList.takeIf { it.isNotEmpty() }?.let {
+                    MKTextField(
+                        value = searchTeam.value,
+                        onValueChange = {
+                            searchTeam.value = it
+                            viewModel.onSearchTeam(it)
+                        },
+                        placeHolderRes = R.string.search_team,
+                        backgroundColor = Colors.blackAlphaed
+                    )
+                    LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
+                        items(state.value.teamList) {
+                            TeamCell(modifier = Modifier.padding(5.dp), team = it, onClick = {
+                                viewModel.onTeamSelected(it)
+                            })
+                        }
+                    }
+                }
+                MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.next), enabled = state.value.nextButtonEnabled) {
+                    scope.launch { pagerState.animateScrollToPage(1) }
                 }
             }
 

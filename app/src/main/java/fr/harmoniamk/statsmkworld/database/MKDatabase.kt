@@ -8,6 +8,7 @@ import androidx.room.TypeConverters
 import fr.harmoniamk.statsmkworld.database.converters.StringConverter
 import fr.harmoniamk.statsmkworld.database.converters.WarPenaltyConverter
 import fr.harmoniamk.statsmkworld.database.converters.WarPositionConverter
+import fr.harmoniamk.statsmkworld.database.converters.WarScoreConverter
 import fr.harmoniamk.statsmkworld.database.converters.WarTrackConverter
 import fr.harmoniamk.statsmkworld.database.dao.PlayerDao
 import fr.harmoniamk.statsmkworld.database.dao.TeamDao
@@ -17,7 +18,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import kotlinx.coroutines.FlowPreview
 
-@TypeConverters(value = [WarTrackConverter::class, WarPositionConverter::class, WarPenaltyConverter::class, StringConverter::class])
+@TypeConverters(value = [WarTrackConverter::class, WarPositionConverter::class, WarPenaltyConverter::class, StringConverter::class, WarScoreConverter::class])
 @Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class], version = 4)
 abstract class MKDatabase : RoomDatabase() {
 

@@ -48,7 +48,8 @@ fun PlayerCell(
     onAddShock: (String) -> Unit = {},
     onRemoveShock: (String) -> Unit = {},
     onClick: (PlayerEntity) -> Unit,
-    playerRanking: RankingItem.PlayerRanking? = null
+    playerRanking: RankingItem.PlayerRanking? = null,
+    is24p: Boolean = false
 ) {
     val shockCountState = remember { mutableIntStateOf(shockCount ?: 0) }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -85,7 +86,7 @@ fun PlayerCell(
             ) {
                 MKText(
                     text = position.toString(),
-                    textColor = position.positionColor(),
+                    textColor = position.positionColor(is24p),
                     fontSize = 40,
                     font = Fonts.MKPosition
                 )

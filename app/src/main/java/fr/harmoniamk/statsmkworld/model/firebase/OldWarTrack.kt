@@ -14,7 +14,7 @@ data class OldWarTrack(
     fun hasPlayer(playerId: String?) = positions.any { pos -> pos.playerId == playerId }
 
     val teamScore: Int
-        get() = positions.sumOf { it.position.positionToPoints() }
+        get() = positions.sumOf { it.position.positionToPoints(false) }
 
 
     private val opponentScore: Int

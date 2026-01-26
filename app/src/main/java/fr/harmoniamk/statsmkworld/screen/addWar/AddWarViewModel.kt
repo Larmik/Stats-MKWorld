@@ -2,6 +2,9 @@ package fr.harmoniamk.statsmkworld.screen.addWar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
@@ -9,6 +12,7 @@ import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -32,18 +36,25 @@ import javax.inject.Inject
 
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class AddWarViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = AddWarViewModel.Factory::class)
+class AddWarViewModel @AssistedInject constructor(
+    @Assisted val is24p: Boolean,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
 ) : ViewModel() {
 
+    @AssistedFactory
+    interface Factory {
+        fun create(is24p: Boolean): AddWarViewModel
+    }
+
     data class State(
         val teamList: List<TeamEntity> = listOf(),
         val playerList: Map<String, List<PlayerSelector>> = mapOf(),
-        val teamSelected: TeamEntity? = null,
+        val teamSelected: List<TeamEntity>? = null,
         val buttonEnabled: Boolean = false,
+        val nextButtonEnabled: Boolean = false,
         val warName: String? = null
     )
 
@@ -81,10 +92,34 @@ class AddWarViewModel @Inject constructor(
     }
 
     fun onTeamSelected(team: TeamEntity) {
+        val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { add(team) }
+        val buttonEnabled = when (is24p) {
+            true -> selectedTeams.size == 3
+            else -> selectedTeams.size == 1
+        }
         _state.value = state.value.copy(
-            teamSelected = team,
-            warName = "${currentTeam?.tag} - ${team.tag}"
-            )
+            teamList = when (buttonEnabled) {
+                false -> teams.filterNot { selectedTeams.contains(it) }
+                else -> listOf()
+            },
+            teamSelected = selectedTeams,
+            nextButtonEnabled = buttonEnabled,
+            warName = "${currentTeam?.tag} - ${selectedTeams.joinToString(" - ") { it.tag }}"
+        )
+    }
+
+    fun onRemoveTeam() {
+        val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { removeAt(lastIndex) }
+        val buttonEnabled = when (is24p) {
+            true -> selectedTeams.size == 3
+            else -> selectedTeams.size == 1
+        }
+        _state.value = state.value.copy(
+            teamList = teams.filterNot { selectedTeams.contains(it) },
+            teamSelected = selectedTeams,
+            nextButtonEnabled = buttonEnabled,
+            warName = "${currentTeam?.tag} - ${selectedTeams.joinToString(" - ") { it.tag }}"
+        )
     }
 
     fun onPlayerSelected(player: PlayerEntity) {
@@ -111,12 +146,14 @@ class AddWarViewModel @Inject constructor(
             .filterNotNull()
             .map {
                 this.rosterId = it
+                val teams = listOf(it) + state.value.teamSelected?.map { it.id }.orEmpty()
                 War(
                     id = System.currentTimeMillis(),
                     teamHost = it,
-                    teamOpponent = listOf(_state.value.teamSelected?.id.orEmpty()),
+                    teamOpponent = state.value.teamSelected?.map { it.id }.orEmpty(),
                     tracks = listOf(),
-                    penalties = listOf()
+                    penalties = listOf(),
+                    scores = teams.map { WarScore(teamId = it, score = 0) }
                 )
             }
             .zip(dataStoreRepository.mkcTeam) { war, team ->

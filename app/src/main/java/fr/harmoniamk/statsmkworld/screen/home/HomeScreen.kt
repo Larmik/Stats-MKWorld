@@ -39,7 +39,7 @@ fun HomeScreen(
     onBack: () -> Unit,
     onTeamProfile: (String) -> Unit,
     onPlayerProfile: (String) -> Unit,
-    onAddWar: () -> Unit,
+    onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
     onStats: (StatsType) -> Unit,

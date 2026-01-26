@@ -3,7 +3,7 @@ package fr.harmoniamk.statsmkworld.extension
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
 
-fun Int?.toTeamColor()  = Color(
+fun Int?.toTeamColor() = Color(
     when (this) {
         1 -> "#ef5350"
         2 -> "#ffa726"
@@ -45,61 +45,101 @@ fun Int?.toTeamColor()  = Color(
         38 -> "#382185"
         39 -> "#91114b"
         else -> "#000000"
-    }.toColorInt())
+    }.toColorInt()
+)
 
-fun Int?.positionColor()  = Color(
-    when (this) {
-        1 ->"#D4AF37"
-        2 -> "#C0C0C0"
-        3 -> "#C49C48"
-        4 -> "#F1B04C"
-        5 -> "#EE9F27"
-        6,7 -> "#EC9006"
-        8 -> "#E88504"
-        9,10 -> "#E27602"
-        11 -> "#DC6601"
-        12 -> "#D24E01"
-        else -> "#000000"
-    }.toColorInt())
+fun Int?.positionColor(is24p: Boolean = false) = Color(
+    when (is24p) {
+        true -> when (this) {
+            1 -> "#D4AF37"
+            2 -> "#C0C0C0"
+            3 -> "#C49C48"
+            4, 5, 6 -> "#F1B04C"
+            7, 8, 9 -> "#EE9F27"
+            10, 11, 12 -> "#EC9006"
+            13, 14, 15, 16 -> "#E88504"
+            17, 18, 19, 20 -> "#E27602"
+            21, 22 -> "#DC6601"
+            23, 24 -> "#D24E01"
+            else -> "#000000"
+        }
 
-fun Int?.positionToPoints() = when (this) {
-    1 -> 15
-    2 -> 12
-    3 -> 10
-    4 -> 9
-    5 -> 8
-    6 -> 7
-    7 -> 6
-    8 -> 5
-    9 -> 4
-    10 -> 3
-    11 -> 2
-    12 -> 1
-    else -> 0
+        else -> when (this) {
+            1 -> "#D4AF37"
+            2 -> "#C0C0C0"
+            3 -> "#C49C48"
+            4 -> "#F1B04C"
+            5 -> "#EE9F27"
+            6, 7 -> "#EC9006"
+            8 -> "#E88504"
+            9, 10 -> "#E27602"
+            11 -> "#DC6601"
+            12 -> "#D24E01"
+            else -> "#000000"
+        }
+    }
+        .toColorInt()
+)
+
+fun Int?.positionToPoints(is24p: Boolean) = when (is24p) {
+    true ->  when (this) {
+        1 -> 15
+        2 -> 12
+        3 -> 10
+        4,5 -> 9
+        6,7 -> 8
+        8,9 -> 7
+        10,11,12 -> 6
+        13,14,15 -> 5
+        16,17,18 -> 4
+        19,20,21 -> 3
+        22,23 -> 2
+        24 -> 1
+        else -> 0
+    }
+    else ->  when (this) {
+        1 -> 15
+        2 -> 12
+        3 -> 10
+        4 -> 9
+        5 -> 8
+        6 -> 7
+        7 -> 6
+        8 -> 5
+        9 -> 4
+        10 -> 3
+        11 -> 2
+        12 -> 1
+        else -> 0
+    }
 }
 
 
-fun Int.warScoreToDiff() : String {
+
+
+
+fun Int.warScoreToDiff(): String {
     val halfDiff = when {
         this > 492 -> this - 492
         this < 492 -> 492 - this
         else -> 0
     }
     return when {
-        this > 492 -> "+${halfDiff*2}"
-        this < 492 -> "-${halfDiff*2}"
+        this > 492 -> "+${halfDiff * 2}"
+        this < 492 -> "-${halfDiff * 2}"
         else -> "0"
     }
 }
-fun Int.trackScoreToDiff() : String {
+
+fun Int.trackScoreToDiff(): String {
     val halfDiff = when {
         this > 41 -> this - 41
         this < 41 -> 41 - this
         else -> 0
     }
     return when {
-        this > 41 -> "+${halfDiff*2}"
-        this < 41 -> "-${halfDiff*2}"
+        this > 41 -> "+${halfDiff * 2}"
+        this < 41 -> "-${halfDiff * 2}"
         else -> "0"
     }
 }

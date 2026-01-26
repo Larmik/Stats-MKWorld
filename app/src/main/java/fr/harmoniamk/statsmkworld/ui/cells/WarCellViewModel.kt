@@ -31,13 +31,15 @@ class WarCellViewModel @AssistedInject constructor(
     }
 
     data class State(
+        val details: WarDetails? = null,
         val teamHost: TeamEntity? = null,
         val teamOpponent: List<TeamEntity>? = null,
         val score: String? = null,
         val diff: String? = null,
         val date: String? = null,
         val mapsWon: Int? = null,
-        val rosterName: String? = null
+        val rosterName: String? = null,
+        val rosterId: String? = null
     )
 
     val state = dataStoreRepository.mkcTeam
@@ -45,15 +47,18 @@ class WarCellViewModel @AssistedInject constructor(
             val opponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
             val mapsWon = details.warTracks.filter { it.displayedDiff.startsWith("+") }.size
             val rosterName = host.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.name ?: host.name
+            val rosterId = host.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.id ?: host.id
 
             State(
+                details = details,
                 teamHost = TeamEntity(host),
                 teamOpponent = opponents,
                 score = details.displayedScore,
                 diff = details.displayedDiff,
                 date = Date(details.war.id).displayedString("dd/MM/yyyy"),
                 mapsWon = mapsWon,
-                rosterName = rosterName
+                rosterName = rosterName,
+                rosterId = rosterId.toString()
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 

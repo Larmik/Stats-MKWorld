@@ -8,9 +8,9 @@ data class War(
     val teamHost: String,
     val teamOpponent: List<String>,
     val tracks: List<WarTrack>,
-    val penalties: List<WarPenalty>
+    val penalties: List<WarPenalty>,
+    val scores: List<WarScore>
 ) {
-    var name: String? = null
 
     @Deprecated("24 players")
     constructor(war: DatastoreWar) : this(
@@ -18,15 +18,17 @@ data class War(
         teamHost = war.teamHost,
         teamOpponent = war.teamOpponent,
         tracks = war.tracks,
-        penalties = war.penalties
+        penalties = war.penalties,
+        scores = war.scores
     )
 
     constructor(entity: WarEntity): this(
         id = entity.id.toLong(),
         teamHost = entity.teamHost.orEmpty(),
-        teamOpponent = entity.teamOpponent.orEmpty(),
+        teamOpponent = entity.teamOpponent,
         tracks = entity.warTracks.orEmpty(),
-        penalties = entity.penalties.orEmpty()
+        penalties = entity.penalties.orEmpty(),
+        scores = entity.scores.orEmpty()
     )
 
     fun hasPlayer(playerId: String?): Boolean {

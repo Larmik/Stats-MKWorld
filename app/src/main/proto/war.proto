@@ -10,6 +10,7 @@ message WarProto {
     repeated string team_opponent = 3;
     repeated WarTrackProto tracks = 4;
     repeated WarPenaltyProto penalties = 5;
+    repeated WarScoreProto scores = 6;
 }
 
 message WarTrackProto {
@@ -22,6 +23,11 @@ message WarTrackProto {
 message WarPenaltyProto {
     string teamId = 1;
     int32 amount = 2;
+}
+
+message WarScoreProto {
+    string teamId = 1;
+    int32 score = 2;
 }
 
 message WarPositionProto {

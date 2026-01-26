@@ -12,6 +12,7 @@ import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.parsePenalties
 import fr.harmoniamk.statsmkworld.extension.parseOldTracks
+import fr.harmoniamk.statsmkworld.extension.parseScores
 import fr.harmoniamk.statsmkworld.extension.parseTracks
 import fr.harmoniamk.statsmkworld.extension.toMapList
 import fr.harmoniamk.statsmkworld.model.firebase.Tag
@@ -162,7 +163,8 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
                         teamHost = map["teamHost"].toString(),
                         teamOpponent = map["teamOpponent"] as List<String>,
                         tracks = map["tracks"].toMapList().parseTracks().orEmpty(),
-                        penalties = map["penalties"].toMapList().parsePenalties().orEmpty()
+                        penalties = map["penalties"].toMapList().parsePenalties().orEmpty(),
+                        scores = map["scores"].toMapList().parseScores().orEmpty()
                     )
                 }
             if (isActive) trySend(wars)
@@ -179,7 +181,8 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
                         teamOpponent = value["teamOpponent"] as List<String>,
                         teamHost = value["teamHost"].toString(),
                         tracks = value["tracks"].toMapList().parseTracks().orEmpty(),
-                        penalties = value["penalties"].toMapList().parsePenalties().orEmpty()
+                        penalties = value["penalties"].toMapList().parsePenalties().orEmpty(),
+                        scores = value["scores"].toMapList().parseScores().orEmpty()
                     )
                     if (isActive) trySend(war)
                 }
@@ -200,7 +203,8 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
                             teamOpponent = value["teamOpponent"] as List<String>,
                             teamHost = value["teamHost"].toString(),
                             tracks = value["tracks"].toMapList().parseTracks().orEmpty(),
-                            penalties = value["penalties"].toMapList().parsePenalties().orEmpty()
+                            penalties = value["penalties"].toMapList().parsePenalties().orEmpty(),
+                            scores = value["scores"].toMapList().parseScores().orEmpty()
                         )
                     }
                     if (isActive) trySend(war)

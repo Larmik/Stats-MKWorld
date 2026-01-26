@@ -34,12 +34,14 @@ class CurrentWarCellViewModel @AssistedInject constructor(
     }
 
     data class State(
+        val details: WarDetails? = null,
         val teamHost: TeamEntity? = null,
         val teamOpponent: List<TeamEntity>? = null,
         val score: String? = null,
         val diff: String? = null,
         val remaining: Int? = null,
-        val rosterName: String? = null
+        val rosterName: String? = null,
+        val rosterId: String? = null
     )
 
     val state = flowOf(currentWar)
@@ -47,15 +49,17 @@ class CurrentWarCellViewModel @AssistedInject constructor(
             .zip(dataStoreRepository.mkcTeam) { war, teamHost ->
                 val details = WarDetails(war)
                 val teamOpponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
-
                 val rosterName = teamHost.rosters.singleOrNull { it.id.toString() == war.teamHost }?.name ?: teamHost.name
+                val rosterId = teamHost.rosters.singleOrNull { it.id.toString() == war.teamHost }?.id ?: teamHost.id
                 State(
+                    details = details,
                     teamHost = TeamEntity(teamHost),
                     teamOpponent = teamOpponents,
                     score = details.displayedScore,
                     diff = details.displayedDiff,
                     remaining = 12 - war.tracks.size,
-                    rosterName = rosterName
+                    rosterName = rosterName,
+                    rosterId = rosterId.toString()
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 

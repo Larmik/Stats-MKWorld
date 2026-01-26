@@ -44,23 +44,20 @@ fun WarDetailsScreen(
             WarScoreView(
                 teamHost = state.value.teamHost,
                 teamOpponent = state.value.teamOpponent,
-                score = state.value.details?.displayedScore.orEmpty(),
-                diff = state.value.details?.displayedDiff.orEmpty(),
-                penalties = state.value.details?.war?.penalties.orEmpty(),
-                shockCount = state.value.details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } },
+                details = state.value.details,
                 rosterName = state.value.roster?.name,
-                rosterId = state.value.roster?.id?.toString()
             )
             Spacer(Modifier.height(20.dp))
             WarPlayersCell(players = state.value.players, trackCount = state.value.details?.warTracks.orEmpty().size)
-            Row(
-                Modifier.padding(vertical = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                MKButton(style = MKButtonStyle.Minor(Colors.black), text = "Tab") {
-                    viewModel.warDetails?.let { onTab(it) }
+            if (state.value.details?.war?.teamOpponent.orEmpty().size == 1)
+                Row(
+                    Modifier.padding(vertical = 5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    MKButton(style = MKButtonStyle.Minor(Colors.black), text = "Tab") {
+                        viewModel.warDetails?.let { onTab(it) }
+                    }
                 }
-            }
             Spacer((Modifier
                 .fillMaxWidth()
                 .height(1.dp)
@@ -75,6 +72,7 @@ fun WarDetailsScreen(
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
                     items(it) {
                         val borderColor = when {
+                            state.value.teamOpponent.orEmpty().size > 1 -> Colors.transparent
                             it.displayedDiff.contains("+") -> Colors.green
                             it.displayedDiff.contains("-") -> Colors.red
                             else -> Colors.transparent
@@ -83,6 +81,7 @@ fun WarDetailsScreen(
                             modifier = Modifier.padding(5.dp),
                             track = it,
                             onClick = {},
+                            is24p = state.value.teamOpponent.orEmpty().size > 1,
                             onTrackDetails = onTrackClick,
                             backgroundColor = Colors.whiteAlphaed,
                             textColor = Colors.black,

@@ -35,6 +35,7 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCell
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCellViewModel
@@ -46,7 +47,7 @@ fun WelcomeScreen(
     viewModel: WelcomeViewModel = hiltViewModel(),
     onTeamProfile: () -> Unit,
     onPlayerProfile: () -> Unit,
-    onAddWar: () -> Unit,
+    onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
     onWarListClick: () -> Unit
@@ -143,13 +144,26 @@ fun WelcomeScreen(
                 }
                 Spacer(Modifier.height(10.dp))
 
+                MKSegmentedSelector(
+                    items = listOf(
+                        "12 joueurs",
+                        "24 joueurs"
+                    ),
+                    page = state.value.index,
+                    onClick = viewModel::onWarTypeSwitch
+                )
+                Spacer(Modifier.height(10.dp))
+
                 if (state.value.currentWar == null && state.value.buttonVisible)
-                    MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.nouvelle_war), onClick = onAddWar, modifier = Modifier.padding(bottom = 5.dp))
+                    MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.nouvelle_war), onClick = { onAddWar(state.value.index == 1) }, modifier = Modifier.padding(bottom = 5.dp))
 
                 Spacer((Modifier
                     .fillMaxWidth()
                     .height(1.dp)
                     .background(Colors.blackAlphaed)))
+
+
+
                 state.value.currentWar?.let {
                     Spacer(Modifier.height(10.dp))
                     MKText(text = stringResource(R.string.war_en_cours),  fontSize = 16, font = Fonts.NunitoBD, modifier = Modifier.padding(bottom = 5.dp))

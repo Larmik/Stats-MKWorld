@@ -120,7 +120,7 @@ fun CurrentWarActionsScreen(
                 when (pagerState.currentPage) {
                     0 -> {
                         Column {
-                           LazyVerticalGrid(columns = GridCells.Fixed(2)) {
+                           LazyVerticalGrid(modifier = Modifier.weight(1f), columns = GridCells.Fixed(2)) {
                                items(state.value.penalties.orEmpty()) {
                                    val backgroundColor = when (it.isSelected) {
                                        true -> Colors.whiteAlphaed
@@ -141,15 +141,18 @@ fun CurrentWarActionsScreen(
                                            val text = when (val penalty = it.penalty) {
                                                is PenaltyType.Minus10 -> "-10 " + context.getString(
                                                    R.string.penalty_placeholder,
-                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name.orEmpty()
+                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name
+                                                       ?: state.value.teamHost?.name.orEmpty()
                                                )
                                                is PenaltyType.Minus15 -> "-15 " + context.getString(
                                                    R.string.penalty_placeholder,
-                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name.orEmpty()
+                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name
+                                                       ?: state.value.teamHost?.name.orEmpty()
                                                )
                                                is PenaltyType.Minus20 -> "-20 " + context.getString(
                                                    R.string.penalty_placeholder,
-                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name.orEmpty()
+                                                   teamsList.singleOrNull { it?.id == penalty.teamId }?.name
+                                                       ?: state.value.teamHost?.name.orEmpty()
                                                )
                                            }
                                            MKText(modifier = Modifier.padding(5.dp), text = text, font = Fonts.NunitoBD, textColor = textColor)
