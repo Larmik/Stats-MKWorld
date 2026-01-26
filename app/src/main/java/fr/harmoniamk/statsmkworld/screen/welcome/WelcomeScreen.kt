@@ -149,13 +149,16 @@ fun WelcomeScreen(
                         "12 joueurs",
                         "24 joueurs"
                     ),
-                    page = state.value.index,
+                    page = when (state.value.is24PEnabled) {
+                        true -> 1
+                        else -> 0
+                    },
                     onClick = viewModel::onWarTypeSwitch
                 )
                 Spacer(Modifier.height(10.dp))
 
                 if (state.value.currentWar == null && state.value.buttonVisible)
-                    MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.nouvelle_war), onClick = { onAddWar(state.value.index == 1) }, modifier = Modifier.padding(bottom = 5.dp))
+                    MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.nouvelle_war), onClick = { onAddWar(state.value.is24PEnabled) }, modifier = Modifier.padding(bottom = 5.dp))
 
                 Spacer((Modifier
                     .fillMaxWidth()

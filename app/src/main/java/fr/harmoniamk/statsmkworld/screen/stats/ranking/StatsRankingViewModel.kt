@@ -96,6 +96,7 @@ class StatsRankingViewModel @AssistedInject constructor(
         val playerList: Map<String, List<RankingItem.PlayerRanking>> = mapOf(),
         val index: Int = 0,
         val currentUserId: String? = null,
+        val is24PEnabled: Boolean? = null,
         val sortItems: List<Pair<SortType, Boolean>> = listOf(
             Pair(SortType.OCCURENCES, true),
             Pair(SortType.NAME, false),
@@ -140,6 +141,10 @@ class StatsRankingViewModel @AssistedInject constructor(
 
                 else -> _state.value.copy(title = title)
             }
+        }
+        .map {
+            val is24p = dataStoreRepository.is24PEnabled.firstOrNull()
+            it.copy(is24PEnabled = is24p)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)

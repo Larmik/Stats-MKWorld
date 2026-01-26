@@ -21,12 +21,28 @@ import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 @Composable
 fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (StatsType) -> Unit, onRanking: (StatsType?) -> Unit) {
     val state = viewModel.state.collectAsState()
     BaseScreen(title = stringResource(R.string.statistiques)) {
+        state.value.is24PEnabled?.let {
+            MKSegmentedSelector(
+                items = listOf(
+                    "12 joueurs",
+                    "24 joueurs"
+                ),
+                page = when (it) {
+                    true -> 1
+                    else -> 0
+                },
+                onClick = viewModel::onWarTypeSwitch
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
         LazyColumn(
             Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -35,7 +51,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onClick(StatsType.PlayerStats(state.value.currentPlayerId.orEmpty())) }) {
+                        .clickable { onClick(StatsType.PlayerStats(userId = state.value.currentPlayerId.orEmpty(), is24p = state.value.is24PEnabled == true)) }) {
                     MKText(
                         text = stringResource(R.string.statistiques_individuelles),
                         font = Fonts.Urbanist,
@@ -53,7 +69,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onClick(StatsType.TeamStats()) }) {
+                        .clickable { onClick(StatsType.TeamStats(is24p = state.value.is24PEnabled == true)) }) {
                     MKText(
                         text = stringResource(R.string.statistiques_de_l_quipe),
                         font = Fonts.Urbanist,
@@ -72,7 +88,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onRanking(StatsType.TeamStats()) }) {
+                        .clickable { onRanking(StatsType.TeamStats(is24p = state.value.is24PEnabled == true)) }) {
                     MKText(
                         text = stringResource(R.string.statistiques_des_joueurs),
                         font = Fonts.Urbanist,
@@ -91,7 +107,7 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onRanking(StatsType.OpponentStats(state.value.currentTeamId.orEmpty())) }) {
+                        .clickable { onRanking(StatsType.OpponentStats(teamId = state.value.currentTeamId.orEmpty(), is24p = state.value.is24PEnabled == true)) }) {
                     MKText(
                         text = stringResource(R.string.statistiques_des_adversaires),
                         font = Fonts.Urbanist,
@@ -114,7 +130,8 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                             onRanking(
                                 StatsType.MapStats(
                                     userId = state.value.currentPlayerId.orEmpty(),
-                                    teamId = state.value.currentTeamId.orEmpty()
+                                    teamId = state.value.currentTeamId.orEmpty(),
+                                    is24p = state.value.is24PEnabled == true
                                 )
                             )
                         }) {

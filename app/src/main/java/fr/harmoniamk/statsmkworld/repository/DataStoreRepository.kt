@@ -23,6 +23,7 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.serializers.mkcPlayerDataStore
 import fr.harmoniamk.statsmkworld.serializers.mkcTeamDataStore
 import fr.harmoniamk.statsmkworld.serializers.warDataStore
+import fr.harmoniamk.statsmkworld.worker.InitStatsWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -47,6 +48,8 @@ interface DataStoreRepositoryInterface {
     suspend fun clearPlayer()
     suspend fun clearTeam()
 
+    suspend fun set24PEnabled(enabled: Boolean)
+
     val accessToken: Flow<String>
     val matrixMode: Flow<Boolean>
     val mkcPlayer: Flow<MKCPlayer>
@@ -57,6 +60,8 @@ interface DataStoreRepositoryInterface {
     val multiRosterEnabled: Flow<Boolean>
 
     val notifAlreadyRequested: Flow<Boolean>
+
+    val is24PEnabled: Flow<Boolean>
 }
 
 @Module
@@ -67,7 +72,7 @@ interface DataStoreRepositoryModule {
     fun bind(impl: DataStoreRepository): DataStoreRepositoryInterface
 }
 
-class DataStoreRepository @Inject constructor(@ApplicationContext val context: Context): DataStoreRepositoryInterface {
+class DataStoreRepository @Inject constructor(@ApplicationContext val context: Context, private val workerRepository: WorkerRepositoryInterface): DataStoreRepositoryInterface {
 
     override suspend fun setAccessToken(token: String) {
         val key = stringPreferencesKey("access_token")
@@ -113,6 +118,14 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         context.mkcTeamDataStore.updateData {
             MKCTeamProto.newBuilder().build()
         }
+    }
+
+    override suspend fun set24PEnabled(enabled: Boolean) {
+        val keyMode = booleanPreferencesKey("is24PEnabled")
+        context.dataStore.edit {
+            it[keyMode] = enabled
+        }
+        workerRepository.launchBackgroundTask(InitStatsWorker::class.java, "InitStats", null)
     }
 
     override suspend fun setLastUpdate(lastUpdate: Long) {
@@ -196,6 +209,11 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
     override val notifAlreadyRequested: Flow<Boolean>
         get() {
             val key = booleanPreferencesKey("firstTimeAskingNotifications")
+            return context.dataStore.data.map { it[key] == true }
+        }
+    override val is24PEnabled: Flow<Boolean>
+        get() {
+            val key = booleanPreferencesKey("is24PEnabled")
             return context.dataStore.data.map { it[key] == true }
         }
 

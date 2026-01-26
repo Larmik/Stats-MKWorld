@@ -22,12 +22,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.Int
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, databaseRepository: DatabaseRepositoryInterface) : ViewModel() {
+class WelcomeViewModel @Inject constructor(private val dataStoreRepository: DataStoreRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, databaseRepository: DatabaseRepositoryInterface) : ViewModel() {
 
     data class State(
         val teamName: String? = null,
@@ -37,7 +38,7 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
         val buttonVisible: Boolean = false,
         val currentWar: War? = null,
         var wars: List<WarDetails> = listOf(),
-        val index: Int = 0
+        val is24PEnabled: Boolean = false
     )
 
     private var wars: List<WarDetails> = listOf()
@@ -48,6 +49,16 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
             .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
             .onEach { _state.value = state.value.copy(currentWar = it) }
             .launchIn(viewModelScope)
+
+        dataStoreRepository.is24PEnabled
+            .onEach { is24p -> _state.value = state.value.copy(
+                wars = wars.filter {
+                    (is24p && it.war.teamOpponent.size > 1)
+                            || (!is24p && it.war.teamOpponent.size == 1)
+                }.safeSubList(0, 5),
+                is24PEnabled = is24p
+            ) }
+            .launchIn(viewModelScope)
     }
 
     private val _state = MutableStateFlow(State())
@@ -56,6 +67,7 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
         .mapNotNull { player ->
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
+            val is24PEnabled = dataStoreRepository.is24PEnabled.firstOrNull() == true
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
                 val buttonVisible = firebaseRepository
                     .getUser(team.id.toString(), player.id.toString())
@@ -81,8 +93,9 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     buttonVisible =  buttonVisible == true || dataStoreRepository.matrixMode.firstOrNull() == true,
                     currentWar = firebaseRepository.getCurrentWar(rosterId).firstOrNull(),
+                    is24PEnabled = is24PEnabled,
                     wars = wars
-                        .filter { it.war.teamOpponent.size == 1 }
+                        .filter { (!is24PEnabled && it.war.teamOpponent.size == 1) || is24PEnabled && it.war.teamOpponent.size > 1 }
                         .safeSubList(0, 5)
 
                 )
@@ -92,14 +105,18 @@ class WelcomeViewModel @Inject constructor(dataStoreRepository: DataStoreReposit
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
     fun onWarTypeSwitch(index: Int) {
-        val is24p = index == 1
-        _state.value = state.value.copy(
-            wars = this.wars.filter {
-                (is24p && it.war.teamOpponent.size > 1)
-                        || (!is24p && it.war.teamOpponent.size == 1)
-            }.safeSubList(0, 5),
-            index = index
-        )
+        viewModelScope.launch {
+            val is24p = index == 1
+            dataStoreRepository.set24PEnabled(is24p)
+            _state.value = state.value.copy(
+                wars = wars.filter {
+                    (is24p && it.war.teamOpponent.size > 1)
+                            || (!is24p && it.war.teamOpponent.size == 1)
+                }.safeSubList(0, 5),
+                is24PEnabled = is24p
+            )
+        }
+
     }
 
 }

@@ -107,7 +107,8 @@ fun StatsRankingScreen(
                                 onStats(
                                     StatsType.OpponentStats(
                                         teamId = it.id,
-                                        userId = state.value.currentUserId
+                                        userId = state.value.currentUserId,
+                                        is24p = state.value.is24PEnabled == true
                                     )
                                 )
                             },
@@ -125,7 +126,8 @@ fun StatsRankingScreen(
                                 onStats(
                                     StatsType.MapStats(
                                         userId = state.value.currentUserId,
-                                        trackIndex = it.map { it.ordinal }
+                                        trackIndex = it.map { it.ordinal },
+                                        is24p = state.value.is24PEnabled == true
                                     )
                                 )
                             }
@@ -165,7 +167,7 @@ fun StatsRankingScreen(
                                         .fillMaxWidth(0.48f),
                                     textColor = Colors.white,
                                     backgroundColor = Colors.blackAlphaed,
-                                    onClick = { onStats(StatsType.PlayerStats(it.id)) },
+                                    onClick = { onStats(StatsType.PlayerStats(it.id, is24p = state.value.is24PEnabled == true)) },
                                     playerRanking = it,
                                     player = null
                                 )

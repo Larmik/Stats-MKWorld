@@ -25,6 +25,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -32,19 +33,21 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.io.Serializable
 
-sealed class StatsType(val title: Int): Serializable {
-    class PlayerStats(val userId: String) : StatsType(R.string.statistiques_du_joueur)
-    class TeamStats : StatsType(R.string.statistiques_de_l_quipe)
+sealed class StatsType(val title: Int, val is24PEnabled: Boolean): Serializable {
+    class PlayerStats(val userId: String, val is24p: Boolean) : StatsType(R.string.statistiques_du_joueur, is24p)
+    class TeamStats(val is24p: Boolean) : StatsType(R.string.statistiques_de_l_quipe, is24p)
     class OpponentStats(
         val teamId: String,
-        val userId: String? = null
-    ) : StatsType(R.string.statistiques_de_l_adversaire)
+        val userId: String? = null,
+        val is24p: Boolean
+    ) : StatsType(R.string.statistiques_de_l_adversaire, is24p)
 
     class MapStats(
         val userId: String? = null,
         val teamId: String? = null,
-        val trackIndex: List<Int>? = null
-    ) : StatsType(R.string.statistiques_du_circuit)
+        val trackIndex: List<Int>? = null,
+        val is24p: Boolean
+    ) : StatsType(R.string.statistiques_du_circuit, is24p)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -89,6 +92,12 @@ class StatsViewModel @AssistedInject constructor(
                     .filter { war -> (type.teamId != null && war.hasTeam(type.teamId)) || type.teamId == null }
                     .filter { war -> (type.userId != null && war.hasPlayer(type.userId)) || type.userId == null }
                 else -> it
+            }
+        }
+        .map {
+            it.filter { war ->
+                (type?.is24PEnabled == true && war.teamOpponent.size > 1)
+                        ||(type?.is24PEnabled != true && war.teamOpponent.size == 1)
             }
         }
         .filterNot { it.isEmpty() }

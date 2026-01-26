@@ -20,6 +20,7 @@ import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -49,9 +50,11 @@ class InitStatsWorker @AssistedInject constructor(
         val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
         val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
         val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
+        val is24PEnabled = dataStoreRepository.is24PEnabled.firstOrNull() == true
 
         databaseRepository.getWars().firstOrNull()
             ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+            ?.filter { (is24PEnabled && it.teamOpponent.size > 1 || (!is24PEnabled && it.teamOpponent.size == 1)) }
             ?.let { warList ->
             val currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
 
