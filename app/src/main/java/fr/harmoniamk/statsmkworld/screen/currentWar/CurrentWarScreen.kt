@@ -41,7 +41,6 @@ import fr.harmoniamk.statsmkworld.ui.WarScoreView
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
@@ -168,6 +167,7 @@ fun CurrentWarScreen(
 
          }
             else -> BaseScreen(title = "Scores adversaires") {
+                MKText(text = "Veuillez renseigner les scores adverses dans les champs correspondants. \n Il faut inscrire les scores tels qu'ils ont été calculés par le jeu, le total des points étant de 1728. \n \n Ne tenez pas compte des pénalités.")
                 state.value.teamOpponent?.forEach { team ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         TeamCell(team = team, modifier = Modifier.size(120.dp), tagVisible = false) { }

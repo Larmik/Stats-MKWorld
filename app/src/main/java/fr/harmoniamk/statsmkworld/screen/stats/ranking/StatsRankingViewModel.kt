@@ -93,7 +93,7 @@ class StatsRankingViewModel @AssistedInject constructor(
         val userId: String? = null,
         val teamId: String? = null,
         val list: List<RankingItem> = listOf(),
-        val playerList: Map<String, List<RankingItem.PlayerRanking>> = mapOf(),
+        val playerList: Map<Pair<Int, String>, List<RankingItem.PlayerRanking>> = mapOf(),
         val index: Int = 0,
         val currentUserId: String? = null,
         val is24PEnabled: Boolean? = null,
@@ -196,11 +196,7 @@ class StatsRankingViewModel @AssistedInject constructor(
         }.filter {
             when (search.isEmpty()) {
                 true -> true
-                else -> (it as? RankingItem.TrackRanking)?.stats?.map?.label?.let {
-                    context.getString(
-                        it
-                    ).lowercase().contains(search.lowercase()) == true
-                } == true
+                else -> (it as? RankingItem.TrackRanking)?.stats?.map?.joinToString { context.getString(it.label) }?.lowercase()?.contains(search.lowercase()) == true
             }
         }.takeIf { type is StatsType.MapStats }.orEmpty()
 
@@ -232,7 +228,7 @@ class StatsRankingViewModel @AssistedInject constructor(
                 .sortedByDescending {
                     when (state.value.currentUserId) {
                         null -> it.stats.averagePoints
-                        else -> -(it.stats.averagePlayerPosition)
+                        else -> -(it.stats.averagePlayerPosition.firstOrNull() ?: 0)
 
                 } }
 
@@ -250,14 +246,14 @@ class StatsRankingViewModel @AssistedInject constructor(
                 .sortedByDescending { it.stats.totalPlayed }
             SortType.NAME -> state.value.list
                 .mapNotNull { it as? RankingItem.TrackRanking }
-                .sortedBy { it.stats.map?.label?.let { context.getString(it) } ?: "" }
+                .sortedBy { it.stats.map?.joinToString { context.getString(it.label) } ?: "" }
             SortType.AVERAGE -> state.value.list
                 .mapNotNull { it as? RankingItem.TrackRanking }
                 .sortedByDescending {
                     when (state.value.currentUserId) {
                         null -> it.stats.teamScore?.trackScoreToDiff()?.substringAfter("+")
                             ?.toIntOrNull() ?: 0
-                        else -> it.stats.playerScore?.pointsToPosition()?.let { -it }
+                        else -> it.stats.playerScore?.pointsToPosition(state.value.is24PEnabled == true)?.firstOrNull()?.let { -it }
                     }
                 }
             SortType.WINRATE -> state.value.list

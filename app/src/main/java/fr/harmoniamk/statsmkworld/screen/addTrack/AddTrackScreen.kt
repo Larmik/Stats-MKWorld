@@ -22,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,7 +45,6 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () -> Unit) {
-    val context = LocalContext.current
     val search = remember { mutableStateOf("") }
     val pagerState = rememberPagerState()
     val scope = rememberCoroutineScope()
@@ -57,7 +55,8 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
             when (pagerState.currentPage) {
                 0 -> onBack()
                 1 -> scope.launch { pagerState.animateScrollToPage(0) }
-                2, 3 -> scope.launch { pagerState.animateScrollToPage(1) }
+                2 -> scope.launch { pagerState.animateScrollToPage(1) }
+                3 -> scope.launch { pagerState.animateScrollToPage(2) }
             }
         }
     }
@@ -78,7 +77,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
     }
     HorizontalPager(
         modifier = Modifier.fillMaxWidth(),
-        count = 3,
+        count = 4,
         state = pagerState,
         userScrollEnabled = false
     ) {
@@ -94,21 +93,37 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                     backgroundColor = Colors.blackAlphaed
                 )
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(state.value.mapList) {
-                        MapCell(Modifier.padding(5.dp), map = listOf(it), onClick = {
-                            viewModel.onMapSelected(it)
+                    items(state.value.mapList) { map ->
+                        MapCell(Modifier.padding(5.dp), map = listOf(map), onClick = {
+                            viewModel.onMapSelected(map)
                             scope.launch { pagerState.animateScrollToPage(1) }
                         })
                     }
                 }
             }
+            1 -> BaseScreen(title = stringResource(R.string.pick_circuit)) {
+                LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
+                    val mapList = listOfNotNull(state.value.mapSelected)
+                    items(mapList) { map ->
+                        MapCell(Modifier.padding(5.dp), map = listOf(map), onClick = {
+                            viewModel.onIntermissionSelected(map)
+                        })
+                    }
+                    items(state.value.intermissionList.orEmpty()) { intermission ->
+                        MapCell(Modifier.padding(5.dp), map = listOf(intermission) + mapList, onClick = {
+                            viewModel.onIntermissionSelected(intermission)
+                        })
+                    }
+                }
+            }
 
-            1 -> BaseScreen(title = stringResource(R.string.pick_position), subtitle = stringResource(
+            2 -> BaseScreen(title = stringResource(R.string.pick_position), subtitle = stringResource(
                 R.string.current_race, state.value.trackOrder.toString()
             )) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    state.value.mapSelected?.let {
-                        MapCell(map = it, onClick =  { })
+                    val maps = listOfNotNull(state.value.intermissionSelected, state.value.mapSelected)
+                    maps.takeIf { it.isNotEmpty() }?.let {
+                        MapCell(map = maps, onClick =  { })
                     }
                 }
                 Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
@@ -135,8 +150,9 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                 }
 
             }
-            2 -> BaseScreen(title = stringResource(R.string.resume), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                state.value.mapSelected?.let {
+            3 -> BaseScreen(title = stringResource(R.string.resume), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                val maps = listOfNotNull(state.value.intermissionSelected, state.value.mapSelected)
+                maps.takeIf { it.isNotEmpty() }?.let {
                     MapCell(map = it, backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = { })
                 }
                 VerticalGrid {

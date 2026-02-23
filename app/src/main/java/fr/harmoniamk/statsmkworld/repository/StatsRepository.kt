@@ -9,7 +9,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface StatsRepositoryInterface {
-    var playersRankList: Map<String, List<RankingItem.PlayerRanking>>
+    var playersRankList: Map<Pair<Int, String>, List<RankingItem.PlayerRanking>>
     var opponentRankList: List<RankingItem>
     var playerOpponentRankList: List<RankingItem>
     var trackRankList: List<RankingItem>
@@ -27,13 +27,13 @@ interface StatsRepositoryModule {
 
 class StatsRepository @Inject constructor() : StatsRepositoryInterface {
 
-    private var _playersRankingList: Map<String, List<RankingItem.PlayerRanking>> = mapOf()
+    private var _playersRankingList: Map<Pair<Int, String>, List<RankingItem.PlayerRanking>> = mapOf()
     private var _opponentRankingList: List<RankingItem> = listOf()
     private var _playerOpponentRankingList: List<RankingItem> = listOf()
     private var _trackRankList: List<RankingItem> = listOf()
     private var _playerTrackRankList: List<RankingItem> = listOf()
 
-    override var playersRankList: Map<String, List<RankingItem.PlayerRanking>>
+    override var playersRankList: Map<Pair<Int, String>, List<RankingItem.PlayerRanking>>
         get() = _playersRankingList
         set(value) { _playersRankingList = value }
 

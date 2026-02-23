@@ -216,9 +216,42 @@ fun WarScoreView(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            details?.war?.scores?.sortedByDescending { it.score }
-                                ?.forEach { score ->
-                                    val total = penalty.filter { it.teamId == score.teamId }
+                            details?.war?.teamHost?.let { teamId ->
+                                val total = penalty.filter { it.teamId == teamId }
+                                    .sumOf { it.amount }
+                                if (total > 0)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(10.dp)
+                                    ) {
+
+                                        val team = teamOpponent.orEmpty()
+                                            .firstOrNull { it.id == teamId } ?: teamHost
+                                        when (val logo = team?.logo) {
+                                            null -> Image(
+                                                painter = painterResource(R.drawable.default_logo),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+
+                                            else -> AsyncImage(
+                                                model = "https://mkcentral.com$logo",
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.width(5.dp))
+                                        MKText(
+                                            text = "-$total",
+                                            font = Fonts.NunitoBD,
+                                            fontSize = 16,
+                                            textColor = Colors.white
+                                        )
+                                    }
+                            }
+                            details?.war?.teamOpponent
+                                ?.forEach { teamId ->
+                                    val total = penalty.filter { it.teamId == teamId }
                                         .sumOf { it.amount }
                                     if (total > 0)
                                         Row(
@@ -227,7 +260,7 @@ fun WarScoreView(
                                         ) {
 
                                             val team = teamOpponent.orEmpty()
-                                                .firstOrNull { it.id == score.teamId } ?: teamHost
+                                                .firstOrNull { it.id == teamId } ?: teamHost
                                             when (val logo = team?.logo) {
                                                 null -> Image(
                                                     painter = painterResource(R.drawable.default_logo),

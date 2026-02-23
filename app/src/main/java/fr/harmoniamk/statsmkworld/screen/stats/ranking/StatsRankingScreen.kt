@@ -122,6 +122,7 @@ fun StatsRankingScreen(
                                 .fillMaxWidth(0.48f),
                             trackRanking = it,
                             userId = state.value.currentUserId,
+                            is24p = state.value.is24PEnabled == true,
                             onClick = {
                                 onStats(
                                     StatsType.MapStats(
@@ -139,7 +140,7 @@ fun StatsRankingScreen(
             }
 
             else -> LazyColumn {
-                state.value.playerList.forEach {
+                state.value.playerList.toList().sortedBy { it.first.first }.forEach {
                     item {
                         Box(
                             Modifier
@@ -154,13 +155,13 @@ fun StatsRankingScreen(
                                 fontSize = 18,
                                 font = Fonts.NunitoBD,
                                 textColor = Colors.white,
-                                text = it.key
+                                text = it.first.second
                             )
                         }
                     }
                     item {
                         VerticalGrid {
-                            it.value.forEach {
+                            it.second.forEach {
                                 PlayerCell(
                                     modifier = Modifier
                                         .padding(5.dp)

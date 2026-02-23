@@ -144,18 +144,35 @@ fun Int.trackScoreToDiff(): String {
     }
 }
 
-fun Int?.pointsToPosition() = when (this) {
-    14, 15 -> 1
-    11, 12, 13 -> 2
-    10 -> 3
-    9 -> 4
-    8 -> 5
-    7 -> 6
-    6 -> 7
-    5 -> 8
-    4 -> 9
-    3 -> 10
-    2 -> 11
-    1 -> 12
-    else -> 0
+fun Int?.pointsToPosition(is24p: Boolean) = when (is24p) {
+    true -> when (this) {
+        15 -> listOf(1)
+        12 -> listOf(2)
+        10 -> listOf(3)
+        9 -> listOf(4,5)
+        8 -> listOf(6,7)
+        7 -> listOf(8,9)
+        6 -> listOf(10,11,12)
+        5 -> listOf(13,14,15)
+        4 -> listOf(16,17,18)
+        3 -> listOf(19,20,21)
+        2 -> listOf(22,23)
+        1 -> listOf(24)
+        else -> listOf(0)
+    }
+    else ->  when (this) {
+        15 -> listOf(1)
+        12 -> listOf(2)
+        10 -> listOf(3)
+        9 -> listOf(4)
+        8 -> listOf(5)
+        7 -> listOf(6)
+        6 -> listOf(7)
+        5 -> listOf(8)
+        4 -> listOf(9)
+        3 -> listOf(10)
+        2 -> listOf(11)
+        1 -> listOf(12)
+        else -> listOf(0)
+    }
 }

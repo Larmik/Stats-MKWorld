@@ -47,8 +47,10 @@ fun MapCell(
     onTrackDetails: (WarTrackDetails) -> Unit = {}
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
-
-    val mapToDisplay = map ?: trackRanking?.stats?.map?.let { listOf(it) } ?: track?.index?.map { Maps.entries[it.toInt()] }.orEmpty()
+    val maps = Maps.entries
+    val mapToDisplay =
+        map ?: trackRanking?.stats?.map ?: track?.index?.map { Maps.entries[it.toInt()] }.orEmpty()
+    val isIntermission = mapToDisplay.size > 1 || track?.index.orEmpty().size > 1
 
     Column(
         modifier
@@ -60,38 +62,104 @@ fun MapCell(
             }, horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            mapToDisplay.forEach {
-                Image(
-                    painter = painterResource(it.cup),
-                    modifier = Modifier.size(25.dp),
-                    contentDescription = null
-                )
-                Image(
-                    painter = painterResource(it.picture),
-                    modifier = Modifier
-                        .width(90.dp)
-                        .height(50.dp),
-                    contentDescription = null
-                )
-                Spacer(Modifier.height(10.dp))
-                MKText(
-                    text = stringResource(it.label),
-                    font = Fonts.NunitoBD,
-                    textColor = textColor,
-                    maxLines = 1
-                )
-                MKText(
-                    text = it.name,
-                    fontSize = 10,
-                    textColor = textColor,
-                    font = Fonts.NunitoIT
-                )
+
+            when (isIntermission) {
+                true -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 5.dp)
+                    ) {
+                        maps.getOrNull(mapToDisplay.firstOrNull()?.ordinal ?: -1)?.let { mapFrom ->
+                            Image(
+                                painter = painterResource(mapFrom.picture),
+                                modifier = Modifier
+                                    .width(50.dp)
+                                    .height(35.dp),
+                                contentDescription = null
+                            )
+                        }
+                        maps.getOrNull(mapToDisplay.lastOrNull()?.ordinal ?: -1)?.let { mapTo ->
+                            MKText(
+                                text = " >>> ",
+                                fontSize = 10,
+                                textColor = textColor,
+                                font = Fonts.NunitoBdIt
+                            )
+                            Image(
+                                painter = painterResource(mapTo.picture),
+                                modifier = Modifier
+                                    .width(50.dp)
+                                    .height(35.dp),
+                                contentDescription = null
+                            )
+                        }
+                    }
+
+                    maps.getOrNull(mapToDisplay.lastOrNull()?.ordinal ?: -1)?.let { mapTo ->
+                        MKText(
+                            text = stringResource(mapTo.label),
+                            font = Fonts.NunitoBD,
+                            textColor = textColor,
+                            modifier = Modifier.padding(top = 5.dp)
+                        )
+                        MKText(
+                            text = mapTo.name,
+                            fontSize = 10,
+                            textColor = textColor,
+                            font = Fonts.NunitoIT,
+                            modifier = Modifier.padding(bottom = 5.dp)
+                        )
+
+                    }
+                    maps.getOrNull(mapToDisplay.firstOrNull()?.ordinal ?: -1)?.let { mapFrom ->
+                        MKText(
+                            text = "depuis",
+                            fontSize = 10,
+                            textColor = textColor,
+                            font = Fonts.NunitoIT
+                        )
+                        MKText(
+                            text = stringResource(mapFrom.label),
+                            fontSize = 12,
+                            font = Fonts.NunitoBdIt,
+                            textColor = textColor
+                        )
+                    }
+
+                }
+
+                else -> mapToDisplay.forEach {
+                    Image(
+                        painter = painterResource(it.cup),
+                        modifier = Modifier.size(25.dp),
+                        contentDescription = null
+                    )
+                    Image(
+                        painter = painterResource(it.picture),
+                        modifier = Modifier
+                            .width(90.dp)
+                            .height(50.dp),
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    MKText(
+                        text = stringResource(it.label),
+                        font = Fonts.NunitoBD,
+                        textColor = textColor,
+                        maxLines = 1
+                    )
+                    MKText(
+                        text = it.name,
+                        fontSize = 10,
+                        textColor = textColor,
+                        font = Fonts.NunitoIT
+                    )
+                }
             }
-
-
         }
 
-        when (val total = track?.track?.shocks?.takeIf { it.isNotEmpty() }.orEmpty().sumOf { it.count }) {
+        when (val total =
+            track?.track?.shocks?.takeIf { it.isNotEmpty() }.orEmpty().sumOf { it.count }) {
             0 -> if (trackRanking == null) Spacer(Modifier.size(20.dp))
             else -> Row {
                 (0 until total).forEach { i ->
@@ -128,9 +196,11 @@ fun MapCell(
             }
         }
         trackRanking?.let {
-            Column(Modifier
-                .fillMaxWidth()
-                .padding(bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 MKText(
                     text = String.format(
                         stringResource(R.string.times_played),
@@ -138,17 +208,20 @@ fun MapCell(
                     ), fontSize = 12,
                     textColor = Colors.white
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MKText(text = stringResource(R.string.winrate), fontSize = 12,
-                        textColor = Colors.white)
-                    Spacer(modifier = Modifier.width(5.dp))
-                    MKText(
-                        text = "${trackRanking.stats.winRate}%",
-                        font = Fonts.NunitoBD,
-                        fontSize = 12,
-                        textColor = Colors.white
-                    )
-                }
+                if (!is24p)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MKText(
+                            text = stringResource(R.string.winrate), fontSize = 12,
+                            textColor = Colors.white
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        MKText(
+                            text = "${trackRanking.stats.winRate}%",
+                            font = Fonts.NunitoBD,
+                            fontSize = 12,
+                            textColor = Colors.white
+                        )
+                    }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     MKText(
                         text = when (userId) {
@@ -160,9 +233,18 @@ fun MapCell(
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     MKText(
-                        text = when (userId) {
-                            null -> it.stats.teamScore?.trackScoreToDiff().toString()
-                            else -> it.stats.playerScore?.pointsToPosition().toString()
+                        text = when {
+                            userId == null -> if (is24p) it.stats.teamScore.toString() else it.stats.teamScore?.trackScoreToDiff()
+                                .toString()
+
+                            it.stats.playerScore?.pointsToPosition(is24p)
+                                ?.singleOrNull() != null -> it.stats.playerScore.pointsToPosition(
+                                is24p
+                            ).singleOrNull().toString()
+
+                            else -> "${
+                                it.stats.playerScore?.pointsToPosition(is24p)?.firstOrNull()
+                            } - ${it.stats.playerScore?.pointsToPosition(is24p)?.lastOrNull()}"
                         },
                         font = Fonts.NunitoBD,
                         textColor = Colors.white
@@ -178,6 +260,14 @@ fun MapCell(
 @Composable
 fun MapCellPreview() {
     MapCell(map = listOf(Maps.MBC), onClick = {}) {
+
+    }
+}
+
+@Preview
+@Composable
+fun IntermissionCellPreview() {
+    MapCell(map = listOf(Maps.MBC, Maps.rSGB), onClick = {}) {
 
     }
 }

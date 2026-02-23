@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Stats
+import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +21,7 @@ import kotlinx.coroutines.FlowPreview
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @Composable
-fun MKWarStatsView(stats: Stats?, mapStats: MapStats?) {
+fun MKWarStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) {
     val totalPlayed = stats?.warStats?.warsPlayed ?: mapStats?.trackPlayed
     val totalPlayedLabel = when  {
         stats != null -> stringResource(R.string.wars_played)
@@ -34,8 +35,8 @@ fun MKWarStatsView(stats: Stats?, mapStats: MapStats?) {
                 MKText(text = totalPlayed.toString(), font = Fonts.Urbanist, fontSize = 26)
                 MKText(text = totalPlayedLabel, font = Fonts.Urbanist, fontSize = 20)
                 Spacer(modifier = Modifier.height(15.dp))
-                MKWinTieLossCell(stats = stats, mapStats = mapStats)
-
+                if (type?.is24PEnabled != true)
+                    MKWinTieLossCell(stats = stats, mapStats = mapStats)
             }
         }
     }

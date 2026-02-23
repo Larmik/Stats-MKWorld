@@ -55,19 +55,19 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                     MKText(text = stringResource(R.string.average_score),
                         textColor = Colors.white)
                     MKText(
-                        text = when (userId) {
-                            null -> stats?.averagePointsLabel.toString()
+                        text = when (userId == null && type?.is24PEnabled != true) {
+                            true -> stats?.averagePointsLabel.toString()
                             else -> stats?.averagePoints.toString()
                         } ,
                         font = Fonts.Urbanist, fontSize = 20, textColor = Colors.white)
                 }
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MKText(text = stringResource(R.string.maps_gagn_es),
-                        textColor = Colors.white)
-                    MKText(text = stats?.mapsWon.toString(), fontSize = 16, font = Fonts.NunitoBD,
-                        textColor = Colors.white)
-                }
-
+                if (type?.is24PEnabled != true)
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        MKText(text = stringResource(R.string.maps_gagn_es),
+                            textColor = Colors.white)
+                        MKText(text = stats?.mapsWon.toString(), fontSize = 16, font = Fonts.NunitoBD,
+                            textColor = Colors.white)
+                    }
             }
 
 
@@ -85,8 +85,8 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                 )
                 MKText(
                     text =  when (userId) {
-                        null -> (stats?.averageMapPointsLabel ?: mapStats?.teamScore?.trackScoreToDiff()).toString()
-                        else -> (stats?.averagePlayerPosition ?: mapStats?.playerPosition).toString()
+                        null -> (stats?.averageMapPointsLabel ?: stats?.averageMapPoints?.toString() ?: mapStats?.teamScore?.trackScoreToDiff())?.takeIf { type?.is24PEnabled != true } ?: mapStats?.teamScore.toString()
+                        else -> (stats?.averagePlayerPosLabel ?: mapStats?.averagePlayerPosLabel).toString()
                     },
 
                     font = Fonts.Urbanist, fontSize = 20, textColor = Colors.white

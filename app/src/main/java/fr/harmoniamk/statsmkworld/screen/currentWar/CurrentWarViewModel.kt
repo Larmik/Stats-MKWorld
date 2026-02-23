@@ -120,7 +120,7 @@ class CurrentWarViewModel @Inject constructor(
                 val scores = state.value.opponentsScores
                 val totalOpponentScore = scores.mapNotNull { it.value }.sum()
                 val total = it + totalOpponentScore
-                val totalTracksPlayed = state.value.details?.war?.tracks.orEmpty().size + 1
+                val totalTracksPlayed = state.value.details?.war?.tracks.orEmpty().size
                 val totalPoints = totalTracksPlayed * 144
                 if (total != totalPoints) {
                     val diff = when (total < totalPoints) {
@@ -129,13 +129,15 @@ class CurrentWarViewModel @Inject constructor(
                     }
                     _onToast.emit("Scores incorrects : $diff")
                 } else {
-                    val warScores = scores.map { WarScore(teamId = it.key, score = it.value) } +
-                           listOf(
-                               WarScore(
-                                   teamId = state.value.roster?.id.toString(),
-                                   score = state.value.details?.scoreHostWithPenalties ?: 0
-                               )
+                    val warScores = scores.map {
+                        val penalty = state.value.details?.war?.penalties?.firstOrNull { penalty ->  penalty.teamId == it.key }?.amount ?: 0
+                        WarScore(teamId = it.key, score = it.value - penalty)
+                    } + listOf(
+                           WarScore(
+                               teamId = state.value.roster?.id.toString(),
+                               score = state.value.details?.scoreHostWithPenalties ?: 0
                            )
+                       )
                     state.value.details?.war?.copy(scores = warScores)?.let {
                         _state.value = state.value.copy(details = WarDetails(it))
                         onValidateWar()

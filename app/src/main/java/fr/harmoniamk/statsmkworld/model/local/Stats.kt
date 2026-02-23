@@ -3,6 +3,7 @@ package fr.harmoniamk.statsmkworld.model.local
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
+import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.extension.sum
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.extension.warScoreToDiff
@@ -11,9 +12,9 @@ import kotlinx.coroutines.FlowPreview
 
 data class Stats(
     val warStats: WarStats,
-    val mostPlayedTeam: TeamStats?,
-    val mostDefeatedTeam: TeamStats?,
-    val lessDefeatedTeam: TeamStats?,
+    val mostPlayedTeam: List<TeamStats>?,
+    val mostDefeatedTeam: List<TeamStats>?,
+    val lessDefeatedTeam: List<TeamStats>?,
     val warScores: List<WarScore>,
     val maps: List<TrackStats>,
     val averageForMaps: List<TrackStats>,
@@ -33,11 +34,16 @@ data class Stats(
     val averagePoints: Int =
         warScores.sumOf { it.score } / (warScores.takeIf { it.isNotEmpty() }?.size ?: 1)
     val averagePointsLabel: String = averagePoints.warScoreToDiff()
-    private val averageMapPoints: Int =
+    val averageMapPoints: Int =
         (averageForMaps.map { it.teamScore }.sum() / (averageForMaps.takeIf { it.isNotEmpty() }?.size ?: 1))
-    val averagePlayerPosition: Int =
+    val averagePlayerPosition: List<Int> =
         (averageForMaps.map { it.playerScore }.sum() / (averageForMaps.takeIf { it.isNotEmpty() }?.size
-            ?: 1)).pointsToPosition()
+            ?: 1)).pointsToPosition(warStats.is24p)
+
+    val averagePlayerPosLabel = when (val single = averagePlayerPosition.singleOrNull()) {
+        null -> "${averagePlayerPosition.firstOrNull()} - ${averagePlayerPosition.lastOrNull()}"
+        else -> single.toString()
+    }
 
     val averageMapPointsLabel = averageMapPoints.trackScoreToDiff()
     val mapsWon = "${averageForMaps.filter { (it.teamScore ?: 0) > 41 }.size} / ${averageForMaps.size}"
@@ -53,7 +59,7 @@ class WarScore(
 
 data class TrackStats(
     val stats: Stats? = null,
-    val map: Maps? = null,
+    val map: List<Maps>? = null,
     val trackIndex: List<Int>? = null,
     val teamScore: Int? = null,
     val playerScore: Int? = null,
@@ -64,15 +70,28 @@ data class TrackStats(
 
 data class TeamStats(val team: TeamEntity?, val totalPlayed: Int?)
 
-data class WarStats(val list: List<WarDetails>) {
+data class WarStats(val list: List<WarDetails>, val is24p: Boolean = false) {
     val warsPlayed = list.count()
-    val warsWon = list.count { war -> war.displayedDiff.contains('+') }
+    val warsWon = when (is24p) {
+        true -> list.count { it.war.scores.sortedByDescending { it.score }.safeSubList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
+        else -> list.count { war -> war.displayedDiff.contains('+') }
+    }
+
     val warsTied = list.count { war -> war.displayedDiff == "0" }
-    val warsLoss = list.count { war -> war.displayedDiff.contains('-') }
-    val highestVictory = list.maxByOrNull { war -> war.scoreHost }
-        .takeIf { it?.displayedDiff?.contains("+") == true }
-    val loudestDefeat = list.minByOrNull { war -> war.scoreHost }
-        .takeIf { it?.displayedDiff?.contains("-") == true }
+    val warsLoss = when (is24p) {
+        true -> list.count { it.war.scores.sortedBy { it.score }.safeSubList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
+        else -> list.count { war -> war.displayedDiff.contains('-') }
+    }
+    val highestVictory = when (is24p) {
+        true -> list.maxByOrNull { details ->  details.war.scores.firstOrNull { it.teamId == details.war.teamHost }?.score ?: 0 }
+        else -> list.maxByOrNull { war -> war.scoreHost }.takeIf { it?.displayedDiff?.contains("+") == true }
+
+    }
+    val loudestDefeat = when (is24p) {
+        true -> list.minByOrNull { details ->  details.war.scores.firstOrNull { it.teamId == details.war.teamHost }?.score ?: 0 }
+        else ->  list.minByOrNull { war -> war.scoreHost }.takeIf { it?.displayedDiff?.contains("-") == true }
+    }
+
 }
 
 
@@ -86,36 +105,42 @@ data class MapDetails(
 @ExperimentalCoroutinesApi
 class MapStats(
     val list: List<MapDetails>,
-    val userId: String? = null
+    val userId: String? = null,
+    val is24p: Boolean
 ) {
 
     private val isIndiv = userId != null
     private val playerScoreList = list
-        .filter { pair -> pair.war.warTracks?.any { it.track.hasPlayer(userId) } == true }
+        .filter { pair -> pair.war.warTracks.any { it.track.hasPlayer(userId) } }
         .map { it.warTrack.track.positions }
         .map { it.singleOrNull { it.playerId == userId } }
-        .mapNotNull { it?.position.positionToPoints(false) }
+        .mapNotNull { it?.position.positionToPoints(is24p) }
     val trackPlayed =
-        list.filter { (isIndiv && it.war.warTracks?.any { it.track.hasPlayer(userId) } == true) || !isIndiv }.size
+        list.filter { (isIndiv && it.war.warTracks.any { it.track.hasPlayer(userId) }) || !isIndiv }.size
     val trackWon = list
         .filter { pair -> pair.warTrack.displayedDiff.contains('+') }
-        .filter { (isIndiv && it.war.warTracks?.any { it.track.hasPlayer(userId) } == true) || !isIndiv }
+        .filter { (isIndiv && it.war.warTracks.any { it.track.hasPlayer(userId) }) || !isIndiv }
         .size
     val trackTie = list
         .filter { pair -> pair.warTrack.displayedDiff == "0" }.count {
-            (isIndiv && it.war.warTracks?.any {
+            (isIndiv && it.war.warTracks.any {
                 it.track.hasPlayer(userId)
-            } == true) || !isIndiv
+            }) || !isIndiv
         }
     val trackLoss = list
         .filter { pair -> pair.warTrack.displayedDiff.contains('-') }.count {
-            (isIndiv && it.war.warTracks?.any {
+            (isIndiv && it.war.warTracks.any {
                 it.track.hasPlayer(userId)
-            } == true) || !isIndiv
+            }) || !isIndiv
         }
     val teamScore = list.map { pair -> pair.warTrack }.map { it.teamScore }.sum() / (list.takeIf { it.isNotEmpty() }?.size ?: 1)
-    val playerPosition = playerScoreList.takeIf { it.isNotEmpty() }
-        ?.let { (playerScoreList.sum() / playerScoreList.size).pointsToPosition() } ?: 0
+    val playerPosition: List<Int> =  (playerScoreList.sum() / (playerScoreList.takeIf { it.isNotEmpty() }?.size
+        ?: 1)).pointsToPosition(is24p)
+
+    val averagePlayerPosLabel = when (val single = playerPosition.singleOrNull()) {
+        null -> "${playerPosition.firstOrNull()} - ${playerPosition.lastOrNull()}"
+        else -> single.toString()
+    }
     val topsTable = listOf(
         Pair(
             "Top 6",

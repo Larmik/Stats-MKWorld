@@ -51,7 +51,9 @@ class AddTrackViewModel @AssistedInject constructor(
 
     data class State(
         val mapList: List<Maps> = Maps.entries,
-        val mapSelected: List<Maps>? = null,
+        val mapSelected: Maps? = null,
+        val intermissionList: List<Maps>? = null,
+        val intermissionSelected: Maps? = null,
         val teamHost: TeamEntity? = null,
         val teamOpponent: List<TeamEntity>? = null,
         val players: List<PlayerEntity> = listOf(),
@@ -122,8 +124,18 @@ class AddTrackViewModel @AssistedInject constructor(
         })
     }
 
-    fun onMapSelected(map: List<Maps>) {
-        _state.value = _state.value.copy(mapSelected = map)
+    fun onMapSelected(map: Maps) {
+        val intermissions = Maps.intermissionsTo(map)
+        _state.value = _state.value.copy(mapSelected = map, intermissionList = intermissions)
+
+    }
+
+    fun onIntermissionSelected(map: Maps) {
+        val mapSelected = state.value.mapSelected
+        _state.value = state.value.copy(intermissionSelected = map.takeIf { it != mapSelected })
+        viewModelScope.launch {
+            _onNext.emit(2)
+        }
     }
 
     fun onBack() {
@@ -181,7 +193,7 @@ class AddTrackViewModel @AssistedInject constructor(
                     }
                 )
                 viewModelScope.launch {
-                    _onNext.emit(2)
+                    _onNext.emit(3)
                 }
 
             }
@@ -214,7 +226,7 @@ class AddTrackViewModel @AssistedInject constructor(
             val shockList = state.value.shocks.map { Shock(it.key, it.value) }
             val track = WarTrack(
                 id = System.currentTimeMillis(),
-                index = _state.value.mapSelected?.map { it.ordinal.toString() } ?: listOf(),
+                index = listOfNotNull(state.value.intermissionSelected, state.value.mapSelected).map { it.ordinal.toString() },
                 positions = _state.value.selectedPositions.map { it.position },
                 shocks = shockList
             )

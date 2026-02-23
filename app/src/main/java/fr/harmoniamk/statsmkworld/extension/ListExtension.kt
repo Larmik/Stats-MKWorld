@@ -100,61 +100,15 @@ fun List<Int?>?.sum(): Int {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterface, userId: String? = null, teamId: String? = null): Flow<Stats> {
+fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterface, userId: String? = null, teamId: String? = null, is24p: Boolean = false): Flow<Stats> {
 
     val warScores = mutableListOf<WarScore>()
     val averageForMaps = mutableListOf<TrackStats>()
 
     val warList = this
         .filter { (userId != null && it.war.hasPlayer(userId)) || userId == null }
-
-    val warsPlayed = warList
-        .flatMap { it.war.teamOpponent.map { teamId ->
-            Pair(
-                teamId,
-                warList.filter { it.war.teamOpponent.contains(teamId) }
-            )
-        } }
-
-    val warsWon = warList
-        .filterNot { it.displayedDiff.contains('-') }
-        .flatMap { it.war.teamOpponent.map { teamId ->
-            Pair(
-                teamId,
-                warList
-                    .filterNot { it.displayedDiff.contains('-') }
-                    .filter { it.war.teamOpponent.contains(teamId) }
-            )
-        } }
-
-    val warsLost = warList
-        .filter { it.displayedDiff.contains('-') }
-        .flatMap { it.war.teamOpponent.map {
-            Pair(
-                teamId,
-                warList
-                    .filter { it.displayedDiff.contains('-') }
-                    .filter { it.war.teamOpponent.contains(teamId) }
-            )
-        } }
-
-
-    val mostPlayedTeamId = warsPlayed
-        .groupBy { it.first }
-        .toList()
-        .maxByOrNull { it.second.size }
-
-    val mostDefeatedTeamId = warsWon
-        .toList()
-        .maxByOrNull { it.second.size }
-
-    val lessDefeatedTeamId = warsLost
-        .toList()
-        .maxByOrNull { it.second.size }
-
-    this
-        .filter { (userId != null && it.war.hasPlayer(userId)) || userId == null }
         .filter { (teamId != null && it.war.hasTeam(teamId)) || teamId == null }
+    warList
         .map { Pair(it, it.warTracks) }
         .forEach {
             var currentPoints = 0
@@ -186,7 +140,6 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
                 )
             }
             warScores.add(WarScore(it.first, currentPoints))
-            currentPoints = 0
         }
 
     val maps = when  {
@@ -205,26 +158,141 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
     }
 
-    return flowOf(
-        Stats(
-            warStats = WarStats(this),
-            warScores = warScores,
-            maps = maps,
-            averageForMaps = averageForMaps,
-            mostPlayedTeam = null,
-            mostDefeatedTeam = null,
-            lessDefeatedTeam = null
-        )
-    ).map { stats ->
-        val mostPlayedTeam = databaseRepository.getTeam(mostPlayedTeamId?.first.orEmpty()).firstOrNull()
-        val mostDefeatedTeam = databaseRepository.getTeam(mostDefeatedTeamId?.first.orEmpty()).firstOrNull()
-        val lessDefeatedTeam = databaseRepository.getTeam(lessDefeatedTeamId?.first.orEmpty()).firstOrNull()
-        stats.copy(
-            mostPlayedTeam = TeamStats(mostPlayedTeam, mostPlayedTeamId?.second?.size),
-            mostDefeatedTeam = TeamStats(mostDefeatedTeam, mostDefeatedTeamId?.second?.size),
-            lessDefeatedTeam = TeamStats(lessDefeatedTeam, lessDefeatedTeamId?.second?.size)
-        )
+    val flow = when (is24p) {
+        false -> {
+            val warsPlayed = warList
+                .flatMap { it.war.teamOpponent.map { teamId ->
+                    Pair(
+                        teamId,
+                        warList.filter { it.war.teamOpponent.contains(teamId) }
+                    )
+                } }
+
+            val warsWon = warList
+                .filterNot { it.displayedDiff.contains('-') }
+                .flatMap { it.war.teamOpponent.map { teamId ->
+                    Pair(
+                        teamId,
+                        warList
+                            .filterNot { it.displayedDiff.contains('-') }
+                            .filter { it.war.teamOpponent.contains(teamId) }
+                    )
+                } }
+
+            val warsLost = warList
+                .filter { it.displayedDiff.contains('-') }
+                .flatMap { it.war.teamOpponent.map { teamId ->
+                    Pair(
+                        teamId,
+                        warList
+                            .filter { it.displayedDiff.contains('-') }
+                            .filter { it.war.teamOpponent.contains(teamId) }
+                    )
+                } }
+
+
+            val mostPlayedTeams = warsPlayed
+                .groupBy { it.first }
+                .toList()
+                .sortedByDescending { it.second.size }
+                .distinctBy { it.first }
+                .safeSubList(0, 3)
+
+            val mostDefeatedTeams = warsWon
+                .toList()
+                .sortedByDescending { it.second.size }
+                .distinctBy { it.first }
+                .safeSubList(0, 3)
+
+
+            val lessDefeatedTeams = warsLost
+                .toList()
+                .sortedByDescending { it.second.size }
+                .distinctBy { it.first }
+                .safeSubList(0, 3)
+
+            flowOf(
+                Stats(
+                    warStats = WarStats(this),
+                    warScores = warScores,
+                    maps = maps,
+                    averageForMaps = averageForMaps,
+                    mostPlayedTeam = null,
+                    mostDefeatedTeam = null,
+                    lessDefeatedTeam = null
+                )
+            ).map { stats ->
+                val mostPlayedTeam = mostPlayedTeams.map {
+                    TeamStats(
+                        databaseRepository.getTeam(it.first).firstOrNull(),
+                        it.second.size
+                    )
+                }
+                val mostDefeatedTeam = mostDefeatedTeams.map {
+                    TeamStats(
+                        databaseRepository.getTeam(it.first).firstOrNull(),
+                        it.second.size
+                    )
+                }
+                val lessDefeatedTeam = lessDefeatedTeams.map {
+                    TeamStats(
+                        databaseRepository.getTeam(it.first).firstOrNull(),
+                        it.second.size
+                    )
+                }
+                stats.copy(
+                    mostPlayedTeam = mostPlayedTeam,
+                    mostDefeatedTeam = mostDefeatedTeam,
+                    lessDefeatedTeam = lessDefeatedTeam
+                )
+        }
+
     }
+        else -> {
+            val warsWon = warList.filter { it.war.scores.sortedByDescending { it.score }.subList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
+            val warsLost = warList.filter { it.war.scores.sortedBy { it.score }.subList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
+            val mostPlayedTeams = warList.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warList.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 3)
+            val mostDefeatedTeams = warsWon.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsWon.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 3)
+            val lessDefeatedTeams = warsLost.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsLost.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 3)
+            flowOf(
+                Stats(
+                    warStats = WarStats(this, is24p = true),
+                    warScores = warScores,
+                    maps = maps,
+                    averageForMaps = averageForMaps,
+                    mostPlayedTeam = null,
+                    mostDefeatedTeam = null,
+                    lessDefeatedTeam = null,
+
+                )
+            ).map { stats ->
+                val mostPlayedTeam = mostPlayedTeams.map {
+                    TeamStats(
+                        databaseRepository.getTeam(it.first).firstOrNull(),
+                        it.second.size
+                    )
+                }
+                val mostDefeatedTeam = mostDefeatedTeams.map {
+                    TeamStats(
+                        databaseRepository.getTeam(it.first).firstOrNull(),
+                        it.second.size
+                    )
+                }
+                val lessDefeatedTeam = lessDefeatedTeams.map {
+                    TeamStats(
+                        databaseRepository.getTeam(it.first).firstOrNull(),
+                        it.second.size
+                    )
+                }
+                stats.copy(
+                    mostPlayedTeam = mostPlayedTeam,
+                    mostDefeatedTeam = mostDefeatedTeam,
+                    lessDefeatedTeam = lessDefeatedTeam
+                )
+            }
+        }
+    }
+    return flow
 
 }
 
@@ -281,7 +349,7 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
 
                 TrackStats(
                     stats = null,
-                    map = Maps.entries[index.toInt()],
+                    map = listOf(Maps.entries[index.toInt()]),
                     trackIndex = listOf(index.toInt()),
                     totalPlayed = it.second.size,
                     winRate = (it.second.filter { it.diffScore > 0 }.size * 100) / it.second.size,
@@ -289,8 +357,18 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
                     shockCount = shockCount,
                     playerScore = playerScoreForTrack / it.second.size
                 )
+            } ?: it.first.takeIf { it.size == 2 }?.let { indexes ->
+                TrackStats(
+                    stats = null,
+                    map = indexes.mapNotNull { it.toIntOrNull() }.mapNotNull { Maps.entries.getOrNull(it) },
+                    trackIndex = indexes.mapNotNull { it.toIntOrNull() },
+                    totalPlayed = it.second.size,
+                    winRate = (it.second.filter { it.diffScore > 0 }.size * 100) / it.second.size,
+                    teamScore = teamScoreForTrack,
+                    shockCount = shockCount,
+                    playerScore = playerScoreForTrack / it.second.size
+                )
             }
-
         }
 
 }

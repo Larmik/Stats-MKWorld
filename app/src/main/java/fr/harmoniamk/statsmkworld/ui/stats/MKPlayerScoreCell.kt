@@ -30,7 +30,9 @@ fun MKPlayerScoreCell(stats: Stats?, type: StatsType?) {
             })
             MKText(
                 text = when (userId) {
-                    null -> stats?.warStats?.highestVictory?.displayedScore ?: stringResource(R.string.aucune)
+                    null -> stats?.warStats?.highestVictory?.displayedScore?.takeIf { type?.is24PEnabled != true }
+                        ?: stats?.warStats?.highestVictory?.scoreHost?.toString()
+                        ?: stringResource(R.string.aucune)
                     else -> stats?.lowestPlayerScore?.first?.toString() ?: stats?.lowestScore?.score.toString()
                 },
                 fontSize = 20,
@@ -52,7 +54,9 @@ fun MKPlayerScoreCell(stats: Stats?, type: StatsType?) {
             })
             MKText(
                 text = when (userId) {
-                    null -> stats?.warStats?.loudestDefeat?.displayedScore ?: stringResource(R.string.aucune)
+                    null -> stats?.warStats?.loudestDefeat?.displayedScore?.takeIf { type?.is24PEnabled != true }
+                        ?: stats?.warStats?.loudestDefeat?.scoreHost?.toString()
+                        ?: stringResource(R.string.aucune)
                     else -> stats?.highestPlayerScore?.first?.toString() ?: stats?.highestScore?.score.toString()
                 },
                 fontSize = 20,

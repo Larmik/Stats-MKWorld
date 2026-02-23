@@ -20,7 +20,6 @@ import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -78,7 +77,14 @@ class InitStatsWorker @AssistedInject constructor(
                     }
                     statsRepository.playersRankList = players
                         .mapNotNull { it as? RankingItem.PlayerRanking }
-                        .groupBy { ranking -> rosters?.firstOrNull { it.id.toString() == ranking.player.rosterId }?.name ?: "Allies" }
+                        .filter { it.stats.warStats.warsPlayed > 0 }
+                        .groupBy { ranking ->
+                            val pair = when (val name =  rosters?.firstOrNull { it.id.toString() == ranking.player.rosterId }?.name) {
+                                null -> Pair(1, "Allies")
+                                else -> Pair(0, name)
+                             }
+                            pair
+                        }
                 }.launchIn(this)
 
             //Fetch opponent stats

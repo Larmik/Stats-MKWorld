@@ -35,5 +35,43 @@ enum class Maps(@StringRes val label: Int, @DrawableRes val picture: Int, @Drawa
     BC(R.string.bc, R.drawable.bc, R.drawable.lightling, R.drawable.bc_tab_bg),
     AH(R.string.ah, R.drawable.ah, R.drawable.special, R.drawable.ah_tab_bg),
     MC(R.string.mc, R.drawable.mc, R.drawable.special, R.drawable.mc_tab_bg),
-    RR(R.string.rr, R.drawable.rr, R.drawable.special, R.drawable.rr_tab_bg),
+    RR(R.string.rr, R.drawable.rr, R.drawable.special, R.drawable.rr_tab_bg);
+
+    companion object {
+        fun intermissionsFrom(map: Maps): List<Maps> = when (map) {
+            MBC -> listOf(rWS, rTF, rCM, CC, WS, rDH, rSGB)
+            CC -> listOf(rCM, rMMM, PS, FO, rKTB, DKS, WS, rDH, MBC, rWS)
+            WS -> listOf(rDH, MBC, rCM, CC, rKTB, DKS)
+            DKS -> listOf(WS, rDH, MBC, CC, PS, rKTB)
+            rDH -> listOf(rSGB, MBC, CC, rKTB, WS)
+            rSGB -> listOf(rAF, rWS, rCM, MBC, rDH)
+            rWS -> listOf(BC, DBB, rTF, rCM, CC, MBC, rSGB, rAF)
+            rAF -> listOf(BC, DBB, rTF, rWS, rSGB)
+            rDKP -> listOf(SP, rSHS, rWSh, SSS, CCF, rMMM, DD)
+            SP -> listOf(rSHS, rWSh, rDKP, CCF, DD, MC, BCi)
+            rSHS -> listOf(rWSh, SSS, rDKP, CCF, DD, SP)
+            rWSh -> listOf(rPB, SSS, CCF, rDKP, SP, rSHS)
+            rKTB -> listOf(DKS, CC, PS, FO, rDDJ)
+            FO -> listOf(CCF, SSS, rPB, GBR, rDDJ, rKTB, CC, PS)
+            PS -> listOf(rMMM, CCF, FO, rKTB, CC, rCM, rTF, RR)
+            rPB -> listOf(GBR, rDDJ, FO, SSS, rWSh)
+            SSS -> listOf(rDKP, rWSh, rPB, GBR, rDDJ, FO, CCF)
+            rDDJ -> listOf(rKTB, FO, SSS, rPB, GBR)
+            GBR -> listOf(rDDJ, rKTB, FO, SSS, rPB)
+            CCF -> listOf(DD, SP, rDKP, rWSh, SSS, FO, PS, rCM, rMMM)
+            DD -> listOf(BCi, SP, rSHS, rDKP, CCF, rMMM, rTF, MC, AH)
+            BCi -> listOf(SP, DD, MC, DBB, AH)
+            DBB -> listOf(AH, BCi, MC, rMMM, rTF, rWS, rAF, BC)
+            rMMM -> listOf(MC, DD, rDKP, CCF, PS, CC, rCM, rTF, DBB)
+            rCM -> listOf(rTF, rMMM, CCF, PS, CC, WS, MBC, rSGB, rWS, BC)
+            rTF -> listOf(DBB, AH, MC, DD, rMMM, PS, rCM, MBC, rWS, rAF, BC)
+            BC -> listOf(DBB, MC, rTF, rCM, rWS, rAF)
+            AH -> listOf(BCi, DD, MC, rTF, DBB)
+            MC -> listOf(AH, BCi, SP, DD, rMMM, PS, rTF, BC, DBB)
+            RR -> listOf()
+        }
+
+        fun intermissionsTo(map: Maps): List<Maps> = Maps.entries.filter { intermissionsFrom(it).contains(map) }
+
+    }
 }

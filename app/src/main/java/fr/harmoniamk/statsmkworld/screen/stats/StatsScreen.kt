@@ -55,7 +55,7 @@ fun StatsScreen(viewModel: StatsViewModel, onWarDetailsClick: (WarDetails) -> Un
                         MapCell(modifier = Modifier.fillMaxWidth(), map = it, onClick = { })
                     }
                 }
-                MKWarStatsView(state.value.stats, state.value.mapStats)
+                MKWarStatsView(state.value.stats, state.value.mapStats, viewModel.type)
                 MKWarDetailsStatsView(state.value.stats, state.value.mapStats, type = viewModel.type)
                 if (viewModel.type !is StatsType.MapStats)
                     MKPlayerScoreCell(stats = state.value.stats, type = viewModel.type)

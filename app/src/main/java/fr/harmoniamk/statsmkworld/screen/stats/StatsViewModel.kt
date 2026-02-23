@@ -106,10 +106,10 @@ class StatsViewModel @AssistedInject constructor(
             this.wars.clear()
             this.wars.addAll(wars)
             when {
-                type is StatsType.PlayerStats -> wars.withFullStats(databaseRepository, userId = type.userId)
-                type is StatsType.OpponentStats -> wars.withFullStats(databaseRepository, teamId = type.teamId, userId = type.userId)
-                type is StatsType.MapStats -> wars.withFullStats(databaseRepository, teamId = type.teamId, userId = type.userId)
-                else -> wars.withFullStats(databaseRepository)
+                type is StatsType.PlayerStats -> wars.withFullStats(databaseRepository, userId = type.userId, is24p = type.is24p)
+                type is StatsType.OpponentStats -> wars.withFullStats(databaseRepository, teamId = type.teamId, userId = type.userId, is24p = type.is24p)
+                type is StatsType.MapStats -> wars.withFullStats(databaseRepository, teamId = type.teamId, userId = type.userId, is24p = type.is24p)
+                else -> wars.withFullStats(databaseRepository, is24p = type?.is24PEnabled == true)
             }
         }
         .map { stats ->
@@ -145,7 +145,8 @@ class StatsViewModel @AssistedInject constructor(
                     _state.value = _state.value.copy(
                         mapStats = MapStats(
                             list = mapDetailsList,
-                            userId = type.userId
+                            userId = type.userId,
+                            is24p = type.is24p
                         ),
                         map = mapDetailsList.first().warTrack.track.index.map { Maps.entries[it.toInt()] }
                     )
