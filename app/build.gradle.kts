@@ -3,13 +3,13 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("kotlin-kapt")
+    alias(libs.plugins.ksp)
     id("dagger.hilt.android.plugin")
     alias(notation = libs.plugins.kotlin.compose.compiler)
     id("com.google.gms.google-services")
     id("com.google.protobuf") version "0.9.4"
     id("com.google.firebase.crashlytics")
-
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {
@@ -29,6 +29,9 @@ android {
         properties.load(project.rootProject.file("local.properties").inputStream())
         buildConfigField("String", "DISCORD_API_SECRET", properties.getProperty("DISCORD_API_SECRET"))
         buildConfigField("String", "DISCORD_API_CLIENT", properties.getProperty("DISCORD_API_CLIENT"))
+        ksp {
+            arg(k = "room.schemaLocation", v = "$projectDir/schemas")
+        }
 
     }
 
@@ -119,8 +122,8 @@ dependencies {
     // Hilt
     implementation(libs.dagger.hilt.android)
     debugImplementation(libs.androidx.ui.tooling)
-    kapt(libs.hilt.android.compiler)
-    kapt(libs.androidx.hilt.compiler)
+    ksp(libs.hilt.android.compiler)
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -136,13 +139,13 @@ dependencies {
     implementation(dependencyNotation = libs.moshi.kotlin)
     implementation(dependencyNotation = libs.moshi.adapters)
     implementation(dependencyNotation = libs.converter.moshi)
-    kapt(dependencyNotation = libs.moshi.kotlin.codegen)
+    ksp(dependencyNotation = libs.moshi.kotlin.codegen)
 
     //Room
     implementation( libs.androidx.room.runtime)
     implementation( libs.androidx.work.runtime)
     implementation( libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
     implementation(dependencyNotation = libs.work.runtime)
 
     implementation(libs.accompanist.pager)
@@ -150,6 +153,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
+    //Serialization
+    implementation(libs.kotlinx.serialization.json)
+    ksp(dependencyNotation = libs.kotlin.metadata)
 
     // Splashscreen
     implementation(libs.androidx.core.splashscreen)

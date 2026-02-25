@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.model.local
 
+import android.os.Parcelable
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.OldWar
@@ -7,8 +8,10 @@ import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
+import kotlinx.parcelize.Parcelize
 import java.io.Serializable
 import java.util.Date
+
 
 
 data class WarDetails(val war: War): Serializable {
@@ -67,7 +70,8 @@ data class WarDetails(val war: War): Serializable {
     }
 }
 
-data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Serializable {
+@Parcelize
+data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Parcelable, Serializable {
 
     val index
         get() = track.index

@@ -44,7 +44,6 @@ interface FetchUseCaseInterface {
     fun fetchTeams(): Flow<String>
     fun fetchWars(teamId: String): Flow<Unit>
     fun fetchTags(): Flow<Unit>
-
     fun manageTransferts(): Flow<Unit>
 }
 
@@ -164,11 +163,8 @@ class FetchUseCase @Inject constructor(
 
     override fun fetchWars(teamId: String): Flow<Unit> = firebaseRepository.getWars(teamId)
         .map {
-            val existingWars = databaseRepository.getWars().firstOrNull().orEmpty()
-            it.forEach { war ->
-                if (!existingWars.map { it.id }.contains(war.id.toString()))
-                    databaseRepository.writeWar(WarEntity(war)).firstOrNull()
-            }
+            databaseRepository.clearWars().firstOrNull()
+            databaseRepository.writeWars(it.map { WarEntity(it) }).firstOrNull()
         }
     override fun fetchTags(): Flow<Unit> = databaseRepository.getTeams()
         .map { it.map { Tag(it.tag, it.id) } }
