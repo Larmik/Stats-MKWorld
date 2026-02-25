@@ -1,10 +1,10 @@
 package fr.harmoniamk.statsmkworld.extension
 
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
-import fr.harmoniamk.statsmkworld.model.firebase.OldWar
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
+import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.flow.firstOrNull
@@ -13,7 +13,7 @@ import kotlin.collections.forEach
 import kotlin.collections.map
 import kotlin.collections.orEmpty
 
-suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface): List<PlayerScore> {
+suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, dataStoreRepository: DataStoreRepositoryInterface): List<PlayerScore> {
     val localPlayers = databaseRepository.getPlayers().firstOrNull()
 
     val currentLocalPlayers = localPlayers
@@ -23,12 +23,18 @@ suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface,
 
 
     val players = when (currentLocalPlayers.isEmpty()) {
-        true -> firebaseRepository.getUsers(this.teamHost)
-            .firstOrNull()
-            ?.filter { player -> this.tracks.flatMap { it.positions }.any { it.playerId == player.id  } ||  player.currentWar == this.id.toString()}
-            ?.map { user -> localPlayers?.firstOrNull { it.id == user.id } }
-            ?.map { PlayerScore(it, 0, 0, 0) }
-            .orEmpty()
+        true -> {
+            val team = dataStoreRepository.mkcTeam.firstOrNull()
+            firebaseRepository.getUsers(team?.id.toString())
+                .firstOrNull()
+                ?.filter { player ->
+                    this.tracks.flatMap { it.positions }
+                        .any { it.playerId == player.id } || player.currentWar == this.id.toString()
+                }
+                ?.map { user -> localPlayers?.firstOrNull { it.id == user.id } }
+                ?.map { PlayerScore(it, 0, 0, 0) }
+                .orEmpty()
+        }
 
         else -> currentLocalPlayers
     }

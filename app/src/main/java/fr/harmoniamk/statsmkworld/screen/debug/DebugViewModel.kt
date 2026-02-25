@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
+import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
+import kotlin.toString
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -51,6 +53,7 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
     }
 
     fun onMatrix(playerId: String) {
+        var user: User? = null
         when (playerId.isEmpty()) {
             true -> viewModelScope.launch {
                 _sharedToast.emit("Il faut un ID de joueur pour cela")
@@ -59,12 +62,25 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
                 .onEach { _sharedLoading.emit("Entrée dans la matrice...") }
                 .flatMapLatest { fetchUseCase.fetchPlayer(playerId) }
                 .map {
-                   val team = it.rosters?.firstOrNull { it.game == "mkworld" }
+                   user = User(it.id.toString(), discordId = it.discord?.discordID.orEmpty(), name = it.name)
+                    val team = it.rosters?.firstOrNull { it.game == "mkworld" }
                     if (team == null)
                         _sharedLoading.emit(null)
                     team
                 }
                 .flatMapLatest { fetchUseCase.fetchTeam(it?.teamID.toString()) }
+                .onEach {
+                    user?.let { user ->
+                        val teamId = it.id.toString()
+                        if (firebaseRepository.getUser(teamId, user.id).firstOrNull() == null) {
+                            val role = when (it.rosters.filter { it.game == "mkworld" }.flatMap { it.players }.singleOrNull { it.playerId == user.id }?.leader) {
+                                true -> 2
+                                else -> 0
+                            }
+                            firebaseRepository.writeUser(teamId, user.copy(role = role)).firstOrNull()
+                        }
+                    }
+                }
                 .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
                 .flatMapLatest { fetchUseCase.fetchTeams() }
                 .flatMapLatest { databaseRepository.clearWars() }

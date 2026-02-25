@@ -6,12 +6,14 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.datasource.network.DiscordDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.extension.emit
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.NotificationRepositoryInterface
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
@@ -45,7 +47,8 @@ class SignupViewModel @AssistedInject constructor(
     private val mkCentralDataSource: MKCentralDataSourceInterface,
     private val notificationRepository: NotificationRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
-    private val fetchUseCase: FetchUseCaseInterface
+    private val fetchUseCase: FetchUseCaseInterface,
+    private val databaseRepository: DatabaseRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -96,15 +99,33 @@ class SignupViewModel @AssistedInject constructor(
             val rosterId = it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             //Set player dans datastore puis écriture sur Firebase (si non existant)
             dataStoreRepository.setMKCPlayer(it)
-            if (firebaseRepository.getUser(rosterId.toString(), it.id.toString()).firstOrNull() == null) {
-                val user = User(it.id.toString(), discordId = it.discord?.discordID.orEmpty(), name = it.name)
-                firebaseRepository.writeUser(teamId.toString(), user).firstOrNull()
-            }
+            val user = User(it.id.toString(), discordId = it.discord?.discordID.orEmpty(), name = it.name)
+
+
             //Fetch classique, puis affichage du succès, MAJ de la date et redirection home
             fetchUseCase.fetchTeam(teamId.toString())
                 .flatMapLatest { fetchUseCase.fetchAllies(teamId.toString()) }
                 .flatMapLatest { fetchUseCase.fetchTeams() }
                 .flatMapLatest { dataStoreRepository.mkcTeam }
+                .onEach {
+                    val rosters = it.rosters.filter { it.game == "mkworld" }
+                    val player = rosters.flatMap { it.players }.singleOrNull { it.playerId == user.id }
+                    val role = when (player?.leader) {
+                        true -> 2
+                        else -> 0
+                    }
+
+                    firebaseRepository.writeUser(teamId.toString(), user.copy(role = role)).firstOrNull()
+                    player?.let { player ->
+                        databaseRepository.writePlayer(PlayerEntity(
+                            player = player,
+                            rosterId = rosters.singleOrNull { it.players.map { it.playerId }.contains(player.playerId) }?.id.toString()
+                        )).firstOrNull()
+                    }
+
+
+
+                }
                 .mapNotNull {
                     it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() }
                 }

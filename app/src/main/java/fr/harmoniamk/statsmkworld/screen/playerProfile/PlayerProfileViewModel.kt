@@ -94,10 +94,9 @@ class PlayerProfileViewModel @AssistedInject constructor(
         }
         .filterNotNull()
         .mapNotNull {
-            val team = dataStoreRepository.mkcTeam
-                .firstOrNull()
-
-            val isLeader =  firebaseRepository.getUser(team?.id.toString(), _state.value.currentPlayer?.id.toString())
+            val team = dataStoreRepository.mkcTeam.firstOrNull()
+            val fbUser = firebaseRepository.getUser(team?.id.toString(), it.id.toString()).firstOrNull()
+            val isLeader = firebaseRepository.getUser(team?.id.toString(), _state.value.currentPlayer?.id.toString())
                 .map { it?.role ?: 0 }
                 .map { it == 2 }
                 .firstOrNull()
@@ -116,20 +115,27 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 ?.singleOrNull { it.id == id }
                 ?.rosterId == "-1"
 
-            val role = firebaseRepository.getUser(team?.id.toString(), it.id.toString())
-                .map { when (it?.role) {
-                    1 -> R.string.admin
-                    2 -> R.string.leader
-                    else -> R.string.membre
-                } }.firstOrNull()
+            val rolePlayer = team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }?.singleOrNull { player -> player.playerId == it.id.toString() }
+
+            val roleValue = when  {
+                fbUser?.role == 2 || rolePlayer?.leader == true || rolePlayer?.manager == true -> 2
+                else -> fbUser?.role ?: 0
+            }
+
+            val role = when (roleValue) {
+                1 -> R.string.admin
+                2 -> R.string.leader
+                else -> R.string.membre
+            }
+
             val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { id == "me" && it?.startsWith("01/01/1970") != true }
             val matrixMode = dataStoreRepository.matrixMode.firstOrNull()
             val notificationsActivated = dataStoreRepository.notifEnabled.firstOrNull() == true
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             State(
                 player = it,
-                buttonVisible = canAlly && isAlly != true,
-                isAlly = isAlly == true,
+                buttonVisible = canAlly && !isAlly,
+                isAlly = isAlly,
                 role = role.takeIf { _ -> it.rosters?.any { it.teamID.toString() == team?.id.toString() } == true },
                 showMenu = id == "me",
                 lastUpdate = lastUpdate,
@@ -175,14 +181,25 @@ class PlayerProfileViewModel @AssistedInject constructor(
     }
 
     fun onSwitchRole() {
-        dataStoreRepository.mkcTeam
-            .flatMapLatest { firebaseRepository.getUser(it.id.toString(), id) }
-            .filterNotNull()
-            .map {
-                val newRole = when (state.value.role) {
-                    R.string.membre -> 1
-                    else -> 0
-                }
+        viewModelScope.launch {
+            val newRole = when (state.value.role) {
+                R.string.membre -> 1
+                else -> 0
+            }
+            databaseRepository.getPlayer(id).firstOrNull()?.let {
+                val team = dataStoreRepository.mkcTeam.firstOrNull()
+                val updatedPlayer = PlayerEntity(
+                    id = it.id,
+                    name = it.name,
+                    country = it.country,
+                    role = newRole,
+                    currentWar = it.currentWar,
+                    rosterId = it.rosterId,
+                    discordId = it.discordId
+                )
+                val user = User(updatedPlayer)
+                firebaseRepository.writeUser(team?.id.toString(), user).firstOrNull()
+                databaseRepository.writePlayer(updatedPlayer).firstOrNull()
                 _state.value = state.value.copy(
                     adminButtonLabel = when (newRole) {
                         0 -> R.string.basculer_en_tant_qu_admin
@@ -193,28 +210,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
                         else -> R.string.admin
                     }
                 )
-                it.copy(role = newRole)
             }
-            .flatMapLatest { firebaseRepository.writeUser(state.value.teamId.orEmpty(), it) }
-            .flatMapLatest { databaseRepository.getPlayer(id) }
-            .flatMapLatest {
-                val newRole = when (_state.value.role) {
-                    R.string.admin -> 1
-                    else -> 0
-                }
-                val updatedPlayer = PlayerEntity(
-                    id = it.id,
-                    name = it.name,
-                    country = it.country,
-                    role = newRole,
-                    currentWar = it.currentWar,
-                    rosterId = it.rosterId,
-                    discordId = it.discordId
-                )
-                databaseRepository.writePlayer(updatedPlayer)
-            }
-            .launchIn(viewModelScope)
-
+        }
     }
 
     init {

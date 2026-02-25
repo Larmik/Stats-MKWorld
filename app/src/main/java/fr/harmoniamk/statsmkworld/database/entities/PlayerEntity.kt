@@ -35,7 +35,10 @@ class PlayerEntity(
         id = player.playerId,
         name = player.name,
         country = player.countryCode,
-        role = role,
+        role = when (player.leader || player.manager) {
+            true -> 2
+            else -> role
+        },
         currentWar = currentWar,
         rosterId = rosterId,
         discordId = discordId

@@ -54,7 +54,7 @@ class WarDetailsViewModel @AssistedInject constructor(
             val roster = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }
             State(
                 details = details,
-                players = details.war.withPlayersList(databaseRepository, firebaseRepository),
+                players = details.war.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository),
                 teamHost = TeamEntity(teamHost),
                 teamOpponent = teamOpponents,
                 roster = roster

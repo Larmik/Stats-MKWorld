@@ -211,11 +211,12 @@ class CurrentWarActionsViewModel @Inject constructor(
     fun cancelWar() {
         flowOf(Unit)
             .mapNotNull {
+                val team = dataStoreRepository.mkcTeam.firstOrNull()
                 state.value.players?.filter { it.currentWar == state.value.war?.id.toString() }?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
                         when (it.rosterId) {
                             "-1" -> firebaseRepository.writeAlly(
-                                teamId = state.value.war?.teamHost.orEmpty(),
+                                teamId = team?.id.toString(),
                                 user = User(
                                     id = it.id,
                                     currentWar = "",
@@ -225,7 +226,7 @@ class CurrentWarActionsViewModel @Inject constructor(
                                 )
                             ).firstOrNull()
                             else -> firebaseRepository.writeUser(
-                                teamId = state.value.war?.teamHost.orEmpty(),
+                                teamId = team?.id.toString(),
                                 user = User(
                                     id = it.id,
                                     currentWar = "",

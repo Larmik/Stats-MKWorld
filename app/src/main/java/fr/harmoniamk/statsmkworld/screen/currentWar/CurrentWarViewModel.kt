@@ -79,7 +79,7 @@ class CurrentWarViewModel @Inject constructor(
 
                     _state.value = state.value.copy(
                         details = WarDetails(it),
-                        players = it.withPlayersList(databaseRepository, firebaseRepository),
+                        players = it.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository),
                         teamHost = TeamEntity(teamHost),
                         teamOpponent = teamOpponents,
                         buttonsVisible = buttonsVisible,
@@ -154,11 +154,12 @@ class CurrentWarViewModel @Inject constructor(
                 .onEach {
                     databaseRepository.writeWar(WarEntity(war)).firstOrNull()
                     val players = databaseRepository.getPlayers().firstOrNull()
+                    val team = dataStoreRepository.mkcTeam.firstOrNull()
                     players?.filter { it.currentWar == war.id.toString() }?.forEach {
                         databaseRepository.updateUser(it.id, "").firstOrNull()
                         when (it.rosterId) {
                             "-1" ->  firebaseRepository.writeAlly(
-                                teamId = state.value.details?.war?.teamHost.orEmpty(),
+                                teamId = team?.id.toString(),
                                 user = User(
                                     id = it.id,
                                     currentWar = "",
@@ -168,7 +169,7 @@ class CurrentWarViewModel @Inject constructor(
                                 )
                             ).firstOrNull()
                             else ->  firebaseRepository.writeUser(
-                                teamId = state.value.details?.war?.teamHost.orEmpty(),
+                                teamId = team?.id.toString(),
                                 user = User(
                                     id = it.id,
                                     currentWar = "",
