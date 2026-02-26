@@ -1,8 +1,12 @@
 package fr.harmoniamk.statsmkworld.model.firebase
 
+import android.os.Parcelable
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.model.local.DatastoreWar
+import kotlinx.parcelize.Parcelize
+import java.io.Serializable
 
+@Parcelize
 data class War(
     val id: Long,
     val teamHost: String,
@@ -10,7 +14,7 @@ data class War(
     val tracks: List<WarTrack>,
     val penalties: List<WarPenalty>,
     val scores: List<WarScore>
-) {
+): Serializable, Parcelable {
 
     @Deprecated("24 players")
     constructor(war: DatastoreWar) : this(

@@ -14,7 +14,8 @@ import java.util.Date
 
 
 
-data class WarDetails(val war: War): Serializable {
+@Parcelize
+data class WarDetails(val war: War): Serializable, Parcelable {
 
     constructor(oldWar: OldWar) : this(
         war = War(
