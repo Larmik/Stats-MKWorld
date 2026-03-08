@@ -176,8 +176,3 @@ fun Int?.pointsToPosition(is24p: Boolean) = when (is24p) {
         else -> listOf(0)
     }
 }
-
-fun Int?.toStringOrNull(): String? = when (this) {
-    null -> null
-    else -> this.toString()
-}
