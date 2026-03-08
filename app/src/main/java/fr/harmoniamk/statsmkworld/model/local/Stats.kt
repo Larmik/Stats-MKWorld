@@ -45,8 +45,10 @@ data class Stats(
         else -> single.toString()
     }
 
-    val averageMapPointsLabel = averageMapPoints.trackScoreToDiff()
-    val mapsWon = "${averageForMaps.filter { (it.teamScore ?: 0) > 41 }.size} / ${averageForMaps.size}"
+    val mapsWon = averageForMaps.takeIf { it.isNotEmpty() }?.let {
+        "${(it.filter { (it.teamScore ?: 0) > 41 }.size * 100 / it.size)}%"
+    }
+
     val shockCount = averageForMaps.map { it.shockCount }.sum()
     var highestPlayerScore: Pair<Int, String?>? = null
     var lowestPlayerScore: Pair<Int, String?>? = null

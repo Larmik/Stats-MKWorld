@@ -55,7 +55,10 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
             when (pagerState.currentPage) {
                 0 -> onBack()
                 1 -> scope.launch { pagerState.animateScrollToPage(0) }
-                2 -> scope.launch { pagerState.animateScrollToPage(1) }
+                2 -> scope.launch { pagerState.animateScrollToPage(when (viewModel.is24p) {
+                    true -> 1
+                    else -> 0
+                }) }
                 3 -> scope.launch { pagerState.animateScrollToPage(2) }
             }
         }

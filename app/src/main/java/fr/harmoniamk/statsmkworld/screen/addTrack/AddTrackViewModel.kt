@@ -125,8 +125,18 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     fun onMapSelected(map: Maps) {
-        val intermissions = Maps.intermissionsTo(map)
-        _state.value = _state.value.copy(mapSelected = map, intermissionList = intermissions)
+        when (is24p) {
+            true -> {
+                val intermissions = Maps.intermissionsTo(map)
+                _state.value = state.value.copy(mapSelected = map, intermissionList = intermissions)
+            } else -> {
+                _state.value = state.value.copy(mapSelected = map)
+                viewModelScope.launch {
+                    _onNext.emit(2)
+                }
+            }
+        }
+
 
     }
 

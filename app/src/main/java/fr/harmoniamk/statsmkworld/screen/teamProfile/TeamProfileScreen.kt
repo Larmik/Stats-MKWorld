@@ -15,11 +15,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,14 +40,18 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
-import fr.harmoniamk.statsmkworld.extension.countryFlag
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKButton
+import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
+import fr.harmoniamk.statsmkworld.ui.MKSelectorViewPager
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.VerticalGrid
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
+import kotlinx.coroutines.launch
 import java.util.Date
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -46,151 +61,203 @@ fun TeamProfileScreen(
     onBack: () -> Unit,
     onPlayerClick: (String) -> Unit
 ) {
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+    val scope = rememberCoroutineScope()
     val state = viewModel.state.collectAsState()
-    BackHandler { onBack() }
-    BaseScreen(title = stringResource(R.string.team_profile)) {
-        when (val team = state.value.team) {
-            null -> CircularProgressIndicator()
-            else -> {
-                when (val logo = team.logo) {
-                    null -> Image(
-                        painter = painterResource(R.drawable.default_logo),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                    )
-                    else -> AsyncImage(
-                        model = "https://mkcentral.com$logo",
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp)
-                    )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(15.dp)
-                ) {
-                    MKText(text = team.language.uppercase().countryFlag, fontSize = 30)
-                    MKText(text = team.name, fontSize = 18, font = Fonts.NunitoBD)
+    val playerSearch = remember { mutableStateOf("") }
 
-                }
-                MKText(
-                    text = team.description,
-                    modifier = Modifier.padding(bottom = 10.dp),
-                    font = Fonts.NunitoIT,
-                    resizable = false
+    BackHandler {
+        when (bottomSheetState.isVisible) {
+            true -> scope.launch { bottomSheetState.hide() }
+            else -> onBack()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.onDismiss.collect {
+            bottomSheetState.hide()
+        }
+    }
+
+    ModalBottomSheetLayout(
+        sheetState = bottomSheetState,
+        sheetContent = {
+            BaseScreen(title = "Ajouter un ally") {
+                MKTextField(
+                    backgroundColor = Colors.blackAlphaed,
+                    placeHolderRes = R.string.rechercher_un_joueur,
+                    value = playerSearch.value,
+                    onValueChange = {
+                        playerSearch.value = it
+                        viewModel.onSearchPlayers(it)
+                    }
                 )
-
-
-                Column(
-                    Modifier
-                        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                        .border(1.dp, Colors.white, RoundedCornerShape(5.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(modifier = Modifier.padding(vertical = 10.dp)) {
-                        Column(
-                            Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            MKText(
-                                text = stringResource(R.string.created_date),
-                                textColor = Colors.white
-                            )
-                            MKText(
-                                text = Date(team.creationDate * 1000).displayedString("dd MMMM yyyy"),
-                                textColor = Colors.white,
-                                font = Fonts.NunitoBD
-                            )
-                        }
-                    }
-
-                }
-                Spacer(Modifier.height(10.dp))
-                val rosters = team.rosters.filter { it.game == "mkworld" }
-                LazyColumn(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    rosters.forEach { roster ->
-                        item {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                                    .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
-                            ) {
-                                MKText(
-                                    modifier = Modifier
-                                        .padding(10.dp)
-                                        .align(Alignment.Center),
-                                    fontSize = 18,
-                                    font = Fonts.NunitoBD,
-                                    textColor = Colors.white,
-                                    text = when (rosters.size) {
-                                        1 -> stringResource(R.string.roster)
-                                        else -> roster.name
-                                    }
-                                )
-                            }
-                        }
-                        item {
-                            VerticalGrid {
-                                roster.players.forEach {
-                                    PlayerCell(
-                                        modifier = Modifier
-                                            .padding(5.dp)
-                                            .fillParentMaxWidth(0.48f),
-                                        player = PlayerEntity(player = it, rosterId = roster.id.toString()),
-                                        textColor = Colors.white,
-                                        backgroundColor = Colors.blackAlphaed,
-                                        onClick = { onPlayerClick(it.id) }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    state.value.allyList.takeIf { it.isNotEmpty() }?.let {
-                        item {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                                    .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
-                            ) {
-                                MKText(
-                                    modifier = Modifier
-                                        .padding(10.dp)
-                                        .align(Alignment.Center),
-                                    fontSize = 18,
-                                    font = Fonts.NunitoBD,
-                                    textColor = Colors.white,
-                                    text = stringResource(R.string.allies)
-                                )
-                            }
-                        }
-                        item {
-                            VerticalGrid {
-                                it.forEach {
-                                    PlayerCell(
-                                        modifier = Modifier
-                                            .padding(5.dp)
-                                            .fillParentMaxWidth(0.48f),
-                                        player = it,
-                                        textColor = Colors.white,
-                                        backgroundColor = Colors.blackAlphaed,
-                                        onClick = { onPlayerClick(it.id) }
-                                    )
-                                }
-                            }
-                        }
+                LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
+                    items(state.value.playerList) { player ->
+                        PlayerCell(
+                            player = PlayerEntity(player, isAlly = false),
+                            onClick = { viewModel.addAlly(player) }
+                        )
                     }
                 }
-
             }
         }
+    ) {
+        BaseScreen(title = stringResource(R.string.team_profile)) {
+            when (val team = state.value.team) {
+                null -> CircularProgressIndicator()
+                else -> {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        when (val logo = team.logo) {
+                            null -> Image(
+                                painter = painterResource(R.drawable.default_logo),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(CircleShape)
+                            )
 
+                            else -> AsyncImage(
+                                model = "https://mkcentral.com$logo",
+                                contentDescription = null,
+                                modifier = Modifier.size(80.dp)
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            MKText(text = team.name, fontSize = 24, font = Fonts.NunitoBD)
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                MKText(
+                                    text = stringResource(R.string.created_date),
+                                    font = Fonts.NunitoIT
+                                )
+                                MKText(
+                                    text = Date(team.creationDate * 1000).displayedString("dd MMMM yyyy"),
+                                    font = Fonts.NunitoBD
+                                )
+                            }
+                        }
+                    }
+                    MKText(
+                        text = team.description,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                        font = Fonts.NunitoIT,
+                        resizable = false
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    val rosters = team.rosters.filter { it.game == "mkworld" }
+                    if (viewModel.id == "me")
+                        MKSelectorViewPager(pagerState, listOf("Membres", "Allies")) {
+                            when (pagerState.currentPage) {
+                                0 -> LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                                    rosters.forEach { roster ->
+                                        if (rosters.size > 1)
+                                            item {
+                                                Box(Modifier
+                                                    .fillMaxWidth()
+                                                    .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+                                                    .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
+                                                ) {
+                                                    MKText(
+                                                        modifier = Modifier.padding(10.dp).align(Alignment.Center),
+                                                        fontSize = 18,
+                                                        font = Fonts.NunitoBD,
+                                                        textColor = Colors.white,
+                                                        text = roster.name
+                                                    )
+                                                }
+                                            }
+                                        item {
+                                            VerticalGrid {
+                                                roster.players.forEach {
+                                                    PlayerCell(
+                                                        modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
+                                                        player = PlayerEntity(
+                                                            player = it,
+                                                            rosterId = roster.id.toString()
+                                                        ),
+                                                        textColor = Colors.white,
+                                                        backgroundColor = Colors.blackAlphaed,
+                                                        onClick = { onPlayerClick(it.id) }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                1 ->  LazyColumn(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    item {
+                                        MKButton(style = MKButtonStyle.Gradient, text = "Ajouter un ally", onClick = { scope.launch { bottomSheetState.show() } })
+                                    }
+                                    state.value.allyList.takeIf { it.isNotEmpty() }?.let {
+                                        item {
+                                            VerticalGrid {
+                                                it.forEach {
+                                                    PlayerCell(
+                                                        modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
+                                                        player = it,
+                                                        textColor = Colors.white,
+                                                        backgroundColor = Colors.blackAlphaed,
+                                                        onClick = { onPlayerClick(it.id) }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                        }
+                    else
+                        LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                            rosters.forEach { roster ->
+                                item {
+                                    Box(Modifier
+                                        .fillMaxWidth()
+                                        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+                                        .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
+                                    ) {
+                                        MKText(
+                                            modifier = Modifier.padding(10.dp).align(Alignment.Center),
+                                            fontSize = 18,
+                                            font = Fonts.NunitoBD,
+                                            textColor = Colors.white,
+                                            text = when (rosters.size) {
+                                                1 -> stringResource(R.string.roster)
+                                                else -> roster.name
+                                            }
+                                        )
+                                    }
+                                }
+                                item {
+                                    VerticalGrid {
+                                        roster.players.forEach {
+                                            PlayerCell(
+                                                modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
+                                                player = PlayerEntity(
+                                                    player = it,
+                                                    rosterId = roster.id.toString()
+                                                ),
+                                                textColor = Colors.white,
+                                                backgroundColor = Colors.blackAlphaed,
+                                                onClick = { onPlayerClick(it.id) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                }
+            }
+        }
     }
+
 }

@@ -22,7 +22,6 @@ interface MKCentralDataSourceInterface {
     fun getPlayer(playerId: String): Flow<NetworkResponse<MKCPlayer>>
     fun getTeam(teamId: String): Flow<MKCTeam?>
     fun getTeams(page: Int): Flow<MKCTeamResponse?>
-    fun getMK8Teams(page: Int): Flow<MKCTeamResponse?>
     fun searchPlayers(page: Int, term: String): Flow<MKCPlayerResponse?>
 }
 
@@ -152,33 +151,7 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
         awaitClose {  }
     }
 
-    override fun getMK8Teams(page: Int): Flow<MKCTeamResponse?> = callbackFlow {
-        val call = RetrofitUtils.createRetrofit(
-            MKCentralApi::class.java,
-            MKCentralApi.baseUrl,
-            timeout = 60
-        ).getMK8Teams(page)
 
-        call.enqueue(object : retrofit2.Callback<MKCTeamResponse> {
-
-            override fun onResponse(
-                call: retrofit2.Call<MKCTeamResponse>,
-                response: retrofit2.Response<MKCTeamResponse>
-            ) {
-                val result = response.body()
-
-                when {
-                    result != null -> trySend(result)
-                    else -> trySend(null)
-                }
-            }
-
-            override fun onFailure(call: retrofit2.Call<MKCTeamResponse>, t: Throwable) {
-                trySend(null)
-            }
-        })
-        awaitClose {  }
-    }
 
     override fun searchPlayers(page: Int, term: String): Flow<MKCPlayerResponse?>  = callbackFlow {
         val call = RetrofitUtils.createRetrofit(

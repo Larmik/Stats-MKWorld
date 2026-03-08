@@ -121,8 +121,8 @@ class StatsViewModel @AssistedInject constructor(
                 ?: (type as? StatsType.MapStats)?.teamId
                 ?: (type as? StatsType.TeamStats)?.let { dataStoreRepository.mkcTeam.firstOrNull()?.id.toString() }
 
-            val player = databaseRepository.getPlayer(userId.orEmpty()).firstOrNull()
-            val team = databaseRepository.getTeam(teamId.orEmpty()).firstOrNull()
+            val player = userId?.let { databaseRepository.getPlayer(it).firstOrNull() }
+            val team = teamId?.let { databaseRepository.getTeam(it).firstOrNull() }
 
             when (type) {
                 is StatsType.PlayerStats, is StatsType.TeamStats, is StatsType.OpponentStats -> _state.value = _state.value.copy(stats = stats)

@@ -80,13 +80,21 @@ fun PlayerProfileScreen(
     LaunchedEffect(Unit) {
         viewModel.showNotif.collect {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                val shouldShow = activity?.let { ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS) } ?: false
+                val granted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+                val shouldShow = activity?.let {
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        it,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    )
+                } ?: false
                 if (!granted && !shouldShow)
                     showPopup.value = true
                 else
                     activity?.notificationPermissionLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
-             }
+            }
         }
     }
 
@@ -131,7 +139,7 @@ fun PlayerProfileScreen(
             onDismiss = { showPopup.value = false }
         )
     }
-  if (showHelpPopup.value) {
+    if (showHelpPopup.value) {
         MKDialog(
             title = "Multi-roster",
             message = "Activé: Statistiques calculées sur l'activité de tous les rosters de l'équipe \n \n Désactivé: Statistiques calculées sur l'activité de votre roster uniquement. \n \n Un redémarrage de l'application est nécessaire pour prendre en compte le changement de ce paramètre.",
@@ -152,6 +160,7 @@ fun PlayerProfileScreen(
                     .size(35.dp)
                     .clip(CircleShape)
             )
+
             else -> AsyncImage(model = "https://mkcentral.com$avatar", contentDescription = null)
         }
 
@@ -315,139 +324,85 @@ fun PlayerProfileScreen(
                 if (state.value.showMenu) {
                     LazyColumn {
                         item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { viewModel.onRefresh() }) {
-                                MKText(
-                                    text = stringResource(R.string.refresh),
-                                    font = Fonts.Urbanist,
-                                    modifier = Modifier.padding(vertical = 20.dp)
-                                )
-
-                            }
-                            Spacer(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Colors.blackAlphaed)
+                            SettingCell(
+                                label = "Mode 12 joueurs",
+                                onClick = {},
+                                endContent = {
+                                    Switch(
+                                        checked = true,
+                                        onCheckedChange = {  },
+                                        colors = SwitchDefaults.colors(
+                                            checkedTrackColor = Colors.black.copy(alpha = 0.3f),
+                                            checkedThumbColor = Colors.black,
+                                            uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),
+                                            uncheckedThumbColor = Colors.blackAlphaed,
+                                            uncheckedBorderColor = Colors.transparent,
+                                            checkedBorderColor = Colors.transparent
+                                        )
+                                    )
+                                }
                             )
                         }
                         item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { viewModel.onNotification() },
-                                horizontalArrangement = Arrangement.SpaceBetween) {
-                                MKText(
-                                    text = stringResource(
-                                        when (state.value.notificationsEnabled) {
-                                            true -> R.string.notif_enabled
-                                            else -> R.string.notif_disabled
-                                        }
-                                    ),
-                                    font = Fonts.Urbanist,
-                                    modifier = Modifier.padding(vertical = 20.dp)
-                                )
-                                Switch(
-                                    checked = state.value.notificationsEnabled == true, onCheckedChange = { viewModel.onNotification() }, colors = SwitchDefaults.colors(
-                                        checkedTrackColor = Colors.black.copy(alpha = 0.3f),
-                                        checkedThumbColor = Colors.black,
-                                        uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),
-                                        uncheckedThumbColor = Colors.blackAlphaed,
-                                        uncheckedBorderColor = Colors.transparent,
-                                        checkedBorderColor = Colors.transparent
+                            SettingCell(
+                                label = stringResource(R.string.refresh),
+                                onClick = viewModel::onRefresh
+                            ) { }
+                        }
+                        item {
+                            SettingCell(
+                                label = stringResource(
+                                    when (state.value.notificationsEnabled) {
+                                        true -> R.string.notif_enabled
+                                        else -> R.string.notif_disabled
+                                    }
+                                ), onClick = viewModel::onNotification, endContent = {
+                                    Switch(
+                                        checked = state.value.notificationsEnabled == true,
+                                        onCheckedChange = { viewModel.onNotification() },
+                                        colors = SwitchDefaults.colors(
+                                            checkedTrackColor = Colors.black.copy(alpha = 0.3f),
+                                            checkedThumbColor = Colors.black,
+                                            uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),
+                                            uncheckedThumbColor = Colors.blackAlphaed,
+                                            uncheckedBorderColor = Colors.transparent,
+                                            checkedBorderColor = Colors.transparent
+                                        )
                                     )
-                                )
-                            }
-                            Spacer(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Colors.blackAlphaed)
-                            )
-
+                                })
                         }
                         if (state.value.hasMultiRoster)
                             item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { viewModel.onNotification() },
-                                horizontalArrangement = Arrangement.SpaceBetween) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    MKText(
-                                        text = stringResource(
-                                            when (state.value.multiRosterEnabled) {
-                                                true -> R.string.multi_roster_enabled
-                                                else -> R.string.multi_roster_disabled
-                                            }
-                                        ),
-                                        font = Fonts.Urbanist,
-                                        modifier = Modifier.padding(vertical = 20.dp)
-                                    )
-                                    Image(painter = painterResource(R.drawable.help), contentDescription = null, modifier = Modifier.size(25.dp).clickable {
-                                        showHelpPopup.value = true
-                                    })
-                                }
-
-                                Switch(
-                                    checked = state.value.multiRosterEnabled, onCheckedChange = { viewModel.onMultiRoster() }, colors = SwitchDefaults.colors(
-                                        checkedTrackColor = Colors.black.copy(alpha = 0.3f),
-                                        checkedThumbColor = Colors.black,
-                                        uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),
-                                        uncheckedThumbColor = Colors.blackAlphaed,
-                                        uncheckedBorderColor = Colors.transparent,
-                                        checkedBorderColor = Colors.transparent
-                                    )
+                                SettingCell(
+                                    label = stringResource(
+                                        when (state.value.multiRosterEnabled) {
+                                            true -> R.string.multi_roster_enabled
+                                            else -> R.string.multi_roster_disabled
+                                        }
+                                    ), onClick = viewModel::onMultiRoster, endContent = {
+                                        Switch(
+                                            checked = state.value.multiRosterEnabled,
+                                            onCheckedChange = { viewModel.onMultiRoster() },
+                                            colors = SwitchDefaults.colors(
+                                                checkedTrackColor = Colors.black.copy(alpha = 0.3f),
+                                                checkedThumbColor = Colors.black,
+                                                uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),
+                                                uncheckedThumbColor = Colors.blackAlphaed,
+                                                uncheckedBorderColor = Colors.transparent,
+                                                checkedBorderColor = Colors.transparent
+                                            )
+                                        )
+                                    }
                                 )
                             }
-                            Spacer(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Colors.blackAlphaed)
-                            )
-
-                        }
                         item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { viewModel.onLogoutClick() }) {
-                                MKText(
-                                    text = stringResource(R.string.logout),
-                                    font = Fonts.Urbanist,
-                                    modifier = Modifier.padding(vertical = 20.dp)
-                                )
-                            }
-                            Spacer(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Colors.blackAlphaed)
-                            )
-
+                            SettingCell(
+                                label = stringResource(R.string.logout),
+                                onClick = viewModel::onLogoutClick
+                            ) { }
                         }
                         if (state.value.player?.id.toString() == "18595" || state.value.isMatrixMode)
-                            item {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onDebug() }) {
-                                    MKText(
-                                        text = "Debug",
-                                        font = Fonts.Urbanist,
-                                        modifier = Modifier.padding(vertical = 20.dp)
-                                    )
-                                }
-                                Spacer(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(1.dp)
-                                        .background(Colors.blackAlphaed)
-                                )
-                            }
+                            item { SettingCell(label = "Debug", onClick = onDebug) { } }
                     }
                     state.value.lastUpdate?.let {
                         MKText(
@@ -459,5 +414,30 @@ fun PlayerProfileScreen(
             }
         }
 
+    }
+}
+
+@Composable
+fun SettingCell(label: String, onClick: () -> Unit, endContent: @Composable () -> Unit) {
+    Column() {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onClick() },
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            MKText(
+                text = label,
+                font = Fonts.Urbanist,
+                modifier = Modifier.padding(vertical = 20.dp)
+            )
+            endContent()
+        }
+        Spacer(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Colors.blackAlphaed)
+        )
     }
 }

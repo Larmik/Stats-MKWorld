@@ -31,9 +31,11 @@ class WarListViewModel @Inject constructor(databaseRepository: DatabaseRepositor
     val state = dataStoreRepository.mkcPlayer
         .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld"}?.rosterID?.toString() }
         .zip(databaseRepository.getWars()) { rosterId, wars ->
+            val is24PEnabled = dataStoreRepository.is24PEnabled.firstOrNull() == true
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             wars
                 .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+                .filter { (!is24PEnabled && it.teamOpponent.size == 1) || is24PEnabled && it.teamOpponent.size > 1 }
                 .map { War(it) }
                 .map { WarDetails(it) }
                 .sortedByDescending { it.war.id }

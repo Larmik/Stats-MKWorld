@@ -95,7 +95,10 @@ fun WarScoreView(
                                     modifier = Modifier.size(50.dp)
                                 )
                             }
-                            MKText(text = teamHost?.name.orEmpty(), maxLines = 1)
+                            MKText(text = when (is24p) {
+                                true -> teamHost?.tag
+                                else -> teamHost?.name
+                            }.orEmpty(), maxLines = 1)
                         }
                         teamOpponent?.forEach { team ->
                             Column(
@@ -115,7 +118,10 @@ fun WarScoreView(
                                         modifier = Modifier.size(50.dp)
                                     )
                                 }
-                                MKText(text = team.name, maxLines = 1)
+                                MKText(text = when (is24p) {
+                                    true -> team.tag
+                                    else -> team.name
+                                }, maxLines = 1)
                             }
                         }
 
@@ -143,7 +149,10 @@ fun WarScoreView(
                                                 modifier = Modifier.size(50.dp)
                                             )
                                         }
-                                        MKText(text = it.name, maxLines = 1)
+                                        MKText(text = when (is24p) {
+                                            true -> it.tag
+                                            else -> it.name
+                                        }, maxLines = 1)
                                         MKText(
                                             text = score.score.toString(),
                                             fontSize = 24,

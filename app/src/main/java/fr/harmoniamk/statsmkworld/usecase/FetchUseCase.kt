@@ -9,6 +9,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.model.firebase.Tag
+import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -185,6 +186,14 @@ class FetchUseCase @Inject constructor(
                         }
                     }
                 }
+                if (team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }?.any { it.playerId == player.id } == true) {
+                    mkCentralDataSource.getPlayer(player.id).firstOrNull()?.successResponse?.let { mkcPlayer ->
+                        val fbUser = User(mkcPlayer)
+                            firebaseRepository.writeUser(team.id.toString(), fbUser).firstOrNull()
+                            firebaseRepository.deleteAlly(team.id.toString(), fbUser.id).firstOrNull()
+                            databaseRepository.updateUserRoster(fbUser.id, rosterId = team.rosters.firstOrNull { it.game == "mkworld" && it.players.map { it.playerId }.contains(mkcPlayer.id.toString()) }?.id.toString()).firstOrNull()
+                    }
+                }
             }
         }
 
@@ -193,9 +202,6 @@ class FetchUseCase @Inject constructor(
         .map { Pair(it?.pageCount, it?.teamList) }
         .shareIn(this, SharingStarted.Eagerly)
 
-    private fun getMK8Teams(page: Int) = mkCentralDataSource.getMK8Teams(page)
-        .map { Pair(it?.pageCount, it?.teamList) }
-        .shareIn(this, SharingStarted.Eagerly)
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO

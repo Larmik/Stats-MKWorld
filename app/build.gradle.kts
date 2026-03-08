@@ -161,6 +161,8 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("org.jsoup:jsoup:1.21.2")
+    implementation(dependencyNotation = libs.androidx.material)
+
 }
 protobuf {
     protoc {

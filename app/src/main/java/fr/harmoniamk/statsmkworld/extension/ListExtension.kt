@@ -196,20 +196,20 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
                 .toList()
                 .sortedByDescending { it.second.size }
                 .distinctBy { it.first }
-                .safeSubList(0, 3)
+                .safeSubList(0, 1)
 
             val mostDefeatedTeams = warsWon
                 .toList()
                 .sortedByDescending { it.second.size }
                 .distinctBy { it.first }
-                .safeSubList(0, 3)
+                .safeSubList(0, 1)
 
 
             val lessDefeatedTeams = warsLost
                 .toList()
                 .sortedByDescending { it.second.size }
                 .distinctBy { it.first }
-                .safeSubList(0, 3)
+                .safeSubList(0, 1)
 
             flowOf(
                 Stats(
@@ -251,9 +251,9 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
         else -> {
             val warsWon = warList.filter { it.war.scores.sortedByDescending { it.score }.subList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
             val warsLost = warList.filter { it.war.scores.sortedBy { it.score }.subList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
-            val mostPlayedTeams = warList.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warList.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 3)
-            val mostDefeatedTeams = warsWon.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsWon.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 3)
-            val lessDefeatedTeams = warsLost.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsLost.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 3)
+            val mostPlayedTeams = warList.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warList.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 1)
+            val mostDefeatedTeams = warsWon.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsWon.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 1)
+            val lessDefeatedTeams = warsLost.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsLost.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 1)
             flowOf(
                 Stats(
                     warStats = WarStats(this, is24p = true),

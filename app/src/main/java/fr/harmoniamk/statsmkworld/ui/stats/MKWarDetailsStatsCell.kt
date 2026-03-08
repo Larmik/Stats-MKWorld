@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.ui.stats
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.toStringOrNull
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Stats
@@ -85,10 +87,9 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                 )
                 MKText(
                     text =  when (userId) {
-                        null -> (stats?.averageMapPointsLabel ?: stats?.averageMapPoints?.toString() ?: mapStats?.teamScore?.trackScoreToDiff())?.takeIf { type?.is24PEnabled != true } ?: mapStats?.teamScore.toString()
-                        else -> (stats?.averagePlayerPosLabel ?: mapStats?.averagePlayerPosLabel).toString()
-                    },
-
+                        null -> (stats?.averageMapPoints?.trackScoreToDiff()?.takeIf { type?.is24PEnabled != true } ?: stats?.averageMapPoints?.toString()) ?: mapStats?.teamScore?.trackScoreToDiff()?.takeIf { type?.is24PEnabled != true } ?: mapStats?.teamScore?.toString()
+                        else -> (stats?.averagePlayerPosLabel ?: mapStats?.averagePlayerPosLabel)
+                    }.orEmpty(),
                     font = Fonts.Urbanist, fontSize = 20, textColor = Colors.white
                 )
             }

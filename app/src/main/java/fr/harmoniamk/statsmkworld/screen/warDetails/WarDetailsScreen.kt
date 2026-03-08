@@ -58,11 +58,6 @@ fun WarDetailsScreen(
                         viewModel.warDetails?.let { onTab(it) }
                     }
                 }
-            Spacer((Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Colors.blackAlphaed)))
-
             it.warTracks.takeIf { it.isNotEmpty() }?.let {
                 MKText(
                     text = stringResource(R.string.courses_jouees),

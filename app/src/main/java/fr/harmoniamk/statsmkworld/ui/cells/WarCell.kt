@@ -71,7 +71,10 @@ fun WarCell(modifier: Modifier = Modifier, viewModel: WarCellViewModel, onClick:
                                     modifier = Modifier.size(30.dp)
                                 )
                             }
-                            MKText(text = team?.name.orEmpty(), maxLines = 1)
+                            MKText(text = when (is24p){
+                                true -> team?.tag
+                                else -> team?.name
+                            }.orEmpty(), maxLines = 1)
                             MKText(
                                 text = score.score.toString(),
                                 fontSize = 20,

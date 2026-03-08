@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -59,88 +59,25 @@ fun WelcomeScreen(
             true -> CircularProgressIndicator()
             else -> {
                 Row(
-                    Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(20.dp)
-                        ) {
-                            when (val logo = state.value.teamLogo) {
-                                null -> Image(
-                                    painter = painterResource(R.drawable.default_logo),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .clip(CircleShape)
-                                )
-                                else -> AsyncImage(
-                                    model = logo,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .clip(CircleShape)
-                                )
-                            }
+                    ProfileCell(
+                        title = "Joueur",
+                        modifier = Modifier.weight(1f),
+                        name = state.value.playerName.orEmpty(),
+                        image = state.value.playerLogo,
+                        onClick = onPlayerProfile
+                    )
+                    Spacer(Modifier.width(20.dp))
+                    ProfileCell(
+                        title = "Equipe",
+                        modifier = Modifier.weight(1f),
+                        name = state.value.teamName.orEmpty(),
+                        image = state.value.teamLogo,
+                        onClick = onTeamProfile
+                    )
 
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                MKText(
-                                    text = state.value.teamName.orEmpty(),
-                                    font = Fonts.NunitoBD,
-                                    fontSize = 18,
-                                )
-                                Box(
-                                    Modifier
-                                        .border(
-                                            1.dp,
-                                            color = Colors.black,
-                                            RoundedCornerShape(5.dp)
-                                        )
-                                        .clickable { onTeamProfile() }
-                                ) {
-                                    MKText(
-                                        text = stringResource(R.string.show_team_btn),
-                                        font = Fonts.NunitoIT,
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .align(Alignment.Center)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { onPlayerProfile() }) {
-                        when (val logo = state.value.playerLogo) {
-                            null -> Image(
-                                painter = painterResource(R.drawable.default_logo),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clip(CircleShape)
-                            )
-                            else -> AsyncImage(
-                                model = logo,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clip(CircleShape)
-                            )
-                        }
-                        MKText(
-                            text = state.value.playerName.orEmpty()
-                        )
-                    }
                 }
                 Spacer(Modifier.height(10.dp))
 
@@ -164,8 +101,6 @@ fun WelcomeScreen(
                     .fillMaxWidth()
                     .height(1.dp)
                     .background(Colors.blackAlphaed)))
-
-
 
                 state.value.currentWar?.let {
                     Spacer(Modifier.height(10.dp))
@@ -207,8 +142,34 @@ fun WelcomeScreen(
                         }
                     }
                 }
-                }
+            }
         }
 
+    }
+}
+
+@Composable
+fun ProfileCell(title: String, modifier: Modifier = Modifier, name: String, image: String?, onClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = modifier.clickable(onClick = onClick).background(Colors.whiteAlphaed, RoundedCornerShape(10.dp)).border(1.dp, Colors.black, RoundedCornerShape(10.dp))) {
+        MKText(font = Fonts.NunitoIT, text = title, modifier = Modifier.padding(top = 10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 10.dp)) {
+            when (image) {
+                null -> Image(
+                    painter = painterResource(R.drawable.default_logo),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                )
+                else -> AsyncImage(
+                    model = image,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                )
+            }
+            MKText(text = name, font = Fonts.NunitoBD, textColor = Colors.black, fontSize = 16)
+        }
     }
 }

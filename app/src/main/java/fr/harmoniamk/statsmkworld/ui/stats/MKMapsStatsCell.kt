@@ -52,11 +52,9 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
         bestMap?.let {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 MKText(text = stringResource(R.string.best_map), modifier = Modifier.padding(bottom = 5.dp))
-                Row(Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 5.dp)) {
+                Row {
                     MapCell(
-                        Modifier.fillMaxWidth(),
+                        Modifier.weight(1f),
                         track = null,
                         userId = userId,
                         trackRanking = RankingItem.TrackRanking(it),
@@ -68,11 +66,9 @@ fun MKMapsStatsCell(stats: Stats?, type: StatsType?) {
         worstMap?.let {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 MKText(text = stringResource(R.string.worst_map), modifier = Modifier.padding(bottom = 5.dp))
-                Row(Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 5.dp)) {
+                Row {
                     MapCell(
-                        Modifier.fillMaxWidth(),
+                        Modifier.weight(1f),
                         track = null,
                         userId = userId,
                         trackRanking = RankingItem.TrackRanking(it),

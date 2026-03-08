@@ -28,21 +28,10 @@ fun MKTeamStatsView(stats: Stats?) {
                 text = stringResource(R.string.adversaire_le_plus_joue),
                 modifier = Modifier.padding(bottom = 5.dp)
             )
-            it.singleOrNull()?.let {
-                TeamCell(
-                    modifier = Modifier.fillMaxWidth(0.5f),
-                    team = it.team,
-                    teamStatsLabel = it.totalPlayed?.let {
-                        stringResource(
-                            R.string.opponent_times_played,
-                            it
-                        )
-                    },
-                    onClick = { })
-            } ?: Row {
+            Row(Modifier.padding(bottom = 10.dp)) {
                 it.forEach {
                     TeamCell(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(0.5f),
                         team = it.team,
                         teamStatsLabel = it.totalPlayed?.let {
                             stringResource(
@@ -53,76 +42,54 @@ fun MKTeamStatsView(stats: Stats?) {
                         onClick = { })
                 }
             }
-
         }
-    }
 
-
-    stats?.mostDefeatedTeam?.let {
-        MKText(
-            text = stringResource(R.string.le_plus_vaincu),
-            modifier = Modifier.padding(bottom = 5.dp)
-        )
-        it.singleOrNull()?.let {
-            TeamCell(
-                Modifier.fillMaxWidth(),
-                team = it.team,
-                teamStatsLabel = it.totalPlayed?.let {
-                    stringResource(
-                        R.string.victoires,
-                        it
+        Row{
+            stats?.mostDefeatedTeam?.let {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                    MKText(
+                        text = stringResource(R.string.le_plus_vaincu),
+                        modifier = Modifier.padding(bottom = 5.dp)
                     )
-                },
-                onClick = { })
-        } ?: Row {
-            it.forEach {
-                TeamCell(
-                    modifier = Modifier.weight(1f),
-                    team = it.team,
-                    teamStatsLabel = it.totalPlayed?.let {
-                        stringResource(
-                            R.string.victoires,
-                            it
-                        )
-                    },
-                    onClick = { })
+                    Row {
+                        it.forEach {
+                            TeamCell(
+                                modifier = Modifier.weight(1f),
+                                team = it.team,
+                                teamStatsLabel = it.totalPlayed?.let {
+                                    stringResource(
+                                        R.string.victoires,
+                                        it
+                                    )
+                                },
+                                onClick = { })
+                        }
+                    }
+                }
+            }
+
+            stats?.lessDefeatedTeam?.let {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                    MKText(
+                        text = stringResource(R.string.le_moins_vaincu),
+                        modifier = Modifier.padding(bottom = 5.dp)
+                    )
+                    Row {
+                        it.forEach {
+                            TeamCell(
+                                Modifier.weight(1f),
+                                team = it.team,
+                                teamStatsLabel = it.totalPlayed?.let {
+                                    stringResource(
+                                        R.string.d_faites,
+                                        it
+                                    )
+                                },
+                                onClick = { })
+                        }
+                    }
+                }
             }
         }
-
     }
-
-    stats?.lessDefeatedTeam?.let {
-        MKText(
-            text = stringResource(R.string.le_moins_vaincu),
-            modifier = Modifier.padding(bottom = 5.dp)
-        )
-        it.singleOrNull()?.let {
-            TeamCell(
-                Modifier.fillMaxWidth(0.5f),
-                team = it.team,
-                teamStatsLabel = it.totalPlayed?.let {
-                    stringResource(
-                        R.string.d_faites,
-                        it
-                    )
-                },
-                onClick = { })
-        } ?: Row {
-            it.forEach {
-                TeamCell(
-                    Modifier.weight(1f),
-                    team = it.team,
-                    teamStatsLabel = it.totalPlayed?.let {
-                        stringResource(
-                            R.string.d_faites,
-                            it
-                        )
-                    },
-                    onClick = { })
-            }
-        }
-
-    }
-
-
 }
