@@ -21,7 +21,7 @@ import javax.inject.Singleton
 
 interface DatabaseRepositoryInterface {
     fun getPlayers(): Flow<List<PlayerEntity>>
-    fun getPlayer(playerId: String): Flow<PlayerEntity>
+    fun getPlayer(playerId: String): Flow<PlayerEntity?>
     fun writePlayer(player: PlayerEntity): Flow<Unit>
     fun clearPlayers(): Flow<Unit>
 
@@ -62,7 +62,7 @@ class DatabaseRepository @Inject constructor(
 ) : DatabaseRepositoryInterface {
 
     override fun getPlayers(): Flow<List<PlayerEntity>> = playerLocalDataSource.getAll().flowOn(Dispatchers.IO)
-    override fun getPlayer(playerId: String): Flow<PlayerEntity> = playerLocalDataSource.getById(playerId)
+    override fun getPlayer(playerId: String): Flow<PlayerEntity?> = playerLocalDataSource.getById(playerId)
     override fun writePlayer(player: PlayerEntity): Flow<Unit> = playerLocalDataSource.insert(player).flowOn(Dispatchers.IO)
     override fun clearPlayers(): Flow<Unit> = playerLocalDataSource.clear()
 

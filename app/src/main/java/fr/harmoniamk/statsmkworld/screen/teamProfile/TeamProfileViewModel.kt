@@ -46,6 +46,7 @@ class TeamProfileViewModel @AssistedInject constructor(
         val team: MKCTeam? = null,
         val allyList: List<PlayerEntity> = listOf(),
         val playerList: List<MKCPlayer> = listOf(),
+        val addAllyVisible: Boolean = false
     )
 
     private val _state = MutableSharedFlow<State>()
@@ -86,7 +87,12 @@ class TeamProfileViewModel @AssistedInject constructor(
                 "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()
                 else -> listOf()
             }
-            State(team = it, allyList = allyList)
+            val buttonVisible = firebaseRepository
+                .getUser(it?.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
+                .map { it?.role ?: 0 }
+                .map { it > 0 }
+                .firstOrNull()
+            State(team = it, addAllyVisible = buttonVisible == true, allyList = allyList)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())

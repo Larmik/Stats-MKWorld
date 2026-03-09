@@ -20,7 +20,7 @@ android {
         applicationId = "fr.harmoniamk.statsmkworld"
         minSdk = 28
         targetSdk = 35
-        versionCode = 20
+        versionCode = 23
         versionName = "3.0.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -116,6 +116,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.fragment.compose)
     implementation(libs.firebase.config)
+    implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
 
 

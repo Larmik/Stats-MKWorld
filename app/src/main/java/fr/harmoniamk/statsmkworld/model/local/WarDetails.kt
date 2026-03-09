@@ -3,8 +3,6 @@ package fr.harmoniamk.statsmkworld.model.local
 import android.os.Parcelable
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
-import fr.harmoniamk.statsmkworld.model.firebase.OldWar
-import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
@@ -13,20 +11,10 @@ import java.io.Serializable
 import java.util.Date
 
 
-
 @Parcelize
 data class WarDetails(val war: War): Serializable, Parcelable {
 
-    constructor(oldWar: OldWar) : this(
-        war = War(
-            oldWar.id,
-            oldWar.teamHost,
-            listOf(oldWar.teamOpponent),
-            oldWar.tracks.map { WarTrack(it) },
-            oldWar.penalties,
-            listOf()
-        )
-    )
+
 
     val date = Date(war.id).displayedString("dd/MM/yyyy")
 

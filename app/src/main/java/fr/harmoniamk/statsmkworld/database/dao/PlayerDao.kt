@@ -16,7 +16,7 @@ interface PlayerDao {
     fun getAll(): Flow<List<PlayerEntity>>
 
     @Query("SELECT * FROM PlayerEntity WHERE id=(:id) LIMIT 1")
-    fun getById(id: String): Flow<PlayerEntity>
+    fun getById(id: String): Flow<PlayerEntity?>
 
     @Query("UPDATE PlayerEntity SET currentWar=(:currentWar) WHERE id=(:id)")
     suspend fun setCurrentWar(id: String, currentWar: String)

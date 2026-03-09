@@ -15,7 +15,7 @@ interface WarDao {
     fun getAll(): Flow<List<WarEntity>>
 
     @Query("SELECT * FROM WarEntity WHERE id=(:id) LIMIT 1")
-    fun getById(id: String?): Flow<WarEntity>
+    fun getById(id: String?): Flow<WarEntity?>
 
     @Query("DELETE FROM WarEntity")
     suspend fun clear()

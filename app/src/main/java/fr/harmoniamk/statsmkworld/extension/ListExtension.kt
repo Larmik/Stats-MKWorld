@@ -5,7 +5,6 @@ import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
-import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
@@ -25,30 +24,6 @@ import kotlinx.coroutines.flow.map
 
 @Suppress("UNCHECKED_CAST")
 fun Any?.toMapList(): List<Map<*, *>>? = this as? List<Map<*, *>>
-
-@Deprecated("24 players")
-fun List<Map<*, *>>?.parseOldTracks(): List<OldWarTrack>? =
-    this?.map { track ->
-        OldWarTrack(
-            id = track["id"].toString().toLong(),
-            index = track["index"].toString().toInt(),
-            positions = (track["positions"]?.toMapList())
-                ?.map {
-                    WarPosition(
-                        id = it["id"].toString().toLong(),
-                        playerId = it["playerId"].toString(),
-                        position = it["position"].toString().toInt()
-                    )
-                }.orEmpty(),
-            shocks = (track["shocks"]?.toMapList())
-                ?.map {
-                    Shock(
-                        playerId = it["playerId"].toString(),
-                        count = it["count"].toString().toInt()
-                    )
-                }
-        )
-    }
 
 fun List<Map<*, *>>?.parseTracks(): List<WarTrack>? =
     this?.map { track ->

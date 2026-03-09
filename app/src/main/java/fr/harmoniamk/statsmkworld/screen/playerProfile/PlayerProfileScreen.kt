@@ -325,26 +325,6 @@ fun PlayerProfileScreen(
                     LazyColumn {
                         item {
                             SettingCell(
-                                label = "Mode 12 joueurs",
-                                onClick = {},
-                                endContent = {
-                                    Switch(
-                                        checked = true,
-                                        onCheckedChange = {  },
-                                        colors = SwitchDefaults.colors(
-                                            checkedTrackColor = Colors.black.copy(alpha = 0.3f),
-                                            checkedThumbColor = Colors.black,
-                                            uncheckedTrackColor = Colors.blackAlphaed.copy(alpha = 0.3f),
-                                            uncheckedThumbColor = Colors.blackAlphaed,
-                                            uncheckedBorderColor = Colors.transparent,
-                                            checkedBorderColor = Colors.transparent
-                                        )
-                                    )
-                                }
-                            )
-                        }
-                        item {
-                            SettingCell(
                                 label = stringResource(R.string.refresh),
                                 onClick = viewModel::onRefresh
                             ) { }

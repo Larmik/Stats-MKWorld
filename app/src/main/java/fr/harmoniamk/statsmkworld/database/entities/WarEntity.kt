@@ -4,10 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import fr.harmoniamk.statsmkworld.extension.displayedString
-import fr.harmoniamk.statsmkworld.model.firebase.OldWar
-import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
-import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import java.util.Date

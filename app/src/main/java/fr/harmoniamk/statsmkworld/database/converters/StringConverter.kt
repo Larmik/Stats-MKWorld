@@ -4,8 +4,6 @@ import androidx.room.TypeConverter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import fr.harmoniamk.statsmkworld.model.firebase.OldWarTrack
-import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 
 class StringConverter {
 

@@ -126,8 +126,19 @@ class FetchUseCase @Inject constructor(
     override fun fetchTeams(): Flow<String> = flow {
         val teams = mutableListOf<TeamEntity>()
         var teamPage = 1
+        var teamPageMK8 = 1
         val firstResponse = getTeams(teamPage).firstOrNull()
+        val firstResponseMK8 = getMK8Teams(teamPageMK8).firstOrNull()
         teams.addAll(firstResponse?.second?.map {
+            TeamEntity(
+                id = it.id.toString(),
+                name = it.name,
+                tag = it.tag,
+                color = it.color.toInt(),
+                logo = it.logo
+            )
+        }.orEmpty())
+        teams.addAll(firstResponseMK8?.second?.map {
             TeamEntity(
                 id = it.id.toString(),
                 name = it.name,
@@ -139,6 +150,19 @@ class FetchUseCase @Inject constructor(
         while (teamPage < (firstResponse?.first ?: 1)) {
             teamPage++
             val teamsToAdd = getTeams(teamPage).firstOrNull()
+            teams.addAll(teamsToAdd?.second?.map {
+                TeamEntity(
+                    id = it.id.toString(),
+                    name = it.name,
+                    tag = it.tag,
+                    color = it.color.toInt(),
+                    logo = it.logo
+                )
+            }.orEmpty())
+        }
+        while (teamPageMK8 < (firstResponseMK8?.first ?: 1)) {
+            teamPageMK8++
+            val teamsToAdd = getMK8Teams(teamPageMK8).firstOrNull()
             teams.addAll(teamsToAdd?.second?.map {
                 TeamEntity(
                     id = it.id.toString(),
@@ -202,6 +226,9 @@ class FetchUseCase @Inject constructor(
         .map { Pair(it?.pageCount, it?.teamList) }
         .shareIn(this, SharingStarted.Eagerly)
 
+    private fun getMK8Teams(page: Int) = mkCentralDataSource.getMK8Teams(page)
+        .map { Pair(it?.pageCount, it?.teamList) }
+        .shareIn(this, SharingStarted.Eagerly)
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO

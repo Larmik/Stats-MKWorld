@@ -19,7 +19,7 @@ import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import kotlinx.coroutines.FlowPreview
 
 @TypeConverters(value = [WarTrackConverter::class, WarPositionConverter::class, WarPenaltyConverter::class, StringConverter::class, WarScoreConverter::class])
-@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class], version = 4)
+@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class], version = 5)
 abstract class MKDatabase : RoomDatabase() {
 
     abstract fun playerDao(): PlayerDao

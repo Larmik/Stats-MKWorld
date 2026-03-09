@@ -5,10 +5,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.model.firebase.User
-import fr.harmoniamk.statsmkworld.model.firebase.War
-import fr.harmoniamk.statsmkworld.model.firebase.WarScore
-import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
-import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -23,7 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -32,7 +27,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
-import kotlin.toString
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -129,36 +123,6 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
         viewModelScope.launch {
             worldRecordsRepository.getCurrentWRs()
         }
-    }
-
-    fun migrateWars() {
-        firebaseRepository.getWarIndexes()
-            .onEach {
-                it.forEach { index ->
-                    val wars = firebaseRepository.getOldWars(index).firstOrNull()
-                    wars?.forEach { war ->
-                        val warTracks = war.tracks.map { track -> WarTrack(
-                            id = track.id,
-                            index = listOf(track.index.toString()),
-                            positions = track.positions,
-                            shocks = track.shocks
-                        ) }
-                        val newWar = War(
-                            id = war.id,
-                            teamHost = war.teamHost,
-                            teamOpponent = listOf(war.teamOpponent),
-                            tracks = warTracks,
-                            penalties = war.penalties,
-                            scores = listOf(
-                                WarScore(teamId = index, score = WarDetails(war).scoreHostWithPenalties),
-                                WarScore(teamId = war.teamOpponent, score = WarDetails(war).scoreOpponentWithPenalties)
-                            )
-                        )
-                        firebaseRepository.migrateWar(index, newWar).firstOrNull()
-                    }
-                }
-                _sharedToast.emit("Wars migrées avec succès")
-            }.launchIn(viewModelScope)
     }
 
     fun onUpdateBotData() {

@@ -21,13 +21,6 @@ data class WarTrack(
         shocks = track.shocks
     )
 
-    constructor(oldTrack: OldWarTrack) : this(
-        id = oldTrack.id,
-        index = listOf(oldTrack.index.toString()),
-        positions = oldTrack.positions,
-        shocks = oldTrack.shocks
-    )
-
     fun hasPlayer(playerId: String?) = positions.any { pos -> pos.playerId == playerId }
 
     val diffScore: Int

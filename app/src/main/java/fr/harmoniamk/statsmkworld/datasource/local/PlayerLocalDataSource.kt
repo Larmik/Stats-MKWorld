@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 interface PlayerLocalDataSourceInterface {
     fun getAll(): Flow<List<PlayerEntity>>
-    fun getById(id: String): Flow<PlayerEntity>
+    fun getById(id: String): Flow<PlayerEntity?>
     fun insert(player: PlayerEntity): Flow<Unit>
     fun upsert(player: PlayerEntity): Flow<Unit>
     fun setCurrentWar(id: String, currentWar: String): Flow<Unit>
@@ -44,7 +44,7 @@ class PlayerLocalDataSource @Inject constructor(@ApplicationContext private val 
     private val dao = MKDatabase.getInstance(context).playerDao()
 
     override fun getAll(): Flow<List<PlayerEntity>> = dao.getAll()
-    override fun getById(id: String): Flow<PlayerEntity> = dao.getById(id)
+    override fun getById(id: String): Flow<PlayerEntity?> = dao.getById(id)
     override fun insert(player: PlayerEntity): Flow<Unit> = flow { emit(dao.insert(player)) }
     override fun upsert(player: PlayerEntity): Flow<Unit> = flow { emit(dao.upsert(player)) }
     override fun setCurrentWar(id: String, currentWar: String): Flow<Unit> = flow { emit(dao.setCurrentWar(id, currentWar)) }

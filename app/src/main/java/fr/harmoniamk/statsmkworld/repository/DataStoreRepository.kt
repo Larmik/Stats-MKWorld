@@ -101,7 +101,6 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         }
     }
 
-    @Deprecated("24 players")
     override suspend fun deleteCurrentWar() {
         context.warDataStore.updateData {
             WarProto.newBuilder().build()
@@ -184,7 +183,6 @@ class DataStoreRepository @Inject constructor(@ApplicationContext val context: C
         get() = context.mkcTeamDataStore.data
             .map { MKCTeam(it) }
 
-    @Deprecated("24 players")
     override val war: Flow<War?>
         get() = context.warDataStore.data
             .map { DatastoreWar(it) }

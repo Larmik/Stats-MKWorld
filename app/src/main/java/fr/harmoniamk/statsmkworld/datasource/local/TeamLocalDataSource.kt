@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 interface TeamLocalDataSourceInterface {
     fun getAll(): Flow<List<TeamEntity>>
-    fun getById(id: String) : Flow<TeamEntity>
+    fun getById(id: String) : Flow<TeamEntity?>
     fun bulkInsert(teams: List<TeamEntity>): Flow<Unit>
     fun insert(team: TeamEntity): Flow<Unit>
     fun clear(): Flow<Unit>

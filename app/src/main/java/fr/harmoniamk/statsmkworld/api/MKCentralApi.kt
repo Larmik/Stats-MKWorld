@@ -38,4 +38,7 @@ interface MKCentralApi {
     @GET("registry/teams?game=mkworld&mode=150cc&is_historical=false&is_active=true")
     fun getTeams(@Query("page") page: Int): Call<MKCTeamResponse>
 
+    @GET("registry/teams?game=mk8dx&mode=150cc&is_historical=false&is_active=true")
+    fun getMK8Teams(@Query("page") page: Int): Call<MKCTeamResponse>
+
 }

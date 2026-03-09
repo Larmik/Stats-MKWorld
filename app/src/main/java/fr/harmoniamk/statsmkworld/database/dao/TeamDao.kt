@@ -15,7 +15,7 @@ interface TeamDao {
     fun getAll(): Flow<List<TeamEntity>>
 
     @Query("SELECT * FROM TeamEntity WHERE id=(:id) LIMIT 1")
-    fun getById(id: String): Flow<TeamEntity>
+    fun getById(id: String): Flow<TeamEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun bulkInsert(teams: List<TeamEntity>)

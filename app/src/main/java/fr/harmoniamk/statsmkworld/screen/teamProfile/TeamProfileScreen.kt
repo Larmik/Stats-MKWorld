@@ -194,9 +194,10 @@ fun TeamProfileScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    item {
-                                        MKButton(style = MKButtonStyle.Gradient, text = "Ajouter un ally", onClick = { scope.launch { bottomSheetState.show() } })
-                                    }
+                                    if (state.value.addAllyVisible)
+                                        item {
+                                            MKButton(style = MKButtonStyle.Gradient, text = "Ajouter un ally", onClick = { scope.launch { bottomSheetState.show() } })
+                                        }
                                     state.value.allyList.takeIf { it.isNotEmpty() }?.let {
                                         item {
                                             VerticalGrid {

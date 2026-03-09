@@ -16,7 +16,6 @@ data class War(
     val scores: List<WarScore>
 ): Serializable, Parcelable {
 
-    @Deprecated("24 players")
     constructor(war: DatastoreWar) : this(
         id = war.id,
         teamHost = war.teamHost,
