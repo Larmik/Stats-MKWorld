@@ -340,7 +340,7 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
                     trackIndex = indexes.mapNotNull { it.toIntOrNull() },
                     totalPlayed = it.second.size,
                     winRate = (it.second.filter { it.diffScore > 0 }.size * 100) / it.second.size,
-                    teamScore = teamScoreForTrack / it.second.size,
+                    teamScore = teamScoreForTrack,
                     shockCount = shockCount,
                     playerScore = playerScoreForTrack / it.second.size
                 )
