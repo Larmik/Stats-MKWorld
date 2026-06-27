@@ -1,7 +1,7 @@
 package fr.harmoniamk.statsmkworld.model.local
 
 import android.os.Parcelable
-import fr.harmoniamk.statsmkworld.extension.ScoringConstants
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.War

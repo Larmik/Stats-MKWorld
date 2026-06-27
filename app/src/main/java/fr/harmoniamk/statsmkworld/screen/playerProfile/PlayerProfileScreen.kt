@@ -43,7 +43,7 @@ import androidx.lifecycle.Lifecycle
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.activity.MainActivity
-import fr.harmoniamk.statsmkworld.extension.ScoringConstants
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.countryFlag
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.getActivity

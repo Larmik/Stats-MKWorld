@@ -10,7 +10,7 @@ import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.WorldRecordsRepositoryInterface
-import fr.harmoniamk.statsmkworld.extension.ScoringConstants
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow

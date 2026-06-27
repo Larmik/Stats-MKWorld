@@ -2,6 +2,7 @@ package fr.harmoniamk.statsmkworld.extension
 
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 
 fun Int?.toTeamColor() = Color(
     when (this) {

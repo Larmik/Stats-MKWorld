@@ -1,4 +1,4 @@
-package fr.harmoniamk.statsmkworld.extension
+package fr.harmoniamk.statsmkworld.model
 
 object ScoringConstants {
     const val MAX_POINTS_PER_TRACK_12P = 82   // somme des points positions 1-12

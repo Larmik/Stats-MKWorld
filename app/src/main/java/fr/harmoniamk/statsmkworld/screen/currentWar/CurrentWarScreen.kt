@@ -39,7 +39,7 @@ import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.WarScoreView
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
-import fr.harmoniamk.statsmkworld.extension.ScoringConstants
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
 
 @Composable
