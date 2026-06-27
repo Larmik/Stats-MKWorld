@@ -20,9 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.activity.MainActivity
 import fr.harmoniamk.statsmkworld.extension.getActivity
@@ -30,7 +29,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun SignupScreen(
     viewModel: SignupViewModel,
@@ -43,7 +41,7 @@ fun SignupScreen(
 
     val scope = rememberCoroutineScope()
     val selectedIndex = remember { mutableIntStateOf(0) }
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState(pageCount = { TutorialItem.entries.size })
     val state = viewModel.state.collectAsState()
 
     LaunchedEffect(state.value.currentPage) {
@@ -83,7 +81,6 @@ fun SignupScreen(
             HorizontalPager(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
-                count = TutorialItem.entries.size,
                 state = pagerState,
                 userScrollEnabled = false
             ) { pagerScope ->

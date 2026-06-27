@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.activity.MainActivity
 import fr.harmoniamk.statsmkworld.extension.ScoringConstants

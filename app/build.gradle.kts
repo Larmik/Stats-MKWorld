@@ -7,7 +7,7 @@ plugins {
     id("dagger.hilt.android.plugin")
     alias(notation = libs.plugins.kotlin.compose.compiler)
     id("com.google.gms.google-services")
-    id("com.google.protobuf") version "0.9.4"
+    id("com.google.protobuf") version "0.10.0"
     id("com.google.firebase.crashlytics")
     alias(libs.plugins.kotlin.parcelize)
 }
@@ -19,12 +19,12 @@ val localProps = Properties().also { props ->
 
 android {
     namespace = "fr.harmoniamk.statsmkworld"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "fr.harmoniamk.statsmkworld"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 23
         versionName = "3.0.0"
         multiDexEnabled = true
@@ -82,8 +82,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
@@ -105,12 +108,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.fragment.compose)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
 
     //Firebase
-    implementation(libs.firebase.bom)
-    implementation(libs.firebase.database.ktx)
-    implementation(libs.firebase.ui.auth)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.database)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.fragment.compose)
     implementation(libs.firebase.config)
@@ -132,7 +135,6 @@ dependencies {
     implementation(dependencyNotation = libs.okhttp)
     implementation(dependencyNotation = libs.retrofit2.retrofit)
     implementation(dependencyNotation = libs.logging.interceptor)
-    implementation(dependencyNotation = libs.squareup.okhttp)
     // Moshi
     implementation(dependencyNotation = libs.moshi)
     implementation(dependencyNotation = libs.moshi.kotlin)
@@ -147,7 +149,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(dependencyNotation = libs.work.runtime)
 
-    implementation(libs.accompanist.pager)
     implementation(libs.lottie.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore)

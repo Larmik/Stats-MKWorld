@@ -25,9 +25,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -43,7 +42,6 @@ import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import fr.harmoniamk.statsmkworld.extension.ScoringConstants
 import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
 
-@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun CurrentWarScreen(
     viewModel: CurrentWarViewModel = hiltViewModel(),
@@ -54,7 +52,12 @@ fun CurrentWarScreen(
     onWarValidated: () -> Unit,
 ) {
     val state = viewModel.state.collectAsState()
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState(pageCount = {
+        when (state.value.teamOpponent.orEmpty().size > 1) {
+            true -> 2
+            else -> 1
+        }
+    })
     val context = LocalContext.current
 
 
@@ -77,10 +80,6 @@ fun CurrentWarScreen(
     BackHandler { onBack() }
     HorizontalPager(
         modifier = Modifier.fillMaxWidth(),
-        count = when (state.value.teamOpponent.orEmpty().size > 1) {
-            true -> 2
-            else -> 1
-        },
         state = pagerState,
         userScrollEnabled = false
     ) {
