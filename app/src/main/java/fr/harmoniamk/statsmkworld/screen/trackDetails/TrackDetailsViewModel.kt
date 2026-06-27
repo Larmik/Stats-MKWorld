@@ -6,6 +6,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.extension.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
@@ -45,7 +46,7 @@ class TrackDetailsViewModel @AssistedInject constructor(
         .map {
             val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
             val scoreHost = it.track.positions.map { it.position }.sumOf { pos -> pos.positionToPoints(details?.is24p == true) }
-            val scoreOpponent = 82 - scoreHost
+            val scoreOpponent = ScoringConstants.MAX_POINTS_PER_TRACK_12P - scoreHost
             val players = mutableListOf<PlayerPosition>()
             it.track.positions.forEach { pos ->
                 databaseRepository.getPlayer(pos.playerId).firstOrNull()?.let {

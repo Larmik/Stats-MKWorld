@@ -1,6 +1,7 @@
 package fr.harmoniamk.statsmkworld.model.firebase
 
 import android.os.Parcelable
+import fr.harmoniamk.statsmkworld.extension.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.local.DatastoreWarTrack
 import kotlinx.parcelize.Parcelize
@@ -27,7 +28,7 @@ data class WarTrack(
         get() {
             val teamScore = positions.sumOf { it.position.positionToPoints(false) }
             val opponentScore = teamScore.takeIf { it != 0 }?.let {
-                82 - it
+                ScoringConstants.MAX_POINTS_PER_TRACK_12P - it
             } ?: 0
             opponentScore.takeIf { it != 0 }?.let {
                 return teamScore - it

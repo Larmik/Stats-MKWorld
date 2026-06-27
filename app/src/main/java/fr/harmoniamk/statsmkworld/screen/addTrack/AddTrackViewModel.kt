@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.application.MainApplication
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
@@ -191,7 +192,7 @@ class AddTrackViewModel @AssistedInject constructor(
         when {
             positions.size == _state.value.players.size -> {
                 val scoreHost = _state.value.selectedPositions.map { it.position }.sumOf { it.position.positionToPoints(is24p) }
-                val scoreOpponent = 82 - scoreHost
+                val scoreOpponent = ScoringConstants.MAX_POINTS_PER_TRACK_12P - scoreHost
                 _state.value = _state.value.copy(
                     trackScore = "$scoreHost - $scoreOpponent",
                     teamHostTrackScore = scoreHost,

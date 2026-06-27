@@ -39,10 +39,10 @@ android {
         create("release") {
             val properties = Properties()
             properties.load(project.rootProject.file("local.properties").inputStream())
-            storeFile  = file("/Users/pascal/Documents/statsmkworld_keystore")
-            storePassword  = "Harmonia2025!"
-            keyPassword =  "Harmonia2025!"
-            keyAlias =  "statsmkworld"
+            properties.getProperty("KEYSTORE_PATH")?.let { storeFile = file(it) }
+            storePassword = properties.getProperty("KEYSTORE_PASSWORD")
+            keyPassword = properties.getProperty("KEY_PASSWORD")
+            keyAlias = properties.getProperty("KEY_ALIAS") ?: "statsmkworld"
         }
     }
 

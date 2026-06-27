@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.extension.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.countryFlag
 import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -174,7 +175,7 @@ fun PlayerCell(
 fun PlayerCellPreview() {
     PlayerCell(
         player = PlayerEntity(
-            id = "18595",
+            id = ScoringConstants.DEBUG_PLAYER_ID,
             name = "Larii",
             country = "FR",
             role = 0,
@@ -190,7 +191,7 @@ fun PlayerCellPreview() {
         onRemoveShock = {},
         playerRanking = RankingItem.PlayerRanking(
             player =  PlayerEntity(
-                id = "18595",
+                id = ScoringConstants.DEBUG_PLAYER_ID,
                 name = "Larii",
                 country = "FR",
                 role = 0,
