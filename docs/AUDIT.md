@@ -33,7 +33,7 @@ Les numéros de ligne sont indicatifs (état au moment de l'audit) — à reconf
 - [ ] 🔴 **B1 — Crash potentiel `subList(0, 2)`.** [extension/ListExtension.kt:227-228](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/ListExtension.kt) (branche 24p de `withFullStats`) appelle `subList(0, 2)` sur les `war.scores` **bruts**. Si une war 24p a < 2 scores (scores non saisis → liste vide) ⇒ `IndexOutOfBoundsException`. [Stats.kt:78,84](../app/src/main/java/fr/harmoniamk/statsmkworld/model/local/Stats.kt) utilise `safeSubList`, lui. → Utiliser `safeSubList` partout.
 - [ ] 🟠 **B2 — Flag `is24p` perdu dans les classements d'adversaires.** [ListExtension.kt:285](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/ListExtension.kt) : `withFullTeamStats` appelle `.withFullStats(databaseRepository, userId)` **sans** `is24p` (défaut `false`). Utilisé par `InitStatsWorker` pour `opponentRankList`/`playerOpponentRankList` → en mode 24p, les classements d'adversaires sont calculés avec les formules 12p (victoire/défaite via `displayedDiff` basé sur `82 × nbTracks`, faux en 24p). Le `StatsScreen` direct, lui, passe bien `is24p` ([StatsViewModel.kt:107-110](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/StatsViewModel.kt)). → Propager `is24p` dans `withFullTeamStats` et son appel.
 - [ ] 🟠 **B3 — Shadowing trompeur de `is24p`.** Dans `withFullStats` ([ListExtension.kt:78-136](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/ListExtension.kt)), le paramètre `is24p` est masqué par un `val is24p = …teamOpponent.size > 1` local (scoring), mais le `when (is24p)` qui choisit la branche utilise le **paramètre**. Source directe de B2. → Unifier sur `teamOpponent.size`.
-- [ ] 🟠 **B4 — `withTrackStats` : division incohérente de `teamScore`.** [ListExtension.kt:323-345](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/ListExtension.kt) : pour un index simple, `teamScore = teamScoreForTrack / size` (moyenne) ; pour un combo intermission (index double), `teamScore = teamScoreForTrack` (**non divisé**). Les stats de circuit des combos 24p sont donc fausses. → Diviser dans les deux branches (à confirmer fonctionnellement).
+- [x] ~~🟠 **B4 — `withTrackStats` : division incohérente de `teamScore`.**~~ **Analyse incorrecte.** Une intermission est une course unique (l'index double identifie 2 circuits joués simultanément, pas 2 courses). `teamScoreForTrack` est déjà le score d'une seule course et ne dépend pas de la taille du tableau d'index. Le comportement original (`teamScore = teamScoreForTrack` sans division) est correct.
 - [ ] 🟡 **B5 — `82` codé en dur dans des calculs réutilisés.** [WarDetails.kt:28](../app/src/main/java/fr/harmoniamk/statsmkworld/model/local/WarDetails.kt) (`82 * size − scoreHost`) et `WarTrack.diffScore` (force `positionToPoints(false)`) ne valent qu'en 12p ; fragile dès qu'un appel 24p y passe (cf. B2).
 - [ ] 🟡 **B6 — `PlayerEntity` est `class`, pas `data class`.** [entities/PlayerEntity.kt:10](../app/src/main/java/fr/harmoniamk/statsmkworld/database/entities/PlayerEntity.kt) : pas d'`equals`/`hashCode`. `WarExtension.withPlayersList` fait `groupBy { it.player }` → regroupement par **référence**. Fonctionne aujourd'hui (instances partagées) mais piège latent. → `data class`.
 - [ ] 🟡 **B7 — Erreurs réseau silencieuses.** Les datasources MKCentral/Discord font `trySend(null)` sur échec : un `null` est indistinct d'un « aucun résultat », sans log Crashlytics. → Propager `NetworkResponse.Error`, journaliser.
@@ -132,12 +132,12 @@ Les numéros de ligne sont indicatifs (état au moment de l'audit) — à reconf
 
 ## 8. Feuille de route priorisée
 
-### Lot 1 — Rapide & à fort impact (≈ 0,5–1 j)
-1. **B1** `safeSubList` (anti-crash, 1 ligne).
-2. **B2+B3** propager `is24p` (stats 24p correctes).
-3. **B4** division `teamScore` (combos intermission).
-4. **G2** extraire les constantes de scoring (préalable utile aux tests).
-5. **A1** sortir les secrets + chemin keystore relatif.
+### Lot 1 — Rapide & à fort impact (≈ 0,5–1 j) ✅ Appliqué
+1. ✅ **B1** `safeSubList` (anti-crash, 1 ligne).
+2. ✅ **B2+B3** propager `is24p` (stats 24p correctes).
+3. ~~**B4**~~ analyse incorrecte — comportement original correct.
+4. ✅ **G2** extraire les constantes de scoring (préalable utile aux tests).
+5. ✅ **A1** sortir les secrets + chemin keystore relatif.
 
 ### Lot 2 — Filet de sécurité (≈ 1–2 j)
 6. **T1** tests unitaires du moteur de scoring/stats (verrouille les corrections du Lot 1).
