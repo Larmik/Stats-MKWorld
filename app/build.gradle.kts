@@ -12,6 +12,11 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
 }
 
+val localProps = Properties().also { props ->
+    val file = project.rootProject.file("local.properties")
+    if (file.exists()) props.load(file.inputStream())
+}
+
 android {
     namespace = "fr.harmoniamk.statsmkworld"
     compileSdk = 35
@@ -25,10 +30,8 @@ android {
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val properties = Properties()
-        properties.load(project.rootProject.file("local.properties").inputStream())
-        buildConfigField("String", "DISCORD_API_SECRET", properties.getProperty("DISCORD_API_SECRET"))
-        buildConfigField("String", "DISCORD_API_CLIENT", properties.getProperty("DISCORD_API_CLIENT"))
+        buildConfigField("String", "DISCORD_API_SECRET", localProps.getProperty("DISCORD_API_SECRET", "\"\""))
+        buildConfigField("String", "DISCORD_API_CLIENT", localProps.getProperty("DISCORD_API_CLIENT", "\"\""))
         ksp {
             arg(k = "room.schemaLocation", v = "$projectDir/schemas")
         }
@@ -37,12 +40,10 @@ android {
 
     signingConfigs {
         create("release") {
-            val properties = Properties()
-            properties.load(project.rootProject.file("local.properties").inputStream())
-            properties.getProperty("KEYSTORE_PATH")?.let { storeFile = file(it) }
-            storePassword = properties.getProperty("KEYSTORE_PASSWORD")
-            keyPassword = properties.getProperty("KEY_PASSWORD")
-            keyAlias = properties.getProperty("KEY_ALIAS") ?: "statsmkworld"
+            localProps.getProperty("KEYSTORE_PATH")?.let { storeFile = file(it) }
+            storePassword = localProps.getProperty("KEYSTORE_PASSWORD")
+            keyPassword = localProps.getProperty("KEY_PASSWORD")
+            keyAlias = localProps.getProperty("KEY_ALIAS") ?: "statsmkworld"
         }
     }
 
@@ -76,9 +77,6 @@ android {
     }
     dataBinding {
         enable = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.12"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

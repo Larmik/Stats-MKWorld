@@ -21,10 +21,9 @@ Les numéros de ligne sont indicatifs (état au moment de l'audit) — à reconf
 
 ## 1. Bloquant & sécurité
 
-- [ ] 🔴 **A1 — Secrets en clair, versionnés.** [app/build.gradle.kts:42-46](../app/build.gradle.kts) : mot de passe keystore, alias et **chemin absolu** (`/Users/pascal/…`) en dur. Couplé à `DISCORD_API_SECRET`/`DISCORD_API_CLIENT` (`local.properties`) et `google-services.json`. Le chemin absolu casse tout build hors de la machine d'origine (CI, autre dev).
-  → Externaliser (env/`local.properties`), chemin relatif. **Considérer le secret Discord comme compromis et le faire tourner.**
+- [x] ✅ **A1 — Secrets en clair, versionnés.** Keystore (chemin absolu + mots de passe) externalisé dans `local.properties`. `google-services.json` ajouté au `.gitignore` et désindexé. Secrets Discord déjà dans `local.properties`. **Reste : faire tourner le secret Discord si considéré comme compromis.**
 - [ ] 🔴 **A2 — Règles de sécurité Firebase RTDB à auditer.** L'app lit/écrit `users/`, `wars/`, `currentWars/`, `newAllies/`, `tags/`, `debug/` sans couche d'autorisation applicative (Discord OAuth ≠ Firebase Auth). Si les règles RTDB sont publiques, n'importe qui peut altérer les wars de n'importe quelle équipe. **À vérifier en console Firebase** (hors-repo).
-- [ ] 🟠 **A3 — Build impossible sans `local.properties`.** Lu en phase de configuration Gradle → CI/analyse échouent d'emblée. Prévoir des valeurs de repli si le fichier est absent.
+- [x] ✅ **A3 — Build sans `local.properties`.** `localProps` chargé conditionnellement en tête de `build.gradle.kts` (une seule lecture, valeurs de repli vides). Le build debug passe sans le fichier ; seule la fonctionnalité Discord est non-opérationnelle.
 
 ---
 
