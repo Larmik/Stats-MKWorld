@@ -1,0 +1,17 @@
+# Tableau PDF (réf. TESTS_FUNCTIONAL.md §12.1, §12.2). Ouverture + ajustement lignes. Non destructif.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- stopApp
+- launchApp
+- scrollUntilVisible:
+    element:
+      text: "Voir plus"
+    direction: DOWN
+- tapOn: "Voir plus"
+- tapOn: "553 - 431"          # war 12p
+- assertVisible: "Details war"
+- tapOn: "Tab"
+- assertVisible: "Ajouter une ligne"   # écran EditTab (contentDescription +/-)
+- tapOn: "Ajouter une ligne"           # 6 -> 7 lignes
+- tapOn: "Retirer une ligne"           # 7 -> 6 lignes
+- takeScreenshot: .maestro/screenshots/pdf_tab
