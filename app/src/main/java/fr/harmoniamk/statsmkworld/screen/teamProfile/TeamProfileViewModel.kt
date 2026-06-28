@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterfac
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayerList
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -21,8 +22,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -54,9 +57,10 @@ class TeamProfileViewModel @AssistedInject constructor(
 
     val onDismiss = _onDismiss.asSharedFlow()
 
-    private fun searchPlayers(page: Int, term: String) = mkCentralDataSource.searchPlayers(page, term)
-        .map { Pair(it?.pageCount, it?.playerList) }
-        .shareIn(viewModelScope, SharingStarted.Eagerly)
+    private suspend fun searchPlayers(page: Int, term: String): Pair<Int?, MKCPlayerList?> {
+        val players = mkCentralDataSource.searchPlayers(page, term).successResponse
+        return Pair(players?.pageCount, players?.playerList)
+    }
 
     fun onSearchPlayers(term: String) {
         viewModelScope.launch {
@@ -64,12 +68,12 @@ class TeamProfileViewModel @AssistedInject constructor(
                 var page = 1
                 val playerList = mutableListOf<MKCPlayer>()
                 _state.emit(state.value.copy(playerList = listOf()))
-                var player: Pair<Int?, List<MKCPlayer>?>? = searchPlayers(page, term).firstOrNull()
+                var player: Pair<Int?, List<MKCPlayer>?>? = searchPlayers(page, term)
 
                 playerList.addAll(player?.second.orEmpty())
                 while (page < (player?.first ?: 0)) {
                     page++
-                    player = searchPlayers(page, term).firstOrNull()
+                    player = searchPlayers(page, term)
                     playerList.addAll(player?.second?.filterNot { state.value.allyList.map { it.id }.contains(it.id.toString()) }.orEmpty())
                 }
                 _state.emit(state.value.copy(playerList = playerList))
@@ -78,17 +82,20 @@ class TeamProfileViewModel @AssistedInject constructor(
 
     }
 
-    val state =  when (id) {
-        "me" -> dataStoreRepository.mkcTeam
-        else -> mkCentralDataSource.getTeam(id)
-    }
+    val state =  flowOf(Unit)
+        .mapNotNull {
+            when (id) {
+                "me" -> dataStoreRepository.mkcTeam.firstOrNull()
+                else -> mkCentralDataSource.getTeam(id).successResponse
+            }
+        }
         .map {
             val allyList = when (id) {
                 "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()
                 else -> listOf()
             }
             val buttonVisible = firebaseRepository
-                .getUser(it?.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
+                .getUser(it.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
                 .map { it?.role ?: 0 }
                 .map { it > 0 }
                 .firstOrNull()
