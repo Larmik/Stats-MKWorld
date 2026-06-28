@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.datasource.network
 
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -44,6 +45,8 @@ class DiscordDataSource @Inject constructor(
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO
 
+    private val crashlytics get() = FirebaseCrashlytics.getInstance()
+
     override fun getToken(code: String): Flow<NetworkResponse<TokenResponse>> = callbackFlow {
         val credentials = Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)
         val call = RetrofitUtils.createRetrofit(
@@ -59,16 +62,20 @@ class DiscordDataSource @Inject constructor(
                 response: retrofit2.Response<TokenResponse>
             ) {
                 val result = response.body()
-                val error = response.errorBody()
+                val errorMessage = response.errorBody()?.string()
 
                 when {
                     result != null -> trySend(NetworkResponse.Success(result))
-                    error != null -> trySend(NetworkResponse.Error(error.string()))
+                    errorMessage != null -> {
+                        crashlytics.log("Discord getToken error: $errorMessage")
+                        trySend(NetworkResponse.Error(errorMessage))
+                    }
                     else -> trySend(NetworkResponse.Error("Erreur inconnue"))
                 }
             }
 
             override fun onFailure(call: retrofit2.Call<TokenResponse>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(NetworkResponse.Error(t.message ?: "Erreur inconnnue"))
             }
         })
@@ -89,16 +96,20 @@ class DiscordDataSource @Inject constructor(
                 response: retrofit2.Response<DiscordUser>
             ) {
                 val result = response.body()
-                val error = response.errorBody()
+                val errorMessage = response.errorBody()?.string()
 
                 when {
                     result != null -> trySend(NetworkResponse.Success(result))
-                    error != null -> trySend(NetworkResponse.Error(error.string()))
+                    errorMessage != null -> {
+                        crashlytics.log("Discord getUser error: $errorMessage")
+                        trySend(NetworkResponse.Error(errorMessage))
+                    }
                     else -> trySend(NetworkResponse.Error("Erreur inconnue"))
                 }
             }
 
             override fun onFailure(call: retrofit2.Call<DiscordUser>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(NetworkResponse.Error(t.message ?: "Erreur inconnnue"))
             }
         })
@@ -128,6 +139,7 @@ class DiscordDataSource @Inject constructor(
             }
 
             override fun onFailure(call: retrofit2.Call<TokenResponse>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(null)
             }
         })
