@@ -11,6 +11,31 @@
 - 🔁 = comporte une écriture **temps réel** (war en cours écoutée via Firebase).
 - Modes : **12p** = 1 adversaire (6v6) · **24p** = 3 adversaires (tournoi).
 - Sauf mention contraire, tester chaque cas **en 12p ET en 24p**.
+- 🤖 = cas couvert par un flow **Maestro** automatisé (`.maestro/flows/`).
+
+---
+
+## Couverture automatisée (Maestro)
+
+Suite dans `.maestro/flows/` — exécuter : `maestro test .maestro/flows`.
+Pré-requis : appareil connecté + app **déjà connectée** (login Discord manuel une fois). Build **debug** = environnement Firebase séparé (écritures sans risque).
+
+| Flow | Cas couverts | Statut |
+|---|---|---|
+| `01_accueil_smoke` | 4.1, 4.4 | ✅ |
+| `02_navigation` | 3.1 (3 onglets) | ✅ |
+| `03_annuaire` | 14.4 (filtre équipes local), 14.2 (recherche joueurs — à durcir avec attente) | ✅ / ⚠️ |
+| `04_stats` | 13.1.1 → 13.1.6 (ouverture des 5 catégories) | ✅ |
+| `05_historique` | 4.9/4.10 (Voir plus), 10.1, 10.5, 11.1 | ✅ |
+| `06_profils` | 15.8 (menu présent sur son profil), 16.1 | ✅ |
+
+> Convention sélecteurs : `MKButton` et titres `BaseScreen` sont **affichés en MAJUSCULES** mais leur sémantique est en **casse naturelle** → sélectionner en casse naturelle.
+
+## Bugs trouvés en campagne
+
+| ID | Sévérité | Cas | Description | Statut |
+|---|---|---|---|---|
+| BUG-A11Y-1 | 🟠 | (transverse) | `MKButton` faisait `clearAndSetSemantics { }` → libellé des boutons **invisible aux lecteurs d'écran** (TalkBack) et aux outils de test. | ✅ Corrigé (`contentDescription` exposé) |
 
 ---
 
