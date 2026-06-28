@@ -1,0 +1,26 @@
+# Édition d'une course (réf. TESTS_FUNCTIONAL.md §9). Idempotent.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- runFlow: ../subflows/start_war_12p.yaml
+# Ajouter une course
+- tapOn: "Course suivante"
+- tapOn: "Circuit Mario Bros."
+- tapOn: "^1$"
+- tapOn: "^2$"
+- tapOn: "^3$"
+- tapOn: "^4$"
+- tapOn: "^5$"
+- tapOn: "^6$"
+- tapOn: "Confirmer"
+- assertVisible: "Plus d'actions"
+# Ouvrir le détail de la course depuis la grille puis éditer
+- tapOn: "Circuit Mario Bros."
+- assertVisible: "Editer"
+- tapOn: "Editer"
+- assertVisible: "Edition circuit"
+# Changer le circuit
+- tapOn: "Stade Wario"
+- tapOn: "Confirmer"
+- assertVisible: "Plus d'actions"      # retour war en cours
+- takeScreenshot: .maestro/screenshots/track_edited
+- runFlow: ../subflows/cancel_current_war.yaml
