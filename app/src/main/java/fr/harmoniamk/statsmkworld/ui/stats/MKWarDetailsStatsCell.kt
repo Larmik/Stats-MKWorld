@@ -86,7 +86,7 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                 )
                 MKText(
                     text =  when (userId) {
-                        null -> (stats?.averageMapPoints?.trackScoreToDiff()?.takeIf { type?.is24PEnabled != true } ?: stats?.averageMapPoints?.toString()) ?: mapStats?.teamScore?.trackScoreToDiff()?.takeIf { type?.is24PEnabled != true } ?: mapStats?.teamScore?.toString()
+                        null -> (stats?.averageMapPoints?.trackScoreToDiff(type?.is24PEnabled == true)?.takeIf { type?.is24PEnabled != true } ?: stats?.averageMapPoints?.toString()) ?: mapStats?.teamScore?.trackScoreToDiff(type?.is24PEnabled == true)?.takeIf { type?.is24PEnabled != true } ?: mapStats?.teamScore?.toString()
                         else -> (stats?.averagePlayerPosLabel ?: mapStats?.averagePlayerPosLabel)
                     }.orEmpty(),
                     font = Fonts.Urbanist, fontSize = 20, textColor = Colors.white

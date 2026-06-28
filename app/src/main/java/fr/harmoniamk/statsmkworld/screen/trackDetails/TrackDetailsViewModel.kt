@@ -46,7 +46,11 @@ class TrackDetailsViewModel @AssistedInject constructor(
         .map {
             val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
             val scoreHost = it.track.positions.map { it.position }.sumOf { pos -> pos.positionToPoints(details?.is24p == true) }
-            val scoreOpponent = ScoringConstants.MAX_POINTS_PER_TRACK_12P - scoreHost
+            val maxPointsPerTrack = when (details?.is24p == true) {
+                true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
+                else -> ScoringConstants.MAX_POINTS_PER_TRACK_12P
+            }
+            val scoreOpponent = maxPointsPerTrack - scoreHost
             val players = mutableListOf<PlayerPosition>()
             it.track.positions.forEach { pos ->
                 databaseRepository.getPlayer(pos.playerId).firstOrNull()?.let {

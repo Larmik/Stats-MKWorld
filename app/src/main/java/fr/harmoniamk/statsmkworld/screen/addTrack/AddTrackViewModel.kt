@@ -192,7 +192,11 @@ class AddTrackViewModel @AssistedInject constructor(
         when {
             positions.size == _state.value.players.size -> {
                 val scoreHost = _state.value.selectedPositions.map { it.position }.sumOf { it.position.positionToPoints(is24p) }
-                val scoreOpponent = ScoringConstants.MAX_POINTS_PER_TRACK_12P - scoreHost
+                val maxPointsPerTrack = when (is24p) {
+                    true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
+                    else -> ScoringConstants.MAX_POINTS_PER_TRACK_12P
+                }
+                val scoreOpponent = maxPointsPerTrack - scoreHost
                 _state.value = _state.value.copy(
                     trackScore = "$scoreHost - $scoreOpponent",
                     teamHostTrackScore = scoreHost,

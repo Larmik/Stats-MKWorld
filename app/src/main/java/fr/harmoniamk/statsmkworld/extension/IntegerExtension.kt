@@ -119,8 +119,11 @@ fun Int?.positionToPoints(is24p: Boolean) = when (is24p) {
 
 
 
-fun Int.warScoreToDiff(): String {
-    val mid = ScoringConstants.MID_WAR_SCORE
+fun Int.warScoreToDiff(is24p: Boolean = false): String {
+    val mid = when (is24p) {
+        true -> ScoringConstants.MID_WAR_SCORE_24P
+        else -> ScoringConstants.MID_WAR_SCORE
+    }
     val halfDiff = when {
         this > mid -> this - mid
         this < mid -> mid - this
@@ -133,8 +136,11 @@ fun Int.warScoreToDiff(): String {
     }
 }
 
-fun Int.trackScoreToDiff(): String {
-    val mid = ScoringConstants.MID_TRACK_SCORE
+fun Int.trackScoreToDiff(is24p: Boolean = false): String {
+    val mid = when (is24p) {
+        true -> ScoringConstants.MID_TRACK_SCORE_24P
+        else -> ScoringConstants.MID_TRACK_SCORE
+    }
     val halfDiff = when {
         this > mid -> this - mid
         this < mid -> mid - this

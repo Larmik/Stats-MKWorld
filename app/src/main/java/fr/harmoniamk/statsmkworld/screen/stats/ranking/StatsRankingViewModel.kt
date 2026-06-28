@@ -251,7 +251,7 @@ class StatsRankingViewModel @AssistedInject constructor(
                 .mapNotNull { it as? RankingItem.TrackRanking }
                 .sortedByDescending {
                     when (state.value.currentUserId) {
-                        null -> it.stats.teamScore?.trackScoreToDiff()?.substringAfter("+")
+                        null -> it.stats.teamScore?.trackScoreToDiff(state.value.is24PEnabled == true)?.substringAfter("+")
                             ?.toIntOrNull() ?: 0
                         else -> it.stats.playerScore?.pointsToPosition(state.value.is24PEnabled == true)?.firstOrNull()?.let { -it }
                     }
