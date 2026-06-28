@@ -208,9 +208,11 @@ data class War(
 data class WarTrack(val id: Long, val index: List<String>, val positions: List<WarPosition>, var shocks: List<Shock>? = null)
 data class WarPosition(val id: Long, val playerId: String, val position: Int)
 data class WarPenalty(val teamId: String, val amount: Int)   // amount ∈ {10,15,20}
-data class WarScore(var teamId: String, var score: Int)      // 24p
-data class Shock(var playerId: String, var count: Int)
+data class WarScore(val teamId: String, val score: Int)      // 24p — immuable (val)
+data class Shock(val playerId: String, val count: Int)       // immuable (val)
 ```
+
+> Les modèles « source de vérité » sont **immuables** (`val` + `copy`) ; seul `WarTrack.shocks` reste `var` (champ optionnel renseigné après coup). `WarScore`/`Shock` ont été figés en `val` (audit B8).
 
 **`Shock`** : représente l'objet **éclair** récupéré en jeu (item stratégiquement décisif en Mario Kart). Le compteur (`count` par joueur sur une course) sert uniquement à produire des statistiques dédiées — il **n'entre pas** dans le calcul du score d'une course ou d'une war.
 
@@ -230,7 +232,19 @@ data class Shock(var playerId: String, var count: Int)
 
 ## 8. Algorithmes de scoring
 
-Tout est dans `extension/IntegerExtension.kt` (`positionToPoints`, `pointsToPosition`, `*ScoreToDiff`) et appliqué dans `WarDetails`/`WarTrackDetails` (`model/local/WarDetails.kt`).
+Tout est dans `extension/IntegerExtension.kt` (`positionToPoints`, `pointsToPosition`, `*ScoreToDiff`) et appliqué dans `WarDetails`/`WarTrackDetails` (`model/local/WarDetails.kt`). **Les constantes magiques sont centralisées dans `model/ScoringConstants.kt`**, avec une déclinaison par mode (suffixe `_24P`) pour celles dont la valeur diffère entre 12p et 24p — voir le tableau ci-dessous.
+
+### Constantes (`ScoringConstants`)
+
+| Constante | 12p | 24p | Sens |
+|---|---|---|---|
+| `MAX_POINTS_PER_TRACK_*` | `_12P` = 82 | `_24P` = 144 | total de points d'une course |
+| `MID_WAR_SCORE` / `MID_WAR_SCORE_24P` | 492 | 864 | milieu (équilibre) d'une war de 12 courses |
+| `MID_TRACK_SCORE` / `MID_TRACK_SCORE_24P` | 41 | 72 | milieu d'une course |
+| `TOTAL_24P_SCORE` | — | 1728 | total d'une war 24p (12 × 144) — contrôle de saisie |
+| `DEBUG_PLAYER_ID` | `"18595"` | — | joueur de référence (mode matrix) |
+
+La sélection se fait via `when (is24p)` partout où la valeur dépend du mode (`WarTrack.diffScore`, `WarTrackDetails.opponentScore`, `Int.warScoreToDiff/trackScoreToDiff`, `AddTrackViewModel`, `TrackDetailsViewModel`).
 
 ### Position → points
 
@@ -258,8 +272,8 @@ Tout est dans `extension/IntegerExtension.kt` (`positionToPoints`, `pointsToPosi
 
 ### Totaux et points d'équilibre
 
-- **12 joueurs** : la somme des 12 places = **82 points** par course (réparti entre les 2 équipes de 6). Donc `scoreOpponent = 82 − scoreHost` par course. Une war de 12 courses totalise **984** points, point d'équilibre **492**.
-- **24 joueurs** : la somme des 24 places = **144 points** par course (4 équipes de 6). Une war de 12 courses totalise **1728** points (valeur utilisée pour la validation de la saisie manuelle des scores).
+- **12 joueurs** : la somme des 12 places = **82 points** par course (réparti entre les 2 équipes de 6). Donc `scoreOpponent = 82 − scoreHost` par course. Une war de 12 courses totalise **984** points, point d'équilibre **492** (`MID_WAR_SCORE`) ; milieu d'une course **41** (`MID_TRACK_SCORE`).
+- **24 joueurs** : la somme des 24 places = **144 points** par course (4 équipes de 6). Une war de 12 courses totalise **1728** points (`TOTAL_24P_SCORE`, valeur utilisée pour la validation de la saisie manuelle des scores) ; équilibre **864** (`MID_WAR_SCORE_24P`), milieu d'une course **72** (`MID_TRACK_SCORE_24P`).
 
 ### Calculs dans `WarDetails` (12p)
 
@@ -271,7 +285,9 @@ val scoreOpponentWithPenalties = scoreOpponent - Σ penalties(opponent)
 val displayedDiff = (scoreHostWithPenalties - scoreOpponentWithPenalties).let { if (it>0) "+$it" else "$it" }
 ```
 
-`WarTrackDetails` calcule par course : `teamScore = Σ positionToPoints`, `opponentScore = 82 − teamScore` (si ≠ 0), `diffScore = teamScore − opponentScore`, `displayedResult = "$teamScore - $opponentScore"`.
+`WarTrackDetails` calcule par course : `teamScore = Σ positionToPoints(is24p)`, `opponentScore = maxPointsPerTrack − teamScore` (si ≠ 0, où `maxPointsPerTrack` vaut 82 en 12p / 144 en 24p), `diffScore = teamScore − opponentScore`, `displayedResult = "$teamScore - $opponentScore"`.
+
+Côté modèle firebase, `WarTrack.diffScore(is24p)` est désormais une **fonction** (et non plus une propriété) appliquant la même logique mode-aware ; les appelants (`LineChartExtension`, `withTrackStats`) propagent `is24p` (audit B5).
 
 ### Calculs en 24p
 
@@ -280,9 +296,11 @@ Les scores ne sont pas dérivés des positions mais **saisis manuellement** (`Wa
 ### Conversion écart ↔ affichage
 
 ```kotlin
-fun Int.warScoreToDiff(): String   // référence 492 : "+X" / "-X" / "0", X = |score-492|*2
-fun Int.trackScoreToDiff(): String // référence 41  : idem
+fun Int.warScoreToDiff(is24p: Boolean = false): String   // milieu 492 (12p) / 864 (24p) : "+X" / "-X" / "0", X = |score-milieu|*2
+fun Int.trackScoreToDiff(is24p: Boolean = false): String // milieu 41  (12p) / 72  (24p) : idem
 ```
+
+> Ces affichages « écart » ne sont en pratique utilisés qu'en **12p** (en 24p l'UI montre les scores absolus) ; le paramètre `is24p` est propagé par cohérence/robustesse — voir [AUDIT.md G2](AUDIT.md).
 
 ### Couleurs
 
@@ -308,13 +326,13 @@ Cœur dans `extension/ListExtension.kt` (`withFullStats`, `withTrackStats`, `wit
 
 Agrège **par index de circuit** (`groupBy { it.index }`) :
 - `totalPlayed` = nombre de courses du groupe.
-- `winRate = (courses où diffScore > 0) * 100 / totalPlayed`.
+- `winRate = (courses où diffScore(is24p) > 0) * 100 / totalPlayed` (le barème de points suit le mode).
 - `teamScore` / `playerScore` = moyennes (somme / `totalPlayed`).
 - Gère index simple (`map = [Maps.entries[idx]]`) **et** double (combo intermission, `size == 2`).
 
 ### `Stats` (objet de présentation)
 
-Champs dérivés : `highestScore`/`lowestScore`, `bestMap`/`worstMap` (par `winRate`, min. 2 parties), `bestPlayerMap`/`worstPlayerMap` (par `playerScore`), `mostPlayedMap`, `averagePoints` (+ `averagePointsLabel` via `warScoreToDiff`), `averageMapPoints`, `averagePlayerPosition` (+ `averagePlayerPosLabel`), `mapsWon` (`% de courses moyennes > 41 pts`), `shockCount`.
+Champs dérivés : `highestScore`/`lowestScore`, `bestMap`/`worstMap` (par `winRate`, min. 2 parties), `bestPlayerMap`/`worstPlayerMap` (par `playerScore`), `mostPlayedMap`, `averagePoints` (+ `averagePointsLabel` via `warScoreToDiff(warStats.is24p)`), `averageMapPoints`, `averagePlayerPosition` (+ `averagePlayerPosLabel`), `mapsWon` (`% de courses moyennes > 41 pts`), `shockCount`.
 
 `WarStats(list, is24p)` : `warsPlayed`, `warsWon`, `warsTied` (`displayedDiff == "0"`), `warsLoss`, `highestVictory`, `loudestDefeat` (logique différenciée 12p/24p — cf. §8).
 
@@ -364,7 +382,7 @@ var playerTrackRankList: List<RankingItem>
 | `TeamEntity` | id, name, tag, color?, logo? |
 | `WarEntity` | id, teamHost?, teamOpponent (List<String>), createdDate (`dd/MM/yyyy`), warTracks?, penalties?, scores? |
 
-`PlayerEntity` a deux constructeurs (`MKCPlayer` avec flag `isAlly`, et `MKCTeamPlayer` où `leader || manager → role = 2`).
+`PlayerEntity` est une **`data class`** (audit B6 : `equals`/`hashCode` par valeur, indispensable au `groupBy { it.player }` de `WarExtension.withPlayersList` qui regroupait sinon par référence). Elle a deux constructeurs (`MKCPlayer` avec flag `isAlly`, et `MKCTeamPlayer` où `leader || manager → role = 2`).
 
 **DAO** (requêtes verbatim notables) :
 
@@ -471,7 +489,7 @@ Retrofit créé via `api/RetrofitUtils.createRetrofit(apiClass, url, factory = M
 | `getTeams` | `@GET registry/teams?game=mkworld&mode=150cc&is_historical=false&is_active=true` | `page` |
 | `getMK8Teams` | `@GET registry/teams?game=mk8dx&mode=150cc&is_historical=false&is_active=true` | `page` |
 
-`MKCentralDataSource` enveloppe chaque appel en `callbackFlow` (`enqueue`). Timeouts : **5 s** pour `findPlayer`/`getPlayer`, **60 s** pour les équipes/recherches. `getPlayer` renvoie `NetworkResponse<MKCPlayer>` (Success/Error) ; les autres renvoient le DTO ou `null`.
+`MKCentralDataSource` enveloppe chaque appel en `callbackFlow` (`enqueue`). Timeouts : **5 s** pour `findPlayer`/`getPlayer`, **60 s** pour les équipes/recherches. `getPlayer` renvoie `NetworkResponse<MKCPlayer>` (Success/Error) ; les autres renvoient le DTO ou `null`. **Les échecs ne sont plus silencieux** (audit B7) : `onFailure` journalise via `FirebaseCrashlytics.recordException(t)`, et les corps d'erreur HTTP via `crashlytics.log(...)`. Les signatures nullables sont conservées (propager `NetworkResponse.Error` partout cascaderait sur ~10 appelants — refonte à part).
 
 DTO (`model/network/mkcentral/`, Moshi `@JsonClass(generateAdapter=true)`, mapping `@Json(name=…)` snake_case) :
 - `MKCPlayer` : id, name, country_code, join_date, discord (`MKCDiscordInfo`), friend_codes, **rosters** (`MKCPlayerRoster` : roster_id, team_id, game, mode…), user_settings.
@@ -486,7 +504,7 @@ DTO (`model/network/mkcentral/`, Moshi `@JsonClass(generateAdapter=true)`, mappi
 | `revokeToken` | `@FormUrlEncoded @POST api/oauth2/token/revoke` | `token`, `token_type_hint=access_token` |
 | `getCurrentUser` | `@GET api/users/@me` | header `Authorization: Bearer …` |
 
-`DiscordDataSource` : Basic = `Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)`, timeout 60 s. `getToken`/`getUser` → `NetworkResponse`, `revokeToken` → `Flow<Unit?>`. DTO : `TokenResponse(access_token, token_type, expires_in, refresh_token, scope)`, `DiscordUser` (id, username, avatar, email, …, `avatar_decoration_data`).
+`DiscordDataSource` : Basic = `Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)`, timeout 60 s. `getToken`/`getUser` → `NetworkResponse`, `revokeToken` → `Flow<Unit?>`. Mêmes garde-fous Crashlytics qu'au-dessus (B7). DTO : `TokenResponse(access_token, token_type, expires_in, refresh_token, scope)`, `DiscordUser` (id, username, avatar, email, …, `avatar_decoration_data`).
 
 ### `NetworkResponse<T>`
 Sealed : `Success(response)` / `Error(message)`, avec accesseurs `successResponse: T?` et `errorResponse: String?`.
