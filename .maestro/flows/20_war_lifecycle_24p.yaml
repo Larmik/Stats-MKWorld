@@ -1,0 +1,35 @@
+# Cycle war 24p ALÉATOIRE (3 adversaires, intermission, positions 1-24, barème 24p).
+# Réf. TESTS_FUNCTIONAL.md §5(24p), §7(24p + intermission), §8.1, §8.3. Idempotent.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- runFlow: ../subflows/start_war_24p.yaml
+
+# --- §7 Saisie course 24p : circuit (scroll) -> intermission ignorée (re-tap) -> 6 positions 1-24 ---
+- tapOn: "Course suivante"
+- assertVisible: "Sélection du circuit"
+- scrollUntilVisible: { element: { text: "^${output.circuit}$" }, direction: DOWN }
+- tapOn: "^${output.circuit}$"
+# Page intermission : re-sélectionner le même circuit l'annule -> positions
+- scrollUntilVisible: { element: { text: "^${output.circuit}$" }, direction: DOWN }
+- tapOn: "^${output.circuit}$"
+- assertVisible: "Sélection des positions"
+- tapOn: "^${output.q0}$"
+- tapOn: "^${output.q1}$"
+- tapOn: "^${output.q2}$"
+- tapOn: "^${output.q3}$"
+- tapOn: "^${output.q4}$"
+- tapOn: "^${output.q5}$"
+- assertVisible: "${output.score24}"     # score d'équipe 24p calculé en JS, vérifié
+- tapOn: "Confirmer"
+- assertVisible: "Plus d'actions"
+
+# --- §8.1 Pénalité ---
+- tapOn: "Plus d'actions"
+- tapOn: "Pénalité"
+- tapOn: "-10 pour 6v6 Squad"
+- tapOn: "Valider"
+- assertVisible: "Plus d'actions"
+- takeScreenshot: .maestro/screenshots/war_lifecycle_24p
+
+# --- §8.3 Annulation ---
+- runFlow: ../subflows/cancel_current_war.yaml

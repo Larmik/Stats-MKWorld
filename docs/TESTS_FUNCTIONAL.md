@@ -29,6 +29,7 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 | `05_historique` | 4.9/4.10 (Voir plus), 10.1, 10.5, 11.1 | ✅ |
 | `06_profils` | 15.8 (menu présent sur son profil), 16.1 | ✅ |
 | `10_war_lifecycle` | **E2E ALÉATOIRE dans 1 war** : 5 (création, **6 joueurs aléatoires**) + 7 (course : **circuit parmi 29 avec scroll** + **6 positions aléatoires**, score 12p calculé en JS & vérifié → property-based) + 8.1 (pénalité) + 8.2 (remplacement aléatoire) + 9 (édition, 2ᵉ circuit aléatoire) + 8.3 (annulation) — **idempotent** | ✅ |
+| `20_war_lifecycle_24p` | **E2E ALÉATOIRE 24p** : 5 (3 adversaires + joueurs aléatoires) + 7 (circuit avec scroll + **intermission** + **positions 1-24**, score 24p calculé & vérifié) + 8.1 (pénalité) + 8.3 (annulation) — **idempotent** | ✅ |
 | `16_add_ally_search` | 16.4, 16.5 (ouverture + recherche allié, **sans** ajout) | ✅ |
 | `18_refresh` | 15.9 (rafraîchir → `fetchData` migré ⚙️) | ✅ |
 | `19_pdf` | 11.2, 12.1, 12.2 (ouverture tableau + lignes) | ✅ |
@@ -53,6 +54,8 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 | ID | Sévérité | Cas | Description | Statut |
 |---|---|---|---|---|
 | BUG-A11Y-1 | 🟠 | (transverse) | `MKButton` faisait `clearAndSetSemantics { }` → libellé des boutons **invisible aux lecteurs d'écran** (TalkBack) et aux outils de test. | ✅ Corrigé (`contentDescription` exposé) |
+| A11Y-2 | 🟢 | 5 / 14 | Champ de recherche d'équipe (AddWar) sans label a11y → ajout d'un `contentDescription` (« Recherche equipe »). | ✅ |
+| UX-1 | 🟡 | 5 (24p) | En 24p, sélectionner un adversaire **réinitialise le filtre de recherche** → il faut re-rechercher pour chacun des 3 adversaires (friction). | ℹ️ À évaluer |
 
 ---
 
