@@ -1,0 +1,14 @@
+# Smoke test non destructif : écran Accueil + bascule de mode.
+# Réf. TESTS_FUNCTIONAL.md §4 (Accueil) et §4.4 (sélecteur 12p/24p).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+- assertVisible: "Joueur"
+- assertVisible: "Equipe"
+- assertVisible: "Derniers résultats :"
+- assertVisible: "12 joueurs"
+- assertVisible: "24 joueurs"
+# Bascule 24p puis retour 12p (lecture seule, aucune écriture)
+- tapOn: "24 joueurs"
+- tapOn: "12 joueurs"
+- takeScreenshot: ../screenshots/accueil_12p
