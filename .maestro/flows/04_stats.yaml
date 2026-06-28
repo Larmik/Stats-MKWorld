@@ -1,0 +1,29 @@
+# Statistiques — menu + ouverture des 5 catégories (réf. TESTS_FUNCTIONAL.md §13). Lecture seule.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+- tapOn: "Statistiques"            # onglet
+- assertVisible: "Statistiques individuelles"
+# 1. Individuelles
+- tapOn: "Statistiques individuelles"
+- takeScreenshot: .maestro/screenshots/stats_individuelles
+- back
+- assertVisible: "Statistiques individuelles"
+# 2. Équipe
+- tapOn: "Statistiques de l'équipe"
+- takeScreenshot: .maestro/screenshots/stats_equipe
+- back
+- assertVisible: "Statistiques des joueurs"
+# 3. Joueurs (classement)
+- tapOn: "Statistiques des joueurs"
+- takeScreenshot: .maestro/screenshots/stats_joueurs
+- back
+# 4. Adversaires (classement)
+- tapOn: "Statistiques des adversaires"
+- takeScreenshot: .maestro/screenshots/stats_adversaires
+- back
+# 5. Circuits (classement)
+- tapOn: "Statistiques des circuits"
+- takeScreenshot: .maestro/screenshots/stats_circuits
+- back
+- assertVisible: "Statistiques individuelles"

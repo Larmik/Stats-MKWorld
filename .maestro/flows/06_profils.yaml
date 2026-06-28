@@ -1,0 +1,15 @@
+# Profils joueur & équipe (réf. TESTS_FUNCTIONAL.md §15-§16). Lecture seule (pas de logout/role).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+# --- Profil joueur (soi) : le menu doit être présent ---
+- tapOn: "Larii"
+- assertVisible: "Rafraîchir les données"      # menu visible uniquement sur son profil
+- takeScreenshot: .maestro/screenshots/profil_joueur
+- back
+- assertVisible: "Derniers résultats :"
+# --- Profil équipe (sienne) ---
+- tapOn: "Harmonia"
+- takeScreenshot: .maestro/screenshots/profil_equipe
+- back
+- assertVisible: "Derniers résultats :"
