@@ -27,10 +27,10 @@ import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuScreen
 import fr.harmoniamk.statsmkworld.screen.welcome.WelcomeScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 
-enum class BottomNavItem(var icon: Int, var route: String) {
-    WELCOME(R.drawable.arrivee, "Home/Welcome"),
-    STATS(R.drawable.stats, "Home/Stats"),
-    REGISTRY(R.drawable.encyclopedie, "Home/Registry"),
+enum class BottomNavItem(var icon: Int, var route: String, val label: String) {
+    WELCOME(R.drawable.arrivee, "Home/Welcome", "Accueil"),
+    STATS(R.drawable.stats, "Home/Stats", "Statistiques"),
+    REGISTRY(R.drawable.encyclopedie, "Home/Registry", "Annuaire"),
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -60,7 +60,7 @@ fun HomeScreen(
                         icon = {
                             Icon(
                                 painter = painterResource(id = screen.icon),
-                                contentDescription = null,
+                                contentDescription = screen.label,
                                 modifier = Modifier.size(25.dp)
                             )
                         },

@@ -1,0 +1,18 @@
+# Annuaire (réf. TESTS_FUNCTIONAL.md §14) — exerce recherche MKCentral + filtre local.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+- tapOn: "Annuaire"
+- assertVisible: "Joueurs"
+- assertVisible: "Equipes"
+# --- Équipes : filtre LOCAL (assertion fiable) ---
+- tapOn: "Equipes"
+- tapOn: "Rechercher une équipe…"
+- inputText: "Harmonia"
+- assertVisible: "Harmonia"
+- takeScreenshot: ../screenshots/annuaire_equipes
+# --- Joueurs : recherche RÉSEAU (≥3 caractères) ---
+- tapOn: "Joueurs"
+- tapOn: "Rechercher un joueur"
+- inputText: "Larii"
+- takeScreenshot: ../screenshots/annuaire_joueurs

@@ -1,19 +1,13 @@
 # Navigation inter-onglets (réf. TESTS_FUNCTIONAL.md §3).
-# Les onglets sont des icônes sans contentDescription → tap par coordonnées (barre ~93% h).
+# Onglets sélectionnés par contentDescription (Accueil / Statistiques / Annuaire).
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - launchApp
 - assertVisible: "Derniers résultats :"   # onglet Accueil
-# Onglet Statistiques (centre ~50%)
-- tapOn:
-    point: "50%,93%"
+- tapOn: "Statistiques"
 - assertVisible: "Statistiques individuelles"
-# Onglet Annuaire (centre ~84%)
-- tapOn:
-    point: "84%,93%"
+- tapOn: "Annuaire"
 - assertVisible: "Joueurs"
 - assertVisible: "Equipes"
-# Retour onglet Accueil (centre ~17%)
-- tapOn:
-    point: "17%,93%"
+- tapOn: "Accueil"
 - assertVisible: "Derniers résultats :"
