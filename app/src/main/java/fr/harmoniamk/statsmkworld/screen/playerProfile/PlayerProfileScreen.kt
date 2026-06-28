@@ -40,9 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.activity.MainActivity
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.countryFlag
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.getActivity
@@ -381,7 +382,7 @@ fun PlayerProfileScreen(
                                 onClick = viewModel::onLogoutClick
                             ) { }
                         }
-                        if (state.value.player?.id.toString() == "18595" || state.value.isMatrixMode)
+                        if (state.value.player?.id.toString() == ScoringConstants.DEBUG_PLAYER_ID || state.value.isMatrixMode)
                             item { SettingCell(label = "Debug", onClick = onDebug) { } }
                     }
                     state.value.lastUpdate?.let {

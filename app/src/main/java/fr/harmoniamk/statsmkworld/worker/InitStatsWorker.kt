@@ -94,14 +94,14 @@ class InitStatsWorker @AssistedInject constructor(
                 .shareIn(this, SharingStarted.WhileSubscribed(5000))
 
             teams
-                .flatMapLatest { it.withFullTeamStats(wars = warList, databaseRepository = databaseRepository) }
+                .flatMapLatest { it.withFullTeamStats(wars = warList, databaseRepository = databaseRepository, is24p = is24PEnabled) }
                 .map { it
                     .sortedByDescending { it.second.warStats.warsPlayed }
                     .map { RankingItem.OpponentRanking(it.first, it.second) } }
                 .onEach { statsRepository.opponentRankList = it }
                 .launchIn(this)
             teams
-                .flatMapLatest { it.withFullTeamStats(wars = warList, databaseRepository = databaseRepository, userId = currentPlayer?.id.toString()) }
+                .flatMapLatest { it.withFullTeamStats(wars = warList, databaseRepository = databaseRepository, userId = currentPlayer?.id.toString(), is24p = is24PEnabled) }
                 .map { it
                     .sortedByDescending { it.second.warStats.warsPlayed }
                     .map { RankingItem.OpponentRanking(it.first, it.second) } }

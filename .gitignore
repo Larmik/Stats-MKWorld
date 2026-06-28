@@ -13,3 +13,19 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Secrets Firebase (ne jamais versionner)
+google-services.json
+
+# Builds de release
+app/release/
+*.aab
+*.apk
+
+# Keystores
+*.jks
+*.keystore
+
+# Claude Code (settings personnels et mémoire)
+.claude/settings.local.json
+.claude/memory/

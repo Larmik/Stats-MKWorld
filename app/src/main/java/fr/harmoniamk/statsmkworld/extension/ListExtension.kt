@@ -87,13 +87,13 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
         .map { Pair(it, it.warTracks) }
         .forEach {
             var currentPoints = 0
-            val is24p = it.first.war.teamOpponent.size > 1
+            val warIs24p = it.first.war.teamOpponent.size > 1
             it.second.forEach { track ->
                 val playerScoreForTrack = track.track.positions
                     .singleOrNull { pos -> pos.playerId == userId }
-                    ?.position.positionToPoints(is24p)
+                    ?.position.positionToPoints(warIs24p)
                 var teamScoreForTrack = 0
-                track.track.positions.map { it.position.positionToPoints(is24p) }.forEach {
+                track.track.positions.map { it.position.positionToPoints(warIs24p) }.forEach {
                     teamScoreForTrack += it
                 }
                 currentPoints += when (userId != null) {
@@ -224,8 +224,8 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
     }
         else -> {
-            val warsWon = warList.filter { it.war.scores.sortedByDescending { it.score }.subList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
-            val warsLost = warList.filter { it.war.scores.sortedBy { it.score }.subList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
+            val warsWon = warList.filter { it.war.scores.sortedByDescending { it.score }.safeSubList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
+            val warsLost = warList.filter { it.war.scores.sortedBy { it.score }.safeSubList(0, 2).map { it.teamId }.contains(it.war.teamHost) }
             val mostPlayedTeams = warList.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warList.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 1)
             val mostDefeatedTeams = warsWon.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsWon.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 1)
             val lessDefeatedTeams = warsLost.flatMap { it.war.teamOpponent }.map { id ->  Pair(id, warsLost.filter { it.war.teamOpponent.contains(id) }) }.sortedByDescending { it.second.size }.distinctBy { it.first }.safeSubList(0, 1)
@@ -274,7 +274,8 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 fun List<TeamEntity>.withFullTeamStats(
     wars: List<WarEntity>,
     databaseRepository: DatabaseRepositoryInterface,
-    userId: String? = null
+    userId: String? = null,
+    is24p: Boolean = false
 ) = flow {
     val temp = mutableListOf<Pair<TeamEntity, Stats>>()
     this@withFullTeamStats.forEach { team ->
@@ -282,7 +283,7 @@ fun List<TeamEntity>.withFullTeamStats(
             .filter { it.hasTeam(team.id) }
             .filter { (userId != null && it.hasPlayer(userId)) || userId == null }
             .map { WarDetails(War(it)) }
-            .withFullStats(databaseRepository, userId)
+            .withFullStats(databaseRepository, userId, is24p = is24p)
             .firstOrNull()
             ?.let {
                 if (it.warStats.list.isNotEmpty())

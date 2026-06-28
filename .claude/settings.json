@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew assembleDebug)",
+      "Bash(./gradlew assembleRelease)",
+      "Bash(./gradlew installDebug)",
+      "Bash(./gradlew compileDebugKotlin)",
+      "Bash(./gradlew test)",
+      "Bash(./gradlew test:*)",
+      "Bash(./gradlew lint)",
+      "Bash(./gradlew lint:*)",
+      "Bash(./gradlew clean)",
+      "Bash(./gradlew tasks)",
+      "Bash(./gradlew :app:dependencies)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(adb devices)",
+      "Bash(adb logcat:*)"
+    ],
+    "deny": [
+      "Read(./local.properties)",
+      "Read(./app/google-services.json)",
+      "Read(./app/src/debug/google-services.json)",
+      "Read(**/*.keystore)",
+      "Read(**/*.jks)"
+    ]
+  }
+}

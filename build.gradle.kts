@@ -4,9 +4,10 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.ksp) apply false
-    id("com.google.protobuf") version "0.9.4" apply false
-    id("com.google.firebase.crashlytics") version "3.0.6" apply false
+    id("com.google.protobuf") version "0.10.0" apply false
+    id("com.google.firebase.crashlytics") version "3.0.7" apply false
     alias(libs.plugins.kotlin.parcelize) apply false
+    alias(libs.plugins.kotlin.compose.compiler) apply false
 
 }
 

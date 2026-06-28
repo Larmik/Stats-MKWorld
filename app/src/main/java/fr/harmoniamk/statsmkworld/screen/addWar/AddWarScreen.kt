@@ -27,9 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -43,7 +42,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalPagerApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AddWarScreen(
     viewModel: AddWarViewModel,
@@ -53,7 +52,7 @@ fun AddWarScreen(
 ) {
     val state = viewModel.state.collectAsState()
     val searchTeam = remember { mutableStateOf("") }
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         viewModel.goToCurrent.collect {
@@ -70,7 +69,6 @@ fun AddWarScreen(
     }
     HorizontalPager(
         modifier = Modifier.fillMaxWidth(),
-        count = 2,
         state = pagerState,
         userScrollEnabled = false
     ) {

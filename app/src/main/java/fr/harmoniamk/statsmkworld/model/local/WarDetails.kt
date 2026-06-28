@@ -1,6 +1,7 @@
 package fr.harmoniamk.statsmkworld.model.local
 
 import android.os.Parcelable
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -25,7 +26,7 @@ data class WarDetails(val war: War): Serializable, Parcelable {
      *  12 players
      */
     val scoreHost = warTracks.sumOf { it.teamScore }
-    val scoreOpponent = (82 * warTracks.size) - scoreHost
+    val scoreOpponent = (ScoringConstants.MAX_POINTS_PER_TRACK_12P * warTracks.size) - scoreHost
     val scoreHostWithPenalties = scoreHost - war.penalties.filter { it.teamId == war.teamHost }.sumOf { it.amount }
     val scoreOpponentWithPenalties = scoreOpponent - war.penalties.filter { war.teamOpponent.contains(it.teamId) }.sumOf { it.amount }
 
@@ -71,7 +72,7 @@ data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Parcelable,
     private val opponentScore: Int
         get() {
             teamScore.takeIf { it != 0 }?.let {
-                return 82 - it
+                return ScoringConstants.MAX_POINTS_PER_TRACK_12P - it
             }
             return 0
         }

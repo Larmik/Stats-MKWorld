@@ -7,28 +7,31 @@ plugins {
     id("dagger.hilt.android.plugin")
     alias(notation = libs.plugins.kotlin.compose.compiler)
     id("com.google.gms.google-services")
-    id("com.google.protobuf") version "0.9.4"
+    id("com.google.protobuf") version "0.10.0"
     id("com.google.firebase.crashlytics")
     alias(libs.plugins.kotlin.parcelize)
 }
 
+val localProps = Properties().also { props ->
+    val file = project.rootProject.file("local.properties")
+    if (file.exists()) props.load(file.inputStream())
+}
+
 android {
     namespace = "fr.harmoniamk.statsmkworld"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "fr.harmoniamk.statsmkworld"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 23
         versionName = "3.0.0"
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val properties = Properties()
-        properties.load(project.rootProject.file("local.properties").inputStream())
-        buildConfigField("String", "DISCORD_API_SECRET", properties.getProperty("DISCORD_API_SECRET"))
-        buildConfigField("String", "DISCORD_API_CLIENT", properties.getProperty("DISCORD_API_CLIENT"))
+        buildConfigField("String", "DISCORD_API_SECRET", localProps.getProperty("DISCORD_API_SECRET", "\"\""))
+        buildConfigField("String", "DISCORD_API_CLIENT", localProps.getProperty("DISCORD_API_CLIENT", "\"\""))
         ksp {
             arg(k = "room.schemaLocation", v = "$projectDir/schemas")
         }
@@ -37,12 +40,10 @@ android {
 
     signingConfigs {
         create("release") {
-            val properties = Properties()
-            properties.load(project.rootProject.file("local.properties").inputStream())
-            storeFile  = file("/Users/pascal/Documents/statsmkworld_keystore")
-            storePassword  = "Harmonia2025!"
-            keyPassword =  "Harmonia2025!"
-            keyAlias =  "statsmkworld"
+            localProps.getProperty("KEYSTORE_PATH")?.let { storeFile = file(it) }
+            storePassword = localProps.getProperty("KEYSTORE_PASSWORD")
+            keyPassword = localProps.getProperty("KEY_PASSWORD")
+            keyAlias = localProps.getProperty("KEY_ALIAS") ?: "statsmkworld"
         }
     }
 
@@ -77,15 +78,15 @@ android {
     dataBinding {
         enable = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.12"
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
@@ -107,12 +108,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.fragment.compose)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
 
     //Firebase
-    implementation(libs.firebase.bom)
-    implementation(libs.firebase.database.ktx)
-    implementation(libs.firebase.ui.auth)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.database)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.fragment.compose)
     implementation(libs.firebase.config)
@@ -134,7 +135,6 @@ dependencies {
     implementation(dependencyNotation = libs.okhttp)
     implementation(dependencyNotation = libs.retrofit2.retrofit)
     implementation(dependencyNotation = libs.logging.interceptor)
-    implementation(dependencyNotation = libs.squareup.okhttp)
     // Moshi
     implementation(dependencyNotation = libs.moshi)
     implementation(dependencyNotation = libs.moshi.kotlin)
@@ -149,7 +149,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(dependencyNotation = libs.work.runtime)
 
-    implementation(libs.accompanist.pager)
     implementation(libs.lottie.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore)

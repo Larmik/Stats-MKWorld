@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.WorldRecordsRepositoryInterface
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -95,7 +96,7 @@ class DebugViewModel @Inject constructor(private val fetchUseCase: FetchUseCaseI
     fun onMatrixEnd() {
         databaseRepository.clearWars()
             .onEach { _sharedLoading.emit("Sortie de la matrice...") }
-            .map { "18595" }
+            .map { ScoringConstants.DEBUG_PLAYER_ID }
             .flatMapLatest { fetchUseCase.fetchData(it) }
             .onEach {
                 dataStoreRepository.setMatrixMode(false)
