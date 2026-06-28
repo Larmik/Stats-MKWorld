@@ -149,42 +149,40 @@ class CurrentWarViewModel @Inject constructor(
 
 
     fun onValidateWar() {
-        _state.value.details?.war?.let { war ->
+        val war = _state.value.details?.war ?: return
+        viewModelScope.launch {
             firebaseRepository.writeWar(war)
-                .onEach {
-                    databaseRepository.writeWar(WarEntity(war)).firstOrNull()
-                    val players = databaseRepository.getPlayers().firstOrNull()
-                    val team = dataStoreRepository.mkcTeam.firstOrNull()
-                    players?.filter { it.currentWar == war.id.toString() }?.forEach {
-                        databaseRepository.updateUser(it.id, "").firstOrNull()
-                        when (it.rosterId) {
-                            "-1" ->  firebaseRepository.writeAlly(
-                                teamId = team?.id.toString(),
-                                user = User(
-                                    id = it.id,
-                                    currentWar = "",
-                                    role = it.role,
-                                    name = it.name,
-                                    discordId = it.discordId
-                                )
-                            ).firstOrNull()
-                            else ->  firebaseRepository.writeUser(
-                                teamId = team?.id.toString(),
-                                user = User(
-                                    id = it.id,
-                                    currentWar = "",
-                                    role = it.role,
-                                    name = it.name,
-                                    discordId = it.discordId
-                                )
-                            ).firstOrNull()
-                        }
-                    }
-                    dataStoreRepository.deleteCurrentWar()
+            databaseRepository.writeWar(WarEntity(war))
+            val players = databaseRepository.getPlayers().firstOrNull()
+            val team = dataStoreRepository.mkcTeam.firstOrNull()
+            players?.filter { it.currentWar == war.id.toString() }?.forEach {
+                databaseRepository.updateUser(it.id, "")
+                when (it.rosterId) {
+                    "-1" -> firebaseRepository.writeAlly(
+                        teamId = team?.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = "",
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
+                    else -> firebaseRepository.writeUser(
+                        teamId = team?.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = "",
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
                 }
-                .flatMapLatest { firebaseRepository.deleteCurrentWar(war.teamHost) }
-                .onEach { _backToHome.emit(Unit) }
-                .launchIn(viewModelScope)
+            }
+            dataStoreRepository.deleteCurrentWar()
+            firebaseRepository.deleteCurrentWar(war.teamHost)
+            _backToHome.emit(Unit)
         }
     }
 

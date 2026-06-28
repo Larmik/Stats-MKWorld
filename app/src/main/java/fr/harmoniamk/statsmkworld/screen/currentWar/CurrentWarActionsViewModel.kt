@@ -22,12 +22,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -114,12 +112,12 @@ class CurrentWarActionsViewModel @Inject constructor(
                 }
 
                 val war = it.copy(penalties = penalties, scores = scores)
-                firebaseRepository.writeCurrentWar(war)
-                    .onEach {
-                        dataStoreRepository.setCurrentWar(war)
-                        clearPenalties()
-                        _state.value = state.value.copy(war = war)
-                    }.launchIn(viewModelScope)
+                viewModelScope.launch {
+                    firebaseRepository.writeCurrentWar(war)
+                    dataStoreRepository.setCurrentWar(war)
+                    clearPenalties()
+                    _state.value = state.value.copy(war = war)
+                }
             }
         }
     }
@@ -135,64 +133,62 @@ class CurrentWarActionsViewModel @Inject constructor(
     }
 
     fun onSub() {
-        dataStoreRepository.mkcTeam
-            .mapNotNull { team ->
-                val oldPlayer = state.value.currentPlayers?.singleOrNull { it.isSelected }
-                val newPlayer = state.value.otherPlayers?.singleOrNull { it.isSelected }
-                oldPlayer?.player?.let {
-                    databaseRepository.updateUser(it.id, "").firstOrNull()
-                    when (it.rosterId) {
-                        "-1" -> firebaseRepository.writeAlly(
-                            teamId = team.id.toString(),
-                            user = User(
-                                id = it.id,
-                                currentWar = "",
-                                role = it.role,
-                                name = it.name,
-                                discordId = it.discordId
-                            )
-                        ).firstOrNull()
-                        else -> firebaseRepository.writeUser(
-                            teamId = team.id.toString(),
-                            user = User(
-                                id = it.id,
-                                currentWar = "",
-                                role = it.role,
-                                name = it.name,
-                                discordId = it.discordId
-                            )
-                        ).firstOrNull()
-                    }
-
-                }
-                newPlayer?.player?.let {
-                    databaseRepository.updateUser(it.id, state.value.war?.id.toString()).firstOrNull()
-                    when (it.rosterId) {
-                        "-1" ->  firebaseRepository.writeAlly(
-                            teamId = team.id.toString(),
-                            user = User(
-                                id = it.id,
-                                currentWar = state.value.war?.id.toString(),
-                                role = it.role,
-                                name = it.name,
-                                discordId = it.discordId
-                            )
-                        ).firstOrNull()
-                        else -> firebaseRepository.writeUser(
-                            teamId = team.id.toString(),
-                            user = User(
-                                id = it.id,
-                                currentWar = state.value.war?.id.toString(),
-                                role = it.role,
-                                name = it.name,
-                                discordId = it.discordId
-                            )
-                        ).firstOrNull()
-                    }
+        viewModelScope.launch {
+            val team = dataStoreRepository.mkcTeam.firstOrNull() ?: return@launch
+            val oldPlayer = state.value.currentPlayers?.singleOrNull { it.isSelected }
+            val newPlayer = state.value.otherPlayers?.singleOrNull { it.isSelected }
+            oldPlayer?.player?.let {
+                databaseRepository.updateUser(it.id, "")
+                when (it.rosterId) {
+                    "-1" -> firebaseRepository.writeAlly(
+                        teamId = team.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = "",
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
+                    else -> firebaseRepository.writeUser(
+                        teamId = team.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = "",
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
                 }
             }
-            .onEach { _onBack.emit(Unit) }
-            .launchIn(viewModelScope)
+            newPlayer?.player?.let {
+                databaseRepository.updateUser(it.id, state.value.war?.id.toString())
+                when (it.rosterId) {
+                    "-1" -> firebaseRepository.writeAlly(
+                        teamId = team.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = state.value.war?.id.toString(),
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
+                    else -> firebaseRepository.writeUser(
+                        teamId = team.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = state.value.war?.id.toString(),
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
+                }
+            }
+            _onBack.emit(Unit)
+        }
     }
 
     fun clearPenalties() {
@@ -208,44 +204,38 @@ class CurrentWarActionsViewModel @Inject constructor(
     }
 
     fun cancelWar() {
-        flowOf(Unit)
-            .mapNotNull {
-                val team = dataStoreRepository.mkcTeam.firstOrNull()
-                state.value.players?.filter { it.currentWar == state.value.war?.id.toString() }?.forEach {
-                        databaseRepository.updateUser(it.id, "").firstOrNull()
-                        when (it.rosterId) {
-                            "-1" -> firebaseRepository.writeAlly(
-                                teamId = team?.id.toString(),
-                                user = User(
-                                    id = it.id,
-                                    currentWar = "",
-                                    role = it.role,
-                                    name = it.name,
-                                    discordId = it.discordId
-                                )
-                            ).firstOrNull()
-                            else -> firebaseRepository.writeUser(
-                                teamId = team?.id.toString(),
-                                user = User(
-                                    id = it.id,
-                                    currentWar = "",
-                                    role = it.role,
-                                    name = it.name,
-                                    discordId = it.discordId
-                                )
-                            ).firstOrNull()
-                        }
-                    }
-                state.value.war
+        viewModelScope.launch {
+            val war = state.value.war ?: return@launch
+            val team = dataStoreRepository.mkcTeam.firstOrNull()
+            state.value.players?.filter { it.currentWar == war.id.toString() }?.forEach {
+                databaseRepository.updateUser(it.id, "")
+                when (it.rosterId) {
+                    "-1" -> firebaseRepository.writeAlly(
+                        teamId = team?.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = "",
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
+                    else -> firebaseRepository.writeUser(
+                        teamId = team?.id.toString(),
+                        user = User(
+                            id = it.id,
+                            currentWar = "",
+                            role = it.role,
+                            name = it.name,
+                            discordId = it.discordId
+                        )
+                    )
+                }
             }
-            .flatMapLatest { firebaseRepository.deleteCurrentWar(it.teamHost) }
-            .onEach {
-                dataStoreRepository.deleteCurrentWar()
-                _backToWelcome.emit(Unit)
-            }
-            .launchIn(viewModelScope)
-
-
+            firebaseRepository.deleteCurrentWar(war.teamHost)
+            dataStoreRepository.deleteCurrentWar()
+            _backToWelcome.emit(Unit)
+        }
     }
 
 }

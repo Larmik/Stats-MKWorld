@@ -82,12 +82,12 @@ class FetchUseCase @Inject constructor(
         val team = mkCentralDataSource.getTeam(teamId).successResponse
         team?.let {
             dataStoreRepository.setMKCTeam(it)
-            databaseRepository.clearPlayers().firstOrNull()
+            databaseRepository.clearPlayers()
             it.rosters.filter { it.game == "mkworld" }.forEach { roster ->
                 roster.players.forEach { player ->
-                    val user = firebaseRepository.getUser(teamId, player.playerId).firstOrNull()
+                    val user = firebaseRepository.getUser(teamId, player.playerId)
                     val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString())
-                    databaseRepository.writePlayer(playerEntity).firstOrNull()
+                    databaseRepository.writePlayer(playerEntity)
                 }
             }
         }
@@ -95,20 +95,20 @@ class FetchUseCase @Inject constructor(
     }
 
     override suspend fun fetchAllies(teamId: String) {
-        val allies = firebaseRepository.getAllies(teamId).firstOrNull()
+        val allies = firebaseRepository.getAllies(teamId)
         val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
-        allies?.forEach { ally ->
+        allies.forEach { ally ->
             when (players.map { it.id }.contains(ally.id)) {
                 true -> {
                     databaseRepository.getPlayer(ally.id).firstOrNull()?.let { player ->
-                        firebaseRepository.deleteAlly(teamId, ally.id).firstOrNull()
-                        databaseRepository.updateUserRoster(ally.id, player.rosterId).firstOrNull()
+                        firebaseRepository.deleteAlly(teamId, ally.id)
+                        databaseRepository.updateUserRoster(ally.id, player.rosterId)
                     }
                 }
 
                 else -> {
                     mkCentralDataSource.getPlayer(ally.id).successResponse?.let {
-                        databaseRepository.addAlly(PlayerEntity(player = it, isAlly = true)).firstOrNull()
+                        databaseRepository.addAlly(PlayerEntity(player = it, isAlly = true))
                     }
                 }
             }
@@ -165,7 +165,7 @@ class FetchUseCase @Inject constructor(
                 )
             }.orEmpty())
         }
-        databaseRepository.writeTeams(teams).firstOrNull()
+        databaseRepository.writeTeams(teams)
         databaseRepository.writeTeams(listOf(
             TeamEntity(
                 name = "6v6 Squad",
@@ -174,21 +174,18 @@ class FetchUseCase @Inject constructor(
                 color = null,
                 logo = null
             )
-        )).firstOrNull()
+        ))
         return dataStoreRepository.mkcTeam.firstOrNull()?.id.toString()
     }
 
     override suspend fun fetchWars(teamId: String) {
-        val wars = firebaseRepository.getWars(teamId).firstOrNull()
-        wars?.let {
-            databaseRepository.clearWars().firstOrNull()
-            databaseRepository.writeWars(it.map { WarEntity(it) }).firstOrNull()
-        }
-
+        val wars = firebaseRepository.getWars(teamId)
+        databaseRepository.clearWars()
+        databaseRepository.writeWars(wars.map { WarEntity(it) })
     }
     override suspend fun fetchTags() {
         val tags = databaseRepository.getTeams().map { it.map { Tag(it.tag, it.id) } }.firstOrNull()
-        tags?.let {  firebaseRepository.writeTags(it).firstOrNull() }
+        tags?.let { firebaseRepository.writeTags(it) }
     }
 
     override fun manageTransferts() = dataStoreRepository.mkcTeam
@@ -197,21 +194,21 @@ class FetchUseCase @Inject constructor(
             players.forEach { player ->
                 if (team?.rosters?.firstOrNull { it.game == "mkworld" }?.players?.none { it.playerId == player.id } == true) {
                     mkCentralDataSource.getPlayer(player.id).successResponse?.let { mkcPlayer ->
-                        val fbUser = firebaseRepository.getUser(team.id.toString(), player.id).firstOrNull()
+                        val fbUser = firebaseRepository.getUser(team.id.toString(), player.id)
                         fbUser?.let {
-                            firebaseRepository.writeUser(mkcPlayer.rosters?.firstOrNull { it.game == "mkworld" }?.teamID.toString(), it).firstOrNull()
-                            firebaseRepository.writeAlly(team.id.toString(), it).firstOrNull()
-                            databaseRepository.updateUserRoster(it.id, rosterId = "-1").firstOrNull()
-                            firebaseRepository.deleteUser(team.id.toString(), it.id).firstOrNull()
+                            firebaseRepository.writeUser(mkcPlayer.rosters?.firstOrNull { it.game == "mkworld" }?.teamID.toString(), it)
+                            firebaseRepository.writeAlly(team.id.toString(), it)
+                            databaseRepository.updateUserRoster(it.id, rosterId = "-1")
+                            firebaseRepository.deleteUser(team.id.toString(), it.id)
                         }
                     }
                 }
                 if (team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }?.any { it.playerId == player.id } == true) {
                     mkCentralDataSource.getPlayer(player.id).successResponse?.let { mkcPlayer ->
                         val fbUser = User(mkcPlayer)
-                            firebaseRepository.writeUser(team.id.toString(), fbUser).firstOrNull()
-                            firebaseRepository.deleteAlly(team.id.toString(), fbUser.id).firstOrNull()
-                            databaseRepository.updateUserRoster(fbUser.id, rosterId = team.rosters.firstOrNull { it.game == "mkworld" && it.players.map { it.playerId }.contains(mkcPlayer.id.toString()) }?.id.toString()).firstOrNull()
+                            firebaseRepository.writeUser(team.id.toString(), fbUser)
+                            firebaseRepository.deleteAlly(team.id.toString(), fbUser.id)
+                            databaseRepository.updateUserRoster(fbUser.id, rosterId = team.rosters.firstOrNull { it.game == "mkworld" && it.players.map { it.playerId }.contains(mkcPlayer.id.toString()) }?.id.toString())
                     }
                 }
             }

@@ -69,11 +69,9 @@ class WelcomeViewModel @Inject constructor(private val dataStoreRepository: Data
             val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             val is24PEnabled = dataStoreRepository.is24PEnabled.firstOrNull() == true
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
-                val buttonVisible = firebaseRepository
+                val buttonVisible = (firebaseRepository
                     .getUser(team.id.toString(), player.id.toString())
-                    .map { it?.role ?: 0 }
-                    .map { it > 0 }
-                    .firstOrNull()
+                    ?.role ?: 0) > 0
 
                 val wars = databaseRepository.getWars()
                     .firstOrNull()
@@ -91,8 +89,8 @@ class WelcomeViewModel @Inject constructor(private val dataStoreRepository: Data
                     teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
-                    buttonVisible =  buttonVisible == true || dataStoreRepository.matrixMode.firstOrNull() == true,
-                    currentWar = firebaseRepository.getCurrentWar(rosterId).firstOrNull(),
+                    buttonVisible =  buttonVisible || dataStoreRepository.matrixMode.firstOrNull() == true,
+                    currentWar = firebaseRepository.getCurrentWar(rosterId),
                     is24PEnabled = is24PEnabled,
                     wars = wars
                         .filter { (!is24PEnabled && it.war.teamOpponent.size == 1) || is24PEnabled && it.war.teamOpponent.size > 1 }

@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -94,12 +93,10 @@ class TeamProfileViewModel @AssistedInject constructor(
                 "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()
                 else -> listOf()
             }
-            val buttonVisible = firebaseRepository
+            val buttonVisible = (firebaseRepository
                 .getUser(it.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
-                .map { it?.role ?: 0 }
-                .map { it > 0 }
-                .firstOrNull()
-            State(team = it, addAllyVisible = buttonVisible == true, allyList = allyList)
+                ?.role ?: 0) > 0
+            State(team = it, addAllyVisible = buttonVisible, allyList = allyList)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
@@ -108,10 +105,10 @@ class TeamProfileViewModel @AssistedInject constructor(
         dataStoreRepository.mkcTeam
             .onEach { team ->
                 val user = User(player)
-                firebaseRepository.writeAlly(team.id.toString(), user).firstOrNull()
+                firebaseRepository.writeAlly(team.id.toString(), user)
             }
             .map { PlayerEntity(player = player, isAlly = true) }
-            .flatMapLatest { databaseRepository.addAlly(it) }
+            .onEach { databaseRepository.addAlly(it) }
             .onEach {
                 val allyList = when (id) {
                     "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()

@@ -16,31 +16,32 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface DatabaseRepositoryInterface {
     fun getPlayers(): Flow<List<PlayerEntity>>
     fun getPlayer(playerId: String): Flow<PlayerEntity?>
-    fun writePlayer(player: PlayerEntity): Flow<Unit>
-    fun clearPlayers(): Flow<Unit>
+    suspend fun writePlayer(player: PlayerEntity)
+    suspend fun clearPlayers()
 
-    fun updateUser(id: String, currentWar: String): Flow<Unit>
-    fun updateUser(id: String, role: Int): Flow<Unit>
-    fun updateUserRoster(id: String, rosterId: String): Flow<Unit>
+    suspend fun updateUser(id: String, currentWar: String)
+    suspend fun updateUser(id: String, role: Int)
+    suspend fun updateUserRoster(id: String, rosterId: String)
 
-    fun addAlly(entity: PlayerEntity): Flow<Unit>
+    suspend fun addAlly(entity: PlayerEntity)
 
     fun getTeams(): Flow<List<TeamEntity>>
     fun getTeam(id: String): Flow<TeamEntity?>
-    fun writeTeams(list: List<TeamEntity>): Flow<Unit>
-    fun clearTeams(): Flow<Unit>
+    suspend fun writeTeams(list: List<TeamEntity>)
+    suspend fun clearTeams()
 
     fun getWars(): Flow<List<WarEntity>>
     fun getWar(id: String?): Flow<WarEntity?>
-    fun writeWars(list: List<WarEntity>): Flow<Unit>
-    fun writeWar(war: WarEntity): Flow<Unit>
-    fun clearWars(): Flow<Unit>
+    suspend fun writeWars(list: List<WarEntity>)
+    suspend fun writeWar(war: WarEntity)
+    suspend fun clearWars()
 }
 
 @FlowPreview
@@ -63,24 +64,24 @@ class DatabaseRepository @Inject constructor(
 
     override fun getPlayers(): Flow<List<PlayerEntity>> = playerLocalDataSource.getAll().flowOn(Dispatchers.IO)
     override fun getPlayer(playerId: String): Flow<PlayerEntity?> = playerLocalDataSource.getById(playerId)
-    override fun writePlayer(player: PlayerEntity): Flow<Unit> = playerLocalDataSource.insert(player).flowOn(Dispatchers.IO)
-    override fun clearPlayers(): Flow<Unit> = playerLocalDataSource.clear()
+    override suspend fun writePlayer(player: PlayerEntity) = withContext(Dispatchers.IO) { playerLocalDataSource.insert(player) }
+    override suspend fun clearPlayers() = withContext(Dispatchers.IO) { playerLocalDataSource.clear() }
 
-    override fun updateUser(id: String, currentWar: String): Flow<Unit> = playerLocalDataSource.setCurrentWar(id, currentWar)
-    override fun updateUser(id: String, role: Int): Flow<Unit> = playerLocalDataSource.setRole(id, role)
-    override fun updateUserRoster(id: String, rosterId: String): Flow<Unit> = playerLocalDataSource.setRosterId(id, rosterId)
+    override suspend fun updateUser(id: String, currentWar: String) = withContext(Dispatchers.IO) { playerLocalDataSource.setCurrentWar(id, currentWar) }
+    override suspend fun updateUser(id: String, role: Int) = withContext(Dispatchers.IO) { playerLocalDataSource.setRole(id, role) }
+    override suspend fun updateUserRoster(id: String, rosterId: String) = withContext(Dispatchers.IO) { playerLocalDataSource.setRosterId(id, rosterId) }
 
-    override fun addAlly(entity: PlayerEntity): Flow<Unit> = playerLocalDataSource.upsert(entity)
+    override suspend fun addAlly(entity: PlayerEntity) = withContext(Dispatchers.IO) { playerLocalDataSource.upsert(entity) }
 
     override fun getTeams(): Flow<List<TeamEntity>> = teamLocalDataSource.getAll().flowOn(Dispatchers.IO)
     override fun getTeam(id: String): Flow<TeamEntity?> = teamLocalDataSource.getById(id).flowOn(Dispatchers.IO)
-    override fun writeTeams(list: List<TeamEntity>): Flow<Unit> = teamLocalDataSource.bulkInsert(list).flowOn(Dispatchers.IO)
-    override fun clearTeams(): Flow<Unit> = teamLocalDataSource.clear()
+    override suspend fun writeTeams(list: List<TeamEntity>) = withContext(Dispatchers.IO) { teamLocalDataSource.bulkInsert(list) }
+    override suspend fun clearTeams() = withContext(Dispatchers.IO) { teamLocalDataSource.clear() }
 
     override fun getWars(): Flow<List<WarEntity>> = warLocalDataSource.getAll().flowOn(Dispatchers.IO)
     override fun getWar(id: String?): Flow<WarEntity?> = id?.let { warLocalDataSource.getById(it).flowOn(Dispatchers.IO) } ?: flowOf(null)
-    override fun writeWars(list: List<WarEntity>) = warLocalDataSource.insert(list).flowOn(Dispatchers.IO)
-    override fun writeWar(war: WarEntity) = warLocalDataSource.insert(war).flowOn(Dispatchers.IO)
-    override fun clearWars(): Flow<Unit> = warLocalDataSource.clear()
+    override suspend fun writeWars(list: List<WarEntity>) = withContext(Dispatchers.IO) { warLocalDataSource.insert(list) }
+    override suspend fun writeWar(war: WarEntity) = withContext(Dispatchers.IO) { warLocalDataSource.insert(war) }
+    override suspend fun clearWars() = withContext(Dispatchers.IO) { warLocalDataSource.clear() }
 
 }
