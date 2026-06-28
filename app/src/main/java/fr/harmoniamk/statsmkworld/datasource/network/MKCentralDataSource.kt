@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.datasource.network
 
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -35,6 +36,9 @@ interface MKCentralDataSourceModule {
 }
 
 class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
+
+    private val crashlytics get() = FirebaseCrashlytics.getInstance()
+
     override fun findPlayer(discordId: String): Flow<MKCPlayerResponse?> = callbackFlow {
         val call = RetrofitUtils.createRetrofit(
             MKCentralApi::class.java,
@@ -57,6 +61,7 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
             }
 
             override fun onFailure(call: retrofit2.Call<MKCPlayerResponse>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(null)
             }
         })
@@ -78,16 +83,20 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
                 response: retrofit2.Response<MKCPlayer>
             ) {
                 val result = response.body()
-                val error = response.errorBody()
+                val errorMessage = response.errorBody()?.string()
 
                 when {
                     result != null -> trySend(NetworkResponse.Success(result))
-                    error != null -> trySend(NetworkResponse.Error(error.string()))
+                    errorMessage != null -> {
+                        crashlytics.log("MKCentral getPlayer($playerId) error: $errorMessage")
+                        trySend(NetworkResponse.Error(errorMessage))
+                    }
                     else -> trySend(NetworkResponse.Error("Erreur inconnue"))
                 }
             }
 
             override fun onFailure(call: retrofit2.Call<MKCPlayer>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(NetworkResponse.Error(t.message ?: "Erreur inconnnue"))
             }
         })
@@ -117,6 +126,7 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
             }
 
             override fun onFailure(call: retrofit2.Call<MKCTeam>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(null)
             }
         })
@@ -146,6 +156,7 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
             }
 
             override fun onFailure(call: retrofit2.Call<MKCTeamResponse>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(null)
             }
         })
@@ -174,6 +185,7 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
             }
 
             override fun onFailure(call: retrofit2.Call<MKCTeamResponse>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(null)
             }
         })
@@ -202,6 +214,7 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
             }
 
             override fun onFailure(call: retrofit2.Call<MKCPlayerResponse>, t: Throwable) {
+                crashlytics.recordException(t)
                 trySend(null)
             }
         })

@@ -71,8 +71,12 @@ data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Parcelable,
 
     private val opponentScore: Int
         get() {
+            val maxPointsPerTrack = when (is24p) {
+                true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
+                else -> ScoringConstants.MAX_POINTS_PER_TRACK_12P
+            }
             teamScore.takeIf { it != 0 }?.let {
-                return ScoringConstants.MAX_POINTS_PER_TRACK_12P - it
+                return maxPointsPerTrack - it
             }
             return 0
         }

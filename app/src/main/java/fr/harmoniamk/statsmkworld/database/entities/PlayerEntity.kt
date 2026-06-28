@@ -7,7 +7,7 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamPlayer
 
 @Entity
-class PlayerEntity(
+data class PlayerEntity(
     @PrimaryKey
     @ColumnInfo(name = "id") val id: String,
     @ColumnInfo(name = "name") val name: String,

@@ -14,10 +14,10 @@ class WarScoreConverter {
         .adapter<List<WarScore>>(Types.newParameterizedType(List::class.java, WarScore::class.java))
 
     @TypeConverter
-    fun fromWarPositionList(value: List<WarScore>?): String = adapter.toJson(value)
+    fun fromWarScoreList(value: List<WarScore>?): String = adapter.toJson(value)
 
     @TypeConverter
-    fun toWarPositionList(value: String?) =
+    fun toWarScoreList(value: String?) =
         try {
             value?.let { adapter.fromJson(it) }
         } catch (e: Exception) {

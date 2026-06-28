@@ -234,7 +234,7 @@ fun MapCell(
                     Spacer(modifier = Modifier.width(5.dp))
                     MKText(
                         text = when {
-                            userId == null -> if (is24p) it.stats.teamScore.toString() else it.stats.teamScore?.trackScoreToDiff()
+                            userId == null -> if (is24p) it.stats.teamScore.toString() else it.stats.teamScore?.trackScoreToDiff(is24p)
                                 .toString()
 
                             it.stats.playerScore?.pointsToPosition(is24p)

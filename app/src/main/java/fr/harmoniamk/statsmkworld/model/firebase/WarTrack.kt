@@ -24,17 +24,20 @@ data class WarTrack(
 
     fun hasPlayer(playerId: String?) = positions.any { pos -> pos.playerId == playerId }
 
-    val diffScore: Int
-        get() {
-            val teamScore = positions.sumOf { it.position.positionToPoints(false) }
-            val opponentScore = teamScore.takeIf { it != 0 }?.let {
-                ScoringConstants.MAX_POINTS_PER_TRACK_12P - it
-            } ?: 0
-            opponentScore.takeIf { it != 0 }?.let {
-                return teamScore - it
-            }
-            return 0
+    fun diffScore(is24p: Boolean = false): Int {
+        val maxPointsPerTrack = when (is24p) {
+            true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
+            else -> ScoringConstants.MAX_POINTS_PER_TRACK_12P
         }
+        val teamScore = positions.sumOf { it.position.positionToPoints(is24p) }
+        val opponentScore = teamScore.takeIf { it != 0 }?.let {
+            maxPointsPerTrack - it
+        } ?: 0
+        opponentScore.takeIf { it != 0 }?.let {
+            return teamScore - it
+        }
+        return 0
+    }
 
 
 

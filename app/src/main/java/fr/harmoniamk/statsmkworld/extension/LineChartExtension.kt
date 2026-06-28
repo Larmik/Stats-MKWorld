@@ -13,7 +13,7 @@ fun LineChart.setData(war: WarDetails) {
     val data = mutableListOf<Entry>()
     data.add(Entry(0f, 0.0001f))
     war.warTracks.forEachIndexed { index, track ->
-        diff += track.track.diffScore
+        diff += track.track.diffScore(track.is24p)
         data.add(Entry((index+1).toFloat(), diff.toFloat()))
     }
     val threshold = 0f

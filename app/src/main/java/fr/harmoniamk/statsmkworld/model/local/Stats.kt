@@ -33,7 +33,7 @@ data class Stats(
         maps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.totalPlayed }
     val averagePoints: Int =
         warScores.sumOf { it.score } / (warScores.takeIf { it.isNotEmpty() }?.size ?: 1)
-    val averagePointsLabel: String = averagePoints.warScoreToDiff()
+    val averagePointsLabel: String = averagePoints.warScoreToDiff(warStats.is24p)
     val averageMapPoints: Int =
         (averageForMaps.map { it.teamScore }.sum() / (averageForMaps.takeIf { it.isNotEmpty() }?.size ?: 1))
     val averagePlayerPosition: List<Int> =
