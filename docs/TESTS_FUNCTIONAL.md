@@ -28,8 +28,13 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 | `04_stats` | 13.1.1 → 13.1.6 (ouverture des 5 catégories) | ✅ |
 | `05_historique` | 4.9/4.10 (Voir plus), 10.1, 10.5, 11.1 | ✅ |
 | `06_profils` | 15.8 (menu présent sur son profil), 16.1 | ✅ |
+| `10_create_war` | 5.1, 5.6, 5.9 (création war 12p) + 8.3 (annulation) — **idempotent** | ✅ |
 
-> Convention sélecteurs : `MKButton` et titres `BaseScreen` sont **affichés en MAJUSCULES** mais leur sémantique est en **casse naturelle** → sélectionner en casse naturelle.
+> **Conventions sélecteurs / pièges Maestro :**
+> - `MKButton` et titres `BaseScreen` sont **affichés en MAJUSCULES** mais leur sémantique est en **casse naturelle** → sélectionner en casse naturelle.
+> - **Ne pas utiliser `hideKeyboard`** sur l'écran de sélection d'adversaire : il réinitialise la sélection. Le clavier se ferme seul après le choix.
+> - Carte « war en cours » : taper **« Courses restantes: N »** (la carte), pas le titre « War en cours ».
+> - Mode 12p/24p : taper « 12 joueurs » / « 24 joueurs » sur l'Accueil avant de créer une war.
 
 ## Bugs trouvés en campagne
 

@@ -1,0 +1,31 @@
+# Création d'une war 12p + annulation (réf. TESTS_FUNCTIONAL.md §5 + §8.3).
+# DESTRUCTIF mais IDEMPOTENT (crée puis annule). Env debug. Adversaire = 6v6 Squad.
+# NB: ne PAS utiliser hideKeyboard (réinitialise la sélection d'équipe).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+- tapOn: "12 joueurs"
+# --- §5.1 Choix de l'adversaire ---
+- tapOn: "Nouvelle war"
+- assertVisible: "Sélection d'un adversaire"
+- tapOn: "Rechercher une équipe…"
+- inputText: "Squad"
+- tapOn: "6v6 Squad"
+- tapOn: "Suivant"
+# --- §5.6 Composition : exactement 6 joueurs ---
+- assertVisible: "Sélection de la Line-up"
+- tapOn: "Arthug"
+- tapOn: "Flash"
+- tapOn: "Genki35"
+- tapOn: "Guyal"
+- tapOn: "Larii"
+- tapOn: "Marss"
+- tapOn: "Commencer"
+# --- §6.1 War en cours créée ---
+- assertVisible: "Plus d'actions"
+- takeScreenshot: .maestro/screenshots/current_war_created
+# --- §8.3 Nettoyage : annulation de la war (idempotence) ---
+- tapOn: "Plus d'actions"
+- tapOn: "Annuler la war"
+- tapOn: "Effacer la war"
+- assertVisible: "Nouvelle war"
