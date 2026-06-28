@@ -11,4 +11,4 @@ appId: fr.harmoniamk.statsmkworld.debug
 # Bascule 24p puis retour 12p (lecture seule, aucune écriture)
 - tapOn: "24 joueurs"
 - tapOn: "12 joueurs"
-- takeScreenshot: ../screenshots/accueil_12p
+- takeScreenshot: .maestro/screenshots/accueil_12p

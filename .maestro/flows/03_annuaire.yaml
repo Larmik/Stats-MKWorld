@@ -10,9 +10,9 @@ appId: fr.harmoniamk.statsmkworld.debug
 - tapOn: "Rechercher une équipe…"
 - inputText: "Harmonia"
 - assertVisible: "Harmonia"
-- takeScreenshot: ../screenshots/annuaire_equipes
+- takeScreenshot: .maestro/screenshots/annuaire_equipes
 # --- Joueurs : recherche RÉSEAU (≥3 caractères) ---
 - tapOn: "Joueurs"
 - tapOn: "Rechercher un joueur"
 - inputText: "Larii"
-- takeScreenshot: ../screenshots/annuaire_joueurs
+- takeScreenshot: .maestro/screenshots/annuaire_joueurs
