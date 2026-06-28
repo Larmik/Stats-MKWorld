@@ -1,0 +1,51 @@
+# Cycle de vie complet d'une war 12p dans UNE seule war (réf. TESTS_FUNCTIONAL.md
+# §5 création, §7 saisie course, §8.1 pénalité, §8.2 remplacement, §9 édition, §8.3 annulation).
+# Idempotent : crée puis annule (la validation à 12 courses est dans .maestro/manual/15_validate_war).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- runFlow: ../subflows/start_war_12p.yaml          # §5 création + composition
+
+# --- §7 Saisie d'une course + vérif scoring (15+12+10+9+8+7 = 61 ; adverse 82-61 = 21) ---
+- tapOn: "Course suivante"
+- tapOn: "Circuit Mario Bros."
+- tapOn: "^1$"
+- tapOn: "^2$"
+- tapOn: "^3$"
+- tapOn: "^4$"
+- tapOn: "^5$"
+- tapOn: "^6$"
+- assertVisible: "61 - 21"
+- tapOn: "Confirmer"
+- assertVisible: "Plus d'actions"
+
+# --- §8.1 Pénalité (-10 à l'adversaire) ---
+- tapOn: "Plus d'actions"
+- tapOn: "Pénalité"
+- tapOn: "-10 pour 6v6 Squad"
+- tapOn: "Valider"
+- assertVisible: "Plus d'actions"
+
+# --- §8.2 Remplacement (Arthug -> Nosta) ---
+- tapOn: "Plus d'actions"
+- tapOn: "Remplacement"
+- tapOn: "Arthug"
+- tapOn: "Nosta"
+- scrollUntilVisible:
+    element:
+      text: "Remplacer"
+    direction: DOWN
+- tapOn: "Remplacer"
+- assertVisible: "Plus d'actions"
+
+# --- §9 Édition de la course (changer le circuit) ---
+- tapOn: "Circuit Mario Bros."
+- assertVisible: "Editer"
+- tapOn: "Editer"
+- assertVisible: "Edition circuit"
+- tapOn: "Stade Wario"
+- tapOn: "Confirmer"
+- assertVisible: "Plus d'actions"
+- takeScreenshot: .maestro/screenshots/war_lifecycle
+
+# --- §8.3 Annulation (nettoyage / idempotence) ---
+- runFlow: ../subflows/cancel_current_war.yaml

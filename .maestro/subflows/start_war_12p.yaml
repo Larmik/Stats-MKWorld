@@ -1,8 +1,19 @@
 # Sous-flow : démarre une war 12p contre 6v6 Squad, finit sur l'écran War en cours.
+# Auto-nettoyant : annule d'abord une éventuelle war résiduelle.
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - stopApp
 - launchApp
+# Si une war est déjà en cours, l'annuler pour repartir propre
+- runFlow:
+    when:
+      visible: "Courses restantes:.*"
+    commands:
+      - tapOn: "Courses restantes:.*"
+      - tapOn: "Plus d'actions"
+      - tapOn: "Annuler la war"
+      - tapOn: "Effacer la war"
+      - assertVisible: "Nouvelle war"
 - tapOn: "12 joueurs"
 - tapOn: "Nouvelle war"
 - tapOn: "Rechercher une équipe…"
