@@ -1,0 +1,18 @@
+# Déconnexion (réf. TESTS_FUNCTIONAL.md §15.13).
+# ⚠️ À LANCER EN DERNIER, MANUELLEMENT : déconnecte l'utilisateur → re-login Discord
+#    (OAuth) MANUEL requis ensuite. Ne PAS inclure dans la suite automatique.
+#   maestro test .maestro/manual/20_logout.yaml
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- stopApp
+- launchApp
+- tapOn: "Larii"
+- scrollUntilVisible:
+    element:
+      text: "Se déconnecter"
+    direction: DOWN
+- tapOn: "Se déconnecter"
+- assertVisible: "Es-tu sûr(e) de vouloir te déconnecter ?"
+- tapOn: "Déconnection"
+# Retour à l'onboarding (Signup) après révocation du token
+- assertVisible: "Suivant"

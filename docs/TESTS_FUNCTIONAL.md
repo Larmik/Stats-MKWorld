@@ -29,6 +29,21 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 | `05_historique` | 4.9/4.10 (Voir plus), 10.1, 10.5, 11.1 | ✅ |
 | `06_profils` | 15.8 (menu présent sur son profil), 16.1 | ✅ |
 | `10_create_war` | 5.1, 5.6, 5.9 (création war 12p) + 8.3 (annulation) — **idempotent** | ✅ |
+| `11_add_track` | 7.1–7.16 (saisie course) + vérif scoring « 61-21 » | ✅ |
+| `12_penalty` | 8.1.1–8.1.3 (pénalité) | ✅ |
+| `13_substitution` | 8.2.1–8.2.3 (remplacement) | ✅ |
+| `14_edit_track` | 9.1, 9.2, 9.4, 9.7 (édition course) | ✅ |
+| `16_add_ally_search` | 16.4, 16.5 (ouverture + recherche allié, **sans** ajout) | ✅ |
+| `18_refresh` | 15.9 (rafraîchir → `fetchData` migré ⚙️) | ✅ |
+| `19_pdf` | 11.2, 12.1, 12.2 (ouverture tableau + lignes) | ✅ |
+
+**Sous-flows** (`.maestro/subflows/`) : `start_war_12p` (démarre une war, auto-nettoyant), `cancel_current_war`.
+
+**Flows manuels non idempotents** (`.maestro/manual/`, à lancer explicitement) :
+| Flow | Cas | Raison |
+|---|---|---|
+| `15_validate_war` | 6.3, 6.10 (12 courses → validation) | ajoute une war à l'historique |
+| `20_logout` | 15.13 (déconnexion) | déconnecte → re-login Discord manuel — **à lancer en dernier** |
 
 > **Conventions sélecteurs / pièges Maestro :**
 > - `MKButton` et titres `BaseScreen` sont **affichés en MAJUSCULES** mais leur sémantique est en **casse naturelle** → sélectionner en casse naturelle.
