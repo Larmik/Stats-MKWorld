@@ -1,20 +1,26 @@
-# Cycle de vie complet d'une war 12p dans UNE seule war (réf. TESTS_FUNCTIONAL.md
-# §5 création, §7 saisie course, §8.1 pénalité, §8.2 remplacement, §9 édition, §8.3 annulation).
-# Idempotent : crée puis annule (la validation à 12 courses est dans .maestro/manual/15_validate_war).
+# Cycle de vie complet d'une war 12p, ALÉATOIRE (joueurs, circuit, positions),
+# dans UNE seule war (réf. TESTS_FUNCTIONAL.md §5,§7,§8.1,§8.2,§9,§8.3). Idempotent.
+# Le score 12p attendu est calculé en JS (pick.js) et vérifié → test property-based.
 appId: fr.harmoniamk.statsmkworld.debug
 ---
-- runFlow: ../subflows/start_war_12p.yaml          # §5 création + composition
+- runFlow: ../subflows/start_war_12p.yaml          # §5 + joueurs aléatoires + pick.js
 
-# --- §7 Saisie d'une course + vérif scoring (15+12+10+9+8+7 = 61 ; adverse 82-61 = 21) ---
+# --- §7 Saisie d'une course : circuit (parmi 29, avec scroll) + 6 positions aléatoires ---
 - tapOn: "Course suivante"
-- tapOn: "Circuit Mario Bros."
-- tapOn: "^1$"
-- tapOn: "^2$"
-- tapOn: "^3$"
-- tapOn: "^4$"
-- tapOn: "^5$"
-- tapOn: "^6$"
-- assertVisible: "61 - 21"
+- assertVisible: "Sélection du circuit"
+- scrollUntilVisible:
+    element:
+      text: "^${output.circuit}$"
+    direction: DOWN
+- tapOn: "^${output.circuit}$"
+- assertVisible: "Sélection des positions"
+- tapOn: "^${output.p0}$"
+- tapOn: "^${output.p1}$"
+- tapOn: "^${output.p2}$"
+- tapOn: "^${output.p3}$"
+- tapOn: "^${output.p4}$"
+- tapOn: "^${output.p5}$"
+- assertVisible: "${output.score}"               # score 12p calculé en JS, vérifié dans l'app
 - tapOn: "Confirmer"
 - assertVisible: "Plus d'actions"
 
@@ -25,11 +31,19 @@ appId: fr.harmoniamk.statsmkworld.debug
 - tapOn: "Valider"
 - assertVisible: "Plus d'actions"
 
-# --- §8.2 Remplacement (Arthug -> Nosta) ---
+# --- §8.2 Remplacement (joueur sélectionné -> remplaçant, aléatoires) ---
 - tapOn: "Plus d'actions"
 - tapOn: "Remplacement"
-- tapOn: "Arthug"
-- tapOn: "Nosta"
+- scrollUntilVisible:
+    element:
+      text: "${output.subOut}"
+    direction: DOWN
+- tapOn: "${output.subOut}"
+- scrollUntilVisible:
+    element:
+      text: "${output.subIn}"
+    direction: DOWN
+- tapOn: "${output.subIn}"
 - scrollUntilVisible:
     element:
       text: "Remplacer"
@@ -37,15 +51,23 @@ appId: fr.harmoniamk.statsmkworld.debug
 - tapOn: "Remplacer"
 - assertVisible: "Plus d'actions"
 
-# --- §9 Édition de la course (changer le circuit) ---
-- tapOn: "Circuit Mario Bros."
+# --- §9 Édition de la course : changer le circuit (aléatoire) ---
+- scrollUntilVisible:
+    element:
+      text: "^${output.circuit}$"
+    direction: DOWN
+- tapOn: "^${output.circuit}$"
 - assertVisible: "Editer"
 - tapOn: "Editer"
 - assertVisible: "Edition circuit"
-- tapOn: "Stade Wario"
+- scrollUntilVisible:
+    element:
+      text: "^${output.circuit2}$"
+    direction: DOWN
+- tapOn: "^${output.circuit2}$"
 - tapOn: "Confirmer"
 - assertVisible: "Plus d'actions"
 - takeScreenshot: .maestro/screenshots/war_lifecycle
 
-# --- §8.3 Annulation (nettoyage / idempotence) ---
+# --- §8.3 Annulation (idempotence) ---
 - runFlow: ../subflows/cancel_current_war.yaml

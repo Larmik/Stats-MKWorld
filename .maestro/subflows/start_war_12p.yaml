@@ -1,10 +1,11 @@
-# Sous-flow : démarre une war 12p contre 6v6 Squad, finit sur l'écran War en cours.
-# Auto-nettoyant : annule d'abord une éventuelle war résiduelle.
+# Sous-flow : démarre une war 12p contre 6v6 Squad avec 6 joueurs ALÉATOIRES.
+# Auto-nettoyant. Exécute pick.js → output.player0..5 / circuit(2) / p0..5 / score / subIn.
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - stopApp
 - launchApp
-# Si une war est déjà en cours, l'annuler pour repartir propre
+- runScript: ../scripts/pick.js
+# Annule une éventuelle war résiduelle
 - runFlow:
     when:
       visible: "Courses restantes:.*"
@@ -21,11 +22,16 @@ appId: fr.harmoniamk.statsmkworld.debug
 - tapOn: "6v6 Squad"
 - tapOn: "Suivant"
 - assertVisible: "Sélection de la Line-up"
-- tapOn: "Arthug"
-- tapOn: "Flash"
-- tapOn: "Genki35"
-- tapOn: "Guyal"
-- tapOn: "Larii"
-- tapOn: "Marss"
+# 6 joueurs aléatoires (tous visibles sans scroll)
+- tapOn: "${output.player0}"
+- tapOn: "${output.player1}"
+- tapOn: "${output.player2}"
+- tapOn: "${output.player3}"
+- tapOn: "${output.player4}"
+- tapOn: "${output.player5}"
+- scrollUntilVisible:
+    element:
+      text: "Commencer"
+    direction: DOWN
 - tapOn: "Commencer"
 - assertVisible: "Plus d'actions"

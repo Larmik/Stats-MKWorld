@@ -28,8 +28,7 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 | `04_stats` | 13.1.1 → 13.1.6 (ouverture des 5 catégories) | ✅ |
 | `05_historique` | 4.9/4.10 (Voir plus), 10.1, 10.5, 11.1 | ✅ |
 | `06_profils` | 15.8 (menu présent sur son profil), 16.1 | ✅ |
-| `10_war_lifecycle` | **E2E dans 1 war** : 5.1/5.6/5.9 (création) + 7.x (saisie course, scoring « 61-21 ») + 8.1 (pénalité) + 8.2 (remplacement) + 9.x (édition) + 8.3 (annulation) — **idempotent** | ✅ |
-| `11_random_track` | 7.x **property-based** : circuit + 6 positions **aléatoires** (`runScript` JS), score 12p calculé et vérifié | ✅ |
+| `10_war_lifecycle` | **E2E ALÉATOIRE dans 1 war** : 5 (création, **6 joueurs aléatoires**) + 7 (course : **circuit parmi 29 avec scroll** + **6 positions aléatoires**, score 12p calculé en JS & vérifié → property-based) + 8.1 (pénalité) + 8.2 (remplacement aléatoire) + 9 (édition, 2ᵉ circuit aléatoire) + 8.3 (annulation) — **idempotent** | ✅ |
 | `16_add_ally_search` | 16.4, 16.5 (ouverture + recherche allié, **sans** ajout) | ✅ |
 | `18_refresh` | 15.9 (rafraîchir → `fetchData` migré ⚙️) | ✅ |
 | `19_pdf` | 11.2, 12.1, 12.2 (ouverture tableau + lignes) | ✅ |
