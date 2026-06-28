@@ -76,7 +76,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                         modifier = Modifier.size(40.dp)
                             .clickable(enabled = rows.value > 6, onClick = { viewModel.onManageRows(false) }),
                         painter = painterResource(R.drawable.moins),
-                        contentDescription = null,
+                        contentDescription = "Retirer une ligne",
                         colorFilter = ColorFilter.tint(
                             when (rows.value > 6) {
                                 true -> Colors.black
@@ -88,7 +88,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                         modifier = Modifier.size(40.dp).padding(3.dp)
                             .clickable(enabled = rows.value < 9, onClick = { viewModel.onManageRows(true) }),
                         painter = painterResource(R.drawable.plus),
-                        contentDescription = null,
+                        contentDescription = "Ajouter une ligne",
                         colorFilter = ColorFilter.tint(
                             when (rows.value < 9) {
                                 true -> Colors.black
