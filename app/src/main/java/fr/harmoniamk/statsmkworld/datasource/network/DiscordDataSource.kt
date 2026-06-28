@@ -1,6 +1,5 @@
 package fr.harmoniamk.statsmkworld.datasource.network
 
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -11,20 +10,14 @@ import fr.harmoniamk.statsmkworld.api.RetrofitUtils
 import fr.harmoniamk.statsmkworld.model.network.NetworkResponse
 import fr.harmoniamk.statsmkworld.model.network.discord.DiscordUser
 import fr.harmoniamk.statsmkworld.model.network.discord.TokenResponse
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import okhttp3.Credentials
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.CoroutineContext
 
 interface DiscordDataSourceInterface {
-    fun getToken(code: String): Flow<NetworkResponse<TokenResponse>>
-    fun getUser(token: String): Flow<NetworkResponse<DiscordUser>>
-    fun revokeToken(token: String): Flow<Unit?>
+    suspend fun getToken(code: String): NetworkResponse<TokenResponse>
+    suspend fun getUser(token: String): NetworkResponse<DiscordUser>
+    suspend fun revokeToken(token: String): NetworkResponse<TokenResponse>
 }
 
 @Module
@@ -37,113 +30,31 @@ interface DiscordDataSourceModule {
 }
 
 
-class DiscordDataSource @Inject constructor(
+class DiscordDataSource @Inject constructor() : DiscordDataSourceInterface {
 
-) : DiscordDataSourceInterface, CoroutineScope {
-
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.IO
-
-    private val crashlytics get() = FirebaseCrashlytics.getInstance()
-
-    override fun getToken(code: String): Flow<NetworkResponse<TokenResponse>> = callbackFlow {
+    override suspend fun getToken(code: String): NetworkResponse<TokenResponse> {
         val credentials = Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)
-        val call = RetrofitUtils.createRetrofit(
+        return RetrofitUtils.createRetrofit(
             DiscordApi::class.java,
             DiscordApi.baseUrl,
             timeout = 60
         ).getToken(code = code, authorization = credentials)
-
-        call.enqueue(object : retrofit2.Callback<TokenResponse> {
-
-            override fun onResponse(
-                call: retrofit2.Call<TokenResponse>,
-                response: retrofit2.Response<TokenResponse>
-            ) {
-                val result = response.body()
-                val errorMessage = response.errorBody()?.string()
-
-                when {
-                    result != null -> trySend(NetworkResponse.Success(result))
-                    errorMessage != null -> {
-                        crashlytics.log("Discord getToken error: $errorMessage")
-                        trySend(NetworkResponse.Error(errorMessage))
-                    }
-                    else -> trySend(NetworkResponse.Error("Erreur inconnue"))
-                }
-            }
-
-            override fun onFailure(call: retrofit2.Call<TokenResponse>, t: Throwable) {
-                crashlytics.recordException(t)
-                trySend(NetworkResponse.Error(t.message ?: "Erreur inconnnue"))
-            }
-        })
-        awaitClose { }
     }
 
-    override fun getUser(token: String): Flow<NetworkResponse<DiscordUser>> = callbackFlow {
-        val call = RetrofitUtils.createRetrofit(
+    override suspend fun getUser(token: String): NetworkResponse<DiscordUser> = RetrofitUtils.createRetrofit(
             DiscordApi::class.java,
             DiscordApi.baseUrl,
             timeout = 60
         ).getCurrentUser(authorization = "Bearer $token")
 
-        call.enqueue(object : retrofit2.Callback<DiscordUser> {
 
-            override fun onResponse(
-                call: retrofit2.Call<DiscordUser>,
-                response: retrofit2.Response<DiscordUser>
-            ) {
-                val result = response.body()
-                val errorMessage = response.errorBody()?.string()
-
-                when {
-                    result != null -> trySend(NetworkResponse.Success(result))
-                    errorMessage != null -> {
-                        crashlytics.log("Discord getUser error: $errorMessage")
-                        trySend(NetworkResponse.Error(errorMessage))
-                    }
-                    else -> trySend(NetworkResponse.Error("Erreur inconnue"))
-                }
-            }
-
-            override fun onFailure(call: retrofit2.Call<DiscordUser>, t: Throwable) {
-                crashlytics.recordException(t)
-                trySend(NetworkResponse.Error(t.message ?: "Erreur inconnnue"))
-            }
-        })
-        awaitClose { }
-    }
-
-    override fun revokeToken(token: String): Flow<Unit?> = callbackFlow {
+    override suspend fun revokeToken(token: String): NetworkResponse<TokenResponse> {
         val credentials = Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)
-        val call = RetrofitUtils.createRetrofit(
+        return RetrofitUtils.createRetrofit(
             DiscordApi::class.java,
             DiscordApi.baseUrl,
             timeout = 60
         ).revokeToken(token = token, authorization = credentials)
-
-        call.enqueue(object : retrofit2.Callback<TokenResponse> {
-
-            override fun onResponse(
-                call: retrofit2.Call<TokenResponse>,
-                response: retrofit2.Response<TokenResponse>
-            ) {
-                val result = response.body()
-
-                when {
-                    result != null -> trySend(Unit)
-                    else -> trySend(null)
-                }
-            }
-
-            override fun onFailure(call: retrofit2.Call<TokenResponse>, t: Throwable) {
-                crashlytics.recordException(t)
-                trySend(null)
-            }
-        })
-        awaitClose { }
     }
 
 }

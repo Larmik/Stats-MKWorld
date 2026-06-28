@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 import java.util.Date
 import kotlin.collections.map
 import kotlin.collections.toTypedArray
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -68,31 +70,34 @@ class SignupViewModel @AssistedInject constructor(
     val showNotif = _showNotif.asSharedFlow()
     val onNext = _onNext.asSharedFlow()
 
-    val state = when {
-        code.isNotEmpty() -> {
-            authDataSource.getToken(code)
-                .mapNotNull { it.successResponse?.accessToken }
-                .filterNot { it.isEmpty() }
-                .onEach {
-                    _state.value = _state.value.copy(currentPage = 4)
-                    dataStoreRepository.setAccessToken(it)
+    val state = flowOf(Unit)
+        .mapNotNull {
+            when {
+                code.isNotEmpty() -> {
+                    val token = authDataSource.getToken(code)
+                        .successResponse?.accessToken
+                        ?.takeIf { it.isNotEmpty() }
+                    token?.let {
+                        _state.value = _state.value.copy(currentPage = 4)
+                        dataStoreRepository.setAccessToken(it)
+                    }
+                    token
                 }
 
+                //Récupération du token en local (user déjà connecté)
+                else -> dataStoreRepository.accessToken.filterNot { it.isEmpty() }.firstOrNull()
+            }
         }
-
-        //Récupération du token en local (user déjà connecté)
-        else -> dataStoreRepository.accessToken.filterNot { it.isEmpty() }
-    }
-        .flatMapLatest { authDataSource.getUser(it) }
+        .map { authDataSource.getUser(it) }
         .mapNotNull {
             if (it.successResponse == null && code.isNotEmpty())
                  _state.value = _state.value.copy(currentPage = 6)
             it.successResponse?.id
         }
         //On recherche dans le registre avec l'ID Discord, puis on récupère le fullPlayer avec l'ID du résultat
-        .flatMapLatest { mkCentralDataSource.findPlayer(it) }
+        .map { mkCentralDataSource.findPlayer(it).successResponse }
         .mapNotNull { it?.playerList?.firstOrNull() }
-        .flatMapLatest { mkCentralDataSource.getPlayer(it.id.toString()) }
+        .map { mkCentralDataSource.getPlayer(it.id.toString()) }
         .mapNotNull { it.successResponse }
         .map {
             val teamId = it.rosters?.firstOrNull { it.game == "mkworld" }?.teamID?.toString()
@@ -104,44 +109,32 @@ class SignupViewModel @AssistedInject constructor(
 
             //Fetch classique, puis affichage du succès, MAJ de la date et redirection home
             fetchUseCase.fetchTeam(teamId.toString())
-                .flatMapLatest { fetchUseCase.fetchAllies(teamId.toString()) }
-                .flatMapLatest { fetchUseCase.fetchTeams() }
-                .flatMapLatest { dataStoreRepository.mkcTeam }
-                .onEach {
-                    val rosters = it.rosters.filter { it.game == "mkworld" }
-                    val player = rosters.flatMap { it.players }.singleOrNull { it.playerId == user.id }
-                    val role = when (player?.leader) {
-                        true -> 2
-                        else -> 0
-                    }
+            fetchUseCase.fetchAllies(teamId.toString())
+            fetchUseCase.fetchTeams()
+            val team = dataStoreRepository.mkcTeam.firstOrNull()
+            val rosters = team?.rosters?.filter { it.game == "mkworld" }
+            val player = rosters?.flatMap { it.players }?.singleOrNull { it.playerId == user.id }
+            val role = when (player?.leader) {
+                true -> 2
+                else -> 0
+            }
 
-                    firebaseRepository.writeUser(teamId.toString(), user.copy(role = role)).firstOrNull()
-                    player?.let { player ->
-                        databaseRepository.writePlayer(PlayerEntity(
-                            player = player,
-                            rosterId = rosters.singleOrNull { it.players.map { it.playerId }.contains(player.playerId) }?.id.toString()
-                        )).firstOrNull()
-                    }
-
-
-
-                }
-                .mapNotNull {
-                    it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() }
-                }
-                .flatMapLatest { ids ->
-                    val flows = ids.map { fetchUseCase.fetchWars(it) }
-                    merge(*flows.toTypedArray())
-                }
-                .onEach {
-                    dataStoreRepository.setLastUpdate(Date().time)
-                    _state.value = _state.value.copy(currentPage = 5)
-                    delay(2000)
-                    _onNext.emit(Unit)
-                }.launchIn(viewModelScope)
+            firebaseRepository.writeUser(teamId.toString(), user.copy(role = role)).firstOrNull()
+            player?.let { player ->
+                databaseRepository.writePlayer(PlayerEntity(
+                    player = player,
+                    rosterId = rosters.singleOrNull { it.players.map { it.playerId }.contains(player.playerId) }?.id.toString()
+                )).firstOrNull()
+            }
+            rosters?.map { it.id.toString() }?.forEach {
+                fetchUseCase.fetchWars(it)
+            }
 
 
-
+            dataStoreRepository.setLastUpdate(Date().time)
+            _state.value = _state.value.copy(currentPage = 5)
+            delay(2000.milliseconds)
+            _onNext.emit(Unit)
             _state.value.copy(launched = true)
         }
         .mergeWith(_state)

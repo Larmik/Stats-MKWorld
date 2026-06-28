@@ -83,25 +83,26 @@ class PlayerProfileViewModel @AssistedInject constructor(
     val showNotif = _showNotif.asSharedFlow()
 
 
-
-    val state = dataStoreRepository.mkcPlayer
-        .flatMapLatest {
-            _state.value = _state.value.copy(currentPlayer = it)
-            when (id) {
-                "me" -> flowOf(it)
-                else -> mkCentralDataSource.getPlayer(id).mapNotNull { it.successResponse }
-            }
+    val state = dataStoreRepository.mkcPlayer.mapNotNull {
+        _state.value = _state.value.copy(currentPlayer = it)
+        when (id) {
+            "me" -> it
+            else -> mkCentralDataSource.getPlayer(id).successResponse
         }
-        .filterNotNull()
-        .mapNotNull {
+    }
+        .map {
             val team = dataStoreRepository.mkcTeam.firstOrNull()
             val fbUser = firebaseRepository.getUser(team?.id.toString(), it.id.toString()).firstOrNull()
-            val isLeader = firebaseRepository.getUser(team?.id.toString(), _state.value.currentPlayer?.id.toString())
+            val isLeader = firebaseRepository.getUser(
+                team?.id.toString(),
+                _state.value.currentPlayer?.id.toString()
+            )
                 .map { it?.role ?: 0 }
                 .map { it == 2 }
                 .firstOrNull()
 
-            val hasMultiRoster = team?.rosters?.filter { it.game == "mkworld" }?.size?.let { it > 1 } ?: false
+            val hasMultiRoster =
+                team?.rosters?.filter { it.game == "mkworld" }?.size?.let { it > 1 } ?: false
 
             val players = team
                 ?.rosters
@@ -115,9 +116,10 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 ?.singleOrNull { it.id == id }
                 ?.rosterId == "-1"
 
-            val rolePlayer = team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }?.singleOrNull { player -> player.playerId == it.id.toString() }
+            val rolePlayer = team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }
+                ?.singleOrNull { player -> player.playerId == it.id.toString() }
 
-            val roleValue = when  {
+            val roleValue = when {
                 fbUser?.role == 2 || rolePlayer?.leader == true || rolePlayer?.manager == true -> 2
                 else -> fbUser?.role ?: 0
             }
@@ -128,7 +130,9 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 else -> R.string.membre
             }
 
-            val lastUpdate = dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }.firstOrNull().takeIf { id == "me" && it?.startsWith("01/01/1970") != true }
+            val lastUpdate =
+                dataStoreRepository.lastUpdate.map { Date(it).displayedString("dd/MM/yyyy - HH:mm") }
+                    .firstOrNull().takeIf { id == "me" && it?.startsWith("01/01/1970") != true }
             val matrixMode = dataStoreRepository.matrixMode.firstOrNull()
             val notificationsActivated = dataStoreRepository.notifEnabled.firstOrNull() == true
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
@@ -144,7 +148,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
                             && isLeader == true
                             && id != "me"
                             && id != _state.value.currentPlayer?.id.toString()
-                            && it.rosters?.filter { it.game == "mkworld" }?.any { it.teamID.toString() == team?.id.toString() } == true
+                            && it.rosters?.filter { it.game == "mkworld" }
+                        ?.any { it.teamID.toString() == team?.id.toString() } == true
                 }?.let {
                     when (it) {
                         R.string.admin -> R.string.basculer_en_tant_que_membre
@@ -172,10 +177,12 @@ class PlayerProfileViewModel @AssistedInject constructor(
             .mapNotNull { state.value.player }
             .map { PlayerEntity(player = it, isAlly = true) }
             .flatMapLatest { databaseRepository.addAlly(it) }
-            .onEach { _state.value = state.value.copy(
-                buttonVisible = false,
-                isAlly = true
-            ) }
+            .onEach {
+                _state.value = state.value.copy(
+                    buttonVisible = false,
+                    isAlly = true
+                )
+            }
             .launchIn(viewModelScope)
 
     }
@@ -216,7 +223,10 @@ class PlayerProfileViewModel @AssistedInject constructor(
 
     init {
         dataStoreRepository.lastUpdate
-            .onEach { _state.value = state.value.copy(lastUpdate = Date(it).displayedString("dd/MM/yyyy - HH:mm")) }
+            .onEach {
+                _state.value =
+                    state.value.copy(lastUpdate = Date(it).displayedString("dd/MM/yyyy - HH:mm"))
+            }
             .launchIn(viewModelScope)
     }
 
@@ -225,24 +235,24 @@ class PlayerProfileViewModel @AssistedInject constructor(
             dataStoreRepository.mkcPlayer.firstOrNull()?.id?.let {
                 _state.value = state.value.copy(dialogTitle = R.string.fetch_player)
                 fetchUseCase.fetchPlayer(it.toString())
-                    .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" } }
-                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_team) }
-                    .flatMapLatest { fetchUseCase.fetchTeam(it.teamID.toString()) }
-                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_allies) }
-                    .flatMapLatest { fetchUseCase.fetchAllies(it.id.toString()) }
-                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents) }
-                    .flatMapLatest { fetchUseCase.fetchTeams() }
-                    .flatMapLatest { databaseRepository.clearWars() }
-                    .flatMapLatest { dataStoreRepository.mkcTeam }
-                    .onEach { _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars) }
-                    .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
-                    .flatMapLatest { ids ->
-                        val flows = ids.map { fetchUseCase.fetchWars(it) }
-                        merge(*flows.toTypedArray())
+                    ?.rosters?.firstOrNull { it.game == "mkworld" }
+                    ?.let {
+                        _state.value = state.value.copy(dialogTitle = R.string.fetch_team)
+                        val team = fetchUseCase.fetchTeam(it.teamID.toString())
+                        _state.value = state.value.copy(dialogTitle = R.string.fetch_allies)
+                        fetchUseCase.fetchAllies(team?.id.toString())
+                        _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents)
+                        fetchUseCase.fetchTeams()
+                        _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars)
+                        databaseRepository.clearWars().firstOrNull()
+                        val rostersId = team?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
+                        rostersId?.forEach {
+                            fetchUseCase.fetchWars(it)
+                        }
+                        _state.value = state.value.copy(dialogTitle = null)
+                        dataStoreRepository.setLastUpdate(Date().time)
                     }
-                    .onEach { _state.value = state.value.copy(dialogTitle = null) }
-                    .onEach { dataStoreRepository.setLastUpdate(Date().time) }
-                    .launchIn(this)
+
             }
         }
     }
@@ -263,7 +273,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
             .flatMapLatest { databaseRepository.clearPlayers() }
             .flatMapLatest { databaseRepository.clearWars() }
             .flatMapLatest { dataStoreRepository.accessToken }
-            .flatMapLatest { authDataSource.revokeToken(it) }
+            .map { authDataSource.revokeToken(it) }
             .onEach {
                 dataStoreRepository.clearPlayer()
                 dataStoreRepository.clearTeam()
@@ -280,6 +290,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     dataStoreRepository.setNotificationsEnabled(true)
                     _state.value = state.value.copy(notificationsEnabled = true)
                 }
+
                 notificationRepository.notificationsEnabled && dataStoreRepository.notifEnabled.firstOrNull() == true -> {
                     dataStoreRepository.setNotificationsEnabled(false)
                     _state.value = state.value.copy(notificationsEnabled = false)
@@ -295,6 +306,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     dataStoreRepository.setMultiRosterEnabled(false)
                     _state.value = state.value.copy(multiRosterEnabled = false)
                 }
+
                 else -> {
                     dataStoreRepository.setMultiRosterEnabled(true)
                     _state.value = state.value.copy(multiRosterEnabled = true)
@@ -307,7 +319,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
 
     fun onResume() {
         viewModelScope.launch {
-            _state.value = state.value.copy(notificationsEnabled = notificationRepository.notificationsEnabled && dataStoreRepository.notifEnabled.firstOrNull() == true)
+            _state.value =
+                state.value.copy(notificationsEnabled = notificationRepository.notificationsEnabled && dataStoreRepository.notifEnabled.firstOrNull() == true)
         }
     }
 }

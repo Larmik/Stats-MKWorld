@@ -1,8 +1,8 @@
 package fr.harmoniamk.statsmkworld.api
 
+import fr.harmoniamk.statsmkworld.model.network.NetworkResponse
 import fr.harmoniamk.statsmkworld.model.network.discord.DiscordUser
 import fr.harmoniamk.statsmkworld.model.network.discord.TokenResponse
-import retrofit2.Call
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -16,24 +16,24 @@ interface DiscordApi {
 
     @FormUrlEncoded
     @POST("api/oauth2/token")
-    fun getToken(
+    suspend fun getToken(
         @Header("Authorization") authorization: String,
         @Header("Content-Type") contentType: String = "application/x-www-form-urlencoded",
         @Field("redirect_uri") redirectUri: String = "https://statsmkworld.com",
         @Field("grant_type") grantType: String = "authorization_code",
         @Field("code") code: String,
-    ): Call<TokenResponse>
+    ): NetworkResponse<TokenResponse>
 
     @FormUrlEncoded
     @POST("api/oauth2/token/revoke")
-    fun revokeToken(
+    suspend fun revokeToken(
         @Header("Authorization") authorization: String,
         @Header("Content-Type") contentType: String = "application/x-www-form-urlencoded",
         @Field("token") token: String,
         @Field("token_type_hint") type: String = "access_token"
-    ): Call<TokenResponse>
+    ): NetworkResponse<TokenResponse>
 
     @GET("api/users/@me")
-    fun getCurrentUser(@Header("Authorization") authorization: String): Call<DiscordUser>
+    suspend fun getCurrentUser(@Header("Authorization") authorization: String): NetworkResponse<DiscordUser>
 
 }

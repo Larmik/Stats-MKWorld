@@ -95,7 +95,7 @@ flowchart TD
 
 Règles transverses :
 
-- Repositories et data sources renvoient **toujours des `Flow`** ; les opérations I/O passent par `flowOn(Dispatchers.IO)` ou des data sources sur IO.
+- Repositories et data sources **locaux** (Room/DataStore/Firebase) renvoient des `Flow` ; les opérations I/O passent par `flowOn(Dispatchers.IO)` ou des data sources sur IO. **Exception** : les data sources **réseau** (MKCentral/Discord) exposent désormais des `suspend fun … : NetworkResponse<T>` (migration Flow→suspend, cf. §12).
 - Un écran = un dossier `screen/<feature>/` avec `<Feature>Screen.kt` (Composable) + `<Feature>ViewModel.kt`.
 - Composants UI maison préfixés `MK` (`ui/MKButton.kt`, `MKText`, `MKDialog`, `MKTextField`, `MKSegmentedSelector`, `MKLoaderDialog`…). Cellules de liste dans `ui/cells/`, widgets de stats dans `ui/stats/`.
 
@@ -476,7 +476,17 @@ Détaillés en §15 et §17.
 
 ## 12. Data sources & APIs
 
-Retrofit créé via `api/RetrofitUtils.createRetrofit(apiClass, url, factory = Moshi, timeout?)`. Le `timeout` (s) s'applique à call/connect/write/read.
+Les datasources réseau exposent des **`suspend fun … : NetworkResponse<T>`** (migration Flow→suspend) et délèguent à des interfaces Retrofit `suspend`. Plus de `callbackFlow`/`enqueue` manuel.
+
+`RetrofitUtils.createRetrofit(apiClass, url, factory = Moshi, timeout?)` :
+- `baseClient` OkHttp, `MoshiConverterFactory` et `NetworkResponseCallAdapterFactory` sont **construits une seule fois** (`by lazy`) — pool de connexions/DNS/threads partagés (audit P1).
+- Le `timeout` (s, appliqué à call/connect/write/read) est dérivé via `baseClient.newBuilder()` (réutilise les ressources du client de base).
+- Les `Retrofit` sont **mis en cache** par clé `url|timeout|factory`.
+
+**`NetworkResponseCallAdapter`** (`api/NetworkResponseCallAdapterFactory.kt`) : adaptateur Retrofit qui transforme un `Call<T>` en `Call<NetworkResponse<T>>`. Il centralise (un seul endroit pour tous les appels) :
+- la conversion **succès → `Success(body)`** / **erreur HTTP → `Error(errorBody ?: message)`** / **exception → `Error(t.message)`** ;
+- la **journalisation Crashlytics** : `log("HTTP <code> error: …")` sur erreur HTTP, `recordException(t)` sur exception (audit B7).
+- `enqueue` (utilisé par les `suspend`) et `execute` (synchrone) partagent la même logique.
 
 ### MKCentral — `MKCentralApi` (base `https://mkcentral.com/api/`)
 
@@ -489,7 +499,7 @@ Retrofit créé via `api/RetrofitUtils.createRetrofit(apiClass, url, factory = M
 | `getTeams` | `@GET registry/teams?game=mkworld&mode=150cc&is_historical=false&is_active=true` | `page` |
 | `getMK8Teams` | `@GET registry/teams?game=mk8dx&mode=150cc&is_historical=false&is_active=true` | `page` |
 
-`MKCentralDataSource` enveloppe chaque appel en `callbackFlow` (`enqueue`). Timeouts : **5 s** pour `findPlayer`/`getPlayer`, **60 s** pour les équipes/recherches. `getPlayer` renvoie `NetworkResponse<MKCPlayer>` (Success/Error) ; les autres renvoient le DTO ou `null`. **Les échecs ne sont plus silencieux** (audit B7) : `onFailure` journalise via `FirebaseCrashlytics.recordException(t)`, et les corps d'erreur HTTP via `crashlytics.log(...)`. Les signatures nullables sont conservées (propager `NetworkResponse.Error` partout cascaderait sur ~10 appelants — refonte à part).
+`MKCentralDataSource` : chaque méthode est un `suspend fun … : NetworkResponse<T>` délégant à l'API Retrofit `suspend`. Timeouts : **5 s** pour `findPlayer`/`getPlayer`, **60 s** pour les équipes/recherches. Les appelants déballent via `.successResponse` (`null` ⇒ erreur ou aucun résultat) ; les erreurs sont journalisées en amont par le `NetworkResponseCallAdapter` (B7).
 
 DTO (`model/network/mkcentral/`, Moshi `@JsonClass(generateAdapter=true)`, mapping `@Json(name=…)` snake_case) :
 - `MKCPlayer` : id, name, country_code, join_date, discord (`MKCDiscordInfo`), friend_codes, **rosters** (`MKCPlayerRoster` : roster_id, team_id, game, mode…), user_settings.
@@ -504,7 +514,7 @@ DTO (`model/network/mkcentral/`, Moshi `@JsonClass(generateAdapter=true)`, mappi
 | `revokeToken` | `@FormUrlEncoded @POST api/oauth2/token/revoke` | `token`, `token_type_hint=access_token` |
 | `getCurrentUser` | `@GET api/users/@me` | header `Authorization: Bearer …` |
 
-`DiscordDataSource` : Basic = `Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)`, timeout 60 s. `getToken`/`getUser` → `NetworkResponse`, `revokeToken` → `Flow<Unit?>`. Mêmes garde-fous Crashlytics qu'au-dessus (B7). DTO : `TokenResponse(access_token, token_type, expires_in, refresh_token, scope)`, `DiscordUser` (id, username, avatar, email, …, `avatar_decoration_data`).
+`DiscordDataSource` : Basic = `Credentials.basic(BuildConfig.DISCORD_API_CLIENT, BuildConfig.DISCORD_API_SECRET)`, timeout 60 s. Les trois méthodes sont des `suspend fun … : NetworkResponse<…>` (`getToken`/`revokeToken` → `TokenResponse`, `getUser` → `DiscordUser`) ; mêmes garde-fous Crashlytics via l'adapter. DTO : `TokenResponse(access_token, token_type, expires_in, refresh_token, scope)`, `DiscordUser` (id, username, avatar, email, …, `avatar_decoration_data`).
 
 ### `NetworkResponse<T>`
 Sealed : `Success(response)` / `Error(message)`, avec accesseurs `successResponse: T?` et `errorResponse: String?`.
@@ -516,20 +526,24 @@ Sealed : `Success(response)` / `Error(message)`, avec accesseurs `successRespons
 
 ## 13. Le UseCase de synchronisation
 
-`FetchUseCase` (sur `Dispatchers.IO`) orchestre la synchro complète :
+`FetchUseCase` (sur `Dispatchers.IO`) orchestre la synchro complète. Depuis la migration Flow→suspend des datasources réseau, `fetchData` et ses étapes (`fetchPlayer`, `fetchTeam`, `fetchAllies`, `fetchTeams`, `fetchWars`) sont des **`suspend fun`** enchaînées **séquentiellement** (plus de `flatMapLatest`/`merge`) ; seul `manageTransferts()` reste un `Flow` (appels suspend dans `.map`/`.zip`).
 
 ```kotlin
-fetchData(playerId) =
-    fetchPlayer(playerId)                                  // MKCentral → setMKCPlayer
-      .mapNotNull { it.rosters?.firstOrNull { game=="mkworld" } }
-      .flatMapLatest { fetchTeam(it.teamID) }              // setMKCTeam ; clearPlayers ; écrit chaque joueur du roster (fusion avec User Firebase)
-      .flatMapLatest { fetchAllies(it.id) }                // newAllies → DB (alliés rosterId=-1)
-      .flatMapLatest { fetchTeams() }                      // toutes les équipes mkworld + mk8dx (paginé) + "6v6 Squad"
-      .flatMapLatest { dataStoreRepository.mkcTeam }
-      .mapNotNull { rosters mkworld → ids }
-      .flatMapLatest { ids -> merge(ids.map { fetchWars(it) }) }  // wars/{rosterId} → clearWars + writeWars
-      .onEach { setLastUpdate(now) }
+suspend fun fetchData(playerId) {
+    fetchPlayer(playerId)                                  // MKCentral getPlayer → setMKCPlayer
+      ?.rosters?.firstOrNull { game == "mkworld" }
+      ?.let {
+          val team = fetchTeam(it.teamID)                  // setMKCTeam ; clearPlayers ; écrit chaque joueur (fusion User Firebase)
+          fetchAllies(team?.id)                            // newAllies → DB (alliés rosterId=-1)
+          fetchTeams()                                     // équipes mkworld + mk8dx (paginé) + "6v6 Squad"
+          team?.rosters?.filter { game == "mkworld" }?.map { it.id }
+              ?.forEach { fetchWars(it) }                  // wars/{rosterId} → clearWars + writeWars
+          setLastUpdate(now)
+      }
+}
 ```
+
+Les étapes réseau lisent `mkCentralDataSource.getX(...).successResponse` (`null` ⇒ étape ignorée).
 
 Méthodes annexes :
 - `fetchTeam` : pour chaque joueur du roster mkworld, fusionne le `User` Firebase (role, currentWar, discordId) et écrit un `PlayerEntity`.

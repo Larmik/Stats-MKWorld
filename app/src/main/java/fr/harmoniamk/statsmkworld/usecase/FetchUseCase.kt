@@ -12,6 +12,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.Tag
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamList
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -20,31 +21,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.zip
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.collections.firstOrNull
 import kotlin.coroutines.CoroutineContext
 
 interface FetchUseCaseInterface {
-    fun fetchData(playerId: String): Flow<Unit>
-    fun fetchPlayer(playerId: String): Flow<MKCPlayer>
-    fun fetchTeam(teamId: String): Flow<MKCTeam>
-    fun fetchAllies(teamId: String): Flow<Unit>
-    fun fetchTeams(): Flow<String>
-    fun fetchWars(teamId: String): Flow<Unit>
-    fun fetchTags(): Flow<Unit>
+    suspend fun fetchData(playerId: String)
+    suspend fun fetchPlayer(playerId: String): MKCPlayer?
+    suspend fun fetchTeam(teamId: String): MKCTeam?
+    suspend fun fetchAllies(teamId: String)
+    suspend fun fetchTeams(): String
+    suspend fun fetchWars(teamId: String)
+    suspend fun fetchTags()
     fun manageTransferts(): Flow<Unit>
 }
 
@@ -66,27 +58,29 @@ class FetchUseCase @Inject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val databaseRepository: DatabaseRepositoryInterface
 ) : FetchUseCaseInterface, CoroutineScope {
-    override fun fetchData(playerId: String): Flow<Unit> = fetchPlayer(playerId)
-            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" } }
-            .flatMapLatest { fetchTeam(it.teamID.toString()) }
-            .flatMapLatest { fetchAllies(it.id.toString()) }
-            .flatMapLatest { fetchTeams() }
-            .flatMapLatest { dataStoreRepository.mkcTeam }
-            .mapNotNull { it.rosters.filter { it.game == "mkworld" }.map { it.id.toString() } }
-            .flatMapLatest { ids ->
-                val flows = ids.map { fetchWars(it) }
-                merge(*flows.toTypedArray())
-            }
-            .onEach { dataStoreRepository.setLastUpdate(Date().time) }
 
-    override fun fetchPlayer(playerId: String): Flow<MKCPlayer> =
-        mkCentralDataSource.getPlayer(playerId)
-            .mapNotNull { it.successResponse }
-            .onEach { dataStoreRepository.setMKCPlayer(it) }
+    override suspend fun fetchData(playerId: String) = fetchPlayer(playerId)
+        ?.rosters?.firstOrNull { it.game == "mkworld" }
+        ?.let {
+            val team = fetchTeam(it.teamID.toString())
+            fetchAllies(team?.id.toString())
+            fetchTeams()
+            val rostersId = team?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
+            rostersId?.forEach { fetchWars(it) }
+            dataStoreRepository.setLastUpdate(Date().time)
+        } ?: Unit
 
-    override fun fetchTeam(teamId: String): Flow<MKCTeam> = mkCentralDataSource.getTeam(teamId)
-        .filterNotNull()
-        .onEach {
+    override suspend fun fetchPlayer(playerId: String): MKCPlayer? {
+        val player = mkCentralDataSource.getPlayer(playerId).successResponse
+        player?.let {
+            dataStoreRepository.setMKCPlayer(it)
+        }
+        return player
+    }
+
+    override suspend fun fetchTeam(teamId: String): MKCTeam? {
+        val team = mkCentralDataSource.getTeam(teamId).successResponse
+        team?.let {
             dataStoreRepository.setMKCTeam(it)
             databaseRepository.clearPlayers().firstOrNull()
             it.rosters.filter { it.game == "mkworld" }.forEach { roster ->
@@ -97,39 +91,37 @@ class FetchUseCase @Inject constructor(
                 }
             }
         }
+        return team
+    }
 
-    override fun fetchAllies(teamId: String): Flow<Unit> = dataStoreRepository.mkcTeam
-        .flatMapLatest { firebaseRepository.getAllies(it.id.toString()) }
-        .map { allies ->
-            val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
-            allies.forEach { ally ->
-                when (players.map { it.id }.contains(ally.id)) {
-                    true -> {
-                        databaseRepository.getPlayer(ally.id).firstOrNull()?.let { player ->
-                            firebaseRepository.deleteAlly(teamId, ally.id).firstOrNull()
-                            databaseRepository.updateUserRoster(ally.id, player.rosterId).firstOrNull()
-                        }
+    override suspend fun fetchAllies(teamId: String) {
+        val allies = firebaseRepository.getAllies(teamId).firstOrNull()
+        val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
+        allies?.forEach { ally ->
+            when (players.map { it.id }.contains(ally.id)) {
+                true -> {
+                    databaseRepository.getPlayer(ally.id).firstOrNull()?.let { player ->
+                        firebaseRepository.deleteAlly(teamId, ally.id).firstOrNull()
+                        databaseRepository.updateUserRoster(ally.id, player.rosterId).firstOrNull()
                     }
+                }
 
-                    else -> {
-                        mkCentralDataSource.getPlayer(ally.id).firstOrNull()?.let { response ->
-                            response.successResponse?.let {
-                                databaseRepository.addAlly(PlayerEntity(player = it, isAlly = true))
-                                    .firstOrNull()
-                            }
-                        }
+                else -> {
+                    mkCentralDataSource.getPlayer(ally.id).successResponse?.let {
+                        databaseRepository.addAlly(PlayerEntity(player = it, isAlly = true)).firstOrNull()
                     }
                 }
             }
         }
+    }
 
-    override fun fetchTeams(): Flow<String> = flow {
+    override suspend fun fetchTeams(): String  {
         val teams = mutableListOf<TeamEntity>()
         var teamPage = 1
         var teamPageMK8 = 1
-        val firstResponse = getTeams(teamPage).firstOrNull()
-        val firstResponseMK8 = getMK8Teams(teamPageMK8).firstOrNull()
-        teams.addAll(firstResponse?.second?.map {
+        val firstResponse = getTeams(teamPage)
+        val firstResponseMK8 = getMK8Teams(teamPageMK8)
+        teams.addAll(firstResponse.second?.map {
             TeamEntity(
                 id = it.id.toString(),
                 name = it.name,
@@ -138,7 +130,7 @@ class FetchUseCase @Inject constructor(
                 logo = it.logo
             )
         }.orEmpty())
-        teams.addAll(firstResponseMK8?.second?.map {
+        teams.addAll(firstResponseMK8.second?.map {
             TeamEntity(
                 id = it.id.toString(),
                 name = it.name,
@@ -147,10 +139,10 @@ class FetchUseCase @Inject constructor(
                 logo = it.logo
             )
         }.orEmpty())
-        while (teamPage < (firstResponse?.first ?: 1)) {
+        while (teamPage < (firstResponse.first ?: 1)) {
             teamPage++
-            val teamsToAdd = getTeams(teamPage).firstOrNull()
-            teams.addAll(teamsToAdd?.second?.map {
+            val teamsToAdd = getTeams(teamPage)
+            teams.addAll(teamsToAdd.second?.map {
                 TeamEntity(
                     id = it.id.toString(),
                     name = it.name,
@@ -160,10 +152,10 @@ class FetchUseCase @Inject constructor(
                 )
             }.orEmpty())
         }
-        while (teamPageMK8 < (firstResponseMK8?.first ?: 1)) {
+        while (teamPageMK8 < (firstResponseMK8.first ?: 1)) {
             teamPageMK8++
-            val teamsToAdd = getMK8Teams(teamPageMK8).firstOrNull()
-            teams.addAll(teamsToAdd?.second?.map {
+            val teamsToAdd = getMK8Teams(teamPageMK8)
+            teams.addAll(teamsToAdd.second?.map {
                 TeamEntity(
                     id = it.id.toString(),
                     name = it.name,
@@ -183,24 +175,28 @@ class FetchUseCase @Inject constructor(
                 logo = null
             )
         )).firstOrNull()
-        emit(dataStoreRepository.mkcTeam.firstOrNull()?.id.toString())
+        return dataStoreRepository.mkcTeam.firstOrNull()?.id.toString()
     }
 
-    override fun fetchWars(teamId: String): Flow<Unit> = firebaseRepository.getWars(teamId)
-        .map {
+    override suspend fun fetchWars(teamId: String) {
+        val wars = firebaseRepository.getWars(teamId).firstOrNull()
+        wars?.let {
             databaseRepository.clearWars().firstOrNull()
             databaseRepository.writeWars(it.map { WarEntity(it) }).firstOrNull()
         }
-    override fun fetchTags(): Flow<Unit> = databaseRepository.getTeams()
-        .map { it.map { Tag(it.tag, it.id) } }
-        .flatMapLatest { firebaseRepository.writeTags(it) }
 
-    override fun manageTransferts(): Flow<Unit> = dataStoreRepository.mkcTeam
-        .flatMapLatest { mkCentralDataSource.getTeam(it.id.toString()) }
+    }
+    override suspend fun fetchTags() {
+        val tags = databaseRepository.getTeams().map { it.map { Tag(it.tag, it.id) } }.firstOrNull()
+        tags?.let {  firebaseRepository.writeTags(it).firstOrNull() }
+    }
+
+    override fun manageTransferts() = dataStoreRepository.mkcTeam
+        .map { mkCentralDataSource.getTeam(it.id.toString()).successResponse }
         .zip(databaseRepository.getPlayers()) { team, players ->
             players.forEach { player ->
                 if (team?.rosters?.firstOrNull { it.game == "mkworld" }?.players?.none { it.playerId == player.id } == true) {
-                    mkCentralDataSource.getPlayer(player.id).firstOrNull()?.successResponse?.let { mkcPlayer ->
+                    mkCentralDataSource.getPlayer(player.id).successResponse?.let { mkcPlayer ->
                         val fbUser = firebaseRepository.getUser(team.id.toString(), player.id).firstOrNull()
                         fbUser?.let {
                             firebaseRepository.writeUser(mkcPlayer.rosters?.firstOrNull { it.game == "mkworld" }?.teamID.toString(), it).firstOrNull()
@@ -211,7 +207,7 @@ class FetchUseCase @Inject constructor(
                     }
                 }
                 if (team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }?.any { it.playerId == player.id } == true) {
-                    mkCentralDataSource.getPlayer(player.id).firstOrNull()?.successResponse?.let { mkcPlayer ->
+                    mkCentralDataSource.getPlayer(player.id).successResponse?.let { mkcPlayer ->
                         val fbUser = User(mkcPlayer)
                             firebaseRepository.writeUser(team.id.toString(), fbUser).firstOrNull()
                             firebaseRepository.deleteAlly(team.id.toString(), fbUser.id).firstOrNull()
@@ -222,14 +218,16 @@ class FetchUseCase @Inject constructor(
         }
 
 
-    private fun getTeams(page: Int) = mkCentralDataSource.getTeams(page)
-        .map { Pair(it?.pageCount, it?.teamList) }
-        .shareIn(this, SharingStarted.Eagerly)
+    private suspend fun getTeams(page: Int): Pair<Int?, MKCTeamList?> {
+        val teams = mkCentralDataSource.getTeams(page).successResponse
+        return Pair(teams?.pageCount, teams?.teamList)
+    }
 
-    private fun getMK8Teams(page: Int) = mkCentralDataSource.getMK8Teams(page)
-        .map { Pair(it?.pageCount, it?.teamList) }
-        .shareIn(this, SharingStarted.Eagerly)
 
+    private suspend fun getMK8Teams(page: Int): Pair<Int?, MKCTeamList?> {
+        val teams = mkCentralDataSource.getMK8Teams(page).successResponse
+        return Pair(teams?.pageCount, teams?.teamList)
+    }
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO
 
