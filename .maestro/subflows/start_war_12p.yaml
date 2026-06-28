@@ -1,0 +1,20 @@
+# Sous-flow : démarre une war 12p contre 6v6 Squad, finit sur l'écran War en cours.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- stopApp
+- launchApp
+- tapOn: "12 joueurs"
+- tapOn: "Nouvelle war"
+- tapOn: "Rechercher une équipe…"
+- inputText: "Squad"
+- tapOn: "6v6 Squad"
+- tapOn: "Suivant"
+- assertVisible: "Sélection de la Line-up"
+- tapOn: "Arthug"
+- tapOn: "Flash"
+- tapOn: "Genki35"
+- tapOn: "Guyal"
+- tapOn: "Larii"
+- tapOn: "Marss"
+- tapOn: "Commencer"
+- assertVisible: "Plus d'actions"

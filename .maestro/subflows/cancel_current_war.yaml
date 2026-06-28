@@ -1,0 +1,7 @@
+# Sous-flow : annule la war en cours (depuis l'écran War en cours), retour Accueil.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- tapOn: "Plus d'actions"
+- tapOn: "Annuler la war"
+- tapOn: "Effacer la war"
+- assertVisible: "Nouvelle war"
