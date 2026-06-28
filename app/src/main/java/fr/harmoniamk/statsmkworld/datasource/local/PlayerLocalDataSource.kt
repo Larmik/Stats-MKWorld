@@ -11,19 +11,18 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface PlayerLocalDataSourceInterface {
     fun getAll(): Flow<List<PlayerEntity>>
     fun getById(id: String): Flow<PlayerEntity?>
-    fun insert(player: PlayerEntity): Flow<Unit>
-    fun upsert(player: PlayerEntity): Flow<Unit>
-    fun setCurrentWar(id: String, currentWar: String): Flow<Unit>
-    fun setRole(id: String, role: Int): Flow<Unit>
-    fun setRosterId(id: String, rosterId: String): Flow<Unit>
-    fun clear(): Flow<Unit>
+    suspend fun insert(player: PlayerEntity)
+    suspend fun upsert(player: PlayerEntity)
+    suspend fun setCurrentWar(id: String, currentWar: String)
+    suspend fun setRole(id: String, role: Int)
+    suspend fun setRosterId(id: String, rosterId: String)
+    suspend fun clear()
 }
 
 @FlowPreview
@@ -45,12 +44,12 @@ class PlayerLocalDataSource @Inject constructor(@ApplicationContext private val 
 
     override fun getAll(): Flow<List<PlayerEntity>> = dao.getAll()
     override fun getById(id: String): Flow<PlayerEntity?> = dao.getById(id)
-    override fun insert(player: PlayerEntity): Flow<Unit> = flow { emit(dao.insert(player)) }
-    override fun upsert(player: PlayerEntity): Flow<Unit> = flow { emit(dao.upsert(player)) }
-    override fun setCurrentWar(id: String, currentWar: String): Flow<Unit> = flow { emit(dao.setCurrentWar(id, currentWar)) }
-    override fun setRole(id: String, role: Int): Flow<Unit> = flow { emit(dao.setRole(id, role)) }
-    override fun setRosterId(id: String, rosterId: String): Flow<Unit> = flow { emit(dao.setRosterId(id, rosterId)) }
+    override suspend fun insert(player: PlayerEntity) = dao.insert(player)
+    override suspend fun upsert(player: PlayerEntity) = dao.upsert(player)
+    override suspend fun setCurrentWar(id: String, currentWar: String) = dao.setCurrentWar(id, currentWar)
+    override suspend fun setRole(id: String, role: Int) = dao.setRole(id, role)
+    override suspend fun setRosterId(id: String, rosterId: String) = dao.setRosterId(id, rosterId)
 
-    override fun clear(): Flow<Unit> = flow { emit(dao.clear())}
+    override suspend fun clear() = dao.clear()
 
 }

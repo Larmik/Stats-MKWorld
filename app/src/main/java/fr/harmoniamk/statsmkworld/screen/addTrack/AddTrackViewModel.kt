@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -255,12 +254,11 @@ class AddTrackViewModel @AssistedInject constructor(
                     WarScore(teamId = it.teamOpponent.firstOrNull().orEmpty(), score = state.value.teamOpponentScore ?: 0)
                 ))
             }
-            firebaseRepository.writeCurrentWar(newWar)
-                .onEach {
-                    dataStoreRepository.setCurrentWar(newWar)
-                    _backToWar.emit(Unit)
-                }
-                .launchIn(viewModelScope)
+            viewModelScope.launch {
+                firebaseRepository.writeCurrentWar(newWar)
+                dataStoreRepository.setCurrentWar(newWar)
+                _backToWar.emit(Unit)
+            }
 
         }
 

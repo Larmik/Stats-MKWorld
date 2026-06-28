@@ -27,8 +27,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -92,14 +90,11 @@ class PlayerProfileViewModel @AssistedInject constructor(
     }
         .map {
             val team = dataStoreRepository.mkcTeam.firstOrNull()
-            val fbUser = firebaseRepository.getUser(team?.id.toString(), it.id.toString()).firstOrNull()
+            val fbUser = firebaseRepository.getUser(team?.id.toString(), it.id.toString())
             val isLeader = firebaseRepository.getUser(
                 team?.id.toString(),
                 _state.value.currentPlayer?.id.toString()
-            )
-                .map { it?.role ?: 0 }
-                .map { it == 2 }
-                .firstOrNull()
+            )?.role == 2
 
             val hasMultiRoster =
                 team?.rosters?.filter { it.game == "mkworld" }?.size?.let { it > 1 } ?: false
@@ -171,12 +166,12 @@ class PlayerProfileViewModel @AssistedInject constructor(
             .onEach { team ->
                 state.value.player?.let {
                     val user = User(it)
-                    firebaseRepository.writeAlly(team.id.toString(), user).firstOrNull()
+                    firebaseRepository.writeAlly(team.id.toString(), user)
                 }
             }
             .mapNotNull { state.value.player }
             .map { PlayerEntity(player = it, isAlly = true) }
-            .flatMapLatest { databaseRepository.addAlly(it) }
+            .onEach { databaseRepository.addAlly(it) }
             .onEach {
                 _state.value = state.value.copy(
                     buttonVisible = false,
@@ -205,8 +200,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
                     discordId = it.discordId
                 )
                 val user = User(updatedPlayer)
-                firebaseRepository.writeUser(team?.id.toString(), user).firstOrNull()
-                databaseRepository.writePlayer(updatedPlayer).firstOrNull()
+                firebaseRepository.writeUser(team?.id.toString(), user)
+                databaseRepository.writePlayer(updatedPlayer)
                 _state.value = state.value.copy(
                     adminButtonLabel = when (newRole) {
                         0 -> R.string.basculer_en_tant_qu_admin
@@ -244,7 +239,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
                         _state.value = state.value.copy(dialogTitle = R.string.fetch_opponents)
                         fetchUseCase.fetchTeams()
                         _state.value = state.value.copy(dialogTitle = R.string.fetch_Wars)
-                        databaseRepository.clearWars().firstOrNull()
+                        databaseRepository.clearWars()
                         val rostersId = team?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
                         rostersId?.forEach {
                             fetchUseCase.fetchWars(it)
@@ -268,18 +263,16 @@ class PlayerProfileViewModel @AssistedInject constructor(
     }
 
     fun onLogout() {
-
-        databaseRepository.clearTeams()
-            .flatMapLatest { databaseRepository.clearPlayers() }
-            .flatMapLatest { databaseRepository.clearWars() }
-            .flatMapLatest { dataStoreRepository.accessToken }
-            .map { authDataSource.revokeToken(it) }
-            .onEach {
-                dataStoreRepository.clearPlayer()
-                dataStoreRepository.clearTeam()
-                _state.value = state.value.copy(confirmDialog = null)
-                _backToLogin.emit(Unit)
-            }.launchIn(viewModelScope)
+        viewModelScope.launch {
+            databaseRepository.clearTeams()
+            databaseRepository.clearPlayers()
+            databaseRepository.clearWars()
+            authDataSource.revokeToken(dataStoreRepository.accessToken.firstOrNull().orEmpty())
+            dataStoreRepository.clearPlayer()
+            dataStoreRepository.clearTeam()
+            _state.value = state.value.copy(confirmDialog = null)
+            _backToLogin.emit(Unit)
+        }
     }
 
     fun onNotification() {

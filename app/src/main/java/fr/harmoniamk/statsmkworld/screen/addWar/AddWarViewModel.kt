@@ -2,6 +2,7 @@ package fr.harmoniamk.statsmkworld.screen.addWar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -24,11 +25,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.zip
 
@@ -139,53 +137,49 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     fun createWar() {
-        dataStoreRepository.mkcPlayer
-            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
-            .filterNotNull()
-            .map {
-                this.rosterId = it
-                val teams = listOf(it) + state.value.teamSelected?.map { it.id }.orEmpty()
-                War(
-                    id = System.currentTimeMillis(),
-                    teamHost = it,
-                    teamOpponent = state.value.teamSelected?.map { it.id }.orEmpty(),
-                    tracks = listOf(),
-                    penalties = listOf(),
-                    scores = teams.map { WarScore(teamId = it, score = 0) }
-                )
-            }
-            .zip(dataStoreRepository.mkcTeam) { war, team ->
-                _state.value.playerList.flatMap { it.value }.filter { it.isSelected }.forEach {
-                    when (it.player.rosterId) {
-                        "-1" -> firebaseRepository.writeAlly(
-                            teamId = team.id.toString(),
-                            user = User(
-                                id = it.player.id,
-                                currentWar = war.id.toString(),
-                                role = it.player.role,
-                                name = it.player.name,
-                                discordId = it.player.discordId
-                            )
-                        ).firstOrNull()
-                        else -> firebaseRepository.writeUser(
-                            teamId = team.id.toString(),
-                            user = User(
-                                id = it.player.id,
-                                currentWar = war.id.toString(),
-                                role = it.player.role,
-                                name = it.player.name,
-                                discordId = it.player.discordId
-                            )
-                        ).firstOrNull()
-                    }
-                    databaseRepository.updateUser(it.player.id, war.id.toString()).firstOrNull()
+        viewModelScope.launch {
+            val roster = dataStoreRepository.mkcPlayer.firstOrNull()
+                ?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() ?: return@launch
+            rosterId = roster
+            val teams = listOf(roster) + state.value.teamSelected?.map { it.id }.orEmpty()
+            val war = War(
+                id = System.currentTimeMillis(),
+                teamHost = roster,
+                teamOpponent = state.value.teamSelected?.map { it.id }.orEmpty(),
+                tracks = listOf(),
+                penalties = listOf(),
+                scores = teams.map { WarScore(teamId = it, score = 0) }
+            )
+            val team = dataStoreRepository.mkcTeam.firstOrNull() ?: return@launch
+            _state.value.playerList.flatMap { it.value }.filter { it.isSelected }.forEach {
+                when (it.player.rosterId) {
+                    "-1" -> firebaseRepository.writeAlly(
+                        teamId = team.id.toString(),
+                        user = User(
+                            id = it.player.id,
+                            currentWar = war.id.toString(),
+                            role = it.player.role,
+                            name = it.player.name,
+                            discordId = it.player.discordId
+                        )
+                    )
+                    else -> firebaseRepository.writeUser(
+                        teamId = team.id.toString(),
+                        user = User(
+                            id = it.player.id,
+                            currentWar = war.id.toString(),
+                            role = it.player.role,
+                            name = it.player.name,
+                            discordId = it.player.discordId
+                        )
+                    )
                 }
-                war
+                databaseRepository.updateUser(it.player.id, war.id.toString())
             }
-            .onEach {  dataStoreRepository.setCurrentWar(it) }
-            .flatMapLatest { firebaseRepository.writeCurrentWar(it) }
-            .onEach { _goToCurrent.emit(Unit) }
-            .launchIn(viewModelScope)
+            dataStoreRepository.setCurrentWar(war)
+            firebaseRepository.writeCurrentWar(war)
+            _goToCurrent.emit(Unit)
+        }
     }
 
 }

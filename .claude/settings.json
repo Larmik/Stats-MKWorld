@@ -29,5 +29,18 @@
       "Read(**/*.keystore)",
       "Read(**/*.jks)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command' | grep -q \"gh pr create\" && printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Rappel (habitude PR) : mettre à jour docs/AUDIT.md, docs/TECHNICAL.md et docs/FUNCTIONAL.md pour refléter cette PR, puis commit + push sur la branche de la PR.\"}}' || true"
+          }
+        ]
+      }
+    ]
   }
 }

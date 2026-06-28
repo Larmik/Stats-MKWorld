@@ -11,17 +11,16 @@ import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface WarLocalDataSourceInterface {
     fun getAll(): Flow<List<WarEntity>>
     fun getById(id: String): Flow<WarEntity?>
-    fun insert(wars: List<WarEntity>): Flow<Unit>
-    fun insert(war: WarEntity): Flow<Unit>
-    fun delete(war: WarEntity): Flow<Unit>
-    fun clear(): Flow<Unit>
+    suspend fun insert(wars: List<WarEntity>)
+    suspend fun insert(war: WarEntity)
+    suspend fun delete(war: WarEntity)
+    suspend fun clear()
 }
 
 @FlowPreview
@@ -44,16 +43,12 @@ class WarLocalDataSource @Inject constructor(@ApplicationContext private val con
 
     override fun getById(id: String): Flow<WarEntity?> = dao.getById(id)
 
-    override fun insert(wars: List<WarEntity>): Flow<Unit> = flow { emit(dao.bulkInsert(wars)) }
+    override suspend fun insert(wars: List<WarEntity>) = dao.bulkInsert(wars)
 
-    override fun insert(war: WarEntity): Flow<Unit> = flow {
-        emit(dao.insert(war))
-    }
+    override suspend fun insert(war: WarEntity) = dao.insert(war)
 
-    override fun delete(war: WarEntity): Flow<Unit> = flow {
-        emit(dao.delete(war))
-    }
+    override suspend fun delete(war: WarEntity) = dao.delete(war)
 
-    override fun clear(): Flow<Unit> = flow { emit(dao.clear()) }
+    override suspend fun clear() = dao.clear()
 
 }

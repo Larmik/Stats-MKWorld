@@ -95,7 +95,9 @@ flowchart TD
 
 Règles transverses :
 
-- Repositories et data sources **locaux** (Room/DataStore/Firebase) renvoient des `Flow` ; les opérations I/O passent par `flowOn(Dispatchers.IO)` ou des data sources sur IO. **Exception** : les data sources **réseau** (MKCentral/Discord) exposent désormais des `suspend fun … : NetworkResponse<T>` (migration Flow→suspend, cf. §12).
+- **Distinction réactif vs one-shot** (depuis la migration Flow→suspend) :
+  - Restent en `Flow` les flux réellement **réactifs** : lectures Room streaming (`getPlayers/getPlayer/getTeams/getTeam/getWars/getWar`), le listener temps réel `FirebaseRepository.listenToCurrentWar`, et les `Flow` DataStore.
+  - Sont des **`suspend fun`** les opérations **one-shot** : data sources réseau (MKCentral/Discord → `NetworkResponse<T>`, cf. §12), écritures/mutations de `DatabaseRepository` (sous `withContext(Dispatchers.IO)`) et lectures `.get()` + écritures de `FirebaseRepository`.
 - Un écran = un dossier `screen/<feature>/` avec `<Feature>Screen.kt` (Composable) + `<Feature>ViewModel.kt`.
 - Composants UI maison préfixés `MK` (`ui/MKButton.kt`, `MKText`, `MKDialog`, `MKTextField`, `MKSegmentedSelector`, `MKLoaderDialog`…). Cellules de liste dans `ui/cells/`, widgets de stats dans `ui/stats/`.
 
@@ -435,11 +437,11 @@ Schémas `.proto` en `proto3`, option lite. `WarProto` → `WarTrackProto`(index
 Façade des deux DataStore (cf. §10). Setters `suspend`, getters `Flow`. Méthodes notables : `setCurrentWar(War)` (écrit `DatastoreWar(war).proto`), `deleteCurrentWar()`, `clearPlayer()`/`clearTeam()` (réinitialisent le proto). Seul écrivain qui déclenche un worker (`set24PEnabled`).
 
 ### FirebaseRepository
-Accès RTDB. Chemins exacts :
+Accès RTDB. **Toutes les méthodes sont `suspend` sauf `listenToCurrentWar`** (seul flux réactif, en `Flow`). Les lectures `.get()` sont attendues via un helper `Task<DataSnapshot>.awaitSnapshot()` (`suspendCancellableCoroutine`, `null` si échec → pas de crash) ; les écritures restent fire-and-forget (`setValue`/`removeValue` non attendus). Chemins exacts :
 
-| Méthode | Chemin RTDB | Lecture |
+| Méthode | Chemin RTDB | Accès |
 |---|---|---|
-| `getUsers(teamId)` | `users/{teamId}` | `.get()` (callbackFlow) |
+| `getUsers(teamId)` | `users/{teamId}` | `.get()` (suspend) |
 | `getUser(teamId, id)` | `users/{teamId}/{id}` | `.get()` |
 | `writeUser` / `deleteUser` | `users/{teamId}/{id}` | `setValue` / `removeValue` |
 | `getWars(teamId)` | `wars/{teamId}` | `.get()` |
@@ -453,7 +455,7 @@ Accès RTDB. Chemins exacts :
 | `log(message, type)` | `debug/{dd-MM-yyyy}/{type}/{Date().time}` | `setValue` |
 | `writeTags(tags)` | `tags` | `setValue` |
 
-Les lectures désérialisent le `DataSnapshot.value` (Map) via les helpers `extension/ListExtension.kt` : `toMapList()`, `parseTracks()` (id, index, positions, shocks), `parsePenalties()`, `parseScores()`. Les écritures sont des `flow { … ; emit(Unit) }`.
+Les lectures désérialisent le `DataSnapshot.value` (Map) via les helpers privés `Map.toUser()` / `Map.toWar()` (eux-mêmes basés sur `extension/ListExtension.kt` : `toMapList()`, `parseTracks()`, `parsePenalties()`, `parseScores()`). `getWars` renvoie `emptyList` si le nœud est absent (cas normal ⇒ `fetchWars` vide alors le cache local).
 
 ### StatsRepository
 Cache mémoire (cf. §9).
@@ -520,7 +522,7 @@ DTO (`model/network/mkcentral/`, Moshi `@JsonClass(generateAdapter=true)`, mappi
 Sealed : `Success(response)` / `Error(message)`, avec accesseurs `successResponse: T?` et `errorResponse: String?`.
 
 ### Data sources locales
-`PlayerLocalDataSource` / `TeamLocalDataSource` / `WarLocalDataSource` : wrappers fins des DAO (`getAll/getById` délèguent le Flow du DAO ; mutations en `flow { emit(dao.…) }`).
+`PlayerLocalDataSource` / `TeamLocalDataSource` / `WarLocalDataSource` : wrappers fins des DAO. `getAll/getById` délèguent le `Flow` du DAO ; les **mutations sont des `suspend fun`** déléguant directement aux DAO suspend (plus de wrapper `flow { emit(dao.…) }` — cf. audit D3).
 
 ---
 

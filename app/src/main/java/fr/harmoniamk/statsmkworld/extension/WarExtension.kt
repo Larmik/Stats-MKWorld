@@ -26,14 +26,12 @@ suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface,
         true -> {
             val team = dataStoreRepository.mkcTeam.firstOrNull()
             firebaseRepository.getUsers(team?.id.toString())
-                .firstOrNull()
-                ?.filter { player ->
+                .filter { player ->
                     this.tracks.flatMap { it.positions }
                         .any { it.playerId == player.id } || player.currentWar == this.id.toString()
                 }
-                ?.map { user -> localPlayers?.firstOrNull { it.id == user.id } }
-                ?.map { PlayerScore(it, 0, 0, 0) }
-                .orEmpty()
+                .map { user -> localPlayers?.firstOrNull { it.id == user.id } }
+                .map { PlayerScore(it, 0, 0, 0) }
         }
 
         else -> currentLocalPlayers

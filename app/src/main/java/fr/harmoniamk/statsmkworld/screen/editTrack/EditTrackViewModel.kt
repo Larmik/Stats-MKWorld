@@ -26,9 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -191,11 +189,10 @@ class EditTrackViewModel @AssistedInject constructor(
         ))
         val warToUpdate = war.copy(tracks = tracks, scores = scores)
         _state.value = State()
-        firebaseRepository.writeCurrentWar(warToUpdate)
-            .onEach {
-                dataStoreRepository.setCurrentWar(warToUpdate)
-                _backToCurrent.emit(Unit)
-            }
-            .launchIn(viewModelScope)
+        viewModelScope.launch {
+            firebaseRepository.writeCurrentWar(warToUpdate)
+            dataStoreRepository.setCurrentWar(warToUpdate)
+            _backToCurrent.emit(Unit)
+        }
     }
 }

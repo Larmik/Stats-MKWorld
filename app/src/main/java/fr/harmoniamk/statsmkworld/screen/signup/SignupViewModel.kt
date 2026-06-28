@@ -119,12 +119,12 @@ class SignupViewModel @AssistedInject constructor(
                 else -> 0
             }
 
-            firebaseRepository.writeUser(teamId.toString(), user.copy(role = role)).firstOrNull()
+            firebaseRepository.writeUser(teamId.toString(), user.copy(role = role))
             player?.let { player ->
                 databaseRepository.writePlayer(PlayerEntity(
                     player = player,
                     rosterId = rosters.singleOrNull { it.players.map { it.playerId }.contains(player.playerId) }?.id.toString()
-                )).firstOrNull()
+                ))
             }
             rosters?.map { it.id.toString() }?.forEach {
                 fetchUseCase.fetchWars(it)

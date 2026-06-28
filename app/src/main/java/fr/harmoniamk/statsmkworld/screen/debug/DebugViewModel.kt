@@ -82,7 +82,7 @@ class DebugViewModel @Inject constructor(
                     .onEach {
                         user?.let { user ->
                             val teamId = it.id.toString()
-                            if (firebaseRepository.getUser(teamId, user.id).firstOrNull() == null) {
+                            if (firebaseRepository.getUser(teamId, user.id) == null) {
                                 val role = when (it.rosters.filter { it.game == "mkworld" }
                                     .flatMap { it.players }
                                     .singleOrNull { it.playerId == user.id }?.leader) {
@@ -90,13 +90,12 @@ class DebugViewModel @Inject constructor(
                                     else -> 0
                                 }
                                 firebaseRepository.writeUser(teamId, user.copy(role = role))
-                                    .firstOrNull()
                             }
                         }
                     }
                     .map { fetchUseCase.fetchAllies(it.id.toString()) }
                     .map { fetchUseCase.fetchTeams() }
-                    .flatMapLatest { databaseRepository.clearWars() }
+                    .onEach { databaseRepository.clearWars() }
                     .mapNotNull {
                         dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.filter { it.game == "mkworld" }
                             ?.map { it.id.toString() }
@@ -116,15 +115,13 @@ class DebugViewModel @Inject constructor(
     }
 
     fun onMatrixEnd() {
-        databaseRepository.clearWars()
-            .onEach { _sharedLoading.emit("Sortie de la matrice...") }
-            .map { ScoringConstants.DEBUG_PLAYER_ID }
-            .map { fetchUseCase.fetchData(it) }
-            .onEach {
-                dataStoreRepository.setMatrixMode(false)
-                _sharedLoading.emit(null)
-            }
-            .launchIn(viewModelScope)
+        viewModelScope.launch {
+            _sharedLoading.emit("Sortie de la matrice...")
+            databaseRepository.clearWars()
+            fetchUseCase.fetchData(ScoringConstants.DEBUG_PLAYER_ID)
+            dataStoreRepository.setMatrixMode(false)
+            _sharedLoading.emit(null)
+        }
     }
 
     fun onNotif() {
@@ -153,13 +150,13 @@ class DebugViewModel @Inject constructor(
     fun onUpdateBotData() {
         dataStoreRepository.mkcTeam
             .onEach {
-                firebaseRepository.getUsers(it.id.toString()).firstOrNull()?.forEach { user ->
+                firebaseRepository.getUsers(it.id.toString()).forEach { user ->
                     mkCentralDataSource.getPlayer(user.id).successResponse?.let { player ->
                         val newUser = user.copy(
                             discordId = player.discord?.discordID.orEmpty(),
                             name = player.name
                         )
-                        firebaseRepository.writeUser(it.id.toString(), newUser).firstOrNull()
+                        firebaseRepository.writeUser(it.id.toString(), newUser)
                     }
                 }
             }.launchIn(viewModelScope)

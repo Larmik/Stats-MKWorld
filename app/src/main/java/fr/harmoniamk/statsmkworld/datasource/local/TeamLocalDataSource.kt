@@ -11,16 +11,15 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface TeamLocalDataSourceInterface {
     fun getAll(): Flow<List<TeamEntity>>
     fun getById(id: String) : Flow<TeamEntity?>
-    fun bulkInsert(teams: List<TeamEntity>): Flow<Unit>
-    fun insert(team: TeamEntity): Flow<Unit>
-    fun clear(): Flow<Unit>
+    suspend fun bulkInsert(teams: List<TeamEntity>)
+    suspend fun insert(team: TeamEntity)
+    suspend fun clear()
 }
 
 @FlowPreview
@@ -41,8 +40,8 @@ class TeamLocalDataSource @Inject constructor(@ApplicationContext private val co
 
     override fun getAll(): Flow<List<TeamEntity>> = dao.getAll()
     override fun getById(id: String) = dao.getById(id)
-    override fun bulkInsert(teams: List<TeamEntity>): Flow<Unit> = flow { emit(dao.bulkInsert(teams)) }
-    override fun insert(team: TeamEntity): Flow<Unit> = flow { emit(dao.insert(team)) }
-    override fun clear(): Flow<Unit> = flow { emit(dao.clear())}
+    override suspend fun bulkInsert(teams: List<TeamEntity>) = dao.bulkInsert(teams)
+    override suspend fun insert(team: TeamEntity) = dao.insert(team)
+    override suspend fun clear() = dao.clear()
 
 }
