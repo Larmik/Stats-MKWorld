@@ -1,0 +1,13 @@
+# Rafraîchir les données (réf. TESTS_FUNCTIONAL.md §15.9). Exerce fetchData (réseau ⚙️). Non destructif.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- stopApp
+- launchApp
+- tapOn: "Larii"                       # profil joueur (soi)
+- assertVisible: "Rafraîchir les données"
+- tapOn: "Rafraîchir les données"
+# La synchro (player→team→allies→teams→wars) affiche un loader puis se termine
+- waitForAnimationToEnd:
+    timeout: 40000
+- assertVisible: "Rafraîchir les données"   # de retour sur le profil, synchro terminée
+- takeScreenshot: .maestro/screenshots/refresh_done
