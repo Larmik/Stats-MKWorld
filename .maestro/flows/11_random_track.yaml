@@ -1,0 +1,22 @@
+# Saisie d'une course avec circuit + positions ALÉATOIRES, score attendu calculé
+# en JS et vérifié (test property-based du scoring 12p). Idempotent.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- runFlow: ../subflows/start_war_12p.yaml
+- runScript: ../scripts/pick_track.js
+- tapOn: "Course suivante"
+- scrollUntilVisible:
+    element:
+      text: "${output.circuit}"
+    direction: DOWN
+- tapOn: "${output.circuit}"
+- tapOn: "^${output.p0}$"
+- tapOn: "^${output.p1}$"
+- tapOn: "^${output.p2}$"
+- tapOn: "^${output.p3}$"
+- tapOn: "^${output.p4}$"
+- tapOn: "^${output.p5}$"
+- assertVisible: "${output.score}"      # score calculé dynamiquement
+- tapOn: "Confirmer"
+- assertVisible: "Plus d'actions"
+- runFlow: ../subflows/cancel_current_war.yaml

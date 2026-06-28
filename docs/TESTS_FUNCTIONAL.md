@@ -29,6 +29,7 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 | `05_historique` | 4.9/4.10 (Voir plus), 10.1, 10.5, 11.1 | ✅ |
 | `06_profils` | 15.8 (menu présent sur son profil), 16.1 | ✅ |
 | `10_war_lifecycle` | **E2E dans 1 war** : 5.1/5.6/5.9 (création) + 7.x (saisie course, scoring « 61-21 ») + 8.1 (pénalité) + 8.2 (remplacement) + 9.x (édition) + 8.3 (annulation) — **idempotent** | ✅ |
+| `11_random_track` | 7.x **property-based** : circuit + 6 positions **aléatoires** (`runScript` JS), score 12p calculé et vérifié | ✅ |
 | `16_add_ally_search` | 16.4, 16.5 (ouverture + recherche allié, **sans** ajout) | ✅ |
 | `18_refresh` | 15.9 (rafraîchir → `fetchData` migré ⚙️) | ✅ |
 | `19_pdf` | 11.2, 12.1, 12.2 (ouverture tableau + lignes) | ✅ |
@@ -46,6 +47,7 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 > - **Ne pas utiliser `hideKeyboard`** sur l'écran de sélection d'adversaire : il réinitialise la sélection. Le clavier se ferme seul après le choix.
 > - Carte « war en cours » : taper **« Courses restantes: N »** (la carte), pas le titre « War en cours ».
 > - Mode 12p/24p : taper « 12 joueurs » / « 24 joueurs » sur l'Accueil avant de créer une war.
+> - **Randomisation** : `runScript` (`.maestro/scripts/`) supporte `Math.random` ; on calcule le résultat attendu en JS et on l'assert via `${output.x}`. Les tirages sont loggés (`console.log`) pour la reproductibilité d'un échec.
 
 ## Bugs trouvés en campagne
 
