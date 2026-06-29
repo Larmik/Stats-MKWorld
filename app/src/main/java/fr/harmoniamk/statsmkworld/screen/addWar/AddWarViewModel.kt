@@ -2,7 +2,6 @@ package fr.harmoniamk.statsmkworld.screen.addWar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -23,12 +22,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.zip
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -153,7 +150,7 @@ class AddWarViewModel @AssistedInject constructor(
             val team = dataStoreRepository.mkcTeam.firstOrNull() ?: return@launch
             _state.value.playerList.flatMap { it.value }.filter { it.isSelected }.forEach {
                 when (it.player.rosterId) {
-                    "-1" -> firebaseRepository.writeAlly(
+                    "-1" -> firebaseRepository.updateAllyCurrentWar(
                         teamId = team.id.toString(),
                         user = User(
                             id = it.player.id,
@@ -163,7 +160,7 @@ class AddWarViewModel @AssistedInject constructor(
                             discordId = it.player.discordId
                         )
                     )
-                    else -> firebaseRepository.writeUser(
+                    else -> firebaseRepository.updateUserCurrentWar(
                         teamId = team.id.toString(),
                         user = User(
                             id = it.player.id,
