@@ -444,6 +444,7 @@ Accès RTDB. **Toutes les méthodes sont `suspend` sauf `listenToCurrentWar`** (
 | `getUsers(teamId)` | `users/{teamId}` | `.get()` (suspend) |
 | `getUser(teamId, id)` | `users/{teamId}/{id}` | `.get()` |
 | `writeUser` / `deleteUser` | `users/{teamId}/{id}` | `setValue` / `removeValue` |
+| `updateUserCurrentWar` | `users/{teamId}/{id}` | `updateChildren({currentWar})` (fallback `setValue` si absent) |
 | `getWars(teamId)` | `wars/{teamId}` | `.get()` |
 | `writeWar(war)` | `wars/{rosterId}/{war.id}` | `setValue` (rosterId via `mkcPlayer`) |
 | `getCurrentWar(teamId)` | `currentWars/{teamId}` | `.get()` |
@@ -452,8 +453,11 @@ Accès RTDB. **Toutes les méthodes sont `suspend` sauf `listenToCurrentWar`** (
 | `deleteCurrentWar(teamId)` | `currentWars/{teamId}` | `removeValue` |
 | `getAllies(teamId)` | `newAllies/{teamId}` | `.get()` |
 | `writeAlly` / `deleteAlly` | `newAllies/{teamId}/{id}` | `setValue` / `removeValue` |
+| `updateAllyCurrentWar` | `newAllies/{teamId}/{id}` | `updateChildren({currentWar})` (fallback `setValue` si absent) |
 | `log(message, type)` | `debug/{dd-MM-yyyy}/{type}/{Date().time}` | `setValue` |
 | `writeTags(tags)` | `tags` | `setValue` |
+
+`updateUserCurrentWar` / `updateAllyCurrentWar` (audit B10) servent au **cycle de vie d'une war** (création, validation, annulation, remplacement de joueur) : elles ne touchent **que** le champ `currentWar` via `updateChildren`, laissant `role` / `name` / `discordId` intacts. C'est volontaire — un `setValue(user)` complet réécrivait tout l'objet et écrasait le `role` d'un membre à `0` dès que la `PlayerEntity` locale était périmée. Si le nœud n'existe pas encore (membre jamais synchronisé), elles retombent sur un `setValue` complet pour ne pas créer de nœud partiel.
 
 Les lectures désérialisent le `DataSnapshot.value` (Map) via les helpers privés `Map.toUser()` / `Map.toWar()` (eux-mêmes basés sur `extension/ListExtension.kt` : `toMapList()`, `parseTracks()`, `parsePenalties()`, `parseScores()`). `getWars` renvoie `emptyList` si le nœud est absent (cas normal ⇒ `fetchWars` vide alors le cache local).
 
