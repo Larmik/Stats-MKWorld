@@ -1,0 +1,25 @@
+# Annuaire (réf. TESTS_FUNCTIONAL.md §14.2, §14.4, §14.5) — recherche MKCentral + filtre local + clic équipe.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+- tapOn: "Annuaire"
+- assertVisible: "Joueurs"
+- assertVisible: "Equipes"
+# --- §14.4 Équipes : filtre LOCAL (assertion fiable) ---
+# On saisit « Harmoni » (sans le « a » final) pour que « Harmonia » ne matche QUE la cellule résultat,
+# pas le texte du champ de recherche -> le tap cible bien l'équipe.
+- tapOn: "Equipes"
+- tapOn: "Rechercher une équipe…"
+- inputText: "Harmoni"
+- assertVisible: "Harmonia"
+- takeScreenshot: .maestro/screenshots/annuaire_equipes
+# --- §14.5 clic sur une équipe -> profil équipe ---
+- tapOn: "Harmonia"
+- assertVisible: "Profil équipe"
+- back
+- assertVisible: "Equipes"
+# --- §14.2 Joueurs : recherche RÉSEAU (≥3 caractères) ---
+- tapOn: "Joueurs"
+- tapOn: "Rechercher un joueur"
+- inputText: "Larii"
+- takeScreenshot: .maestro/screenshots/annuaire_joueurs

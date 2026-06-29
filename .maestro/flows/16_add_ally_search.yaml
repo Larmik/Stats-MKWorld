@@ -1,0 +1,14 @@
+# Recherche d'allié (réf. TESTS_FUNCTIONAL.md §16.5). Non destructif : on ouvre la
+# bottom sheet et on recherche, SANS confirmer l'ajout (pas de retrait possible en UI).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- stopApp
+- launchApp
+- tapOn: "Harmonia"
+- tapOn: "Allies"
+- assertVisible: "Ajouter un ally"
+- tapOn: "Ajouter un ally"
+- assertVisible: "Rechercher un joueur"
+- tapOn: "Rechercher un joueur"
+- inputText: "Mario"
+- takeScreenshot: .maestro/screenshots/add_ally_search

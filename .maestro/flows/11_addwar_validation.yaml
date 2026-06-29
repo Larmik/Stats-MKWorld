@@ -1,0 +1,55 @@
+# Garde-fous de création de war 12p (réf. TESTS_FUNCTIONAL.md §5.4, §5.5, §5.8).
+# NON DESTRUCTIF : jamais 6 joueurs, jamais de validation effective -> aucune war créée.
+# La sémantique `enabled` des MKButton n'étant pas exposée à Maestro (clearAndSetSemantics),
+# on vérifie via PROXY COMPORTEMENTAL : taper un bouton inactif ne change pas d'écran.
+# Le cas « 6 joueurs -> actif -> war créée » est déjà couvert par les sous-flows start_war (10/20).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- runScript: ../scripts/pick.js
+- stopApp
+- launchApp
+# Nettoyage d'une éventuelle war résiduelle
+- runFlow:
+    when:
+      visible: "Courses restantes:.*"
+    commands:
+      - tapOn: "Courses restantes:.*"
+      - tapOn: "Plus d'actions"
+      - tapOn: "Annuler la war"
+      - tapOn: "Effacer la war"
+      - assertVisible: "Nouvelle war"
+- tapOn: "12 joueurs"
+- tapOn: "Nouvelle war"
+- assertVisible: "Sélection d'un adversaire"
+
+# --- §5.4 « retour » retire la dernière équipe sélectionnée ---
+# À 1 équipe (12p), la liste se vide -> le champ de recherche disparaît ; au retrait il réapparaît.
+- tapOn: "Recherche equipe"
+- inputText: "Squad"
+- tapOn: "6v6 Squad"
+- assertNotVisible: "Recherche equipe"  # équipe sélectionnée -> liste + champ masqués
+- pressKey: back                        # §5.4 retire l'équipe
+- assertVisible: "Recherche equipe"     # champ réapparaît -> équipe bien retirée
+
+# --- §5.5 nom de war « TAG - TAGadv » + §5.8 « Commencer » actif uniquement à 6 ---
+- tapOn: "Recherche equipe"
+- eraseText
+- inputText: "Squad"
+- tapOn: "6v6 Squad"
+- tapOn: "Suivant"
+- assertVisible: "Sélection de la Line-up"
+- assertVisible: ".+ - .+"              # §5.5 nom « TAG - TAGadv » (séparateur « - » ; tag hôte inconnu)
+# §5.8 vérif. du NÉGATIF (non destructif) : « Commencer » inactif tant qu'on n'a pas 6 joueurs
+- scrollUntilVisible: { element: { text: "Commencer" }, direction: DOWN }
+- tapOn: "Commencer"                    # 0 joueur -> inactif : sans effet
+- assertVisible: "Sélection de la Line-up"
+- tapOn: "${output.player0}"
+- tapOn: "${output.player1}"
+- tapOn: "${output.player2}"
+- tapOn: "${output.player3}"
+- tapOn: "${output.player4}"
+- scrollUntilVisible: { element: { text: "Commencer" }, direction: DOWN }
+- tapOn: "Commencer"                    # 5 joueurs -> inactif : sans effet
+- assertVisible: "Sélection de la Line-up"
+# Non destructif : aucune war créée
+- stopApp

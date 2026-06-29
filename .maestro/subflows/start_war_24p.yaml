@@ -1,0 +1,41 @@
+# Sous-flow : démarre une war 24p (3 adversaires) avec 6 joueurs ALÉATOIRES.
+# Auto-nettoyant. pick.js doit avoir tourné (ou tourne ici). Adversaires fixes
+# (6v6 Squad / Burger Squad / Cyber Squadron) sélectionnés par recherche partielle
+# (terme ≠ nom de l'équipe) + re-focus du champ (contentDescription) ; PAS de hideKeyboard.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- stopApp
+- launchApp
+- runScript: ../scripts/pick.js
+- runFlow:
+    when: { visible: "Courses restantes:.*" }
+    commands:
+      - tapOn: "Courses restantes:.*"
+      - tapOn: "Plus d'actions"
+      - tapOn: "Annuler la war"
+      - tapOn: "Effacer la war"
+      - assertVisible: "Nouvelle war"
+- tapOn: "24 joueurs"
+- tapOn: "Nouvelle war"
+- tapOn: "Recherche equipe"
+- inputText: "6v6"
+- tapOn: "6v6 Squad"
+- tapOn: "Recherche equipe"
+- eraseText
+- inputText: "Burger"
+- tapOn: "Burger Squad"
+- tapOn: "Recherche equipe"
+- eraseText
+- inputText: "Cyber"
+- tapOn: "Cyber Squadron"
+- tapOn: "Suivant"
+- assertVisible: "Sélection de la Line-up"
+- tapOn: "${output.player0}"
+- tapOn: "${output.player1}"
+- tapOn: "${output.player2}"
+- tapOn: "${output.player3}"
+- tapOn: "${output.player4}"
+- tapOn: "${output.player5}"
+- scrollUntilVisible: { element: { text: "Commencer" }, direction: DOWN }
+- tapOn: "Commencer"
+- assertVisible: "Plus d'actions"

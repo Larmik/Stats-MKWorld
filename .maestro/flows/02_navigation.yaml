@@ -1,0 +1,13 @@
+# Navigation inter-onglets (réf. TESTS_FUNCTIONAL.md §3).
+# Onglets sélectionnés par contentDescription (Accueil / Statistiques / Annuaire).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+- assertVisible: "Derniers résultats :"   # onglet Accueil
+- tapOn: "Statistiques"
+- assertVisible: "Statistiques individuelles"
+- tapOn: "Annuaire"
+- assertVisible: "Joueurs"
+- assertVisible: "Equipes"
+- tapOn: "Accueil"
+- assertVisible: "Derniers résultats :"

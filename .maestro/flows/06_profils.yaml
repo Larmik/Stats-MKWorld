@@ -1,0 +1,36 @@
+# Profils joueur & équipe (réf. TESTS_FUNCTIONAL.md §4.2, §4.3, §15.8, §15.14, §16.1, §16.3).
+# Lecture seule / non destructif (la déconnexion est ouverte puis ANNULÉE).
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+# --- §4.2 carte joueur -> profil joueur (soi) + §15.8 menu présent ---
+- tapOn: "Larii"
+- assertVisible: "Profil joueur"
+- assertVisible: "Rafraîchir les données"      # menu visible uniquement sur son profil
+- takeScreenshot: .maestro/screenshots/profil_joueur
+# --- §15.14 confirmation de déconnexion puis ANNULER (aucune déconnexion) ---
+- scrollUntilVisible:
+    element:
+      text: "Se déconnecter"
+    direction: DOWN
+- tapOn: "Se déconnecter"
+- assertVisible: "Déconnection"                 # bouton du dialog de confirmation
+- tapOn: "Retour"                               # annule -> reste connecté
+- assertNotVisible: "Déconnection"
+- back
+- assertVisible: "24 joueurs"                   # marqueur d'Accueil indépendant du mode (12p/24p)
+# --- §4.3 carte équipe -> profil équipe (sienne) + §16.1 ---
+- tapOn: "Harmonia"
+- assertVisible: "Profil équipe"
+- takeScreenshot: .maestro/screenshots/profil_equipe
+# --- §16.3 clic sur un membre -> profil joueur ---
+- scrollUntilVisible:
+    element:
+      text: "Larii"
+    direction: DOWN
+- tapOn: "Larii"
+- assertVisible: "Profil joueur"
+- back
+- assertVisible: "Profil équipe"
+- back
+- assertVisible: "24 joueurs"                   # marqueur d'Accueil indépendant du mode (12p/24p)

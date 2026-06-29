@@ -1,0 +1,25 @@
+# Validation d'une war 12p complète (réf. TESTS_FUNCTIONAL.md §6.3 + §6.10).
+# NON IDEMPOTENT : ajoute une war à l'historique (debug). À lancer explicitement :
+#   maestro test .maestro/manual/15_validate_war.yaml
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- runFlow: ../subflows/start_war_12p.yaml
+# Saisir les 12 courses (même circuit, positions 1-6)
+- repeat:
+    times: 12
+    commands:
+      - tapOn: "Course suivante"
+      - tapOn: "Circuit Mario Bros."
+      - tapOn: "^1$"
+      - tapOn: "^2$"
+      - tapOn: "^3$"
+      - tapOn: "^4$"
+      - tapOn: "^5$"
+      - tapOn: "^6$"
+      - tapOn: "Confirmer"
+# 12 courses jouées -> bouton de validation (12p)
+- assertVisible: "Valider la war"
+- tapOn: "Valider la war"
+# Retour Accueil, war passée en historique
+- assertVisible: "Nouvelle war"
+- takeScreenshot: .maestro/screenshots/war_validated

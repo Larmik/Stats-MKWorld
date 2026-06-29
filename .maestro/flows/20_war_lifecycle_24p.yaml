@@ -1,0 +1,58 @@
+# Cycle war 24p ALÉATOIRE (3 adversaires, intermission, positions 1-24, barème 24p).
+# Réf. TESTS_FUNCTIONAL.md §5(24p), §7(24p + intermission + shocks), §8.1, §8.2, §8.3. Idempotent.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- runFlow: ../subflows/start_war_24p.yaml
+
+# --- §7 Saisie course 24p : circuit (scroll) -> intermission ALÉATOIRE -> 6 positions 1-24 ---
+- tapOn: "Course suivante"
+- assertVisible: "Sélection du circuit"
+- scrollUntilVisible: { element: { text: "^${output.circuit}$" }, direction: DOWN }
+- tapOn: "^${output.circuit}$"
+# Page intermission : pick.js tire output.intermission au hasard.
+#   - mode "ignore" -> output.intermission == output.circuit : re-sélection du même circuit = intermission annulée.
+#   - mode "select" -> output.intermission = un circuit de Maps.intermissionsTo(circuit) : intermission conservée.
+# Dans les deux cas le label visé est unique sur la page (cellule d'annulation OU cellule "depuis").
+- scrollUntilVisible: { element: { text: "^${output.intermission}$" }, direction: DOWN }
+- tapOn: "^${output.intermission}$"
+- assertVisible: "Sélection des positions"
+- tapOn: "^${output.q0}$"
+- tapOn: "^${output.q1}$"
+- tapOn: "^${output.q2}$"
+- tapOn: "^${output.q3}$"
+- tapOn: "^${output.q4}$"
+- tapOn: "^${output.q5}$"
+- assertVisible: "${output.score24}"     # score d'équipe 24p calculé en JS, vérifié
+# §7.13 / §7.14 Ajout puis retrait de shocks (1er joueur du récap) : +,+ -> x2, - -> retour à 1
+- tapOn:
+    text: "^\\+$"
+- tapOn:
+    text: "^\\+$"
+- assertVisible: "x2"
+- tapOn:
+    text: "^-$"
+- assertNotVisible: "x2"
+- tapOn: "Confirmer"
+- assertVisible: "Plus d'actions"
+
+# --- §8.1 Pénalité ---
+- tapOn: "Plus d'actions"
+- tapOn: "Pénalité"
+- tapOn: "-10 pour 6v6 Squad"
+- tapOn: "Valider"
+- assertVisible: "Plus d'actions"
+
+# --- §8.2 Remplacement (joueur en place -> remplaçant du banc, aléatoires) ---
+- tapOn: "Plus d'actions"
+- tapOn: "Remplacement"
+- scrollUntilVisible: { element: { text: "${output.subOut}" }, direction: DOWN }
+- tapOn: "${output.subOut}"
+- scrollUntilVisible: { element: { text: "${output.subIn}" }, direction: DOWN }
+- tapOn: "${output.subIn}"
+- scrollUntilVisible: { element: { text: "Remplacer" }, direction: DOWN }
+- tapOn: "Remplacer"
+- assertVisible: "Plus d'actions"
+- takeScreenshot: .maestro/screenshots/war_lifecycle_24p
+
+# --- §8.3 Annulation ---
+- runFlow: ../subflows/cancel_current_war.yaml

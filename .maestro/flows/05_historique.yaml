@@ -1,0 +1,24 @@
+# Historique + détail war (réf. TESTS_FUNCTIONAL.md §10, §11). Lecture seule.
+# NB: MKButton et titres BaseScreen sont AFFICHÉS en MAJUSCULES, mais leur
+# sémantique (a11y/Maestro) est en casse naturelle → sélecteurs en casse naturelle.
+appId: fr.harmoniamk.statsmkworld.debug
+---
+- launchApp
+# Forcer 12p (mode global/persistant) -> historique 12p non vide (« Voir plus » + war « 553 - 431 »)
+- tapOn: "12 joueurs"
+- scrollUntilVisible:
+    element:
+      text: "Voir plus"
+    direction: DOWN
+    visibilityPercentage: 10
+- tapOn: "Voir plus"
+- assertVisible: "Toutes les wars"
+- takeScreenshot: .maestro/screenshots/historique
+# Ouvrir le détail d'une war (score unique de la liste)
+- tapOn: "553 - 431"
+- assertVisible: "Details war"
+- takeScreenshot: .maestro/screenshots/war_details
+- back
+- assertVisible: "Toutes les wars"
+- back
+- assertVisible: "Derniers résultats :"
