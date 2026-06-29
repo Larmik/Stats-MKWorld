@@ -255,7 +255,7 @@ Pour une autre équipe : vue simple (rosters + joueurs), sans gestion d'alliés.
 
 - Texte d'explication ; **+/−** pour ajuster le nombre de lignes adverses (**6 à 9**, défaut 6) ; pour chaque ligne, un champ nom + un champ score.
 - **« Tab classique »** : valide que la somme des scores adverses saisis = `scoreOpponent` calculé (sinon toast d'écart), puis génère le PDF (détails de war, scores équipe/joueur/adversaire, pénalités incluses) et émet l'`Uri` pour partage.
-- **« Tab détaillé »** (ajoute courses, shocks, courbe de progression) — présent mais désactivé dans le code actuel.
+- **« Tab détaillé »** (ajoute courses, shocks, courbe de progression) — **commenté dans le code** (`EditTabScreen`), donc **absent de l'UI** actuelle.
 
 Le rendu et l'enregistrement (galerie / partage) sont décrits dans [TECHNICAL.md §15](TECHNICAL.md#15-génération-pdf).
 

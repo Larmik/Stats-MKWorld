@@ -114,8 +114,8 @@ Les numéros de ligne sont indicatifs (état au moment de l'audit) — à reconf
 
 ## 6. Tests & outillage
 
-- [ ] 🟠 **T1 — Aucune couverture de tests** (seulement `ExampleUnitTest`/`ExampleInstrumentedTest`). Le moteur de scoring (`positionToPoints`, `withFullStats`, `WarDetails`, `WarStats`) est **pur et trivial à tester en JVM** : meilleur ROI immédiat, aurait attrapé B1 et B2/B4. → Suite JUnit sur `extension/` + `model/local/`.
-- [ ] 🟡 **T2 — Pas de CI.** → Pipeline build + tests + `lint`.
+- [~] 🟠 **T1 — Couverture de tests** : ~~aucune~~ → **suite E2E Maestro** ajoutée (`.maestro/`, cf. [TESTS_FUNCTIONAL.md](TESTS_FUNCTIONAL.md)) — lifecycles war 12p/24p (création, course, pénalité, remplacement, édition, annulation), navigation, garde-fous de création, profils, annuaire, stats, PDF ; tirages aléatoires + **scoring vérifié (property-based)** via `scripts/pick.js` ; flows idempotents/non destructifs sur l'env. Firebase **debug**. **Reste** : tests **unitaires JVM** du moteur pur (`positionToPoints`, `withFullStats`, `WarDetails`, `WarStats`) — meilleur ROI, complémentaires aux E2E (auraient attrapé B1, B2/B4).
+- [ ] 🟡 **T2 — Pas de CI.** → Pipeline build + tests + `lint` (les flows Maestro nécessitent un device/émulateur).
 - [ ] 🟡 **T3 — `versionCode` manuel** (risque d'incohérence avec `minimumVersion` Remote Config). → Bump automatisé.
 
 ---
