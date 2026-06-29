@@ -24,12 +24,13 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 |---|---|---|
 | `01_accueil_smoke` | 4.1, 4.4 | ✅ |
 | `02_navigation` | 3.1 (3 onglets) | ✅ |
-| `03_annuaire` | 14.4 (filtre équipes local), 14.2 (recherche joueurs — à durcir avec attente) | ✅ / ⚠️ |
-| `04_stats` | 13.1.1 → 13.1.6 (ouverture des 5 catégories) | ✅ |
+| `03_annuaire` | 14.4 (filtre équipes local), 14.2 (recherche joueurs — à durcir avec attente), **14.5 (clic équipe → profil)** | ✅ |
+| `04_stats` | **13.1.1 (bascule mode)**, 13.1.2 → 13.1.6 (ouverture des 5 catégories), **13.3.1 (Indiv/Équipe)**, **13.3.2 (recherche circuits)**, **13.3.8 (clic cellule → stats détaillées)** | ✅ |
 | `05_historique` | 4.9/4.10 (Voir plus), 10.1, 10.5, 11.1 | ✅ |
-| `06_profils` | 15.8 (menu présent sur son profil), 16.1 | ✅ |
-| `10_war_lifecycle` | **E2E ALÉATOIRE dans 1 war** : 5 (création, **6 joueurs aléatoires**) + 7 (course : **circuit parmi 29 avec scroll** + **6 positions aléatoires**, score 12p calculé en JS & vérifié → property-based) + 8.1 (pénalité) + 8.2 (remplacement aléatoire) + 9 (édition, 2ᵉ circuit aléatoire) + 8.3 (annulation) — **idempotent** | ✅ |
-| `20_war_lifecycle_24p` | **E2E ALÉATOIRE 24p** : 5 (3 adversaires + joueurs aléatoires) + 7 (circuit avec scroll + **intermission** + **positions 1-24**, score 24p calculé & vérifié) + 8.1 (pénalité) + 8.3 (annulation) — **idempotent** | ✅ |
+| `06_profils` | **4.2/4.3 (cartes Accueil → profils)**, 15.8 (menu présent sur son profil), **15.14 (déconnexion ANNULÉE)**, 16.1, **16.3 (clic membre → profil)** | ✅ |
+| `10_war_lifecycle` | **E2E ALÉATOIRE dans 1 war** : 5 (création, **6 joueurs aléatoires**) + 7 (course : **7.2 recherche circuit** + **circuit parmi 29 avec scroll** + **6 positions aléatoires**, **7.10 retour position**, score 12p calculé en JS & vérifié → property-based, **7.13/7.14 ajout/retrait shocks**) + 8.1 (pénalité) + 8.2 (remplacement aléatoire) + **6.6/9.1 détail course** + 9 (édition : **9.8 bouton inactif sans modif**, 9.4 circuit, **9.5 positions**, **9.6 shocks**, 9.7 validation) + 8.3 (annulation) — **idempotent** | ✅ |
+| `11_addwar_validation` | Garde-fous création war 12p : 5.4 (retour retire l'équipe), 5.5 (nom « TAG - TAGadv »), 5.8 (« Commencer » actif **uniquement** à 6, vérif. négative) — **non destructif** (jamais validé) | ✅ |
+| `20_war_lifecycle_24p` | **E2E ALÉATOIRE 24p** : 5 (3 adversaires + joueurs aléatoires) + 7 (circuit avec scroll + **intermission aléatoire** + **positions 1-24**, score 24p calculé & vérifié, **7.13/7.14 ajout/retrait shocks**) + 8.1 (pénalité) + **8.2 (remplacement)** + 8.3 (annulation) — **idempotent** | ✅ |
 | `16_add_ally_search` | 16.4, 16.5 (ouverture + recherche allié, **sans** ajout) | ✅ |
 | `18_refresh` | 15.9 (rafraîchir → `fetchData` migré ⚙️) | ✅ |
 | `19_pdf` | 11.2, 12.1, 12.2 (ouverture tableau + lignes) | ✅ |
@@ -48,6 +49,40 @@ Pré-requis : appareil connecté + app **déjà connectée** (login Discord manu
 > - Carte « war en cours » : taper **« Courses restantes: N »** (la carte), pas le titre « War en cours ».
 > - Mode 12p/24p : taper « 12 joueurs » / « 24 joueurs » sur l'Accueil avant de créer une war.
 > - **Randomisation** : `runScript` (`.maestro/scripts/`) supporte `Math.random` ; on calcule le résultat attendu en JS et on l'assert via `${output.x}`. Les tirages sont loggés (`console.log`) pour la reproductibilité d'un échec.
+> - **Boutons `MKButton`** : la sémantique `enabled` n'est **pas** exposée à Maestro (`clearAndSetSemantics` met le label sur le nœud texte, l'état `disabled` reste sur le `Button` parent). Pour tester l'état actif/inactif → **proxy comportemental** : taper un bouton inactif ne change pas d'écran.
+> - **Mode 12p/24p persistant** : le mode est global (DataStore) et survit aux runs. En **24p sans war**, l'Accueil masque « Derniers résultats : » (message de bienvenue) et les classements/historique sont **vides**. Donc : forcer 12p (taper « 12 joueurs ») avant les écrans dépendants des données, et utiliser un marqueur d'Accueil **indépendant du mode** (ex. « 24 joueurs »).
+>
+> **Cas du plan NON automatisés (écartés, à traiter autrement) :**
+> - **10.2** (bascule 12p/24p de l'historique) : `WarListScreen` n'a **pas** de sélecteur — le filtre vient de l'Accueil.
+> - **11.3** (« Tab » masqué en 24p) : nécessite une war **24p** en historique (donnée non garantie en debug).
+> - **13.2.2** (Indiv/Équipe sur PlayerStats/TeamStats) : pas de sélecteur sur `StatsScreen` (présent uniquement sur les classements adversaires/circuits → couvert par 13.3.1).
+> - **14.1** (< 3 car. → pas de recherche réseau) : assertion négative sur résultat réseau peu fiable.
+> - **12.6** (« Tab détaillé » désactivé) : le bouton est **commenté dans le code** (`EditTabScreen`) → **absent de l'UI**. Le §12.6 est obsolète.
+> - **Tri des classements (13.3.3 → 13.3.6)** : l'icône de tri (`StatsRankingScreen`) a `contentDescription = null` → non sélectionnable par Maestro (à corriger, cf. BUG-A11Y-1).
+
+### Inventaire des fichiers de test (fichier → cas couverts)
+
+| Fichier YAML | Cas couverts | Résultat |
+|---|---|---|
+| `flows/01_accueil_smoke.yaml` | 4.1, 4.4 | ✅ |
+| `flows/02_navigation.yaml` | 3.1 | ✅ |
+| `flows/03_annuaire.yaml` | 14.2, 14.4, 14.5 | ✅ |
+| `flows/04_stats.yaml` | 13.1.1, 13.1.2 → 13.1.6, 13.3.1, 13.3.2, 13.3.8 | ✅ |
+| `flows/05_historique.yaml` | 4.9, 4.10, 10.1, 10.5, 11.1 | ✅ |
+| `flows/06_profils.yaml` | 4.2, 4.3, 15.8, 15.14, 16.1, 16.3 | ✅ |
+| `flows/10_war_lifecycle.yaml` | 5, 7.2, 7.10, 7.13, 7.14, 8.1, 8.2, 6.6/9.1, 9.4, 9.5, 9.6, 9.7, 9.8, 8.3 | ✅ |
+| `flows/11_addwar_validation.yaml` | 5.4, 5.5, 5.8 | ✅ |
+| `flows/16_add_ally_search.yaml` | 16.4, 16.5 | ✅ |
+| `flows/18_refresh.yaml` | 15.9 | ✅ |
+| `flows/19_pdf.yaml` | 11.2, 12.1, 12.2 | ✅ |
+| `flows/20_war_lifecycle_24p.yaml` | 5, 7.4–7.6 (intermission), 7.8, 7.13, 7.14, 8.1, 8.2, 8.3 | ✅ |
+| `subflows/start_war_12p.yaml` | §5 (création war 12p) | ♻️ sous-flow |
+| `subflows/start_war_24p.yaml` | §5 (création war 24p) | ♻️ sous-flow |
+| `subflows/cancel_current_war.yaml` | 8.3 (annulation) | ♻️ sous-flow |
+| `manual/15_validate_war.yaml` | 6.3, 6.10 | ⚠️ manuel (non idempotent) |
+| `manual/20_logout.yaml` | 15.13 | ⚠️ manuel (à lancer en dernier) |
+
+> Légende : ✅ automatisé & vert · ♻️ sous-flow réutilisable (appelé par d'autres flows) · ⚠️ à lancer explicitement (non idempotent).
 
 ## Bugs trouvés en campagne
 

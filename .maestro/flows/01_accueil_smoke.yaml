@@ -3,12 +3,15 @@
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - launchApp
+# Marqueurs d'Accueil indépendants du mode (toujours présents en 12p ET 24p)
 - assertVisible: "Joueur"
 - assertVisible: "Equipe"
-- assertVisible: "Derniers résultats :"
 - assertVisible: "12 joueurs"
 - assertVisible: "24 joueurs"
-# Bascule 24p puis retour 12p (lecture seule, aucune écriture)
+# Forcer 12p (le mode est global/persistant) -> données présentes -> « Derniers résultats : » affiché
+- tapOn: "12 joueurs"
+- assertVisible: "Derniers résultats :"
+# §4.4 bascule 24p puis retour 12p (lecture seule, aucune écriture)
 - tapOn: "24 joueurs"
 - tapOn: "12 joueurs"
 - takeScreenshot: .maestro/screenshots/accueil_12p

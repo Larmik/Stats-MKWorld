@@ -4,6 +4,8 @@
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - launchApp
+# Forcer 12p (mode global/persistant) -> historique 12p non vide (« Voir plus » + war « 553 - 431 »)
+- tapOn: "12 joueurs"
 - scrollUntilVisible:
     element:
       text: "Voir plus"

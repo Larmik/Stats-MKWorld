@@ -4,6 +4,8 @@ appId: fr.harmoniamk.statsmkworld.debug
 - launchApp
 - tapOn: "Statistiques"            # onglet
 - assertVisible: "Statistiques individuelles"
+# §13.1.1 bascule de mode : on force 12p (données présentes en historique 12p -> classements non vides)
+- tapOn: "12 joueurs"
 # 1. Individuelles
 - tapOn: "Statistiques individuelles"
 - takeScreenshot: .maestro/screenshots/stats_individuelles
@@ -14,16 +16,34 @@ appId: fr.harmoniamk.statsmkworld.debug
 - takeScreenshot: .maestro/screenshots/stats_equipe
 - back
 - assertVisible: "Statistiques des joueurs"
-# 3. Joueurs (classement)
+# 3. Joueurs (classement) + §13.3.8 clic d'une cellule -> stats détaillées du joueur
 - tapOn: "Statistiques des joueurs"
 - takeScreenshot: .maestro/screenshots/stats_joueurs
+- scrollUntilVisible:
+    element:
+      text: "Larii"
+    direction: DOWN
+- tapOn: "Larii"
+- assertVisible: "Statistiques du joueur"
+- back
+- assertVisible: "Statistiques des joueurs"
 - back
 # 4. Adversaires (classement)
 - tapOn: "Statistiques des adversaires"
 - takeScreenshot: .maestro/screenshots/stats_adversaires
 - back
-# 5. Circuits (classement)
+# 5. Circuits (classement) + §13.3.1 bascule Individuel/Équipe + §13.3.2 recherche
 - tapOn: "Statistiques des circuits"
+- assertVisible: "Statistiques des circuits"
+# §13.3.1 sélecteur Individuel / Équipe (toujours présent pour adversaires & circuits)
+- tapOn: "Equipe"
+- tapOn: "Individuel"
+# §13.3.2 recherche (filtrage par nom de circuit) — smoke : la liste dépend des données jouées
+- tapOn: "Rechercher un circuit…"
+- inputText: "a"
+- eraseText
+- hideKeyboard
+- assertVisible: "Statistiques des circuits"
 - takeScreenshot: .maestro/screenshots/stats_circuits
 - back
 - assertVisible: "Statistiques individuelles"

@@ -5,9 +5,16 @@ appId: fr.harmoniamk.statsmkworld.debug
 ---
 - runFlow: ../subflows/start_war_12p.yaml          # §5 + joueurs aléatoires + pick.js
 
-# --- §7 Saisie d'une course : circuit (parmi 29, avec scroll) + 6 positions aléatoires ---
+# --- §7 Saisie d'une course : circuit (parmi 29) + 6 positions aléatoires ---
 - tapOn: "Course suivante"
 - assertVisible: "Sélection du circuit"
+# §7.2 Recherche d'un circuit par nom : le filtre amène le circuit tiré en tête
+- tapOn: "Rechercher un circuit…"
+- inputText: "${output.circuit}"
+- assertVisible: "^${output.circuit}$"
+- eraseText
+- hideKeyboard
+# Sélection robuste par scroll (chemin éprouvé)
 - scrollUntilVisible:
     element:
       text: "^${output.circuit}$"
@@ -19,8 +26,21 @@ appId: fr.harmoniamk.statsmkworld.debug
 - tapOn: "^${output.p2}$"
 - tapOn: "^${output.p3}$"
 - tapOn: "^${output.p4}$"
+# §7.10 Retour après ≥1 position : retire la dernière saisie et reste sur la page positions
+- pressKey: back
+- assertVisible: "Sélection des positions"
+- tapOn: "^${output.p4}$"                          # re-saisie de la position retirée
 - tapOn: "^${output.p5}$"
-- assertVisible: "${output.score}"               # score 12p calculé en JS, vérifié dans l'app
+- assertVisible: "${output.score}"                 # score 12p calculé en JS, vérifié dans l'app
+# §7.13 / §7.14 Ajout puis retrait de shocks (1er joueur du récap) : +,+ -> x2, - -> retour à 1
+- tapOn:
+    text: "^\\+$"
+- tapOn:
+    text: "^\\+$"
+- assertVisible: "x2"
+- tapOn:
+    text: "^-$"
+- assertNotVisible: "x2"
 - tapOn: "Confirmer"
 - assertVisible: "Plus d'actions"
 
@@ -51,7 +71,8 @@ appId: fr.harmoniamk.statsmkworld.debug
 - tapOn: "Remplacer"
 - assertVisible: "Plus d'actions"
 
-# --- §9 Édition de la course : changer le circuit (aléatoire) ---
+# --- §6.6 / §9 Détail puis édition complète de la course (circuit + positions + shocks) ---
+# §6.6/§9.1 : clic sur une course de la grille -> détail (war en cours -> bouton « Éditer » présent, §9.2)
 - scrollUntilVisible:
     element:
       text: "^${output.circuit}$"
@@ -60,11 +81,30 @@ appId: fr.harmoniamk.statsmkworld.debug
 - assertVisible: "Editer"
 - tapOn: "Editer"
 - assertVisible: "Edition circuit"
+# §9.8 : sans aucune modification, « Confirmer » est inactif -> le taper ne valide pas (on reste sur l'écran d'édition).
+# (Proxy comportemental : la sémantique `disabled` du Button Material3 n'est pas portée par le nœud texte.)
+- tapOn: "Confirmer"
+- assertVisible: "Edition circuit"
+# §9.4 : changement de circuit (aléatoire)
 - scrollUntilVisible:
     element:
       text: "^${output.circuit2}$"
     direction: DOWN
 - tapOn: "^${output.circuit2}$"
+# §9.5 : édition des positions (re-saisie des 6)
+- tapOn: "^Positions$"
+- tapOn: "^${output.p0}$"
+- tapOn: "^${output.p1}$"
+- tapOn: "^${output.p2}$"
+- tapOn: "^${output.p3}$"
+- tapOn: "^${output.p4}$"
+- tapOn: "^${output.p5}$"
+# §9.6 : édition des shocks
+- tapOn: "^Shocks$"
+- tapOn:
+    text: "^\\+$"
+# §9.7 : validation -> score recalculé sur l'ensemble, retour war en cours
+# (le retour vers « Plus d'actions » prouve que le bouton est devenu actif après modifications)
 - tapOn: "Confirmer"
 - assertVisible: "Plus d'actions"
 - takeScreenshot: .maestro/screenshots/war_lifecycle
