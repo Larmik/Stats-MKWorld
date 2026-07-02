@@ -8,16 +8,15 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.flow.firstOrNull
-import kotlin.collections.filter
-import kotlin.collections.forEach
-import kotlin.collections.map
-import kotlin.collections.orEmpty
 
 suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, dataStoreRepository: DataStoreRepositoryInterface): List<PlayerScore> {
     val localPlayers = databaseRepository.getPlayers().firstOrNull()
 
+    // Ensemble des ids de joueurs ayant une position sur cette war (hissé hors des boucles).
+    val playerIdsInWar = this.tracks.flatMap { track -> track.positions.map { it.playerId } }.toHashSet()
+
     val currentLocalPlayers = localPlayers
-        ?.filter { player -> this.tracks.flatMap { it.positions }.any { it.playerId == player.id  } || player.currentWar == this.id.toString() }
+        ?.filter { player -> playerIdsInWar.contains(player.id) || player.currentWar == this.id.toString() }
         ?.map { PlayerScore(it, 0, 0, 0) }
         .orEmpty()
 
@@ -26,10 +25,7 @@ suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface,
         true -> {
             val team = dataStoreRepository.mkcTeam.firstOrNull()
             firebaseRepository.getUsers(team?.id.toString())
-                .filter { player ->
-                    this.tracks.flatMap { it.positions }
-                        .any { it.playerId == player.id } || player.currentWar == this.id.toString()
-                }
+                .filter { player -> playerIdsInWar.contains(player.id) || player.currentWar == this.id.toString() }
                 .map { user -> localPlayers?.firstOrNull { it.id == user.id } }
                 .map { PlayerScore(it, 0, 0, 0) }
         }
@@ -74,8 +70,9 @@ suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface,
             shockCount = shocks.filter { it.playerId == pair.first?.id }.sumOf { it.count }
         ))
     }
+    val scoredPlayerIds = finalList.mapTo(HashSet()) { it.player?.id }
     players
-        .filter { !finalList.map { it.player?.id }.contains(it.player?.id) }
+        .filter { !scoredPlayerIds.contains(it.player?.id) }
         .forEach { finalList.add(it) }
     return finalList
 }

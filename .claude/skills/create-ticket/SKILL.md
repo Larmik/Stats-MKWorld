@@ -3,7 +3,7 @@ name: create-ticket
 description: Génère un ticket prêt à coller sur Trello à partir d'une description de bug ou de feature. Le ticket contient toujours trois sections — Contexte, Description, et Solutions proposées — avec une mise en page Markdown lisible. À utiliser quand on veut transformer une idée de bug/feature en ticket structuré pour le board Trello du projet.
 arguments: [description-bug-ou-feature]
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *), Task
+allowed-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(pbcopy *), Task
 ---
 
 # Création d'un ticket Trello
@@ -63,5 +63,15 @@ le compromis (effort / risque / portée). Mets en avant la solution recommandée
 ## 4. Livraison
 
 Affiche le ticket final **dans un bloc de code** (fenced ```` ``` ````) pour que l'utilisateur puisse le copier d'un seul geste.
+
+**Copie systématiquement le ticket dans le presse-papiers** (macOS) une fois rédigé : passe son contenu intégral et brut (le Markdown, sans les backticks d'entourage) à `pbcopy`, par exemple via un here-doc :
+
+```bash
+pbcopy <<'TICKET'
+<contenu Markdown intégral du ticket>
+TICKET
+```
+
+Confirme ensuite à l'utilisateur que le ticket a été copié dans le presse-papiers.
 
 **Ne crée JAMAIS de fichier** (`.md` ou autre) : la sortie reste exclusivement dans le chat. Écrire un fichier polluerait le dépôt inutilement.

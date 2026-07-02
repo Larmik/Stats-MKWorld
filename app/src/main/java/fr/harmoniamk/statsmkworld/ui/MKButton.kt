@@ -35,8 +35,8 @@ fun MKButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    var backgroundColor: Color = Colors.transparent
-    var bachgroundGradient: List<Color> = listOf()
+    val backgroundColor: Color
+    val backgroundGradient: List<Color>
     val textColor: Color
     val borderColor: Color
     val elevation: Dp
@@ -45,19 +45,23 @@ fun MKButton(
         style is MKButtonStyle.Standard && enabled -> {
             textColor = Colors.black
             backgroundColor = style.color
+            backgroundGradient = listOf()
             borderColor = Colors.transparent
             elevation = 5.dp
         }
 
         style is MKButtonStyle.Minor && enabled -> {
             textColor = style.color
+            backgroundColor = Colors.transparent
+            backgroundGradient = listOf()
             borderColor = style.color
             elevation = 0.dp
         }
 
         style is MKButtonStyle.Gradient && enabled -> {
             textColor = Colors.black
-            bachgroundGradient = listOf(Colors.purple, Colors.blue, Colors.blue, Colors.green)
+            backgroundColor = Colors.transparent
+            backgroundGradient = listOf(Colors.purple, Colors.blue, Colors.blue, Colors.green)
             borderColor = Colors.blue
             elevation = 5.dp
         }
@@ -66,6 +70,7 @@ fun MKButton(
         else -> {
             textColor = Colors.blackAlphaed
             backgroundColor = Colors.whiteAlphaed
+            backgroundGradient = listOf()
             borderColor = Colors.transparent
             elevation = 0.dp
         }
@@ -84,8 +89,8 @@ fun MKButton(
         shape = RoundedCornerShape(10.dp),
     ) {
 
-        val backgroundModifier = when (bachgroundGradient.isNotEmpty()) {
-            true -> Modifier.background(brush = Brush.horizontalGradient(colors = bachgroundGradient), shape = RoundedCornerShape(10.dp))
+        val backgroundModifier = when (backgroundGradient.isNotEmpty()) {
+            true -> Modifier.background(brush = Brush.horizontalGradient(colors = backgroundGradient), shape = RoundedCornerShape(10.dp))
             else -> Modifier.background(color = backgroundColor, shape = RoundedCornerShape(10.dp))
         }
 

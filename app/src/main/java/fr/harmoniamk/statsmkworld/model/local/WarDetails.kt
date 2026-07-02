@@ -30,14 +30,10 @@ data class WarDetails(val war: War): Serializable, Parcelable {
     val scoreHostWithPenalties = scoreHost - war.penalties.filter { it.teamId == war.teamHost }.sumOf { it.amount }
     val scoreOpponentWithPenalties = scoreOpponent - war.penalties.filter { war.teamOpponent.contains(it.teamId) }.sumOf { it.amount }
 
-    val displayedScore: String
-        get() = "$scoreHostWithPenalties - $scoreOpponentWithPenalties"
+    val displayedScore: String = "$scoreHostWithPenalties - $scoreOpponentWithPenalties"
 
-    val displayedDiff: String
-        get() {
-            val diff = scoreHostWithPenalties - scoreOpponentWithPenalties
-            return if (diff > 0) "+$diff" else "$diff"
-        }
+    val displayedDiff: String = (scoreHostWithPenalties - scoreOpponentWithPenalties)
+        .let { diff -> if (diff > 0) "+$diff" else "$diff" }
 
     /**
      *  24 players
@@ -66,32 +62,20 @@ data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Parcelable,
     val index
         get() = track.index
 
-    val teamScore: Int
-        get() = track.positions.sumOf { it.position.positionToPoints(is24p) }
+    val teamScore: Int = track.positions.sumOf { it.position.positionToPoints(is24p) }
 
-    private val opponentScore: Int
-        get() {
-            val maxPointsPerTrack = when (is24p) {
-                true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
-                else -> ScoringConstants.MAX_POINTS_PER_TRACK_12P
-            }
-            teamScore.takeIf { it != 0 }?.let {
-                return maxPointsPerTrack - it
-            }
-            return 0
+    private val opponentScore: Int = run {
+        val maxPointsPerTrack = when (is24p) {
+            true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
+            else -> ScoringConstants.MAX_POINTS_PER_TRACK_12P
         }
+        teamScore.takeIf { it != 0 }?.let { maxPointsPerTrack - it } ?: 0
+    }
 
-    private val diffScore: Int
-        get() {
-            opponentScore.takeIf { it != 0 }?.let {
-                return teamScore - it
-            }
-            return 0
-        }
+    private val diffScore: Int =
+        opponentScore.takeIf { it != 0 }?.let { teamScore - it } ?: 0
 
-    val displayedResult: String
-        get() = "$teamScore - $opponentScore"
+    val displayedResult: String = "$teamScore - $opponentScore"
 
-    val displayedDiff: String
-        get() = if (diffScore > 0) "+$diffScore" else "$diffScore"
+    val displayedDiff: String = if (diffScore > 0) "+$diffScore" else "$diffScore"
 }

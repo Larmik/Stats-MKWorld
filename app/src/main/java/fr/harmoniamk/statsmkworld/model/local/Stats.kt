@@ -4,6 +4,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.safeSubList
+import fr.harmoniamk.statsmkworld.extension.sizeOrOne
 import fr.harmoniamk.statsmkworld.extension.sum
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.extension.warScoreToDiff
@@ -19,26 +20,28 @@ data class Stats(
     val maps: List<TrackStats>,
     val averageForMaps: List<TrackStats>,
 ) {
+    private val mapsAboveThreshold: List<TrackStats> = maps.filter { it.totalPlayed >= 2 }
+
     val highestScore: WarScore? = warScores.maxByOrNull { it.score }
     val lowestScore: WarScore? = warScores.minByOrNull { it.score }
     val bestMap: TrackStats? =
-        maps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.teamScore ?: 0 }
+        mapsAboveThreshold.maxByOrNull { it.teamScore ?: 0 }
     val worstMap: TrackStats? =
-        maps.filter { it.totalPlayed >= 2 }.minByOrNull { it.teamScore ?: 0 }
+        mapsAboveThreshold.minByOrNull { it.teamScore ?: 0 }
     val bestPlayerMap: TrackStats? =
-        maps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.playerScore ?: 0 }
+        mapsAboveThreshold.maxByOrNull { it.playerScore ?: 0 }
     val worstPlayerMap: TrackStats? =
-        maps.filter { it.totalPlayed >= 2 }.minByOrNull { it.playerScore ?: 0 }
+        mapsAboveThreshold.minByOrNull { it.playerScore ?: 0 }
     val mostPlayedMap: TrackStats? =
-        maps.filter { it.totalPlayed >= 2 }.maxByOrNull { it.totalPlayed }
+        mapsAboveThreshold.maxByOrNull { it.totalPlayed }
     val averagePoints: Int =
-        warScores.sumOf { it.score } / (warScores.takeIf { it.isNotEmpty() }?.size ?: 1)
+        warScores.sumOf { it.score } / warScores.sizeOrOne()
     val averagePointsLabel: String = averagePoints.warScoreToDiff(warStats.is24p)
     val averageMapPoints: Int =
-        (averageForMaps.map { it.teamScore }.sum() / (averageForMaps.takeIf { it.isNotEmpty() }?.size ?: 1))
+        (averageForMaps.map { it.teamScore }.sum() / averageForMaps.sizeOrOne())
     val averagePlayerPosition: List<Int> =
-        (averageForMaps.map { it.playerScore }.sum() / (averageForMaps.takeIf { it.isNotEmpty() }?.size
-            ?: 1)).pointsToPosition(warStats.is24p)
+        (averageForMaps.map { it.playerScore }.sum() / averageForMaps.sizeOrOne())
+            .pointsToPosition(warStats.is24p)
 
     val averagePlayerPosLabel = when (val single = averagePlayerPosition.singleOrNull()) {
         null -> "${averagePlayerPosition.firstOrNull()} - ${averagePlayerPosition.lastOrNull()}"
@@ -135,131 +138,44 @@ class MapStats(
                 it.track.hasPlayer(userId)
             }) || !isIndiv
         }
-    val teamScore = list.map { pair -> pair.warTrack }.map { it.teamScore }.sum() / (list.takeIf { it.isNotEmpty() }?.size ?: 1)
-    val playerPosition: List<Int> =  (playerScoreList.sum() / (playerScoreList.takeIf { it.isNotEmpty() }?.size
-        ?: 1)).pointsToPosition(is24p)
+    val teamScore = list.map { it.warTrack.teamScore }.sum() / list.sizeOrOne()
+    val playerPosition: List<Int> =
+        (playerScoreList.sum() / playerScoreList.sizeOrOne()).pointsToPosition(is24p)
 
     val averagePlayerPosLabel = when (val single = playerPosition.singleOrNull()) {
         null -> "${playerPosition.firstOrNull()} - ${playerPosition.lastOrNull()}"
         else -> single.toString()
     }
-    val topsTable = listOf(
-        Pair(
-            "Top 6",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it <= 6 }.size == 6
-            }.size
-        ),
-        Pair(
-            "Top 5",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it <= 5 }.size == 5
-            }.size
-        ),
-        Pair(
-            "Top 4",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it <= 4 }.size == 4
-            }.size
-        ),
-        Pair(
-            "Top 3",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it <= 3 }.size == 3
-            }.size
-        ),
-        Pair(
-            "Top 2",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it <= 2 }.size == 2
-            }.size
-        ),
-    )
-    val bottomsTable = listOf(
-        Pair(
-            "Bot 6",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it >= 7 }.size == 6
-            }.size
-        ),
-        Pair(
-            "Bot 5",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it >= 8 }.size == 5
-            }.size
-        ),
-        Pair(
-            "Bot 4",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it >= 9 }.size == 4
-            }.size
-        ),
-        Pair(
-            "Bot 3",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it >= 10 }.size == 3
-            }.size
-        ),
-        Pair(
-            "Bot 2",
-            list.filter {
-                !isIndiv && it.warTrack.track.positions.map { it.position }.filter { it >= 11 }.size == 2
-            }.size
-        ),
-    )
+    // Tables d'équipe : pour chaque top/bottom N, on compte les manches où les N
+    // meilleures/pires positions sont toutes dans le seuil. Une seule passe sur la liste.
+    val topsTable = when {
+        isIndiv -> (6 downTo 2).map { "Top $it" to 0 }
+        else -> (6 downTo 2).map { n ->
+            "Top $n" to list.count { it.warTrack.track.positions.count { pos -> pos.position <= n } == n }
+        }
+    }
+    val bottomsTable = when {
+        isIndiv -> (6 downTo 2).map { "Bot $it" to 0 }
+        else -> (6 downTo 2).map { n ->
+            // seuil bas : Bot 6 -> >=7, Bot 5 -> >=8, … Bot 2 -> >=11
+            val threshold = 13 - n
+            "Bot $n" to list.count { it.warTrack.track.positions.count { pos -> pos.position >= threshold } == n }
+        }
+    }
 
-    val indivTopsTable = listOf(
-        Pair(
-            "1",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 1 }?.playerId == userId }.size
-        ),
-        Pair(
-            "2",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 2 }?.playerId == userId }.size
-        ),
-        Pair(
-            "3",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 3 }?.playerId == userId }.size
-        ),
-        Pair(
-            "4",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 4 }?.playerId == userId }.size
-        ),
-        Pair(
-            "5",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 5 }?.playerId == userId }.size
-        ),
-        Pair(
-            "6",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 6 }?.playerId == userId }.size
-        ),
-    )
-    val indivBottomsTable = listOf(
-        Pair(
-            "7",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 7 }?.playerId == userId }.size
-        ),
-        Pair(
-            "8",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 8 }?.playerId == userId }.size
-        ),
-        Pair(
-            "9",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 9 }?.playerId == userId }.size
-        ),
-        Pair(
-            "10",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 10 }?.playerId == userId }.size
-        ),
-        Pair(
-            "11",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 11 }?.playerId == userId }.size
-        ),
-        Pair(
-            "12",
-            list.filter { isIndiv && it.warTrack.track.positions.singleOrNull { it.position == 12 }?.playerId == userId }.size
-        ),
-    )
+    // Tables individuelles : nombre de manches où le joueur a fini à la position N.
+    val indivTopsTable = (1..6).map { n ->
+        n.toString() to when {
+            isIndiv -> list.count { it.warTrack.track.positions.singleOrNull { pos -> pos.position == n }?.playerId == userId }
+            else -> 0
+        }
+    }
+    val indivBottomsTable = (7..12).map { n ->
+        n.toString() to when {
+            isIndiv -> list.count { it.warTrack.track.positions.singleOrNull { pos -> pos.position == n }?.playerId == userId }
+            else -> 0
+        }
+    }
     val shockCount = list.map {
         it.warTrack.track.shocks?.filter { (isIndiv && it.playerId == userId) || !isIndiv }
             ?.sumOf { it.count }

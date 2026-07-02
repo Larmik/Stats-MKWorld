@@ -35,9 +35,14 @@ exploitables.
 
 ## 2. Synchroniser puis créer la branche
 
-1. Synchronise le dépôt avant tout (habitude projet) :
-   `git fetch origin` puis, depuis `master`, `git pull`. La branche par défaut du
-   projet est **master** — ignore `main`.
+**Avant toute chose** : synchronise `master` et crée **toujours** ta branche à
+partir de celle-ci. Ne délègue jamais à l'agent, n'ouvre jamais de branche, tant
+que ce point de départ n'est pas garanti.
+
+1. Synchronise le dépôt (habitude projet, non négociable) : `git fetch origin`,
+   puis `git checkout master` et `git pull --ff-only`. La branche par défaut du
+   projet est **master** — ignore `main`. Ne crée jamais la branche depuis une
+   autre branche courante : reviens explicitement sur `master` à jour d'abord.
 2. **Condense le titre** du ticket en un nom de branche :
    - retire le préfixe `[BUG]` / `[FEATURE]` et les emojis ;
    - garde **4 à 5 mots** signifiants (les mots-clés du titre) ;

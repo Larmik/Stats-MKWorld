@@ -45,7 +45,6 @@
     <string name="roster">Roster</string>
     <string name="actions">Actions</string>
     <string name="penalty_placeholder">to %1$s</string>
-    <string name="intermission_placeholder">Intermission picked by %1$s</string>
     <string name="current_race">Race %1$s/12</string>
     <string name="remaining_courses">Races left: %1$s</string>
     <string name="war_en_cours">Currently played</string>
@@ -102,7 +101,6 @@
     <string name="details_war">War details</string>
     <string name="courses_jouees">Races played:</string>
     <string name="accueil">Home</string>
-    <string name="show_team_btn">View team</string>
     <string name="nouvelle_war">New war</string>
     <string name="last_results">Latest results:</string>
     <string name="welcome_text">Your team hasn\'t yet recorded results on this app. To create a new war, click the button below if you have the appropriate role.\n\nIf you can\'t enter results, contact a team leader to grant you the correct role.</string>
@@ -126,9 +124,7 @@
     <string name="fetch_opponents">Fetching opponents…</string>
     <string name="fetch_Wars">Fetching wars…</string>
     <string name="logout_confirm">Are you sure you want to log out ?</string>
-    <string name="data_updated">App data was updated successfully.</string>
     <string name="maps_won">Courses won : %1$s/12</string>
-    <string name="penalty">Penalty</string>
     <string name="cancel_confirm">By cancelling this war, you will lose all progress and stats provided. Are you sure you want to delete it ?</string>
     <string name="valider">Confirm</string>
     <string name="basculer_en_tant_que_membre">Switch as member</string>
@@ -174,7 +170,6 @@
     <string name="remplacer">Substitute</string>
     <string name="joueur_entrant">Incoming</string>
     <string name="id_joueur">Player ID</string>
-    <string name="rsl" translatable="false">Royaume Sorbet</string>
     <string name="see_more">See more</string>
     <string name="all_wars">All wars</string>
     <string name="notif_enabled">Notifications enabled</string>
