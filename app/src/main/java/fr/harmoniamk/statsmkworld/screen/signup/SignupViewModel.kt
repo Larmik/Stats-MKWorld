@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.datasource.network.DiscordDataSourceInterface
@@ -96,6 +97,13 @@ class SignupViewModel @AssistedInject constructor(
         .map {
             val teamId = it.rosters?.firstOrNull { it.game == "mkworld" }?.teamID?.toString()
             val rosterId = it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
+
+            //Connexion anonyme Firebase (autorise les accès RTDB via la var auth des règles).
+            //Ne remplace pas Discord OAuth. Appelée à chaque login (UID non stable après réinstallation).
+            //Échec (réseau) toléré : on log dans Crashlytics et on poursuit sans bloquer la navigation.
+            if (!firebaseRepository.signInAnonymously())
+                FirebaseCrashlytics.getInstance().log("signInAnonymously failed")
+
             //Set player dans datastore puis écriture sur Firebase (si non existant)
             dataStoreRepository.setMKCPlayer(it)
             val user = User(it.id.toString(), discordId = it.discord?.discordID.orEmpty(), name = it.name)
