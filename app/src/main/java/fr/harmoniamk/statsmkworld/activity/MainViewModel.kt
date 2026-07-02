@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.BuildConfig
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.RemoteConfigRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.WorkerRepositoryInterface
 import fr.harmoniamk.statsmkworld.worker.InitStatsWorker
@@ -25,7 +26,8 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     remoteConfigRepository: RemoteConfigRepositoryInterface,
-    private val workerRepository: WorkerRepositoryInterface
+    private val workerRepository: WorkerRepositoryInterface,
+    private val firebaseRepository: FirebaseRepositoryInterface
 ) : ViewModel() {
 
     data class State(
@@ -38,6 +40,11 @@ class MainViewModel @Inject constructor(
 
     val state = flowOf(Unit)
         .map {
+            //Re-authentification anonyme Firebase au démarrage : l'UID est perdu après une
+            //réinstallation, on le régénère s'il manque. Échec (réseau) toléré, ne bloque pas
+            //la navigation (le résultat ne conditionne pas le startDestination).
+            if (!firebaseRepository.isUserConnected())
+                firebaseRepository.signInAnonymously()
             val player = dataStoreRepository.mkcPlayer.firstOrNull()
             when {
                 remoteConfigRepository.minimumVersion() > BuildConfig.VERSION_CODE -> _state.value.copy(needUpdate = true)

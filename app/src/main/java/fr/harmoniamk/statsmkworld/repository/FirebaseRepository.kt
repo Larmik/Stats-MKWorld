@@ -2,6 +2,7 @@ package fr.harmoniamk.statsmkworld.repository
 
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -35,6 +36,10 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 
 interface FirebaseRepositoryInterface {
+    //Auth
+    suspend fun signInAnonymously(): Boolean
+    fun isUserConnected(): Boolean
+
     //SplashScreen/Login
     suspend fun getUsers(teamId: String): List<User>
     suspend fun getUser(teamId: String, id: String): User?
@@ -75,6 +80,14 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
     FirebaseRepositoryInterface {
 
     private val database = Firebase.database.reference
+
+    override suspend fun signInAnonymously(): Boolean = suspendCancellableCoroutine { cont ->
+        Firebase.auth.signInAnonymously()
+            .addOnSuccessListener { cont.resume(true) }
+            .addOnFailureListener { cont.resume(false) }
+    }
+
+    override fun isUserConnected(): Boolean = Firebase.auth.currentUser != null
 
     /** Attend la complétion d'un `get()` Firebase ; renvoie `null` en cas d'échec (pas de crash). */
     private suspend fun Task<DataSnapshot>.awaitSnapshot(): DataSnapshot? =

@@ -49,6 +49,17 @@ DISCORD_API_CLIENT="..."   # injecté dans BuildConfig.DISCORD_API_CLIENT
 
 Le build **release** référence aussi un keystore en chemin absolu (`signingConfigs`) — voir `app/build.gradle.kts`. Firebase nécessite `app/google-services.json` (+ variante debug). Ces fichiers ne sont pas versionnés en clair et contiennent des secrets : **ne jamais les exposer dans une sortie**.
 
+## Workflow & process
+
+Règles de collaboration à respecter systématiquement (pour l'agent comme pour l'humain) :
+
+- **Pas de git sans demande explicite** : ne jamais `commit` / `push` / créer de PR tant que l'utilisateur ne l'a pas explicitement demandé. Appliquer les changements dans le working tree et attendre sa validation.
+- **Synchroniser avant de commencer** : avant toute nouvelle tâche, `git fetch origin` puis se placer sur `master` à jour (`git pull --ff-only`). Créer les branches de travail **depuis `master`**.
+- **Branche par défaut = `master`** : `master` est la branche de base du dépôt (PRs, syncs). Ignorer `main` (obsolète), même si l'outillage local la mentionne.
+- **Documentation à la racine** : la doc fonctionnelle/technique reste dans `docs/` à la racine (`AUDIT.md`, `TECHNICAL.md`, `FUNCTIONAL.md`), séparée de `.claude/`. À chaque PR modifiant le comportement/l'archi, mettre à jour les sections `docs/` impactées (voir aussi la rule `.claude/rules/00-docs-a-jour.md`).
+- **Pas de tests unitaires spontanés** : ne pas créer de tests unitaires tant que l'utilisateur n'a pas indiqué comment il souhaite les écrire (la suite de tests actuelle est volontairement squelettique).
+- **Périmètre des PR décidé par l'utilisateur** : c'est lui qui choisit ce que contient une PR. Ne pas commenter/remettre en question le titre ou la cohérence du périmètre d'une PR, ne jamais proposer de scinder des changements dans une PR dédiée. Regrouper les changements sur la branche en cours et créer **uniquement** les PR explicitement demandées.
+
 ## Stack technique
 
 - **UI** : Jetpack Compose (Material3), Navigation Compose, Accompanist Pager, Coil (images), Lottie (animations), MPAndroidChart (graphes), vues XML résiduelles (ViewBinding/DataBinding) pour le rendu PDF.
