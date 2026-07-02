@@ -42,7 +42,8 @@ Prérequis utilisateur :
 | **Position → points** | Chaque place d'arrivée rapporte des points (1ʳᵉ = 15 pts). |
 | **Pénalité** | Retrait de points (−10, −15, −20) imputé à une équipe. |
 | **Shock** | L'objet **éclair** récupéré en jeu, stratégiquement décisif. Compté par joueur sur une course pour produire des statistiques dédiées (n'affecte pas le calcul du score). |
-| **Roster** | Composition inscrite sur MKCentral (une équipe peut en avoir plusieurs). |
+| **Équipe** | Entité MKCentral complète (identifiant `teamId`), pouvant regrouper plusieurs rosters. Les joueurs y sont rattachés. |
+| **Roster** | Composition inscrite sur MKCentral (identifiant `rosterId`) ; une équipe peut en avoir plusieurs. C'est à ce niveau que se rattachent les wars. |
 | **Allié** | Joueur de renfort hors roster officiel (rosterId interne `-1`), pouvant participer aux wars. |
 | **Multi-roster** | Option : calculer les stats sur tous les rosters de l'équipe ou seulement le sien. |
 | **Mode matrix** | Mode debug permettant de simuler les données d'un autre joueur. |
