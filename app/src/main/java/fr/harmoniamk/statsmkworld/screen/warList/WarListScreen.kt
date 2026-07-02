@@ -10,7 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -32,7 +33,20 @@ fun WarListScreen(
     viewModel: WarListViewModel = hiltViewModel(),
     onWarDetailsClick: (WarDetails) -> Unit
 ) {
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
+    val headerBrush = remember {
+        Brush.linearGradient(
+            colors = listOf(
+                Colors.green,
+                Colors.blue,
+                Colors.blue,
+                Colors.blue,
+                Colors.green
+            ),
+            start = Offset(0f, 0f),
+            end = Offset.Infinite
+        )
+    }
     BaseScreen(title = stringResource(R.string.all_wars)) {
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -40,22 +54,11 @@ fun WarListScreen(
         ) {
             state.value.wars.forEach { pair ->
                 stickyHeader {
-                    Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth().background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Colors.green,
-                                Colors.blue,
-                                Colors.blue,
-                                Colors.blue,
-                                Colors.green
-                            ),
-                            start = Offset(0f, 0f),
-                            end = Offset.Infinite
-                        )).border(2.dp, Colors.black)) {
+                    Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth().background(headerBrush).border(2.dp, Colors.black)) {
                         MKText(text = pair.first + " (${pair.second.size})", font = Fonts.NunitoBD, fontSize = 16, modifier = Modifier.padding(vertical = 10.dp))
                     }
                 }
-                items(pair.second) {
+                items(pair.second, key = { it.war.id }) {
                     WarCell(
                         modifier = Modifier.padding(vertical = 5.dp),
                         viewModel = hiltViewModel(

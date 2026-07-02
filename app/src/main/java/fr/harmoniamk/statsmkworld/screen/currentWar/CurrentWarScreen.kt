@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +41,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
+import kotlinx.coroutines.launch
 
 @Composable
 fun CurrentWarScreen(
@@ -51,7 +52,7 @@ fun CurrentWarScreen(
     onTrackDetails: (WarTrackDetails) -> Unit,
     onWarValidated: () -> Unit,
 ) {
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = {
         when (state.value.teamOpponent.orEmpty().size > 1) {
             true -> 2
@@ -61,19 +62,21 @@ fun CurrentWarScreen(
     val context = LocalContext.current
 
 
-    LaunchedEffect(Unit) {
-        viewModel.backToHome.collect {
-            onWarValidated()
+    LaunchedEffect(viewModel) {
+        launch {
+            viewModel.backToHome.collect {
+                onWarValidated()
+            }
         }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.onPage.collect {
-            pagerState.animateScrollToPage(it)
+        launch {
+            viewModel.onPage.collect {
+                pagerState.animateScrollToPage(it)
+            }
         }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.onToast.collect {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        launch {
+            viewModel.onToast.collect {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -142,7 +145,7 @@ fun CurrentWarScreen(
                              modifier = Modifier.padding(top = 10.dp)
                          )
                          LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                             items(it) {
+                             items(it, key = { it.track.id }) {
                                  val borderColor = when {
                                      state.value.teamOpponent.orEmpty().size > 1 -> Colors.transparent
                                      it.displayedDiff.contains("+") -> Colors.green

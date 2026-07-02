@@ -38,7 +38,7 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>, tr
     ) {
         Row(Modifier.padding(10.dp)) {
             LazyColumn(Modifier.weight(1f)) {
-                items(items = players.safeSubList(0, splitIndex)) {
+                items(items = players.safeSubList(0, splitIndex), key = { it.player?.id ?: it.hashCode() }) {
                     Row(
                         Modifier.padding(vertical = 1.5.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -75,7 +75,7 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>, tr
                 }
             }
             LazyColumn(Modifier.weight(1f)) {
-                items(players.safeSubList(splitIndex, players.size)) {
+                items(players.safeSubList(splitIndex, players.size), key = { it.player?.id ?: it.hashCode() }) {
                     Row(
                         Modifier.padding(vertical = 1.5.dp),
                         verticalAlignment = Alignment.CenterVertically

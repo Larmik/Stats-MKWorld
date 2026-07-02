@@ -20,7 +20,10 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +50,7 @@ fun EditTrackScreen(
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
     BackHandler { onBack() }
     LaunchedEffect(Unit) {
         viewModel.backToCurrent.collect {
@@ -114,7 +117,7 @@ fun EditTrackScreen(
                         when (state.value.mapList.isEmpty()) {
                             true -> CircularProgressIndicator()
                             else -> LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                                items(state.value.mapList) {
+                                items(state.value.mapList, key = { it.name }) {
                                     val backgroundColor = when (state.value.mapSelected?.contains(it)) {
                                         true -> Colors.whiteAlphaed
                                         else -> Colors.blackAlphaed
@@ -156,19 +159,22 @@ fun EditTrackScreen(
                                         true -> 80.dp
                                         else -> 120.dp
                                     }
+                                    val positionCount = when (state.value.is24p) {
+                                        true -> 24
+                                        else -> 12
+                                    }
+                                    val takenPositions by remember {
+                                        derivedStateOf { state.value.selectedPositions.map { it.position.position }.toSet() }
+                                    }
                                     LazyVerticalGrid(columns = GridCells.Adaptive(size)) {
-                                        items(when (state.value.is24p) {
-                                            true -> 24
-                                            else -> 12
-                                        }) {
+                                        items(positionCount, key = { it + 1 }) {
                                             PositionCell(
                                                 position = it + 1,
                                                 is24p = state.value.is24p,
                                                 modifier = Modifier
                                                     .size(size)
                                                     .padding(5.dp),
-                                                isVisible = !state.value.selectedPositions.map { it.position.position }
-                                                    .contains(it + 1),
+                                                isVisible = !takenPositions.contains(it + 1),
                                                 onClick = viewModel::onPositionClick
                                             )
                                         }

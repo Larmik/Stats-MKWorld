@@ -58,7 +58,7 @@ Versions centralisées dans `gradle/libs.versions.toml` (version catalog).
 
 | Domaine | Bibliothèques |
 |---|---|
-| UI Compose | BOM 2025.06.01, Material3, Navigation Compose 2.9, Accompanist Pager 0.28, Coil 2.1, Lottie 4.0, MPAndroidChart 3.1 |
+| UI Compose | BOM 2025.06.01, Material3, Navigation Compose 2.9, Accompanist Pager 0.28, Coil 2.1, Lottie 4.0, MPAndroidChart 3.1, `lifecycle-runtime-compose` (`collectAsStateWithLifecycle`) |
 | Vues XML | ViewBinding + DataBinding (uniquement pour le rendu PDF via `tab_pdf.xml` / `detailed_tab_pdf.xml`) |
 | DI | Hilt/Dagger 2.57, `hilt-navigation-compose`, `hilt-work` (compiler 1.3) |
 | Async | Coroutines + Flow (opt-in `@ExperimentalCoroutinesApi`, `@FlowPreview`) |
@@ -167,6 +167,13 @@ when {
 | `Team/Profile/{id}` | Profil équipe | `String` |
 
 `HomeScreen` contient son **propre** `NavHost` à 3 onglets (`BottomNavItem` : WELCOME, STATS, REGISTRY) avec `saveState`/`restoreState`.
+
+**Conventions de performance Compose** (à respecter pour tout nouvel écran/cellule) :
+
+- **Clés de liste** : chaque `items(...)` (colonne/grille) reçoit une clé métier stable — `key = { it.war.id }`, `{ it.id }` (joueurs/équipes), `it.name` pour l'enum `Maps`, la position pour les grilles de positions. Les listes non réordonnables (positions de saisie, lignes du tab) peuvent conserver l'index. Ne jamais utiliser une clé recalculée à chaque frame (ex. `UUID.randomUUID()`).
+- **Calculs hors composition** : tris, filtres et sommes coûteux sont enveloppés dans `remember(clés)` (ou remontés au ViewModel), pas exécutés en pleine composition. Les valeurs dérivées d'un état qui change plus souvent qu'elles utilisent `derivedStateOf` (ex. `Set` des positions sélectionnées).
+- **Cycle de vie** : la collecte d'un `StateFlow` d'écran se fait via `collectAsStateWithLifecycle()` (dépendance `androidx.lifecycle:lifecycle-runtime-compose`), pas `collectAsState()`, pour suspendre la collecte hors écran visible.
+- **Effets** : regrouper les collectes de plusieurs `SharedFlow` d'événements dans **un seul** `LaunchedEffect(viewModel)` avec un `launch { … }` par flux, plutôt que plusieurs `LaunchedEffect(Unit)`.
 
 ---
 
