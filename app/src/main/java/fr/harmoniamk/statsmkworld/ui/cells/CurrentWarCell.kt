@@ -27,8 +27,6 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
-import kotlin.collections.firstOrNull
-import kotlin.collections.orEmpty
 
 @Composable
 fun CurrentWarCell(modifier: Modifier = Modifier, viewModel: CurrentWarCellViewModel, onClick: () -> Unit) {

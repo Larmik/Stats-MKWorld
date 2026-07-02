@@ -117,7 +117,7 @@ class StatsViewModel @AssistedInject constructor(
 
             val teamId = (type as? StatsType.OpponentStats)?.teamId
                 ?: (type as? StatsType.MapStats)?.teamId
-                ?: (type as? StatsType.TeamStats)?.let { dataStoreRepository.mkcTeam.firstOrNull()?.id.toString() }
+                ?: (type as? StatsType.TeamStats)?.let { team?.id.toString() }
 
             val player = userId?.let { databaseRepository.getPlayer(it).firstOrNull() }
             val team = teamId?.let { databaseRepository.getTeam(it).firstOrNull() }

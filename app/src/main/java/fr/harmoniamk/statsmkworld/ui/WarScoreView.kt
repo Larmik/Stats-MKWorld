@@ -29,8 +29,6 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
-import kotlin.collections.orEmpty
-import kotlin.collections.sumOf
 
 sealed interface WarScoreStyle {
     data object Normal : WarScoreStyle

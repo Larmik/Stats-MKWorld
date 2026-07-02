@@ -25,18 +25,14 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
-import kotlin.collections.map
-import kotlin.collections.toTypedArray
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = PlayerProfileViewModel.Factory::class)
@@ -96,14 +92,12 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 _state.value.currentPlayer?.id.toString()
             )?.role == 2
 
-            val hasMultiRoster =
-                team?.rosters?.filter { it.game == "mkworld" }?.size?.let { it > 1 } ?: false
+            // Rosters "mkworld" de l'équipe, calculés une seule fois.
+            val mkWorldRosters = team?.rosters?.filter { it.game == "mkworld" }.orEmpty()
 
-            val players = team
-                ?.rosters
-                ?.filter { it.game == "mkworld" }
-                ?.flatMap { it.players }
-                .orEmpty()
+            val hasMultiRoster = mkWorldRosters.size > 1
+
+            val players = mkWorldRosters.flatMap { it.players }
 
             val canAlly = !players.map { it.playerId }.contains(id) && id != "me"
 
@@ -111,8 +105,8 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 ?.singleOrNull { it.id == id }
                 ?.rosterId == "-1"
 
-            val rolePlayer = team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }
-                ?.singleOrNull { player -> player.playerId == it.id.toString() }
+            val rolePlayer = players
+                .singleOrNull { player -> player.playerId == it.id.toString() }
 
             val roleValue = when {
                 fbUser?.role == 2 || rolePlayer?.leader == true || rolePlayer?.manager == true -> 2

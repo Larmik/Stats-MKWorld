@@ -29,8 +29,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.collections.mapNotNull
-import kotlin.collections.orEmpty
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel

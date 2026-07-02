@@ -45,7 +45,6 @@
     <string name="roster">Roster</string>
     <string name="actions">Actions</string>
     <string name="penalty_placeholder">pour %1$s</string>
-    <string name="intermission_placeholder">Intermission votée par %1$s</string>
     <string name="current_race">Course %1$s/12</string>
     <string name="remaining_courses">Courses restantes: %1$s</string>
     <string name="war_en_cours">War en cours</string>
@@ -102,7 +101,6 @@
     <string name="details_war">Details war</string>
     <string name="courses_jouees">Courses jouées :</string>
     <string name="accueil">Accueil</string>
-    <string name="show_team_btn">Voir l\'équipe</string>
     <string name="nouvelle_war">Nouvelle war</string>
     <string name="last_results">Derniers résultats :</string>
     <string name="welcome_text">Ton équipe n\'a pas encore enregistré de résultats sur cette application. Pour créer une nouvelle war, tu peux cliquer sur le bouton ci-dessous si tu as le rôle approprié. \n \n Si tu ne peux pas saisir de résultats, rapproche-toi d\'un leader de ton équipe pour qu\'il t\'accorde le bon rôle.</string>
@@ -127,9 +125,7 @@
     <string name="fetch_opponents">Récupération des adversaires…</string>
     <string name="fetch_Wars">Récupération des wars…</string>
     <string name="logout_confirm">Es-tu sûr(e) de vouloir te déconnecter ?</string>
-    <string name="data_updated">Les données de l\'application ont été mises à jour</string>
     <string name="maps_won">Maps gagnées : %1$s/12</string>
-    <string name="penalty">Pénalité</string>
     <string name="cancel_confirm">En annulant la war, tu perdras toute la progression ainsi que les statistiques générées par celle-ci.     Es-tu sûr(e) de vouloir effacer la partie ?</string>
     <string name="basculer_en_tant_que_membre">Basculer en tant que membre</string>
     <string name="basculer_en_tant_qu_admin">Basculer en tant qu\'admin</string>
