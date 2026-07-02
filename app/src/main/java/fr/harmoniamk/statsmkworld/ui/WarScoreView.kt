@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +29,7 @@ import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
+import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 
 sealed interface WarScoreStyle {
@@ -68,13 +70,65 @@ fun WarScoreView(
     }
 
     val is24p = teamOpponent.orEmpty().size > 1
+    val totalShocks = remember(details) {
+        details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } }
+    }
+    val penaltyTotals = remember(details) {
+        details?.war?.penalties.orEmpty()
+            .groupBy { it.teamId }
+            .mapValues { entry -> entry.value.sumOf { it.amount } }
+    }
+    val sortedWarScores = remember(details) {
+        details?.war?.scores?.sortedByDescending { it.score }
+    }
     when (is24p) {
-        true -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        true -> WarScore24pView(
+            teamHost = teamHost,
+            teamOpponent = teamOpponent,
+            details = details,
+            rosterId = rosterId,
+            is24p = is24p,
+            totalShocks = totalShocks,
+            penaltyTotals = penaltyTotals
+        )
+
+        else -> WarScore12pView(
+            modifier = modifier,
+            teamHost = teamHost,
+            teamOpponent = teamOpponent,
+            details = details,
+            rosterName = rosterName,
+            teamNameSize = teamNameSize,
+            logoSize = logoSize,
+            scoreSize = scoreSize,
+            diffSize = diffSize,
+            totalShocks = totalShocks,
+            penaltyTotals = penaltyTotals,
+            sortedWarScores = sortedWarScores
+        )
+    }
+
+}
+
+@Composable
+private fun WarScore24pView(
+    teamHost: TeamEntity?,
+    teamOpponent: List<TeamEntity>?,
+    details: WarDetails?,
+    rosterId: String?,
+    is24p: Boolean,
+    totalShocks: Int,
+    penaltyTotals: Map<String, Int>
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                when (val scores = details?.scores?.filter { it.score > 0 }?.takeIf { it.size == 4 }?.sortedByDescending { it.score }) {
+                val sortedScores = remember(details) {
+                    details?.scores?.filter { it.score > 0 }?.takeIf { it.size == 4 }?.sortedByDescending { it.score }
+                }
+                when (val scores = sortedScores) {
                     null -> {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -163,7 +217,7 @@ fun WarScoreView(
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Spacer(Modifier.weight(1f))
-                            details.diffs.forEach {
+                            details?.diffs.orEmpty().forEach {
                                 MKText(
                                     modifier = Modifier.weight(3f),
                                     text = it,
@@ -185,7 +239,7 @@ fun WarScoreView(
                     font = Fonts.NunitoBD
                 )
             }
-            details?.warTracks.orEmpty().sumOf { it.track.shocks.orEmpty().sumOf { it.count } }
+            totalShocks
                 .takeIf { it > 0 }?.let {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -224,8 +278,7 @@ fun WarScoreView(
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             details?.war?.teamHost?.let { teamId ->
-                                val total = penalty.filter { it.teamId == teamId }
-                                    .sumOf { it.amount }
+                                val total = penaltyTotals[teamId] ?: 0
                                 if (total > 0)
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -258,8 +311,7 @@ fun WarScoreView(
                             }
                             details?.war?.teamOpponent
                                 ?.forEach { teamId ->
-                                    val total = penalty.filter { it.teamId == teamId }
-                                        .sumOf { it.amount }
+                                    val total = penaltyTotals[teamId] ?: 0
                                     if (total > 0)
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
@@ -295,10 +347,25 @@ fun WarScoreView(
                 }
             }
 
-        }
+    }
+}
 
-
-        else -> Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+@Composable
+private fun WarScore12pView(
+    modifier: Modifier,
+    teamHost: TeamEntity?,
+    teamOpponent: List<TeamEntity>?,
+    details: WarDetails?,
+    rosterName: String?,
+    teamNameSize: Int,
+    logoSize: Dp,
+    scoreSize: Int,
+    diffSize: Int,
+    totalShocks: Int,
+    penaltyTotals: Map<String, Int>,
+    sortedWarScores: List<WarScore>?
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(
                     modifier = Modifier.weight(1f),
@@ -339,8 +406,7 @@ fun WarScoreView(
                         fontSize = diffSize,
                         font = Fonts.NunitoBD
                     )
-                    details?.warTracks.orEmpty()
-                        .sumOf { it.track.shocks.orEmpty().sumOf { it.count } }.takeIf { it > 0 }
+                    totalShocks.takeIf { it > 0 }
                         ?.let {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -408,10 +474,9 @@ fun WarScoreView(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            details?.war?.scores?.sortedByDescending { it.score }
+                            sortedWarScores
                                 ?.forEach { score ->
-                                    val total = penalty.filter { it.teamId == score.teamId }
-                                        .sumOf { it.amount }
+                                    val total = penaltyTotals[score.teamId] ?: 0
                                     if (total > 0)
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
@@ -448,7 +513,5 @@ fun WarScoreView(
             }
 
 
-        }
     }
-
 }

@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,7 +52,7 @@ fun AddWarScreen(
     onBack: () -> Unit,
     onCurrentWar: () -> Unit
 ) {
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
     val searchTeam = remember { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
@@ -107,7 +107,7 @@ fun AddWarScreen(
                         backgroundColor = Colors.blackAlphaed
                     )
                     LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                        items(state.value.teamList) {
+                        items(state.value.teamList, key = { it.id }) {
                             TeamCell(modifier = Modifier.padding(5.dp), team = it, onClick = {
                                 viewModel.onTeamSelected(it)
                             })

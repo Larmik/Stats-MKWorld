@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,7 +39,7 @@ fun RegistryScreen(
     val playerSearch = remember { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
     BaseScreen(title = stringResource(R.string.registre)) {
 
         MKSegmentedSelector(
@@ -75,7 +75,7 @@ fun RegistryScreen(
                         )
 
                         LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                            items(state.value.playerList) {
+                            items(state.value.playerList, key = { it.id }) {
                                 PlayerCell(
                                     player = PlayerEntity(it, isAlly = false),
                                     onClick = { onPlayerProfile(it.id) })
@@ -95,7 +95,7 @@ fun RegistryScreen(
                             }
                         )
                         LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                            items(state.value.teamList) {
+                            items(state.value.teamList, key = { it.id }) {
                                 TeamCell(team = it, onClick = { onTeamProfile(it.id) })
                             }
                         }

@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,11 +34,12 @@ import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
+import kotlinx.coroutines.launch
 
 @Composable
 fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
-    val rows = viewModel.rows.collectAsState()
+    val rows = viewModel.rows.collectAsStateWithLifecycle()
     val valuesListName = remember {
         mutableStateListOf(
             "", "", "", "", "", "", "", "", ""
@@ -51,19 +52,21 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
     }
 
     BackHandler { onBack() }
-    LaunchedEffect(Unit) {
-        viewModel.toast.collect {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-        }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.uri.collect {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/jpeg"
-                putExtra(Intent.EXTRA_STREAM, it)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    LaunchedEffect(viewModel) {
+        launch {
+            viewModel.toast.collect {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             }
-            context.startActivity(Intent.createChooser(shareIntent, "Partager l'image"))
+        }
+        launch {
+            viewModel.uri.collect {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/jpeg"
+                    putExtra(Intent.EXTRA_STREAM, it)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(shareIntent, "Partager l'image"))
+            }
         }
     }
 
@@ -99,7 +102,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
-            items(rows.value) { index ->
+            items(rows.value, key = { it }) { index ->
                 Row {
                     Box(Modifier.weight(2f)) {
                         MKTextField(

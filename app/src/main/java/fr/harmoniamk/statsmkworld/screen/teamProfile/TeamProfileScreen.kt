@@ -25,7 +25,7 @@ import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -63,7 +63,7 @@ fun TeamProfileScreen(
     val pagerState = rememberPagerState(pageCount = { 3 })
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
     val playerSearch = remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
@@ -87,7 +87,7 @@ fun TeamProfileScreen(
                     }
                 )
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(state.value.playerList) { player ->
+                    items(state.value.playerList, key = { it.id }) { player ->
                         PlayerCell(
                             player = PlayerEntity(player, isAlly = false),
                             onClick = { viewModel.addAlly(player) }
@@ -143,7 +143,7 @@ fun TeamProfileScreen(
                         resizable = false
                     )
                     Spacer(Modifier.height(10.dp))
-                    val rosters = team.rosters.filter { it.game == "mkworld" }
+                    val rosters = remember(team) { team.rosters.filter { it.game == "mkworld" } }
                     if (viewModel.id == "me")
                         MKSelectorViewPager(pagerState, listOf("Membres", "Allies")) {
                             when (pagerState.currentPage) {

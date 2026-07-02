@@ -12,7 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -36,7 +36,7 @@ fun WarDetailsScreen(
     onTrackClick: (WarTrackDetails) -> Unit,
     onTab: (WarDetails) -> Unit
 ) {
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
 
     BackHandler { onBack() }
     BaseScreen(title = stringResource(R.string.details_war)) {
@@ -65,7 +65,7 @@ fun WarDetailsScreen(
                     modifier = Modifier.padding(top = 10.dp)
                 )
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(it) {
+                    items(it, key = { it.track.id }) {
                         val borderColor = when {
                             state.value.teamOpponent.orEmpty().size > 1 -> Colors.transparent
                             it.displayedDiff.contains("+") -> Colors.green

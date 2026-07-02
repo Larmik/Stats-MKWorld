@@ -35,9 +35,34 @@
 -dontwarn com.crashlytics.**
 -keepattributes SourceFile,LineNumberTable,*Annotation*
 -keepattributes InnerClasses
--keepclassmembers class fr.harmoniamk.statsmkworld.model.firebase.* { *; }
--keepclassmembers class fr.harmoniamk.statsmkworld.model.network.* { *; }
--keepclassmembers class fr.harmoniamk.statsmkworld.model.local.* { *; }
+# Modèles Firebase RTDB : écrits via `setValue(obj)` (réflexion sur getters/champs)
+# ET (dé)sérialisés par les converters Room via KotlinJsonAdapterFactory (Moshi
+# réflexif). On garde classe + membres avec `.**` (double étoile) pour rester
+# robuste si un sous-package est ajouté — même piège que model.network jadis en `.*`.
+-keep class fr.harmoniamk.statsmkworld.model.firebase.** { *; }
+-keep class fr.harmoniamk.statsmkworld.model.local.** { *; }
+
+# --- DTO réseau (Moshi) ---
+# ATTENTION : `.*` ne couvre PAS les sous-packages ; les DTO MKCentral/Discord
+# sont dans model.network.mkcentral / .discord -> il faut `.**`.
+# On garde la classe ET ses membres (pas seulement les membres) pour éviter
+# tout renommage/strip des champs désérialisés par réflexion.
+-keep class fr.harmoniamk.statsmkworld.model.network.** { *; }
+# Adapters Moshi générés par codegen (résolus par réflexion via le nom
+# <Fqcn>JsonAdapter) : sans cette règle R8 peut les renommer/supprimer,
+# ce qui casse la désérialisation UNIQUEMENT en release (crash à la
+# recherche de joueurs MKCentral, réponse MKCPlayerResponse).
+-keep class fr.harmoniamk.statsmkworld.model.network.**JsonAdapter { *; }
+-keep class **JsonAdapter {
+    <init>(...);
+    <fields>;
+}
+# Constructeurs et métadonnées Kotlin nécessaires à Moshi (codegen + reflection).
+-keep,allowobfuscation @interface com.squareup.moshi.JsonQualifier
+-keepclassmembers @com.squareup.moshi.JsonClass class * {
+    <init>(...);
+    <fields>;
+}
 -keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 -keep class androidx.datastore.*.** {*;}
 

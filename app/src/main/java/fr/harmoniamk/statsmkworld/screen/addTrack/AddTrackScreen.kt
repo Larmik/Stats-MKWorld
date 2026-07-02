@@ -16,7 +16,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,29 +48,31 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
     val search = remember { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { 4 })
     val scope = rememberCoroutineScope()
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.onBack.collect {
-            when (pagerState.currentPage) {
-                0 -> onBack()
-                1 -> scope.launch { pagerState.animateScrollToPage(0) }
-                2 -> scope.launch { pagerState.animateScrollToPage(when (viewModel.is24p) {
-                    true -> 1
-                    else -> 0
-                }) }
-                3 -> scope.launch { pagerState.animateScrollToPage(2) }
+    LaunchedEffect(viewModel) {
+        launch {
+            viewModel.onBack.collect {
+                when (pagerState.currentPage) {
+                    0 -> onBack()
+                    1 -> scope.launch { pagerState.animateScrollToPage(0) }
+                    2 -> scope.launch { pagerState.animateScrollToPage(when (viewModel.is24p) {
+                        true -> 1
+                        else -> 0
+                    }) }
+                    3 -> scope.launch { pagerState.animateScrollToPage(2) }
+                }
             }
         }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.onNext.collect {
-           scope.launch { pagerState.animateScrollToPage(it) }
+        launch {
+            viewModel.onNext.collect {
+                scope.launch { pagerState.animateScrollToPage(it) }
+            }
         }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.backToWar.collect {
-           onBack()
+        launch {
+            viewModel.backToWar.collect {
+                onBack()
+            }
         }
     }
 
@@ -93,7 +97,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                     backgroundColor = Colors.blackAlphaed
                 )
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(state.value.mapList) { map ->
+                    items(state.value.mapList, key = { it.name }) { map ->
                         MapCell(Modifier.padding(5.dp), map = listOf(map), onClick = {
                             viewModel.onMapSelected(map)
                             scope.launch { pagerState.animateScrollToPage(1) }
@@ -102,14 +106,14 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                 }
             }
             1 -> BaseScreen(title = stringResource(R.string.pick_circuit)) {
+                val mapList = remember(state.value.mapSelected) { listOfNotNull(state.value.mapSelected) }
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    val mapList = listOfNotNull(state.value.mapSelected)
-                    items(mapList) { map ->
+                    items(mapList, key = { it.name }) { map ->
                         MapCell(Modifier.padding(5.dp), map = listOf(map), onClick = {
                             viewModel.onIntermissionSelected(map)
                         })
                     }
-                    items(state.value.intermissionList.orEmpty()) { intermission ->
+                    items(state.value.intermissionList.orEmpty(), key = { it.name }) { intermission ->
                         MapCell(Modifier.padding(5.dp), map = listOf(intermission) + mapList, onClick = {
                             viewModel.onIntermissionSelected(intermission)
                         })
@@ -120,8 +124,10 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
             2 -> BaseScreen(title = stringResource(R.string.pick_position), subtitle = stringResource(
                 R.string.current_race, state.value.trackOrder.toString()
             )) {
+                val maps = remember(state.value.intermissionSelected, state.value.mapSelected) {
+                    listOfNotNull(state.value.intermissionSelected, state.value.mapSelected)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val maps = listOfNotNull(state.value.intermissionSelected, state.value.mapSelected)
                     maps.takeIf { it.isNotEmpty() }?.let {
                         MapCell(map = maps, onClick =  { })
                     }
@@ -131,6 +137,9 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                         MKText(text = it.name, fontSize = 24, font = Fonts.NunitoBD, modifier = Modifier.padding(bottom = 10.dp))
                     }
 
+                    val takenPositions by remember {
+                        derivedStateOf { state.value.selectedPositions.map { it.position.position }.toSet() }
+                    }
                     state.value.totalPositions?.let { total ->
                         val size = when (total) {
                             12 -> 120.dp
@@ -143,7 +152,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                                     is24p = total == 24,
                                     modifier = Modifier
                                         .size(size)
-                                        .padding(5.dp), isVisible = !state.value.selectedPositions.map { it.position.position }.contains(it+1), onClick = viewModel::onPositionClick)
+                                        .padding(5.dp), isVisible = !takenPositions.contains(it+1), onClick = viewModel::onPositionClick)
                             }
                         }
                     }
@@ -151,7 +160,9 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
 
             }
             3 -> BaseScreen(title = stringResource(R.string.resume), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                val maps = listOfNotNull(state.value.intermissionSelected, state.value.mapSelected)
+                val maps = remember(state.value.intermissionSelected, state.value.mapSelected) {
+                    listOfNotNull(state.value.intermissionSelected, state.value.mapSelected)
+                }
                 maps.takeIf { it.isNotEmpty() }?.let {
                     MapCell(map = it, backgroundColor = Colors.transparent, textColor = Colors.black, borderColor = Colors.transparent, onClick = { })
                 }
@@ -169,7 +180,9 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                         }
                         24 -> {
                             Row {
-                                val score = state.value.scores.orEmpty().firstOrNull { it.teamId == state.value.rosterId }?.score ?: 0
+                                val score = remember(state.value.scores, state.value.rosterId) {
+                                    state.value.scores.orEmpty().firstOrNull { it.teamId == state.value.rosterId }?.score ?: 0
+                                }
                                 MKText(text = score.toString(), fontSize = 32)
                                 MKText(text = "  ->  ", fontSize = 32, font = Fonts.NunitoBD)
                                 MKText(text = "${score + (state.value.teamHostTrackScore ?: 0)}", fontSize = 32, font = Fonts.NunitoBD)

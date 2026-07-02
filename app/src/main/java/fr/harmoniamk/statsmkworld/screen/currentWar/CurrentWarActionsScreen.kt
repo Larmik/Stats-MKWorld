@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +42,7 @@ import fr.harmoniamk.statsmkworld.ui.MKSelectorViewPager
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.VerticalGrid
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
+import kotlinx.coroutines.launch
 
 @Composable
 fun CurrentWarActionsScreen(
@@ -50,17 +51,19 @@ fun CurrentWarActionsScreen(
     onBackToWelcome: () -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.backToWelcome.collect {
-            onBackToWelcome()
+    LaunchedEffect(viewModel) {
+        launch {
+            viewModel.backToWelcome.collect {
+                onBackToWelcome()
+            }
         }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.onBack.collect {
-            onBack()
+        launch {
+            viewModel.onBack.collect {
+                onBack()
+            }
         }
     }
 

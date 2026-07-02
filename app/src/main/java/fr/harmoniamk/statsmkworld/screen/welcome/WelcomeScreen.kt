@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,7 +52,7 @@ fun WelcomeScreen(
     onWarDetailsClick: (WarDetails) -> Unit,
     onWarListClick: () -> Unit
 ) {
-    val state = viewModel.state.collectAsState()
+    val state = viewModel.state.collectAsStateWithLifecycle()
     BaseScreen(title = stringResource(R.string.accueil), modifier = Modifier.padding(bottom = 90.dp)) {
 
         when (state.value.playerName.isNullOrEmpty()) {
@@ -123,7 +123,7 @@ fun WelcomeScreen(
                     else -> {
                         MKText(text = stringResource(R.string.last_results), fontSize = 16, font = Fonts.NunitoBD, modifier = Modifier.padding(top = 10.dp, bottom = 5.dp))
                         LazyColumn(Modifier.weight(1f)) {
-                            items(state.value.wars) {
+                            items(state.value.wars, key = { it.war.id }) {
                                 WarCell(
                                     modifier = Modifier.padding(vertical = 5.dp),
                                     viewModel = hiltViewModel(
