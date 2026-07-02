@@ -181,16 +181,64 @@ Un même domaine est représenté **trois fois** ; les conversions se font par c
 | **Room** | `database/entities/` | Cache local des historiques | colonnes + TypeConverters Moshi |
 | **Réseau** | `model/network/` | DTO MKCentral & Discord | Moshi (`@Json`) |
 
-Chaîne de conversion d'une war :
+### Carte simplifiée des modèles
 
 ```
-MKCentral/Firebase (JSON) ──parse──► War (firebase)
-War ──constructor──► WarEntity (Room, via TypeConverters)
-War ──constructor──► DatastoreWar ──.proto──► WarProto (Protobuf .pb)   // war en cours uniquement
-War ──wrap──► WarDetails (présentation, scores calculés)
+NETWORK (DTO Moshi)            LOCAL / app                  FIREBASE (RTDB · vérité)
+model/network/                 model/local/                 model/firebase/
+
+[MKCentral]
+  MKCTeam ───────────┐
+   └ MKCTeamRoster   ├── conv ──► TeamEntity (Room)
+      └ MKCTeamPlayer┘
+  MKCPlayer ───────────── conv ──► PlayerEntity (Room) ── conv ──► User
+   ├ MKCPlayerRoster                                                ▲
+   ├ MKCDiscordInfo              MKCPlayer ───────── conv ──────────┘
+   ├ MKCFriendCode
+   └ MKCUserSettings
+  (chaque MKC* porte son propre .proto ; pas de classe Datastore* intermédiaire)
+
+[Discord / OAuth]  DiscordUser · TokenResponse        (aucun miroir local)
+
+[War — cœur]
+  War ◄──── conv ────► DatastoreWar ◄──── .proto ────► WarProto (.pb)   ← war « en cours »
+   ├ WarTrack             (miroir DataStore)
+   │  ├ WarPosition
+   │  └ Shock          War ── wrap ──► WarDetails ──► WarStats ──► Stats
+   ├ WarScore                          (présentation / calcul — jamais persisté)
+   └ WarPenalty        War ── conv ──► WarEntity (Room · historique)
 ```
 
-Les modèles firebase (`War`, `WarTrack`, `WarPosition`, `WarPenalty`, `WarScore`, `Shock`) sont `@Parcelize`/`Serializable` et possèdent chacun un `constructor(datastore…)`. Les `Datastore*` possèdent un `constructor(firebase…)`, un `constructor(proto…)` et un getter `proto`.
+### Chaînes de conversion
+
+- **War** : `Firebase JSON ──parse──► War` ↔ `DatastoreWar` ↔ `WarProto` (war en cours uniquement) ; `War ──► WarEntity` (Room, via TypeConverters) ; `War ──wrap──► WarDetails` (scores calculés).
+- **Joueur** : `MKCPlayer`/`MKCTeamPlayer ──► PlayerEntity` (Room) ; `MKCPlayer`/`PlayerEntity ──► User` (Firebase).
+- **Équipe** : `MKCTeam`/`MKCTeamRoster ──► TeamEntity` (Room).
+
+Les modèles firebase (`War`, `WarTrack`, `WarPosition`, `WarPenalty`, `WarScore`, `Shock`) sont `@Parcelize`/`Serializable` et possèdent chacun un `constructor(datastore…)`. Les `Datastore*` possèdent un `constructor(firebase…)`, un `constructor(proto…)` et un getter `proto`. À noter : `DatastoreWar` **réutilise directement** les types firebase `WarTrack`/`WarScore`/`WarPenalty` dans ses champs (seuls `DatastoreWarTrack`/`DatastoreWarPosition` sont des classes distinctes). Les DTO `MKCPlayer`/`MKCTeam` portent quant à eux leur sérialisation Protobuf **en interne** (getter `proto` + `constructor(proto…)`, via les `serializers/`), sans classe `Datastore*` dédiée.
+
+### Identité MKCentral : équipe, roster, joueur
+
+Distinction structurante (source de confusion fréquente) :
+
+| Modèle | Identifiant | Représente |
+|---|---|---|
+| `MKCTeam` | `id` = **teamId** | L'**équipe entière**, qui peut regrouper plusieurs rosters |
+| `MKCTeamRoster` | `id` = **rosterId**, `teamId` → `MKCTeam.id` | Un **roster** d'une équipe (vue « équipe »), filtrable par `game`/`mode` |
+| `MKCPlayerRoster` | `rosterID`, `teamID` | Le même roster vu **côté joueur** (proto `MKCRosterProto`) |
+| `MKCTeamPlayer` | `playerId` | Un joueur listé dans un roster |
+
+- Un roster MK World se filtre par `game == "mkworld"` (filtre répété, cf. audit D28).
+- Dans l'app, **les joueurs sont rattachés à leur `teamId`** (consultation de tous les rosters), mais **les wars devraient l'être au `rosterId`** pour différencier les rosters d'une équipe en multi-roster.
+- ⚠️ **Limite actuelle** : à la création d'une war, l'hôte est enregistré via son `rosterId` (`PlayerEntity.rosterId` mkworld) tandis que l'adversaire l'est via son `teamId` (`TeamEntity.id`) — les rosters d'un même adversaire ne sont donc pas distinguables dans les statistiques. Voir [AUDIT.md §2 B11](AUDIT.md#2-bugs--correctness).
+
+### ⚠️ Homonyme `WarScore`
+
+Deux classes distinctes portent le nom `WarScore` :
+- `model/firebase/WarScore(teamId, score)` — score d'une équipe en mode 24p (source de vérité) ;
+- `model/local/Stats.kt → WarScore(war: WarDetails, score: Int)` — score associé à une war pour les **classements** (présentation).
+
+Elles ne sont **pas** interchangeables : vérifier l'`import` lors de toute manipulation de scores (cf. [AUDIT.md §7 G5](AUDIT.md#7-dette-technique--constantes-magiques)).
 
 ---
 
@@ -444,6 +492,7 @@ Accès RTDB. **Toutes les méthodes sont `suspend` sauf `listenToCurrentWar`** (
 | `getUsers(teamId)` | `users/{teamId}` | `.get()` (suspend) |
 | `getUser(teamId, id)` | `users/{teamId}/{id}` | `.get()` |
 | `writeUser` / `deleteUser` | `users/{teamId}/{id}` | `setValue` / `removeValue` |
+| `updateUserCurrentWar` | `users/{teamId}/{id}` | `updateChildren({currentWar})` (fallback `setValue` si absent) |
 | `getWars(teamId)` | `wars/{teamId}` | `.get()` |
 | `writeWar(war)` | `wars/{rosterId}/{war.id}` | `setValue` (rosterId via `mkcPlayer`) |
 | `getCurrentWar(teamId)` | `currentWars/{teamId}` | `.get()` |
@@ -452,8 +501,11 @@ Accès RTDB. **Toutes les méthodes sont `suspend` sauf `listenToCurrentWar`** (
 | `deleteCurrentWar(teamId)` | `currentWars/{teamId}` | `removeValue` |
 | `getAllies(teamId)` | `newAllies/{teamId}` | `.get()` |
 | `writeAlly` / `deleteAlly` | `newAllies/{teamId}/{id}` | `setValue` / `removeValue` |
+| `updateAllyCurrentWar` | `newAllies/{teamId}/{id}` | `updateChildren({currentWar})` (fallback `setValue` si absent) |
 | `log(message, type)` | `debug/{dd-MM-yyyy}/{type}/{Date().time}` | `setValue` |
 | `writeTags(tags)` | `tags` | `setValue` |
+
+`updateUserCurrentWar` / `updateAllyCurrentWar` (audit B10) servent au **cycle de vie d'une war** (création, validation, annulation, remplacement de joueur) : elles ne touchent **que** le champ `currentWar` via `updateChildren`, laissant `role` / `name` / `discordId` intacts. C'est volontaire — un `setValue(user)` complet réécrivait tout l'objet et écrasait le `role` d'un membre à `0` dès que la `PlayerEntity` locale était périmée. Si le nœud n'existe pas encore (membre jamais synchronisé), elles retombent sur un `setValue` complet pour ne pas créer de nœud partiel.
 
 Les lectures désérialisent le `DataSnapshot.value` (Map) via les helpers privés `Map.toUser()` / `Map.toWar()` (eux-mêmes basés sur `extension/ListExtension.kt` : `toMapList()`, `parseTracks()`, `parsePenalties()`, `parseScores()`). `getWars` renvoie `emptyList` si le nœud est absent (cas normal ⇒ `fetchWars` vide alors le cache local).
 

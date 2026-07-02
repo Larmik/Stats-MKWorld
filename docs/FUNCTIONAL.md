@@ -42,7 +42,8 @@ Prérequis utilisateur :
 | **Position → points** | Chaque place d'arrivée rapporte des points (1ʳᵉ = 15 pts). |
 | **Pénalité** | Retrait de points (−10, −15, −20) imputé à une équipe. |
 | **Shock** | L'objet **éclair** récupéré en jeu, stratégiquement décisif. Compté par joueur sur une course pour produire des statistiques dédiées (n'affecte pas le calcul du score). |
-| **Roster** | Composition inscrite sur MKCentral (une équipe peut en avoir plusieurs). |
+| **Équipe** | Entité MKCentral complète (identifiant `teamId`), pouvant regrouper plusieurs rosters. Les joueurs y sont rattachés. |
+| **Roster** | Composition inscrite sur MKCentral (identifiant `rosterId`) ; une équipe peut en avoir plusieurs. C'est à ce niveau que se rattachent les wars. |
 | **Allié** | Joueur de renfort hors roster officiel (rosterId interne `-1`), pouvant participer aux wars. |
 | **Multi-roster** | Option : calculer les stats sur tous les rosters de l'équipe ou seulement le sien. |
 | **Mode matrix** | Mode debug permettant de simuler les données d'un autre joueur. |
@@ -64,6 +65,8 @@ Le rôle est un entier stocké par joueur :
 | **2** | Leader / Manager | Tout : créer des wars, gérer rosters & alliés, changer les rôles des membres |
 | **1** | Admin | Créer/gérer des wars, basculer le rôle d'un membre |
 | **0** | Membre | Consulter, participer aux wars (pas de création) |
+
+Le rôle ne dépend que de la gestion explicite des rôles (et du statut leader/manager détecté dans le roster MKCentral) : **le cycle de vie d'une war — création, validation, annulation, remplacement de joueur — ne le modifie jamais** (cf. audit B10). Un **allié** (joueur hors équipe) a toujours le rôle `0` : ne faisant pas partie de l'équipe, il ne peut pas la modérer.
 
 Gating concret :
 - Le bouton **« Nouvelle war »** n'apparaît que si `role > 0` **ou** le mode matrix est actif (et qu'aucune war n'est en cours).

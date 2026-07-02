@@ -1,11 +1,11 @@
 package fr.harmoniamk.statsmkworld.repository
 
 import com.google.android.gms.tasks.Task
+import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
-import com.google.firebase.Firebase
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Date
@@ -40,6 +39,7 @@ interface FirebaseRepositoryInterface {
     suspend fun getUsers(teamId: String): List<User>
     suspend fun getUser(teamId: String, id: String): User?
     suspend fun writeUser(teamId: String, user: User)
+    suspend fun updateUserCurrentWar(teamId: String, user: User)
     suspend fun deleteUser(teamId: String, id: String)
 
     suspend fun getWars(teamId: String): List<War>
@@ -52,6 +52,7 @@ interface FirebaseRepositoryInterface {
 
     suspend fun getAllies(teamId: String): List<User>
     suspend fun writeAlly(teamId: String, user: User)
+    suspend fun updateAllyCurrentWar(teamId: String, user: User)
     suspend fun deleteAlly(teamId: String, ally: String)
 
     suspend fun log(message: String, type: String)
@@ -130,6 +131,14 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         database.child("users").child(teamId).child(user.id).setValue(user)
     }
 
+  override suspend fun updateUserCurrentWar(teamId: String, user: User) = withContext(Dispatchers.IO) {
+        val ref = database.child("users").child(teamId).child(user.id)
+        if (ref.get().awaitSnapshot()?.value != null)
+            ref.updateChildren(mapOf("currentWar" to user.currentWar))
+        else ref.setValue(user)
+        Unit
+    }
+
     override suspend fun deleteUser(teamId: String, id: String) {
         database.child("users").child(teamId).child(id).removeValue()
     }
@@ -148,6 +157,14 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
 
     override suspend fun writeAlly(teamId: String, user: User) {
         database.child("newAllies").child(teamId).child(user.id).setValue(user)
+    }
+
+    override suspend fun updateAllyCurrentWar(teamId: String, user: User) = withContext(Dispatchers.IO) {
+        val ref = database.child("newAllies").child(teamId).child(user.id)
+        if (ref.get().awaitSnapshot()?.value != null)
+            ref.updateChildren(mapOf("currentWar" to user.currentWar))
+        else ref.setValue(user)
+        Unit
     }
 
     override suspend fun deleteAlly(teamId: String, ally: String) {

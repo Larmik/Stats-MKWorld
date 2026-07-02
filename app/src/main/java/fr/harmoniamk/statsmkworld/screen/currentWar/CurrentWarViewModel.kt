@@ -158,7 +158,7 @@ class CurrentWarViewModel @Inject constructor(
             players?.filter { it.currentWar == war.id.toString() }?.forEach {
                 databaseRepository.updateUser(it.id, "")
                 when (it.rosterId) {
-                    "-1" -> firebaseRepository.writeAlly(
+                    "-1" -> firebaseRepository.updateAllyCurrentWar(
                         teamId = team?.id.toString(),
                         user = User(
                             id = it.id,
@@ -168,7 +168,7 @@ class CurrentWarViewModel @Inject constructor(
                             discordId = it.discordId
                         )
                     )
-                    else -> firebaseRepository.writeUser(
+                    else -> firebaseRepository.updateUserCurrentWar(
                         teamId = team?.id.toString(),
                         user = User(
                             id = it.id,
