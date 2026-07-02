@@ -1,6 +1,5 @@
 package fr.harmoniamk.statsmkworld.screen.teamProfile
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,7 +20,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,6 +42,7 @@ import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSelectorViewPager
@@ -67,21 +66,15 @@ fun TeamProfileScreen(
     val state = viewModel.state.collectAsState()
     val playerSearch = remember { mutableStateOf("") }
 
-    BackHandler {
-        when (bottomSheetState.isVisible) {
-            true -> scope.launch { bottomSheetState.hide() }
-            else -> onBack()
-        }
-    }
-
     LaunchedEffect(Unit) {
         viewModel.onDismiss.collect {
             bottomSheetState.hide()
         }
     }
 
-    ModalBottomSheetLayout(
+    MKBottomSheet(
         sheetState = bottomSheetState,
+        onBack = onBack,
         sheetContent = {
             BaseScreen(title = "Ajouter un ally") {
                 MKTextField(
