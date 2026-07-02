@@ -1,5 +1,5 @@
 ---
-name: trello-ticket
+name: create-ticket
 description: Génère un ticket prêt à coller sur Trello à partir d'une description de bug ou de feature. Le ticket contient toujours trois sections — Contexte, Description, et Solutions proposées — avec une mise en page Markdown lisible. À utiliser quand on veut transformer une idée de bug/feature en ticket structuré pour le board Trello du projet.
 arguments: [description-bug-ou-feature]
 disable-model-invocation: true

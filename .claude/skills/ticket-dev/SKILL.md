@@ -1,5 +1,5 @@
 ---
-name: ticket
+name: ticket-dev
 description: Prend un ticket (texte collé ou URL Trello), crée une branche nommée d'après le titre, délègue les modifications de code à l'agent ticket-worker en respectant les rules du projet, itère sur les retours sans commiter, puis — sur validation explicite — commit / push / crée la PR vers master. À utiliser quand on veut traiter un ticket de bout en bout.
 arguments: [ticket-ou-url-trello]
 disable-model-invocation: true
@@ -22,7 +22,7 @@ pas explicitement validé** (étape 5). Ne devine jamais cette validation.
 
 Le ticket peut arriver sous deux formes :
 
-- **Texte brut collé** (souvent au format `trello-ticket` : titre préfixé
+- **Texte brut collé** (souvent au format `create-ticket` : titre préfixé
   `[BUG]`/`[FEATURE]`, sections Contexte / Description / Solutions proposées) →
   utilise-le tel quel.
 - **URL Trello** → tente un `WebFetch` de l'URL. Si la carte est privée ou que
