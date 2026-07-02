@@ -43,24 +43,6 @@ class WelcomeViewModel @Inject constructor(private val dataStoreRepository: Data
 
     private var wars: List<WarDetails> = listOf()
 
-    init {
-        dataStoreRepository.mkcPlayer
-            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
-            .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
-            .onEach { _state.value = state.value.copy(currentWar = it) }
-            .launchIn(viewModelScope)
-
-        dataStoreRepository.is24PEnabled
-            .onEach { is24p -> _state.value = state.value.copy(
-                wars = wars.filter {
-                    (is24p && it.war.teamOpponent.size > 1)
-                            || (!is24p && it.war.teamOpponent.size == 1)
-                }.safeSubList(0, 5),
-                is24PEnabled = is24p
-            ) }
-            .launchIn(viewModelScope)
-    }
-
     private val _state = MutableStateFlow(State())
 
     val state = dataStoreRepository.mkcPlayer
@@ -101,6 +83,24 @@ class WelcomeViewModel @Inject constructor(private val dataStoreRepository: Data
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
+
+    init {
+        dataStoreRepository.mkcPlayer
+            .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
+            .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
+            .onEach { _state.value = state.value.copy(currentWar = it) }
+            .launchIn(viewModelScope)
+
+        dataStoreRepository.is24PEnabled
+            .onEach { is24p -> _state.value = state.value.copy(
+                wars = wars.filter {
+                    (is24p && it.war.teamOpponent.size > 1)
+                            || (!is24p && it.war.teamOpponent.size == 1)
+                }.safeSubList(0, 5),
+                is24PEnabled = is24p
+            ) }
+            .launchIn(viewModelScope)
+    }
 
     fun onWarTypeSwitch(index: Int) {
         viewModelScope.launch {

@@ -167,7 +167,7 @@ fun EditTrackScreen(
                                         derivedStateOf { state.value.selectedPositions.map { it.position.position }.toSet() }
                                     }
                                     LazyVerticalGrid(columns = GridCells.Adaptive(size)) {
-                                        items(positionCount, key = { it + 1 }) {
+                                        items(positionCount) {
                                             PositionCell(
                                                 position = it + 1,
                                                 is24p = state.value.is24p,

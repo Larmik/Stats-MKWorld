@@ -76,7 +76,7 @@ fun CurrentWarActionsScreen(
                 0 -> {
                     Column {
                         LazyVerticalGrid(modifier = Modifier.weight(1f), columns = GridCells.Fixed(2)) {
-                            items(state.value.penalties.orEmpty(), key = { it.penalty }) {
+                            items(state.value.penalties.orEmpty()) {
                                 val backgroundColor = when (it.isSelected) {
                                     true -> Colors.whiteAlphaed
                                     else -> Colors.blackAlphaed

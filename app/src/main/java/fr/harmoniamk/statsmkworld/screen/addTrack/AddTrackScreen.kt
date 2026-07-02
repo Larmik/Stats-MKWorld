@@ -146,7 +146,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                             else -> 80.dp
                         }
                         LazyVerticalGrid(columns = GridCells.Adaptive(size)) {
-                            items(total, key = { it + 1 }) {
+                            items(total) {
                                 PositionCell(
                                     position = it+1,
                                     is24p = total == 24,

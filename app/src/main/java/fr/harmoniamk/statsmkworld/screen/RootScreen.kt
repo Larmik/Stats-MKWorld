@@ -205,15 +205,21 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
         }
 
         composable(route = "Home/CurrentWar") {
+            val backToHome: () -> Unit = {
+                navController.navigate("Home") {
+                    popUpTo("Home") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
             CurrentWarScreen(
-                onBack = { navController.popBackStack() },
+                onBack = backToHome,
                 onAddTrack = { navController.navigate(route = "Home/CurrentWar/AddTrack/$it") },
                 onActions = { navController.navigate("Home/CurrentWar/Actions") },
                 onTrackDetails = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
                     navController.navigate("Home/TrackDetails/true")
                 },
-                onWarValidated = { navController.navigate("Home") },
+                onWarValidated = backToHome,
             )
         }
 
