@@ -8,11 +8,13 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -35,6 +37,7 @@ class AddWarViewModel @AssistedInject constructor(
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
+    private val mkCentralDataSource: MKCentralDataSourceInterface,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -42,13 +45,27 @@ class AddWarViewModel @AssistedInject constructor(
         fun create(is24p: Boolean): AddWarViewModel
     }
 
+    /**
+     * État de l'étape intermédiaire de choix du roster adverse.
+     *
+     * N'est renseigné que lorsque l'équipe sélectionnée possède plusieurs
+     * rosters mkworld : le bottomSheet s'ouvre alors pour laisser choisir
+     * lequel affronter. [selectedRoster] porte la preview de la sélection.
+     */
+    data class RosterSelection(
+        val team: TeamEntity,
+        val rosters: List<MKCTeamRoster>,
+        val selectedRoster: MKCTeamRoster? = null
+    )
+
     data class State(
         val teamList: List<TeamEntity> = listOf(),
         val playerList: Map<String, List<PlayerSelector>> = mapOf(),
         val teamSelected: List<TeamEntity>? = null,
         val buttonEnabled: Boolean = false,
         val nextButtonEnabled: Boolean = false,
-        val warName: String? = null
+        val warName: String? = null,
+        val rosterSelection: RosterSelection? = null
     )
 
     private val _state = MutableStateFlow(State())
@@ -57,8 +74,17 @@ class AddWarViewModel @AssistedInject constructor(
     private var currentTeam: MKCTeam? = null
     private var rosterId: String? = null
 
+    // rosterId adverse retenu pour chaque équipe sélectionnée (index aligné sur teamSelected).
+    private var selectedRosterIds = listOf<String>()
+
     private val _goToCurrent = MutableSharedFlow<Unit>()
     val goToCurrent = _goToCurrent.asSharedFlow()
+
+    private val _openRosterSheet = MutableSharedFlow<Unit>()
+    val openRosterSheet = _openRosterSheet.asSharedFlow()
+
+    private val _dismissRosterSheet = MutableSharedFlow<Unit>()
+    val dismissRosterSheet = _dismissRosterSheet.asSharedFlow()
 
     val state = databaseRepository.getTeams()
         .zip(databaseRepository.getPlayers()) { teams, players ->
@@ -85,7 +111,46 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     fun onTeamSelected(team: TeamEntity) {
+        viewModelScope.launch {
+            val rosters = mkCentralDataSource.getTeam(team.id).successResponse
+                ?.rosters?.filter { it.game == "mkworld" }
+                .orEmpty()
+            when {
+                // Plusieurs rosters mkworld : étape intermédiaire de sélection.
+                rosters.size > 1 -> {
+                    _state.value = state.value.copy(
+                        rosterSelection = RosterSelection(team = team, rosters = rosters)
+                    )
+                    _openRosterSheet.emit(Unit)
+                }
+                // Un seul roster mkworld : on retient directement son rosterId.
+                // Fallback sur le teamId si l'équipe n'expose aucun roster mkworld.
+                else -> commitTeam(team, rosters.firstOrNull()?.id?.toString() ?: team.id)
+            }
+        }
+    }
+
+    /** Preview d'un roster dans le bottomSheet, sans valider la sélection. */
+    fun onRosterSelected(roster: MKCTeamRoster) {
+        val selection = state.value.rosterSelection ?: return
+        _state.value = state.value.copy(
+            rosterSelection = selection.copy(selectedRoster = roster)
+        )
+    }
+
+    /** Valide le roster choisi dans le bottomSheet et ferme celui-ci. */
+    fun onRosterValidated() {
+        val selection = state.value.rosterSelection ?: return
+        val roster = selection.selectedRoster ?: return
+        commitTeam(selection.team, roster.id.toString())
+        _state.value = state.value.copy(rosterSelection = null)
+        viewModelScope.launch { _dismissRosterSheet.emit(Unit) }
+    }
+
+    private fun commitTeam(team: TeamEntity, rosterId: String) {
         val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { add(team) }
+        val selectedRosters = selectedRosterIds.toMutableList().apply { add(rosterId) }
+        selectedRosterIds = selectedRosters
         val buttonEnabled = when (is24p) {
             true -> selectedTeams.size == 3
             else -> selectedTeams.size == 1
@@ -103,6 +168,7 @@ class AddWarViewModel @AssistedInject constructor(
 
     fun onRemoveTeam() {
         val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { removeAt(lastIndex) }
+        selectedRosterIds = selectedRosterIds.toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
         val buttonEnabled = when (is24p) {
             true -> selectedTeams.size == 3
             else -> selectedTeams.size == 1
@@ -138,11 +204,12 @@ class AddWarViewModel @AssistedInject constructor(
             val roster = dataStoreRepository.mkcPlayer.firstOrNull()
                 ?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() ?: return@launch
             rosterId = roster
-            val teams = listOf(roster) + state.value.teamSelected?.map { it.id }.orEmpty()
+            val opponents = selectedRosterIds
+            val teams = listOf(roster) + opponents
             val war = War(
                 id = System.currentTimeMillis(),
                 teamHost = roster,
-                teamOpponent = state.value.teamSelected?.map { it.id }.orEmpty(),
+                teamOpponent = opponents,
                 tracks = listOf(),
                 penalties = listOf(),
                 scores = teams.map { WarScore(teamId = it, score = 0) }

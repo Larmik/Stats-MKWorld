@@ -40,6 +40,7 @@
     <string name="resume">Summary</string>
     <string name="confirmer">Confirm</string>
     <string name="pick_opponent">Select an opponent</string>
+    <string name="pick_roster">Select a roster</string>
     <string name="pick_lu">Select Line-up</string>
     <string name="allies">Allies</string>
     <string name="roster">Roster</string>

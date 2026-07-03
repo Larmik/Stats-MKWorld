@@ -100,7 +100,7 @@ Règles transverses :
   - Sont des **`suspend fun`** les opérations **one-shot** : data sources réseau (MKCentral/Discord → `NetworkResponse<T>`, cf. §12), écritures/mutations de `DatabaseRepository` (sous `withContext(Dispatchers.IO)`) et lectures `.get()` + écritures de `FirebaseRepository`.
 - Un écran = un dossier `screen/<feature>/` avec `<Feature>Screen.kt` (Composable) + `<Feature>ViewModel.kt`.
 - Composants UI maison préfixés `MK` (`ui/MKButton.kt`, `MKText`, `MKDialog`, `MKTextField`, `MKSegmentedSelector`, `MKLoaderDialog`, `MKBottomSheet`…). Cellules de liste dans `ui/cells/`, widgets de stats dans `ui/stats/`.
-- `ui/MKBottomSheet.kt` : wrapper à slots autour du `ModalBottomSheetLayout` de **Material2** (pas de migration Material3). Paramètres : `sheetState`, `sheetContent` (contenu personnalisé du sheet), `content` (corps de l'écran englobé) et `onBack` optionnel (gère le `BackHandler` : ferme le sheet si visible, sinon délègue). Le pilotage de la fermeture par un flux `onDismiss` côté ViewModel reste à la charge de l'appelant. Utilisé par `TeamProfileScreen` (ajout d'un ally) et destiné à la sélection de roster adverse.
+- `ui/MKBottomSheet.kt` : wrapper à slots autour du `ModalBottomSheetLayout` de **Material2** (pas de migration Material3). Paramètres : `sheetState`, `sheetContent` (contenu personnalisé du sheet), `content` (corps de l'écran englobé) et `onBack` optionnel (gère le `BackHandler` : ferme le sheet si visible, sinon délègue). Le pilotage de la fermeture par un flux `onDismiss` côté ViewModel reste à la charge de l'appelant. Utilisé par `TeamProfileScreen` (ajout d'un ally) et par `AddWarScreen` (sélection du roster adverse quand l'équipe en compte plusieurs ; `onBack = null`, la fermeture étant pilotée par le `BackHandler` de l'écran et les flux `openRosterSheet`/`dismissRosterSheet` du ViewModel).
 
 ### Performance Compose — passe « fluidité »
 
@@ -247,8 +247,9 @@ Distinction structurante (source de confusion fréquente) :
 | `MKCTeamPlayer` | `playerId` | Un joueur listé dans un roster |
 
 - Un roster MK World se filtre par `game == "mkworld"` (filtre répété, cf. audit D28).
-- Dans l'app, **les joueurs sont rattachés à leur `teamId`** (consultation de tous les rosters), mais **les wars devraient l'être au `rosterId`** pour différencier les rosters d'une équipe en multi-roster.
-- ⚠️ **Limite actuelle** : à la création d'une war, l'hôte est enregistré via son `rosterId` (`PlayerEntity.rosterId` mkworld) tandis que l'adversaire l'est via son `teamId` (`TeamEntity.id`) — les rosters d'un même adversaire ne sont donc pas distinguables dans les statistiques. Voir [AUDIT.md §2 B11](AUDIT.md#2-bugs--correctness).
+- Dans l'app, **les joueurs sont rattachés à leur `teamId`** (consultation de tous les rosters), tandis que **les wars sont rattachées au `rosterId`** (hôte comme adversaire) pour différencier les rosters d'une équipe en multi-roster.
+- **Création de war** : l'hôte est enregistré via son `rosterId` (`PlayerEntity.rosterId` mkworld) et, depuis la sélection de roster adverse (`AddWarViewModel`), l'adversaire aussi. À la sélection d'un adversaire, `AddWarViewModel.onTeamSelected()` appelle `mkCentralDataSource.getTeam(teamId)` et filtre `game == "mkworld"` : **un seul roster** → le `rosterId` est retenu directement ; **plusieurs rosters** → un `MKBottomSheet` intermédiaire (`RosterSelectionSheet`) propose la liste des rosters + preview, validée par « Suivant ». Le `rosterId` retenu par adversaire est mémorisé dans `selectedRosterIds` (index aligné sur `teamSelected`, idempotent en 24p) puis écrit dans `War.teamOpponent` par `createWar()`.
+- ⚠️ **Résolution downstream** : `War.teamOpponent` contient désormais des `rosterId`, mais les consommateurs (`CurrentWarViewModel`, `WarDetailsViewModel`, `StatsViewModel`, `WarCellViewModel`…) résolvent encore l'adversaire via `databaseRepository.getTeam(it)`, or `TeamEntity` (Room) n'est clé que par `teamId`. La résolution `rosterId → équipe/roster` pour l'affichage et les statistiques reste **à traiter** (tickets de suivi). Voir [AUDIT.md §2 B11](AUDIT.md#2-bugs--correctness).
 
 ### ⚠️ Homonyme `WarScore`
 

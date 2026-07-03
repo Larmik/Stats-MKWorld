@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -16,7 +17,10 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,10 +39,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -59,20 +65,42 @@ fun AddWarScreen(
     val state = viewModel.state.collectAsStateWithLifecycle()
     val searchTeam = remember { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { 2 })
+    val rosterSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         viewModel.goToCurrent.collect {
             onCurrentWar()
         }
     }
+    LaunchedEffect(Unit) {
+        viewModel.openRosterSheet.collect {
+            rosterSheetState.show()
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.dismissRosterSheet.collect {
+            rosterSheetState.hide()
+        }
+    }
 
     BackHandler {
         when  {
+            rosterSheetState.isVisible -> scope.launch { rosterSheetState.hide() }
             pagerState.currentPage == 1 -> scope.launch { pagerState.animateScrollToPage(0) }
             state.value.teamSelected?.isNotEmpty() == true -> { viewModel.onRemoveTeam() }
             else -> onBack()
         }
     }
+    MKBottomSheet(
+        sheetState = rosterSheetState,
+        sheetContent = {
+            RosterSelectionSheet(
+                selection = state.value.rosterSelection,
+                onRosterSelected = viewModel::onRosterSelected,
+                onValidate = viewModel::onRosterValidated
+            )
+        }
+    ) {
     HorizontalPager(
         modifier = Modifier.fillMaxWidth(),
         state = pagerState,
@@ -148,6 +176,7 @@ fun AddWarScreen(
             )
         }
     }
+    }
 
 }
 
@@ -163,6 +192,69 @@ private fun OpponentSlot(team: TeamEntity?) {
             .background(Colors.transparent)
             .border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp))
     )
+}
+
+@Composable
+private fun RosterSelectionSheet(
+    selection: AddWarViewModel.RosterSelection?,
+    onRosterSelected: (MKCTeamRoster) -> Unit,
+    onValidate: () -> Unit
+) {
+    selection ?: return
+    BaseScreen(title = stringResource(R.string.pick_roster)) {
+        LazyColumn(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.weight(1f)
+        ) {
+            items(selection.rosters, key = { it.id }) { roster ->
+                RosterCell(
+                    roster = roster,
+                    isSelected = roster.id == selection.selectedRoster?.id,
+                    onClick = { onRosterSelected(roster) }
+                )
+            }
+        }
+        MKButton(
+            style = MKButtonStyle.Gradient,
+            text = stringResource(R.string.next),
+            enabled = selection.selectedRoster != null,
+            onClick = onValidate
+        )
+    }
+}
+
+@Composable
+private fun RosterCell(
+    roster: MKCTeamRoster,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = when (isSelected) {
+        true -> Colors.whiteAlphaed
+        else -> Colors.blackAlphaed
+    }
+    val textColor = when (isSelected) {
+        true -> Colors.black
+        else -> Colors.white
+    }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp)
+            .background(backgroundColor, RoundedCornerShape(5.dp))
+            .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
+            .clickable { onClick() }
+    ) {
+        MKText(
+            modifier = Modifier
+                .padding(10.dp)
+                .align(Alignment.Center),
+            fontSize = 16,
+            font = Fonts.NunitoBD,
+            textColor = textColor,
+            text = "${roster.name} (${roster.tag})"
+        )
+    }
 }
 
 @Composable
