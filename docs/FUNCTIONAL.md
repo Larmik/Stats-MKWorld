@@ -197,6 +197,7 @@ Pager :
 
 ### Édition d'une course (`EditTrackScreen`, 3 onglets)
 - **Circuit** / **Positions** / **Shocks**. Le bouton de validation s'active si le circuit, les positions ou les shocks ont changé. Logique conditionnelle : mise à jour du circuit seul, des positions (exactement 6 saisies), des shocks seuls, ou combinaison ; le score de la war est recalculé sur l'ensemble des courses puis réécrit.
+- Onglet **Positions** : ré-attribution joueur par joueur (nom du joueur courant + grille de positions cliquables). Une fois **toutes les positions ré-attribuées** (autant de positions saisies que de joueurs, dernier joueur inclus), la grille est remplacée par un **récapitulatif** en lecture seule (`VerticalGrid` de `PlayerCell` : joueur, position, shocks existants), réutilisant les mêmes composants que la page « Résumé » de l'ajout d'une course. La `MapCell` n'y est pas affichée (le circuit se modifie dans l'onglet dédié) et les shocks restent en lecture seule (édités dans l'onglet Shocks). Les boutons Confirmer / Annuler, communs aux onglets, restent en bas.
 
 ---
 

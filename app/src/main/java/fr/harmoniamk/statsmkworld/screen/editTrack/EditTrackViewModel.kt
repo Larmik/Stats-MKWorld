@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
@@ -95,20 +96,24 @@ class EditTrackViewModel @AssistedInject constructor(
     }
 
     fun onPositionClick(position: Int) {
-        details?.track?.positions?.firstOrNull { it.playerId == state.value.currentPlayer?.id }
-            ?.let { pos ->
-                val newPos = PlayerPosition(
-                    player = state.value.currentPlayer,
-                    position = pos.copy(position = position)
+        val currentPlayer = state.value.currentPlayer ?: return
+        val originalPosition = details?.track?.positions?.firstOrNull { it.playerId == currentPlayer.id }
+        val newPos = PlayerPosition(
+            player = currentPlayer,
+            position = originalPosition?.copy(position = position)
+                ?: WarPosition(
+                    id = System.currentTimeMillis(),
+                    playerId = currentPlayer.id,
+                    position = position
                 )
-                positions.add(newPos)
-                _state.value = state.value.copy(
-                    selectedPositions = positions.sortedBy { it.position.position },
-                    currentPlayer = state.value.players.getOrNull(positions.indexOf(newPos) + 1),
-                    buttonEnabled = state.value.mapSelected != null && (positions.isEmpty() || positions.size == 6)
-                            || state.value.mapSelected == null && positions.size == 6
-                )
-            }
+        )
+        positions.add(newPos)
+        _state.value = state.value.copy(
+            selectedPositions = positions.sortedBy { it.position.position },
+            currentPlayer = state.value.players.getOrNull(positions.size),
+            buttonEnabled = state.value.mapSelected != null && (positions.isEmpty() || positions.size == 6)
+                    || state.value.mapSelected == null && positions.size == 6
+        )
     }
 
     fun onValidate() {
