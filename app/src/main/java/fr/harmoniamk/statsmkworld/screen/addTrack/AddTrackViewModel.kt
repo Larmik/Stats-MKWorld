@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
@@ -90,13 +91,15 @@ class AddTrackViewModel @AssistedInject constructor(
         .map { WarDetails(it) }
         .zip(dataStoreRepository.mkcTeam) { details, teamHost  ->
             this.details = details
-            val teamOpponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
-            val rosterName = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.name ?: teamHost.name
-            val rosterId = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.id ?: teamHost.id
+            val teamOpponents = details.war.opponentTeams(databaseRepository)
+            val hostRoster = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }
+            val rosterName = hostRoster?.name ?: teamHost.name
+            val rosterId = hostRoster?.id ?: teamHost.id
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == details.war.id.toString() }?.sortedBy { it.name }.orEmpty()
             _state.value.copy(
-                teamHost = TeamEntity(teamHost),
+                // Avatar de l'équipe, nom/tag du roster hôte.
+                teamHost = TeamEntity(teamHost).copy(name = rosterName, tag = hostRoster?.tag ?: teamHost.tag),
                 teamOpponent = teamOpponents,
                 players = players,
                 teamHostWarScore = details.war.scores.firstOrNull { it.teamId == rosterId.toString() }?.score,

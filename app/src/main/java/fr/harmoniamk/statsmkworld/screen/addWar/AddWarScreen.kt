@@ -110,12 +110,12 @@ fun AddWarScreen(
             0 -> BaseScreen(title = stringResource(R.string.pick_opponent)) {
                 if (is24p)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OpponentSlot(team = state.value.teamSelected?.getOrNull(0))
-                        OpponentSlot(team = state.value.teamSelected?.getOrNull(1))
-                        OpponentSlot(team = state.value.teamSelected?.getOrNull(2))
+                        OpponentSlot(team = state.value.opponentSlot(0))
+                        OpponentSlot(team = state.value.opponentSlot(1))
+                        OpponentSlot(team = state.value.opponentSlot(2))
                     }
                 else
-                    OpponentSlot(team = state.value.teamSelected?.getOrNull(0))
+                    OpponentSlot(team = state.value.opponentSlot(0))
 
 
 

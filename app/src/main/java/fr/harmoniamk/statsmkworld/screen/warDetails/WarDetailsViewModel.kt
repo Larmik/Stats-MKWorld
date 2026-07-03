@@ -7,6 +7,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
@@ -50,12 +51,16 @@ class WarDetailsViewModel @AssistedInject constructor(
     val state = flowOf(warDetails)
         .filterNotNull()
         .zip(dataStoreRepository.mkcTeam) { details, teamHost ->
-            val teamOpponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
+            val teamOpponents = details.war.opponentTeams(databaseRepository)
             val roster = teamHost.rosters.singleOrNull { it.id.toString() == details.war.teamHost }
             State(
                 details = details,
                 players = details.war.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository),
-                teamHost = TeamEntity(teamHost),
+                // Avatar de l'équipe, nom/tag du roster hôte.
+                teamHost = TeamEntity(teamHost).copy(
+                    name = roster?.name ?: teamHost.name,
+                    tag = roster?.tag ?: teamHost.tag
+                ),
                 teamOpponent = teamOpponents,
                 roster = roster
             )

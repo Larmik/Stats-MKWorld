@@ -7,6 +7,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -47,12 +48,14 @@ class CurrentWarCellViewModel @AssistedInject constructor(
             .filterNotNull()
             .zip(dataStoreRepository.mkcTeam) { war, teamHost ->
                 val details = WarDetails(war)
-                val teamOpponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
-                val rosterName = teamHost.rosters.singleOrNull { it.id.toString() == war.teamHost }?.name ?: teamHost.name
-                val rosterId = teamHost.rosters.singleOrNull { it.id.toString() == war.teamHost }?.id ?: teamHost.id
+                val teamOpponents = details.war.opponentTeams(databaseRepository)
+                val hostRoster = teamHost.rosters.singleOrNull { it.id.toString() == war.teamHost }
+                val rosterName = hostRoster?.name ?: teamHost.name
+                val rosterId = hostRoster?.id ?: teamHost.id
                 State(
                     details = details,
-                    teamHost = TeamEntity(teamHost),
+                    // Avatar de l'équipe, nom/tag du roster hôte.
+                    teamHost = TeamEntity(teamHost).copy(name = rosterName, tag = hostRoster?.tag ?: teamHost.tag),
                     teamOpponent = teamOpponents,
                     score = details.displayedScore,
                     diff = details.displayedDiff,

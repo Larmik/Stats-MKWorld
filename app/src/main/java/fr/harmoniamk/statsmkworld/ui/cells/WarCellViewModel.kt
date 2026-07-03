@@ -8,6 +8,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.displayedString
+import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -44,14 +45,16 @@ class WarCellViewModel @AssistedInject constructor(
 
     val state = dataStoreRepository.mkcTeam
         .map { host ->
-            val opponents = details.war.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
+            val opponents = details.war.opponentTeams(databaseRepository)
             val mapsWon = details.warTracks.filter { it.displayedDiff.startsWith("+") }.size
-            val rosterName = host.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.name ?: host.name
-            val rosterId = host.rosters.singleOrNull { it.id.toString() == details.war.teamHost }?.id ?: host.id
+            val hostRoster = host.rosters.singleOrNull { it.id.toString() == details.war.teamHost }
+            val rosterName = hostRoster?.name ?: host.name
+            val rosterId = hostRoster?.id ?: host.id
 
             State(
                 details = details,
-                teamHost = TeamEntity(host),
+                // Avatar de l'équipe, nom/tag du roster hôte (principe « afficher le roster »).
+                teamHost = TeamEntity(host).copy(name = rosterName, tag = hostRoster?.tag ?: host.tag),
                 teamOpponent = opponents,
                 score = details.displayedScore,
                 diff = details.displayedDiff,

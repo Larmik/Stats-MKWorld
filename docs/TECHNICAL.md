@@ -47,7 +47,7 @@ Un quatrième, **`mkwrs.com`**, est scrapé (Jsoup) pour les records du monde (f
 | `minSdk` / `targetSdk` / `compileSdk` | 28 / 35 / 35 |
 | Langage / JVM | Kotlin 2.2.20 / Java 17 |
 | Projet Firebase | `stats-mkworld` — RTDB région `europe-west1` |
-| Base de données Room | `mk_db`, version 5, `fallbackToDestructiveMigration()` |
+| Base de données Room | `mk_db`, version 6, `fallbackToDestructiveMigration()` |
 | MultiDex | activé |
 
 ---
@@ -249,7 +249,11 @@ Distinction structurante (source de confusion fréquente) :
 - Un roster MK World se filtre par `game == "mkworld"` (filtre répété, cf. audit D28).
 - Dans l'app, **les joueurs sont rattachés à leur `teamId`** (consultation de tous les rosters), tandis que **les wars sont rattachées au `rosterId`** (hôte comme adversaire) pour différencier les rosters d'une équipe en multi-roster.
 - **Création de war** : l'hôte est enregistré via son `rosterId` (`PlayerEntity.rosterId` mkworld) et, depuis la sélection de roster adverse (`AddWarViewModel`), l'adversaire aussi. À la sélection d'un adversaire, `AddWarViewModel.onTeamSelected()` appelle `mkCentralDataSource.getTeam(teamId)` et filtre `game == "mkworld"` : **un seul roster** → le `rosterId` est retenu directement ; **plusieurs rosters** → un `MKBottomSheet` intermédiaire (`RosterSelectionSheet`) propose la liste des rosters + preview, validée par « Suivant ». Le `rosterId` retenu par adversaire est mémorisé dans `selectedRosterIds` (index aligné sur `teamSelected`, idempotent en 24p) puis écrit dans `War.teamOpponent` par `createWar()`.
-- ⚠️ **Résolution downstream** : `War.teamOpponent` contient désormais des `rosterId`, mais les consommateurs (`CurrentWarViewModel`, `WarDetailsViewModel`, `StatsViewModel`, `WarCellViewModel`…) résolvent encore l'adversaire via `databaseRepository.getTeam(it)`, or `TeamEntity` (Room) n'est clé que par `teamId`. La résolution `rosterId → équipe/roster` pour l'affichage et les statistiques reste **à traiter** (tickets de suivi). Voir [AUDIT.md §2 B11](AUDIT.md#2-bugs--correctness).
+- **Résolution `rosterId → équipe/roster`** (affichage & stats adverses) : `War.teamOpponent` contient des `rosterId`, alors que `TeamEntity` reste **clé par teamId**. Pour éviter toute restructuration de la table équipes / de la chaîne de fetch, `TeamEntity` porte une colonne **`rosters: List<RosterInfo>`** (Room **v6**, `RosterInfoConverter` Moshi) = métadonnées `{id, nom, tag}` des rosters mkworld de l'équipe, renseignée par `TeamEntity(MKCTeam)` (les rosters sont déjà dans la réponse liste `getTeams`, **aucun appel réseau supplémentaire**). `FetchUseCase.fetchTeams()` **ne persiste pas** une équipe sans roster mkworld (`rosters` vide) — sauf l'équipe spéciale « 6v6 Squad », conservée volontairement hors filtre. Deux mécanismes distincts en découlent :
+  - **Affichage (nom/tag du roster, avatar de l'équipe)** : `databaseRepository.getTeam(id)` matche d'abord par teamId (clé primaire), à défaut par l'équipe dont l'un des `rosters` porte l'`id` → on remonte l'équipe parente. L'extension `War.opponentTeams(databaseRepository)` **remplace alors nom/tag par ceux du roster** (avatar/couleur de l'équipe conservés) **en gardant le rosterId comme `TeamEntity.id`** (indispensable pour apparier adversaire ↔ score/pénalité dans `WarScoreView`). Côté **hôte**, les VMs (`WarCell`, `CurrentWarCell`, `WarDetails`, `CurrentWar`, `AddTrack`, `CurrentWarActions`) posent `teamHost = TeamEntity(host).copy(name = rosterName, tag = rosterTag)` (avatar équipe, nom/tag roster). Principe général : cf. rule `.claude/rules/12-ui-roster-display.md`.
+  - **Classement adverse — un item PAR ROSTER** (`InitStatsWorker` → `withFullTeamStats`) : pour chaque `RosterInfo` de chaque `TeamEntity`, un `OpponentRanking` distinct est produit, clé par le **rosterId**, agrégeant les wars dont l'opposant = ce rosterId (`hasTeam(rosterId)`), affiché avec le **nom/tag du roster** et l'avatar de l'équipe (`team.copy(id = rosterId, name = roster.name, tag = roster.tag)`). Les rosters d'une même équipe ne sont **pas** fusionnés (ex. équipe à 2 rosters, 4 wars → 2 items de 2 wars). Un **item de niveau équipe** (clé teamId) capte en plus les **wars legacy** (opposant = teamId, avant la granularité roster) pour ne pas les perdre. `toTeamStats` (sous-stat « adversaire le plus joué ») résout un id par teamId **ou** rosterId → équipe parente. Le worker n'applique **aucune** normalisation préalable.
+  - **Détail d'un adversaire** (`StatsViewModel`, `OpponentStats`) : le classement fournit désormais un **rosterId** (ou un teamId pour l'item legacy) ; les wars sont filtrées **directement** par cet id (`hasTeam(id)`), **sans** normalisation rosterId→teamId (sinon les rosters seraient re-fusionnés). L'en-tête du détail affiche le nom/tag du roster (avatar de l'équipe).
+- ⚠️ **Limite (Ticket 4)** : un adversaire dont l'équipe n'est pas (encore) en cache local (`rosters` vide/absent) n'est pas résolu tant que l'historique n'est pas migré. Voir [AUDIT.md §2 B11](AUDIT.md#2-bugs--correctness).
 
 ### ⚠️ Homonyme `WarScore`
 
@@ -295,7 +299,7 @@ data class Shock(val playerId: String, val count: Int)       // immuable (val)
 
 ### Équipe synthétique « 6v6 Squad »
 
-`FetchUseCase.fetchTeams()` injecte systématiquement une équipe locale `TeamEntity(id="123456789", name="6v6 Squad", tag="SQ", color=null, logo=null)` pour permettre des wars amicales sans adversaire MKCentral réel.
+`FetchUseCase.fetchTeams()` injecte systématiquement une équipe locale `TeamEntity(id="123456789", name="6v6 Squad", tag="SQ", color=null, logo=null)` pour permettre des wars amicales sans adversaire MKCentral réel. Elle n'a **aucun roster mkworld** (`rosters` vide) : elle est donc écrite **hors du filtre** qui, depuis Ticket 2, exclut de la persistance les équipes sans roster mkworld — c'est le seul cas sans roster volontairement conservé.
 
 ---
 
@@ -577,21 +581,21 @@ var playerTrackRankList: List<RankingItem>
 
 ## 10. Persistance
 
-### Room — `MKDatabase` (nom `mk_db`, version 5)
+### Room — `MKDatabase` (nom `mk_db`, version 6)
 
 ```kotlin
-@TypeConverters([WarTrackConverter, WarPositionConverter, WarPenaltyConverter, StringConverter, WarScoreConverter])
-@Database(entities = [WarEntity, PlayerEntity, TeamEntity], version = 5)
+@TypeConverters([WarTrackConverter, WarPositionConverter, WarPenaltyConverter, StringConverter, WarScoreConverter, RosterInfoConverter])
+@Database(entities = [WarEntity, PlayerEntity, TeamEntity], version = 6)
 ```
 
-- **`fallbackToDestructiveMigration()`** — **aucune migration** : toute montée de version efface les données locales (ré-hydratées depuis Firebase/MKCentral au prochain fetch). Schémas exportés dans `app/schemas/`.
+- **`fallbackToDestructiveMigration()`** — **aucune migration** : toute montée de version efface les données locales (ré-hydratées depuis Firebase/MKCentral au prochain fetch). Schémas exportés dans `app/schemas/`. **v6** ajoute la colonne `TeamEntity.rosters` (`List<RosterInfo>`, `RosterInfoConverter` ; résolution `rosterId → équipe/roster`, cf. §6) ; la clé primaire (`teamId`) et le reste du schéma sont inchangés.
 
 **Entités** :
 
 | Entité | Colonnes (PK = `id`) |
 |---|---|
 | `PlayerEntity` | id, name, country, **role** (Int — 2 = leader/manager, 1 = admin, 0 = membre), currentWar, **rosterId** (`-1` = allié), discordId |
-| `TeamEntity` | id, name, tag, color?, logo? |
+| `TeamEntity` | id (= **teamId**), name, tag, color?, logo?, **rosters** (`List<RosterInfo>` = `{id, nom, tag}` des rosters mkworld — résolution `rosterId → équipe/roster`) |
 | `WarEntity` | id, teamHost?, teamOpponent (List<String>), createdDate (`dd/MM/yyyy`), warTracks?, penalties?, scores? |
 
 `PlayerEntity` est une **`data class`** (audit B6 : `equals`/`hashCode` par valeur, indispensable au `groupBy { it.player }` de `WarExtension.withPlayersList` qui regroupait sinon par référence). Elle a deux constructeurs (`MKCPlayer` avec flag `isAlly`, et `MKCTeamPlayer` où `leader || manager → role = 2`).
@@ -765,7 +769,7 @@ Les étapes réseau lisent `mkCentralDataSource.getX(...).successResponse` (`nul
 
 Méthodes annexes :
 - `fetchTeam` : pour chaque joueur du roster mkworld, fusionne le `User` Firebase (role, currentWar, discordId) et écrit un `PlayerEntity`.
-- `fetchTeams` : itère les pages MKCentral (`page_count`) pour `mkworld` ET `mk8dx`, plus l'équipe synthétique « 6v6 Squad ».
+- `fetchTeams` : itère les pages MKCentral (`page_count`) pour `mkworld` ET `mk8dx`, plus l'équipe synthétique « 6v6 Squad ». Chaque `TeamEntity` porte ses `rosters` mkworld ; les équipes **sans** roster mkworld (dont les équipes mk8dx-only) ne sont **pas persistées** (hors « 6v6 Squad »).
 - `fetchWars(teamId)` : `clearWars()` puis `writeWars` (mapping `War → WarEntity`).
 - `fetchTags` : pousse les tags d'équipes locaux vers `tags`.
 - `manageTransferts` : réconcilie roster MKCentral ↔ DB locale (déplace les joueurs entrés/sortis entre `users` et `newAllies`, ajuste `rosterId`).
