@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -32,6 +33,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -78,20 +82,12 @@ fun AddWarScreen(
             0 -> BaseScreen(title = stringResource(R.string.pick_opponent)) {
                 if (is24p)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        state.value.teamSelected?.getOrNull(0)?.let {
-                            TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
-                        } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
-                        state.value.teamSelected?.getOrNull(1)?.let {
-                            TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
-                        } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
-                        state.value.teamSelected?.getOrNull(2)?.let {
-                            TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
-                        } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
+                        OpponentSlot(team = state.value.teamSelected?.getOrNull(0))
+                        OpponentSlot(team = state.value.teamSelected?.getOrNull(1))
+                        OpponentSlot(team = state.value.teamSelected?.getOrNull(2))
                     }
                 else
-                    state.value.teamSelected?.getOrNull(0)?.let {
-                        TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
-                    } ?: Spacer(Modifier.size(120.dp).background(Colors.transparent).border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp)))
+                    OpponentSlot(team = state.value.teamSelected?.getOrNull(0))
 
 
 
@@ -126,51 +122,19 @@ fun AddWarScreen(
                 LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                     state.value.playerList.forEach { (rosterName, list) ->
                         stickyHeader {
-                            Box(Modifier
-                                .fillMaxWidth()
-                                .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                                .border(1.dp, Colors.white, RoundedCornerShape(5.dp))) {
-                                MKText(
-                                    modifier = Modifier
-                                        .padding(10.dp)
-                                        .align(Alignment.Center),
-                                    fontSize = 18,
-                                    font = Fonts.NunitoBD,
-                                    textColor = Colors.white,
-                                    text = when (rosterName.isEmpty()) {
-                                        true -> stringResource(R.string.allies)
-                                        else -> rosterName
-                                    }
-                                )
-                            }
-
+                            AddWarRosterHeader(
+                                text = when (rosterName.isEmpty()) {
+                                    true -> stringResource(R.string.allies)
+                                    else -> rosterName
+                                }
+                            )
                         }
                         item {
-                            VerticalGrid {
-                                list.forEach {
-                                    val textColor = when (it.isSelected) {
-                                        true -> Colors.black
-                                        else -> Colors.white
-                                    }
-                                    val backgroundColor = when (it.isSelected) {
-                                        true -> Colors.whiteAlphaed
-                                        else -> Colors.blackAlphaed
-                                    }
-                                    PlayerCell(
-                                        modifier = Modifier
-                                            .padding(5.dp)
-                                            .fillParentMaxWidth(0.48f),
-                                        player = it.player,
-                                        textColor = textColor,
-                                        backgroundColor = backgroundColor,
-                                        onClick = viewModel::onPlayerSelected
-                                    )
-                                }
-                            }
+                            AddWarPlayerGrid(
+                                players = list,
+                                onPlayerSelected = viewModel::onPlayerSelected
+                            )
                         }
-
-
-
                     }
 
 
@@ -187,4 +151,62 @@ fun AddWarScreen(
 
 }
 
+}
+
+@Composable
+private fun OpponentSlot(team: TeamEntity?) {
+    team?.let {
+        TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
+    } ?: Spacer(
+        Modifier
+            .size(120.dp)
+            .background(Colors.transparent)
+            .border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp))
+    )
+}
+
+@Composable
+private fun AddWarRosterHeader(text: String) {
+    Box(Modifier
+        .fillMaxWidth()
+        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+        .border(1.dp, Colors.white, RoundedCornerShape(5.dp))) {
+        MKText(
+            modifier = Modifier
+                .padding(10.dp)
+                .align(Alignment.Center),
+            fontSize = 18,
+            font = Fonts.NunitoBD,
+            textColor = Colors.white,
+            text = text
+        )
+    }
+}
+
+@Composable
+private fun LazyItemScope.AddWarPlayerGrid(
+    players: List<PlayerSelector>,
+    onPlayerSelected: (PlayerEntity) -> Unit
+) {
+    VerticalGrid {
+        players.forEach {
+            val textColor = when (it.isSelected) {
+                true -> Colors.black
+                else -> Colors.white
+            }
+            val backgroundColor = when (it.isSelected) {
+                true -> Colors.whiteAlphaed
+                else -> Colors.blackAlphaed
+            }
+            PlayerCell(
+                modifier = Modifier
+                    .padding(5.dp)
+                    .fillParentMaxWidth(0.48f),
+                player = it.player,
+                textColor = textColor,
+                backgroundColor = backgroundColor,
+                onClick = onPlayerSelected
+            )
+        }
+    }
 }

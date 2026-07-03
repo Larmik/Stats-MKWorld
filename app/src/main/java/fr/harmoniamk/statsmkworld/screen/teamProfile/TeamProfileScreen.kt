@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -39,6 +40,7 @@ import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.displayedString
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -101,48 +103,12 @@ fun TeamProfileScreen(
             when (val team = state.value.team) {
                 null -> CircularProgressIndicator()
                 else -> {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        when (val logo = team.logo) {
-                            null -> Image(
-                                painter = painterResource(R.drawable.default_logo),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape)
-                            )
-
-                            else -> AsyncImage(
-                                model = "https://mkcentral.com$logo",
-                                contentDescription = null,
-                                modifier = Modifier.size(80.dp)
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            MKText(text = team.name, fontSize = 24, font = Fonts.NunitoBD)
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                MKText(
-                                    text = stringResource(R.string.created_date),
-                                    font = Fonts.NunitoIT
-                                )
-                                MKText(
-                                    text = Date(team.creationDate * 1000).displayedString("dd MMMM yyyy"),
-                                    font = Fonts.NunitoBD
-                                )
-                            }
-                        }
-                    }
-                    MKText(
-                        text = team.description,
-                        modifier = Modifier.padding(bottom = 10.dp),
-                        font = Fonts.NunitoIT,
-                        resizable = false
+                    TeamProfileHeader(
+                        logo = team.logo,
+                        name = team.name,
+                        description = team.description,
+                        creationDate = team.creationDate
                     )
-                    Spacer(Modifier.height(10.dp))
                     val rosters = remember(team) { team.rosters.filter { it.game == "mkworld" } }
                     if (viewModel.id == "me")
                         MKSelectorViewPager(pagerState, listOf("Membres", "Allies")) {
@@ -151,35 +117,10 @@ fun TeamProfileScreen(
                                     rosters.forEach { roster ->
                                         if (rosters.size > 1)
                                             item {
-                                                Box(Modifier
-                                                    .fillMaxWidth()
-                                                    .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                                                    .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
-                                                ) {
-                                                    MKText(
-                                                        modifier = Modifier.padding(10.dp).align(Alignment.Center),
-                                                        fontSize = 18,
-                                                        font = Fonts.NunitoBD,
-                                                        textColor = Colors.white,
-                                                        text = roster.name
-                                                    )
-                                                }
+                                                RosterHeader(text = roster.name)
                                             }
                                         item {
-                                            VerticalGrid {
-                                                roster.players.forEach {
-                                                    PlayerCell(
-                                                        modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
-                                                        player = PlayerEntity(
-                                                            player = it,
-                                                            rosterId = roster.id.toString()
-                                                        ),
-                                                        textColor = Colors.white,
-                                                        backgroundColor = Colors.blackAlphaed,
-                                                        onClick = { onPlayerClick(it.id) }
-                                                    )
-                                                }
-                                            }
+                                            RosterPlayersGrid(roster = roster, onPlayerClick = onPlayerClick)
                                         }
                                     }
                                 }
@@ -214,38 +155,15 @@ fun TeamProfileScreen(
                         LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                             rosters.forEach { roster ->
                                 item {
-                                    Box(Modifier
-                                        .fillMaxWidth()
-                                        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                                        .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
-                                    ) {
-                                        MKText(
-                                            modifier = Modifier.padding(10.dp).align(Alignment.Center),
-                                            fontSize = 18,
-                                            font = Fonts.NunitoBD,
-                                            textColor = Colors.white,
-                                            text = when (rosters.size) {
-                                                1 -> stringResource(R.string.roster)
-                                                else -> roster.name
-                                            }
-                                        )
-                                    }
+                                    RosterHeader(
+                                        text = when (rosters.size) {
+                                            1 -> stringResource(R.string.roster)
+                                            else -> roster.name
+                                        }
+                                    )
                                 }
                                 item {
-                                    VerticalGrid {
-                                        roster.players.forEach {
-                                            PlayerCell(
-                                                modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
-                                                player = PlayerEntity(
-                                                    player = it,
-                                                    rosterId = roster.id.toString()
-                                                ),
-                                                textColor = Colors.white,
-                                                backgroundColor = Colors.blackAlphaed,
-                                                onClick = { onPlayerClick(it.id) }
-                                            )
-                                        }
-                                    }
+                                    RosterPlayersGrid(roster = roster, onPlayerClick = onPlayerClick)
                                 }
                             }
                         }
@@ -254,4 +172,93 @@ fun TeamProfileScreen(
         }
     }
 
+}
+
+@Composable
+private fun TeamProfileHeader(
+    logo: String?,
+    name: String,
+    description: String,
+    creationDate: Long
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        when (logo) {
+            null -> Image(
+                painter = painterResource(R.drawable.default_logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+            )
+
+            else -> AsyncImage(
+                model = "https://mkcentral.com$logo",
+                contentDescription = null,
+                modifier = Modifier.size(80.dp)
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            MKText(text = name, fontSize = 24, font = Fonts.NunitoBD)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                MKText(
+                    text = stringResource(R.string.created_date),
+                    font = Fonts.NunitoIT
+                )
+                MKText(
+                    text = Date(creationDate * 1000).displayedString("dd MMMM yyyy"),
+                    font = Fonts.NunitoBD
+                )
+            }
+        }
+    }
+    MKText(
+        text = description,
+        modifier = Modifier.padding(bottom = 10.dp),
+        font = Fonts.NunitoIT,
+        resizable = false
+    )
+    Spacer(Modifier.height(10.dp))
+}
+
+@Composable
+private fun RosterHeader(text: String) {
+    Box(Modifier
+        .fillMaxWidth()
+        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+        .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
+    ) {
+        MKText(
+            modifier = Modifier.padding(10.dp).align(Alignment.Center),
+            fontSize = 18,
+            font = Fonts.NunitoBD,
+            textColor = Colors.white,
+            text = text
+        )
+    }
+}
+
+@Composable
+private fun LazyItemScope.RosterPlayersGrid(
+    roster: MKCTeamRoster,
+    onPlayerClick: (String) -> Unit
+) {
+    VerticalGrid {
+        roster.players.forEach {
+            PlayerCell(
+                modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
+                player = PlayerEntity(
+                    player = it,
+                    rosterId = roster.id.toString()
+                ),
+                textColor = Colors.white,
+                backgroundColor = Colors.blackAlphaed,
+                onClick = { onPlayerClick(it.id) }
+            )
+        }
+    }
 }
