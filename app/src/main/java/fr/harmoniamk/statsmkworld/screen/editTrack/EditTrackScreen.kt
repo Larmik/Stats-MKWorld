@@ -144,8 +144,29 @@ fun EditTrackScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.weight(1f)
                         ) {
+                            val isComplete by remember {
+                                derivedStateOf {
+                                    state.value.players.isNotEmpty() &&
+                                            state.value.selectedPositions.size == state.value.players.size
+                                }
+                            }
                             when  {
                                 state.value.players.isEmpty() -> CircularProgressIndicator()
+                                isComplete -> {
+                                    VerticalGrid {
+                                        state.value.selectedPositions.forEach {
+                                            PlayerCell(
+                                                player = it.player,
+                                                position = it.position.position,
+                                                is24p = state.value.is24p,
+                                                modifier = Modifier.padding(5.dp),
+                                                shocksEnabled = false,
+                                                shockCount = state.value.shocks[it.player?.id],
+                                                onClick = {}
+                                            )
+                                        }
+                                    }
+                                }
                                 else -> {
                                     state.value.currentPlayer?.let {
                                         MKText(
