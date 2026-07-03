@@ -28,8 +28,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
-import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
-import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 
 sealed interface WarScoreStyle {
@@ -78,8 +76,11 @@ fun WarScoreView(
             .groupBy { it.teamId }
             .mapValues { entry -> entry.value.sumOf { it.amount } }
     }
-    val sortedWarScores = remember(details) {
-        details?.war?.scores?.sortedByDescending { it.score }
+    val penaltyTeamIds24p = remember(details) {
+        listOfNotNull(details?.war?.teamHost) + details?.war?.teamOpponent.orEmpty()
+    }
+    val penaltyTeamIds12p = remember(details) {
+        details?.war?.scores?.sortedByDescending { it.score }.orEmpty().map { it.teamId }
     }
     when (is24p) {
         true -> WarScore24pView(
@@ -89,7 +90,8 @@ fun WarScoreView(
             rosterId = rosterId,
             is24p = is24p,
             totalShocks = totalShocks,
-            penaltyTotals = penaltyTotals
+            penaltyTotals = penaltyTotals,
+            penaltyTeamIds = penaltyTeamIds24p
         )
 
         else -> WarScore12pView(
@@ -104,7 +106,7 @@ fun WarScoreView(
             diffSize = diffSize,
             totalShocks = totalShocks,
             penaltyTotals = penaltyTotals,
-            sortedWarScores = sortedWarScores
+            penaltyTeamIds = penaltyTeamIds12p
         )
     }
 
@@ -118,7 +120,8 @@ private fun WarScore24pView(
     rosterId: String?,
     is24p: Boolean,
     totalShocks: Int,
-    penaltyTotals: Map<String, Int>
+    penaltyTotals: Map<String, Int>,
+    penaltyTeamIds: List<String>
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Row(
@@ -239,113 +242,21 @@ private fun WarScore24pView(
                     font = Fonts.NunitoBD
                 )
             }
-            totalShocks
-                .takeIf { it > 0 }?.let {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .padding(top = 5.dp)
-                        .fillMaxWidth()
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.shock),
-                        contentDescription = null,
-                        modifier = Modifier.size(30.dp)
-                    )
-                    MKText(
-                        text = "x$it",
-                        font = Fonts.NunitoBdIt,
-                    )
-                }
-            }
+            ShocksSection(
+                totalShocks = totalShocks,
+                modifier = Modifier
+                    .padding(top = 5.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            )
 
-            details?.war?.penalties.orEmpty().takeIf { it.isNotEmpty() }?.let { penalty ->
-                Spacer(Modifier.height(10.dp))
-                Column(
-                    modifier = Modifier
-                        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                        .border(1.dp, Colors.white, RoundedCornerShape(5.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Column(
-                        modifier = Modifier.padding(10.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        MKText(text = "Pénalités", textColor = Colors.white)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            details?.war?.teamHost?.let { teamId ->
-                                val total = penaltyTotals[teamId] ?: 0
-                                if (total > 0)
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(10.dp)
-                                    ) {
-
-                                        val team = teamOpponent.orEmpty()
-                                            .firstOrNull { it.id == teamId } ?: teamHost
-                                        when (val logo = team?.logo) {
-                                            null -> Image(
-                                                painter = painterResource(R.drawable.default_logo),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-
-                                            else -> AsyncImage(
-                                                model = "https://mkcentral.com$logo",
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                        Spacer(Modifier.width(5.dp))
-                                        MKText(
-                                            text = "-$total",
-                                            font = Fonts.NunitoBD,
-                                            fontSize = 16,
-                                            textColor = Colors.white
-                                        )
-                                    }
-                            }
-                            details?.war?.teamOpponent
-                                ?.forEach { teamId ->
-                                    val total = penaltyTotals[teamId] ?: 0
-                                    if (total > 0)
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(10.dp)
-                                        ) {
-
-                                            val team = teamOpponent.orEmpty()
-                                                .firstOrNull { it.id == teamId } ?: teamHost
-                                            when (val logo = team?.logo) {
-                                                null -> Image(
-                                                    painter = painterResource(R.drawable.default_logo),
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-
-                                                else -> AsyncImage(
-                                                    model = "https://mkcentral.com$logo",
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
-                                            Spacer(Modifier.width(5.dp))
-                                            MKText(
-                                                text = "-$total",
-                                                font = Fonts.NunitoBD,
-                                                fontSize = 16,
-                                                textColor = Colors.white
-                                            )
-                                        }
-                                }
-                        }
-                    }
-                }
-            }
+            PenaltiesSection(
+                hasPenalties = details?.war?.penalties.orEmpty().isNotEmpty(),
+                orderedTeamIds = penaltyTeamIds,
+                penaltyTotals = penaltyTotals,
+                teamHost = teamHost,
+                teamOpponent = teamOpponent
+            )
 
     }
 }
@@ -363,7 +274,7 @@ private fun WarScore12pView(
     diffSize: Int,
     totalShocks: Int,
     penaltyTotals: Map<String, Int>,
-    sortedWarScores: List<WarScore>?
+    penaltyTeamIds: List<String>
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -406,23 +317,10 @@ private fun WarScore12pView(
                         fontSize = diffSize,
                         font = Fonts.NunitoBD
                     )
-                    totalShocks.takeIf { it > 0 }
-                        ?.let {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(top = 5.dp)
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.shock),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(30.dp)
-                                )
-                                MKText(
-                                    text = "x$it",
-                                    font = Fonts.NunitoBdIt,
-                                )
-                            }
-                        }
+                    ShocksSection(
+                        totalShocks = totalShocks,
+                        modifier = Modifier.padding(top = 5.dp)
+                    )
                 }
                 Column(
                     modifier = Modifier.weight(1f),
@@ -457,61 +355,100 @@ private fun WarScore12pView(
 
                 }
             }
-            details?.war?.penalties.orEmpty().takeIf { it.isNotEmpty() }?.let { penalty ->
-                Spacer(Modifier.height(10.dp))
-                Column(
-                    modifier = Modifier
-                        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-                        .border(1.dp, Colors.white, RoundedCornerShape(5.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Column(
-                        modifier = Modifier.padding(10.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        MKText(text = "Pénalités", textColor = Colors.white)
+            PenaltiesSection(
+                hasPenalties = details?.war?.penalties.orEmpty().isNotEmpty(),
+                orderedTeamIds = penaltyTeamIds,
+                penaltyTotals = penaltyTotals,
+                teamHost = teamHost,
+                teamOpponent = teamOpponent
+            )
+
+
+    }
+}
+
+@Composable
+private fun ShocksSection(
+    totalShocks: Int,
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start
+) {
+    totalShocks.takeIf { it > 0 }?.let {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = horizontalArrangement,
+            modifier = modifier
+        ) {
+            Image(
+                painter = painterResource(R.drawable.shock),
+                contentDescription = null,
+                modifier = Modifier.size(30.dp)
+            )
+            MKText(
+                text = "x$it",
+                font = Fonts.NunitoBdIt,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PenaltiesSection(
+    hasPenalties: Boolean,
+    orderedTeamIds: List<String>,
+    penaltyTotals: Map<String, Int>,
+    teamHost: TeamEntity?,
+    teamOpponent: List<TeamEntity>?
+) {
+    if (!hasPenalties) return
+    Spacer(Modifier.height(10.dp))
+    Column(
+        modifier = Modifier
+            .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
+            .border(1.dp, Colors.white, RoundedCornerShape(5.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            MKText(text = "Pénalités", textColor = Colors.white)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                orderedTeamIds.forEach { teamId ->
+                    val total = penaltyTotals[teamId] ?: 0
+                    if (total > 0)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            modifier = Modifier.padding(10.dp)
                         ) {
-                            sortedWarScores
-                                ?.forEach { score ->
-                                    val total = penaltyTotals[score.teamId] ?: 0
-                                    if (total > 0)
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(10.dp)
-                                        ) {
+                            val team = teamOpponent.orEmpty()
+                                .firstOrNull { it.id == teamId } ?: teamHost
+                            when (val logo = team?.logo) {
+                                null -> Image(
+                                    painter = painterResource(R.drawable.default_logo),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
 
-                                            val team = teamOpponent.orEmpty()
-                                                .firstOrNull { it.id == score.teamId } ?: teamHost
-                                            when (val logo = team?.logo) {
-                                                null -> Image(
-                                                    painter = painterResource(R.drawable.default_logo),
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-
-                                                else -> AsyncImage(
-                                                    model = "https://mkcentral.com$logo",
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
-                                            Spacer(Modifier.width(5.dp))
-                                            MKText(
-                                                text = "-$total",
-                                                font = Fonts.NunitoBD,
-                                                fontSize = 16,
-                                                textColor = Colors.white
-                                            )
-                                        }
-                                }
+                                else -> AsyncImage(
+                                    model = "https://mkcentral.com$logo",
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(5.dp))
+                            MKText(
+                                text = "-$total",
+                                font = Fonts.NunitoBD,
+                                fontSize = 16,
+                                textColor = Colors.white
+                            )
                         }
-                    }
                 }
             }
-
-
+        }
     }
 }
