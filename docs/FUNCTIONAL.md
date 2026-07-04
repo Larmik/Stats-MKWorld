@@ -156,7 +156,7 @@ flowchart LR
 - À la création : `War(id = now, teamHost = rosterId, teamOpponent = [rosterId…], scores = [WarScore(0)…])` — `teamOpponent` contient désormais le(s) **rosterId** choisi(s) à l'étape 1 (et non le teamId) ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
 
 ### Étape 3 — War en cours (`CurrentWarScreen`)
-> Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war.
+> Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war. Si un adversaire ne peut plus être résolu localement (équipe/roster disparu du cache, war ancienne jamais synchronisée), il n'est **plus effacé** de l'affichage : il apparaît **en dégradé** (« Équipe inconnue » / tag `???`, sans logo) au lieu de disparaître.
 
 Pager :
 - **Page principale** : `WarScoreView` (scores + pénalités), `WarPlayersCell` (composition), et selon l'état :
@@ -282,7 +282,7 @@ Le rendu et l'enregistrement (galerie / partage) sont décrits dans [TECHNICAL.m
 1. **Update Tags** — pousse les tags d'équipes vers Firebase.
 2. **Update LariisBot Data** — rafraîchit pour chaque utilisateur d'équipe ses infos Discord/nom depuis MKCentral.
 3. **Update Transferts** — réconcilie les rosters (entrées/sorties de joueurs, alliés).
-4. **Migrer les adversaires (teamId → roster)** — action manuelle et idempotente : réécrit dans l'historique Firebase le `teamId` d'un adversaire en `rosterId`, **uniquement** pour les équipes possédant un seul roster mkworld (cas non ambigu). Fusionne le doublon « équipe legacy + roster » d'une même équipe mono-roster dans le classement adverse. Les équipes multi-rosters et la war en cours ne sont pas touchées.
+4. **Migrer les adversaires (teamId → roster)** — action manuelle et idempotente : réécrit dans l'historique Firebase le `teamId` d'un adversaire en `rosterId`, **uniquement** pour les équipes possédant un seul roster mkworld (cas non ambigu) **et dont le roster est résolvable localement** (sinon la migration s'abstient, pour ne pas rendre l'adversaire non affichable). Fusionne alors le doublon « équipe legacy + roster » d'une même équipe mono-roster en un seul item du classement adverse (wars anciennes et récentes réunies). Les équipes multi-rosters et la war en cours ne sont pas touchées.
 5. **Test MKWR** — charge les records du monde (scraping `mkwrs.com`).
 6. **Test Notif** — envoie une notification de test (si activées).
 7. **Mode Matrix** — simule un autre joueur : entrée par id (charge ses données et passe `matrixMode = true`), sortie (recharge le joueur de référence `18595`, `matrixMode = false`).
