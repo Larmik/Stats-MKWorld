@@ -79,7 +79,7 @@ class EditTabViewModel @AssistedInject constructor(
                     // en conservant le rosterId comme id, afin que les comparaisons de score
                     // du PDF (war.teamOpponent.contains(team.id)) matchent, à l'image de l'hôte.
                     val teamOpponents = war.teamOpponent.mapNotNull { opponentId ->
-                        databaseRepository.getTeam(opponentId).firstOrNull()?.copy(id = opponentId)
+                        databaseRepository.getTeam(opponentId)?.copy(id = opponentId)
                     }
                     teamHost?.let {
                         val roster = teamHost.rosters.singleOrNull { roster -> roster.id.toString() == war.teamHost }

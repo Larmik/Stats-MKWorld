@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.firstOrNull
  */
 suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): List<TeamEntity> =
     teamOpponent.mapNotNull { rosterId ->
-        databaseRepository.getTeam(rosterId).firstOrNull()?.let { team ->
+        databaseRepository.getTeam(rosterId)?.let { team ->
             val roster = team.rosters.firstOrNull { it.id == rosterId }
             team.copy(
                 id = rosterId,

@@ -123,7 +123,7 @@ class StatsViewModel @AssistedInject constructor(
             // teamId peut être un rosterId (classement par roster) : on remonte à
             // l'équipe (avatar) puis on affiche le nom/tag du roster ciblé.
             val team = teamId?.let { id ->
-                databaseRepository.getTeam(id).firstOrNull()?.let { resolved ->
+                databaseRepository.getTeam(id)?.let { resolved ->
                     val roster = resolved.rosters.firstOrNull { it.id == id }
                     resolved.copy(
                         id = id,
