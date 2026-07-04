@@ -19,10 +19,17 @@ import kotlinx.coroutines.flow.firstOrNull
  * équipe/roster est possible, afficher le roster). Le **rosterId est conservé
  * comme `TeamEntity.id`** : indispensable pour apparier un adversaire à son
  * score/pénalité par identifiant (tableau des scores 24p, pénalités), à l'image
- * de l'hôte (`teamHost` = rosterId). Un adversaire non résolu localement est ignoré.
+ * de l'hôte (`teamHost` = rosterId).
+ *
+ * **Résolution non destructive** : un adversaire dont l'id ne se résout plus
+ * localement (équipe/roster disparu du cache, war legacy jamais synchronisée)
+ * n'est **pas** supprimé — on retombe sur une [TeamEntity] dégradée (nom
+ * « Équipe inconnue », tag « ??? », sans logo) afin que l'adversaire reste
+ * visible plutôt que d'être silencieusement effacé (nom + logo absents). L'id
+ * (rosterId/teamId) est conservé pour l'appariement score/pénalité.
  */
 suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): List<TeamEntity> =
-    teamOpponent.mapNotNull { rosterId ->
+    teamOpponent.map { rosterId ->
         databaseRepository.getTeam(rosterId)?.let { team ->
             val roster = team.rosters.firstOrNull { it.id == rosterId }
             team.copy(
@@ -30,7 +37,13 @@ suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): 
                 name = roster?.name ?: team.name,
                 tag = roster?.tag ?: team.tag
             )
-        }
+        } ?: TeamEntity(
+            id = rosterId,
+            name = "Équipe inconnue",
+            tag = "???",
+            color = null,
+            logo = null
+        )
     }
 
 suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, dataStoreRepository: DataStoreRepositoryInterface): List<PlayerScore> {

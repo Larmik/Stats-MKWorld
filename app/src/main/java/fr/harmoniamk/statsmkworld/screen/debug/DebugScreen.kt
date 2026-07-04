@@ -113,6 +113,24 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
                 )
             }
             item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.onMigrateOpponents() }) {
+                    MKText(
+                        text = "Migrer les adversaires (teamId → roster)",
+                        font = Fonts.Urbanist,
+                        modifier = Modifier.padding(vertical = 20.dp)
+                    )
+                }
+                Spacer(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Colors.blackAlphaed)
+                )
+            }
+            item {
                 Column {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Row(Modifier.weight(1f).clickable {

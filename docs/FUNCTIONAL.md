@@ -282,9 +282,10 @@ Le rendu et l'enregistrement (galerie / partage) sont décrits dans [TECHNICAL.m
 1. **Update Tags** — pousse les tags d'équipes vers Firebase.
 2. **Update LariisBot Data** — rafraîchit pour chaque utilisateur d'équipe ses infos Discord/nom depuis MKCentral.
 3. **Update Transferts** — réconcilie les rosters (entrées/sorties de joueurs, alliés).
-4. **Test MKWR** — charge les records du monde (scraping `mkwrs.com`).
-5. **Test Notif** — envoie une notification de test (si activées).
-6. **Mode Matrix** — simule un autre joueur : entrée par id (charge ses données et passe `matrixMode = true`), sortie (recharge le joueur de référence `18595`, `matrixMode = false`).
+4. **Migrer les adversaires (teamId → roster)** — action manuelle et idempotente : réécrit dans l'historique Firebase le `teamId` d'un adversaire en `rosterId`, **uniquement** pour les équipes possédant un seul roster mkworld (cas non ambigu). Fusionne le doublon « équipe legacy + roster » d'une même équipe mono-roster dans le classement adverse. Les équipes multi-rosters et la war en cours ne sont pas touchées.
+5. **Test MKWR** — charge les records du monde (scraping `mkwrs.com`).
+6. **Test Notif** — envoie une notification de test (si activées).
+7. **Mode Matrix** — simule un autre joueur : entrée par id (charge ses données et passe `matrixMode = true`), sortie (recharge le joueur de référence `18595`, `matrixMode = false`).
 
 ---
 
