@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
@@ -57,9 +58,11 @@ class CurrentWarActionsViewModel @Inject constructor(
         .mapNotNull {
             val war = dataStoreRepository.war.firstOrNull()
             val players = databaseRepository.getPlayers().firstOrNull()
-            val roster = dataStoreRepository.mkcTeam.firstOrNull()?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }
-            val teamHost = roster?.let { TeamEntity(it) }
-            val teamOpponents = war?.teamOpponent.orEmpty().mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
+            val mkcTeam = dataStoreRepository.mkcTeam.firstOrNull()
+            val roster = mkcTeam?.rosters?.singleOrNull { it.id.toString() == war?.teamHost }
+            // Avatar de l'équipe parente, nom/tag du roster hôte.
+            val teamHost = mkcTeam?.let { TeamEntity(it).copy(name = roster?.name ?: it.name, tag = roster?.tag ?: it.tag) }
+            val teamOpponents = war?.opponentTeams(databaseRepository).orEmpty()
 
             State(
                 war = war,

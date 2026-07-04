@@ -121,51 +121,25 @@ class FetchUseCase @Inject constructor(
         var teamPageMK8 = 1
         val firstResponse = getTeams(teamPage)
         val firstResponseMK8 = getMK8Teams(teamPageMK8)
-        teams.addAll(firstResponse.second?.map {
-            TeamEntity(
-                id = it.id.toString(),
-                name = it.name,
-                tag = it.tag,
-                color = it.color.toInt(),
-                logo = it.logo
-            )
-        }.orEmpty())
-        teams.addAll(firstResponseMK8.second?.map {
-            TeamEntity(
-                id = it.id.toString(),
-                name = it.name,
-                tag = it.tag,
-                color = it.color.toInt(),
-                logo = it.logo
-            )
-        }.orEmpty())
+        // TeamEntity(MKCTeam) renseigne aussi rosters {id, nom, tag} (rosters mkworld) —
+        // aucune requête supplémentaire, les rosters sont déjà dans la réponse liste.
+        teams.addAll(firstResponse.second?.map { TeamEntity(it) }.orEmpty())
+        teams.addAll(firstResponseMK8.second?.map { TeamEntity(it) }.orEmpty())
         while (teamPage < (firstResponse.first ?: 1)) {
             teamPage++
             val teamsToAdd = getTeams(teamPage)
-            teams.addAll(teamsToAdd.second?.map {
-                TeamEntity(
-                    id = it.id.toString(),
-                    name = it.name,
-                    tag = it.tag,
-                    color = it.color.toInt(),
-                    logo = it.logo
-                )
-            }.orEmpty())
+            teams.addAll(teamsToAdd.second?.map { TeamEntity(it) }.orEmpty())
         }
         while (teamPageMK8 < (firstResponseMK8.first ?: 1)) {
             teamPageMK8++
             val teamsToAdd = getMK8Teams(teamPageMK8)
-            teams.addAll(teamsToAdd.second?.map {
-                TeamEntity(
-                    id = it.id.toString(),
-                    name = it.name,
-                    tag = it.tag,
-                    color = it.color.toInt(),
-                    logo = it.logo
-                )
-            }.orEmpty())
+            teams.addAll(teamsToAdd.second?.map { TeamEntity(it) }.orEmpty())
         }
-        databaseRepository.writeTeams(teams)
+        // Ne persiste pas une équipe sans roster mkworld : elle ne serait pas
+        // résoluble à la granularité roster (et n'a pas de line-up mkworld à jouer).
+        databaseRepository.writeTeams(teams.filter { it.rosters.isNotEmpty() })
+        // L'équipe spéciale « 6v6 Squad » (wars amicales sans adversaire MKCentral)
+        // est conservée volontairement, hors filtre roster (aucun roster mkworld).
         databaseRepository.writeTeams(listOf(
             TeamEntity(
                 name = "6v6 Squad",

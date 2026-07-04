@@ -160,12 +160,14 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
         )
     ).map { stats ->
         // Une seule lecture de la table des équipes, puis indexation en mémoire.
-        val teamsById = databaseRepository.getTeams().firstOrNull()
-            ?.associateBy { it.id }
-            .orEmpty()
+        // On résout un id d'adversaire aussi bien par teamId (wars legacy /
+        // normalisées) que par rosterId (granularité roster) → équipe parente.
+        val teams = databaseRepository.getTeams().firstOrNull().orEmpty()
+        val teamsById = teams.associateBy { it.id }
+        val teamByRosterId = teams.flatMap { team -> team.rosters.map { it.id to team } }.toMap()
 
         fun List<Pair<String, Int>>.toTeamStats() = map { (id, count) ->
-            TeamStats(teamsById[id], count)
+            TeamStats(teamsById[id] ?: teamByRosterId[id], count)
         }
 
         stats.copy(
@@ -197,17 +199,37 @@ fun List<TeamEntity>.withFullTeamStats(
     is24p: Boolean = false
 ) = flow {
     val temp = mutableListOf<Pair<TeamEntity, Stats>>()
-    this@withFullTeamStats.forEach { team ->
+
+    // Calcule les stats d'un adversaire pour un identifiant d'opposant donné
+    // (rosterId ou teamId legacy). `display` porte la vue affichée dans le
+    // classement (id = identifiant d'opposant, nom/tag du roster, avatar équipe).
+    suspend fun addRankingItem(display: TeamEntity, opponentId: String) {
         wars
-            .filter { it.hasTeam(team.id) }
+            .filter { it.hasTeam(opponentId) }
             .filter { (userId != null && it.hasPlayer(userId)) || userId == null }
             .map { WarDetails(War(it)) }
             .withFullStats(databaseRepository, userId, is24p = is24p)
             .firstOrNull()
             ?.let {
                 if (it.warStats.list.isNotEmpty())
-                    temp.add(Pair(team, it))
+                    temp.add(Pair(display, it))
             }
+    }
+
+    this@withFullTeamStats.forEach { team ->
+        // Un item par ROSTER : chaque roster produit son propre classement (ses
+        // wars où l'opposant = ce rosterId), affiché avec le nom/tag du roster et
+        // l'avatar de l'équipe parente. On ne fusionne plus les rosters d'une même
+        // équipe sous l'équipe.
+        team.rosters.forEach { roster ->
+            addRankingItem(
+                display = team.copy(id = roster.id, name = roster.name, tag = roster.tag),
+                opponentId = roster.id
+            )
+        }
+        // Item de niveau ÉQUIPE pour les wars legacy (opposant = teamId, avant la
+        // granularité roster) : elles n'ont pas de rosterId → conservées à part.
+        addRankingItem(display = team, opponentId = team.id)
     }
     emit(temp)
 }

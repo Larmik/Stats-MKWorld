@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -33,7 +34,7 @@ interface DatabaseRepositoryInterface {
     suspend fun addAlly(entity: PlayerEntity)
 
     fun getTeams(): Flow<List<TeamEntity>>
-    fun getTeam(id: String): Flow<TeamEntity?>
+    suspend fun getTeam(id: String): TeamEntity?
     suspend fun writeTeams(list: List<TeamEntity>)
     suspend fun clearTeams()
 
@@ -74,7 +75,15 @@ class DatabaseRepository @Inject constructor(
     override suspend fun addAlly(entity: PlayerEntity) = withContext(Dispatchers.IO) { playerLocalDataSource.upsert(entity) }
 
     override fun getTeams(): Flow<List<TeamEntity>> = teamLocalDataSource.getAll().flowOn(Dispatchers.IO)
-    override fun getTeam(id: String): Flow<TeamEntity?> = teamLocalDataSource.getById(id).flowOn(Dispatchers.IO)
+
+    // Résout un identifiant d'équipe adverse : d'abord par teamId (clé primaire),
+    // à défaut par le rosterId (War.teamOpponent contient un rosterId depuis le
+    // passage à la granularité roster) en cherchant l'équipe dont l'un des rosters
+    // porte cet id → on remonte à l'équipe parente pour l'affichage/regroupement.
+    override suspend fun getTeam(id: String): TeamEntity? = withContext(Dispatchers.IO) {
+        val teams = teamLocalDataSource.getAll().firstOrNull().orEmpty()
+        teams.firstOrNull { it.id == id } ?: teams.firstOrNull { team -> team.rosters.any { it.id == id } }
+    }
     override suspend fun writeTeams(list: List<TeamEntity>) = withContext(Dispatchers.IO) { teamLocalDataSource.bulkInsert(list) }
     override suspend fun clearTeams() = withContext(Dispatchers.IO) { teamLocalDataSource.clear() }
 

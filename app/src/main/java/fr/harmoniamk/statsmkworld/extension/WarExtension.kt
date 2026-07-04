@@ -6,8 +6,32 @@ import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.flow.firstOrNull
+
+/**
+ * Résout les adversaires d'une war pour l'**affichage** : chaque `rosterId` de
+ * `teamOpponent` est remonté à son équipe parente via
+ * [DatabaseRepositoryInterface.getTeam], puis, si le roster est identifiable,
+ * le **nom et le tag du roster** remplacent ceux de l'équipe (l'**avatar** et la
+ * couleur de l'équipe parente sont conservés — principe : dès qu'une distinction
+ * équipe/roster est possible, afficher le roster). Le **rosterId est conservé
+ * comme `TeamEntity.id`** : indispensable pour apparier un adversaire à son
+ * score/pénalité par identifiant (tableau des scores 24p, pénalités), à l'image
+ * de l'hôte (`teamHost` = rosterId). Un adversaire non résolu localement est ignoré.
+ */
+suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): List<TeamEntity> =
+    teamOpponent.mapNotNull { rosterId ->
+        databaseRepository.getTeam(rosterId)?.let { team ->
+            val roster = team.rosters.firstOrNull { it.id == rosterId }
+            team.copy(
+                id = rosterId,
+                name = roster?.name ?: team.name,
+                tag = roster?.tag ?: team.tag
+            )
+        }
+    }
 
 suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, dataStoreRepository: DataStoreRepositoryInterface): List<PlayerScore> {
     val localPlayers = databaseRepository.getPlayers().firstOrNull()

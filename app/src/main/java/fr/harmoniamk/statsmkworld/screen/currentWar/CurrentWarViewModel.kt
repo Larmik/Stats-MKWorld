@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.extension.sum
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.User
@@ -71,14 +72,18 @@ class CurrentWarViewModel @Inject constructor(
             .filterNotNull()
             .onEach {
                 dataStoreRepository.mkcTeam.firstOrNull()?.let { teamHost ->
-                    val teamOpponents = it.teamOpponent.mapNotNull { databaseRepository.getTeam(it).firstOrNull() }
+                    val teamOpponents = it.opponentTeams(databaseRepository)
                     val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
                     val roster = teamHost.rosters.singleOrNull { roster -> roster.id.toString() == it.teamHost }
 
                     _state.value = state.value.copy(
                         details = WarDetails(it),
                         players = it.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository),
-                        teamHost = TeamEntity(teamHost),
+                        // Avatar de l'équipe, nom/tag du roster hôte.
+                        teamHost = TeamEntity(teamHost).copy(
+                            name = roster?.name ?: teamHost.name,
+                            tag = roster?.tag ?: teamHost.tag
+                        ),
                         teamOpponent = teamOpponents,
                         buttonsVisible = buttonsVisible,
                         isOver = it.tracks.size == 12,

@@ -112,7 +112,7 @@ Sélecteur 12/24 joueurs, puis 5 entrées :
 1. **Statistiques individuelles** → `PlayerStats(currentPlayerId, is24p)`
 2. **Statistiques de l'équipe** → `TeamStats(is24p)`
 3. **Statistiques des joueurs** → classement `TeamStats`
-4. **Statistiques des adversaires** → classement `OpponentStats(currentTeamId)`
+4. **Statistiques des adversaires** → classement `OpponentStats`. Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** : une équipe à plusieurs rosters apparaît en autant de lignes (chacune avec ses propres wars), affichées avec le **nom/tag du roster** et l'avatar de l'équipe. Un clic ouvre le détail filtré sur ce roster. Les wars anciennes sans granularité roster restent regroupées sous un item de niveau équipe.
 5. **Statistiques des circuits** → classement `MapStats(userId, teamId)`
 
 ### Onglet 3 — Annuaire (`RegistryScreen`)
@@ -142,16 +142,22 @@ flowchart LR
 ### Étape 1 — Choix de l'adversaire (`AddWarScreen`, page 1)
 - **12 joueurs** : sélectionner **1** équipe. **24 joueurs** : sélectionner **3** équipes.
 - Recherche par nom/tag ; emplacements visuels pour les équipes choisies.
-- Bouton « Suivant » actif quand le bon nombre d'équipes est sélectionné (`nextButtonEnabled`). Le bouton retour retire la dernière équipe sélectionnée.
-- Nom de war affiché : `TAG_équipe - TAG_adv1 - TAG_adv2 …`.
+- **Sélection du roster adverse** : à chaque équipe choisie, l'app récupère ses rosters MK World.
+  - **Un seul roster** → il est retenu automatiquement, sans étape supplémentaire.
+  - **Plusieurs rosters** → un **bottomSheet** s'ouvre : liste des rosters (nom + tag), preview du roster sélectionné, bouton « Suivant » actif une fois un roster choisi. En 24p, l'étape se répète pour chaque équipe adverse ayant plusieurs rosters.
+- L'emplacement de l'adversaire sélectionné affiche le **nom du roster** (avatar de l'équipe).
+- Bouton « Suivant » actif quand le bon nombre d'équipes est sélectionné (`nextButtonEnabled`). Le bouton retour ferme d'abord le bottomSheet s'il est ouvert, sinon retire la dernière équipe sélectionnée.
+- Nom de war affiché avec les **tags des rosters** : `TAG_rosterHôte - TAG_rosterAdv1 - TAG_rosterAdv2 …`.
 
 ### Étape 2 — Composition (`AddWarScreen`, page 2)
 - Joueurs **groupés par roster** (en-têtes collants ; en-tête vide = alliés).
 - Sélection de joueurs, mise en évidence des sélectionnés.
 - Bouton **« Commencer »** actif quand **exactement 6** joueurs sont sélectionnés.
-- À la création : `War(id = now, teamHost = rosterId, teamOpponent = [ids], scores = [WarScore(0)…])` ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
+- À la création : `War(id = now, teamHost = rosterId, teamOpponent = [rosterId…], scores = [WarScore(0)…])` — `teamOpponent` contient désormais le(s) **rosterId** choisi(s) à l'étape 1 (et non le teamId) ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
 
 ### Étape 3 — War en cours (`CurrentWarScreen`)
+> Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war.
+
 Pager :
 - **Page principale** : `WarScoreView` (scores + pénalités), `WarPlayersCell` (composition), et selon l'état :
   - **« Course suivante »** si la war n'est pas finie ;

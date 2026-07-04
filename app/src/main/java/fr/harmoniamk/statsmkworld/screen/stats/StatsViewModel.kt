@@ -120,7 +120,18 @@ class StatsViewModel @AssistedInject constructor(
                 ?: (type as? StatsType.TeamStats)?.let { team?.id.toString() }
 
             val player = userId?.let { databaseRepository.getPlayer(it).firstOrNull() }
-            val team = teamId?.let { databaseRepository.getTeam(it).firstOrNull() }
+            // teamId peut être un rosterId (classement par roster) : on remonte à
+            // l'équipe (avatar) puis on affiche le nom/tag du roster ciblé.
+            val team = teamId?.let { id ->
+                databaseRepository.getTeam(id)?.let { resolved ->
+                    val roster = resolved.rosters.firstOrNull { it.id == id }
+                    resolved.copy(
+                        id = id,
+                        name = roster?.name ?: resolved.name,
+                        tag = roster?.tag ?: resolved.tag
+                    )
+                }
+            }
 
             when (type) {
                 is StatsType.PlayerStats, is StatsType.TeamStats, is StatsType.OpponentStats -> _state.value = _state.value.copy(stats = stats)

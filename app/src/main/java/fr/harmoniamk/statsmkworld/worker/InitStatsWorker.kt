@@ -51,6 +51,9 @@ class InitStatsWorker @AssistedInject constructor(
         val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
         val is24PEnabled = dataStoreRepository.is24PEnabled.firstOrNull() == true
 
+        // Pas de normalisation ici : withFullTeamStats rapproche les wars de chaque
+        // équipe adverse par teamId OU rosterId (via TeamEntity.rosters), et le
+        // regroupement mostPlayed/etc. résout le rosterId → équipe dans withFullStats.
         databaseRepository.getWars().firstOrNull()
             ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
             ?.filter { (is24PEnabled && it.teamOpponent.size > 1 || (!is24PEnabled && it.teamOpponent.size == 1)) }
