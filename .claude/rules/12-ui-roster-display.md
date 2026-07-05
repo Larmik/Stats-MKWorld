@@ -21,6 +21,22 @@ Concrètement :
 - Le nom de war, les en-têtes de line-up, la preview d'adversaire, les libellés
   de statistiques suivent la même règle.
 
+**Ne jamais faire disparaître silencieusement un adversaire non résolu —
+dégrader plutôt qu'effacer.** Quand l'id (rosterId ou teamId legacy) ne se
+résout à AUCUNE `TeamEntity` locale (équipe/roster disparu du cache, war jamais
+synchronisée), il est **interdit** de le supprimer de la liste (pas de
+`mapNotNull` qui « avale » l'entrée) : nom + logo disparaîtraient et l'adversaire
+s'évanouirait de la cellule/du détail. **Retomber** sur une `TeamEntity` dégradée
+conservant l'id (pour l'appariement score/pénalité) avec un libellé explicite —
+nom `« Équipe inconnue »`, tag `« ??? »`, `logo = null` (logo vide assumé, une
+équipe disparue n'a pas de logo local). Cf. `War.opponentTeams` dans
+`extension/WarExtension.kt` : `getTeam(id)?.let { … } ?: TeamEntity(id = id,
+name = "Équipe inconnue", tag = "???", color = null, logo = null)`.
+
+Corollaire côté **écriture/migration** : ne jamais réécrire dans les données un
+identifiant (ex. migration teamId→rosterId) qui ne serait pas résolvable à
+l'affichage. Vérifier `getTeam(nouvelId) != null` avant de remplacer.
+
 Côté données, ne pas perdre le lien vers l'équipe parente : conserver le rosterId
 comme identifiant d'appariement (score/pénalité) et résoudre le nom/tag du roster
 via les métadonnées locales (`TeamEntity.rosters : List<RosterInfo>`), sans appel

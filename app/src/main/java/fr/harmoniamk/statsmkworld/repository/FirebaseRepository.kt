@@ -49,6 +49,7 @@ interface FirebaseRepositoryInterface {
 
     suspend fun getWars(teamId: String): List<War>
     suspend fun writeWar(war: War)
+    suspend fun writeWar(teamId: String, war: War)
 
     suspend fun getCurrentWar(teamId: String): War?
     fun listenToCurrentWar(teamId: String): Flow<War?>
@@ -158,6 +159,14 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
 
     override suspend fun writeWar(war: War) {
         currentRosterId()?.let { database.child("wars").child(it).child(war.id.toString()).setValue(war) }
+    }
+
+    // Écrit une war historique dans un nœud hôte explicite (wars/{teamId}/{warId}),
+    // indépendamment du roster courant. Utilisé par la migration teamId→rosterId
+    // déclenchée depuis l'écran Debug : chaque war est réécrite sous son propre
+    // nœud hôte (war.teamHost), pas sous le roster de l'utilisateur courant.
+    override suspend fun writeWar(teamId: String, war: War) {
+        database.child("wars").child(teamId).child(war.id.toString()).setValue(war)
     }
 
     override suspend fun writeCurrentWar(war: War) {

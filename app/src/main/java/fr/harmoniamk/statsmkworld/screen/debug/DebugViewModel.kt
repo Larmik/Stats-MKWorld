@@ -141,6 +141,16 @@ class DebugViewModel @Inject constructor(
             }.launchIn(viewModelScope)
     }
 
+    fun onMigrateOpponents() {
+        flowOf(Unit)
+            .onEach { _sharedLoading.emit("Migration des adversaires en cours...") }
+            .flatMapLatest { fetchUseCase.migrateOpponentsToRoster() }
+            .onEach {
+                _sharedLoading.emit(null)
+                _sharedToast.emit("Migration des adversaires terminée")
+            }.launchIn(viewModelScope)
+    }
+
     fun loadWRs() {
         viewModelScope.launch {
             worldRecordsRepository.getCurrentWRs()

@@ -38,6 +38,7 @@ interface FetchUseCaseInterface {
     suspend fun fetchWars(teamId: String)
     suspend fun fetchTags()
     fun manageTransferts(): Flow<Unit>
+    fun migrateOpponentsToRoster(): Flow<Unit>
 }
 
 @FlowPreview
@@ -184,6 +185,48 @@ class FetchUseCase @Inject constructor(
                             firebaseRepository.deleteAlly(team.id.toString(), fbUser.id)
                             databaseRepository.updateUserRoster(fbUser.id, rosterId = team.rosters.firstOrNull { it.game == "mkworld" && it.players.map { it.playerId }.contains(mkcPlayer.id.toString()) }?.id.toString())
                     }
+                }
+            }
+        }
+
+
+    // Migration idempotente teamId → rosterId des adversaires dans les wars
+    // historiques (nœud wars/{host}/{warId}), pilotée par le cache local des
+    // équipes. currentWars volontairement exclu.
+    //
+    // Pour chaque identifiant présent dans War.teamOpponent :
+    //  - s'il correspond à un teamId d'une équipe possédant EXACTEMENT un roster
+    //    mkworld → remplacé par ce rosterId (cas non ambigu) ;
+    //  - équipe multi-rosters → conservé en teamId (roster joué inconnu) ;
+    //  - déjà un rosterId → ne matche aucun teamId connu → laissé tel quel.
+    // Garde-fou : on ne remplace un teamId par son rosterId que si ce rosterId
+    // se résout effectivement à l'instant T (databaseRepository.getTeam(rosterId)
+    // != null). Sinon on ne migre pas — écrire un rosterId non résolvable ferait
+    // disparaître le nom/logo de l'adversaire à l'affichage. La war n'est réécrite
+    // que si son teamOpponent a réellement changé (idempotent : une 2ᵉ exécution
+    // ne produit aucune écriture).
+    override fun migrateOpponentsToRoster() = dataStoreRepository.mkcTeam
+        .map { it.rosters.filter { roster -> roster.game == "mkworld" }.map { roster -> roster.id.toString() } }
+        .zip(databaseRepository.getTeams()) { hostRosterIds, teams ->
+            // teamId → rosterId, uniquement pour les équipes mono-roster mkworld
+            // dont le rosterId cible est résolvable localement (getTeam != null).
+            val monoRosterMap = teams
+                .filter { it.rosters.size == 1 }
+                .mapNotNull { team ->
+                    val rosterId = team.rosters.first().id
+                    when (databaseRepository.getTeam(rosterId)) {
+                        null -> null
+                        else -> team.id to rosterId
+                    }
+                }
+                .toMap()
+            hostRosterIds.forEach { hostId ->
+                firebaseRepository.getWars(hostId).forEach { war ->
+                    val migrated = war.teamOpponent.map { opponentId ->
+                        monoRosterMap[opponentId] ?: opponentId
+                    }
+                    if (migrated != war.teamOpponent)
+                        firebaseRepository.writeWar(hostId, war.copy(teamOpponent = migrated))
                 }
             }
         }
