@@ -390,7 +390,7 @@ Cœur dans `extension/ListExtension.kt` (`withFullStats`, `withTrackStats`, `wit
 
 Toutes les stats dérivent en dernier ressort des modèles firebase (source de vérité) :
 
-- **`War`** `(id, teamHost, teamOpponent: List<String>, tracks: List<WarTrack>, penalties: List<WarPenalty>, scores: List<WarScore>)`. `teamOpponent.size == 1` → **war 12p** ; `> 1` (typiquement 3) → **war 24p**.
+- **`War`** `(id, teamHost, teamOpponent: List<String>, tracks: List<WarTrack>, penalties: List<WarPenalty>, scores: List<WarScore>, playerHostId: Long = 0L)`. `teamOpponent.size == 1` → **war 12p** ; `> 1` (typiquement 3) → **war 24p**. `playerHostId` = id MKCentral du joueur **créateur** ; il vit **uniquement** sur Firebase (nœud `currentWars`) et en mémoire — **volontairement absent** de `war.proto` (Proto DataStore) et de `WarEntity` (Room), donc `War(DatastoreWar)`/`War(WarEntity)` le laissent à `0L`. Sert à réhydrater le DataStore du créateur si celui-ci est vide (cf. §Firebase, `restoreCurrentWarIfHost`). Parsing null-safe : war legacy sans `playerHostId` → `0L`.
 - **`WarTrack`** `(id, index: List<String>, positions: List<WarPosition>, shocks: List<Shock>?)`. `index` = index(s) de circuit (une valeur pour une course simple, deux pour un combo intermission). En 12p, `positions` ne contient que les **6 joueurs de l'équipe hôte**.
 - **`WarPosition`** `(id, playerId, position: Int)` : la place d'arrivée d'un joueur sur la course.
 - **`WarScore`** (firebase) `(teamId, score: Int)` : score **saisi manuellement** par équipe, utilisé uniquement en 24p.
@@ -667,8 +667,9 @@ Accès RTDB **+ authentification anonyme**. `suspend fun signInAnonymously(): Bo
 | `writeWar(teamId, war)` | `wars/{teamId}/{war.id}` | `setValue` (nœud hôte **explicite** — migration Debug, indépendant du roster courant) |
 | `getCurrentWar(teamId)` | `currentWars/{teamId}` | `.get()` |
 | `listenToCurrentWar(teamId)` | `currentWars/{teamId}` | **`ValueEventListener` (temps réel)** |
-| `writeCurrentWar(war)` | `currentWars/{rosterId}` | `setValue` |
+| `writeCurrentWar(war)` | `currentWars/{rosterId}` | `setValue` (estampille `playerHostId = mkcPlayer.id` au premier écrit si `0L`, préservé ensuite) |
 | `deleteCurrentWar(teamId)` | `currentWars/{teamId}` | `removeValue` |
+| `restoreCurrentWarIfHost(war)` | (lecture DataStore + `setCurrentWar`) | Réhydrate le DataStore war du **créateur** si vide et `war.playerHostId == mkcPlayer.id` (≠ créateur ou `id == 0L` → no-op). Appelé par `WelcomeViewModel` / `CurrentWarViewModel` sur chaque émission de `listenToCurrentWar`. |
 | `getAllies(teamId)` | `newAllies/{teamId}` | `.get()` |
 | `writeAlly` / `deleteAlly` | `newAllies/{teamId}/{id}` | `setValue` / `removeValue` |
 | `updateAllyCurrentWar` | `newAllies/{teamId}/{id}` | `updateChildren({currentWar})` (fallback `setValue` si absent) |

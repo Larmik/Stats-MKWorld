@@ -88,7 +88,12 @@ class WelcomeViewModel @Inject constructor(private val dataStoreRepository: Data
         dataStoreRepository.mkcPlayer
             .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
             .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
-            .onEach { _state.value = state.value.copy(currentWar = it) }
+            .onEach {
+                // Réhydrate le DataStore du créateur si celui-ci est vide, pour
+                // qu'il retrouve ses droits d'édition sur la war courante.
+                firebaseRepository.restoreCurrentWarIfHost(it)
+                _state.value = state.value.copy(currentWar = it)
+            }
             .launchIn(viewModelScope)
 
         dataStoreRepository.is24PEnabled

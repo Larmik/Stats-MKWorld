@@ -13,7 +13,14 @@ data class War(
     val teamOpponent: List<String>,
     val tracks: List<WarTrack>,
     val penalties: List<WarPenalty>,
-    val scores: List<WarScore>
+    val scores: List<WarScore>,
+    /**
+     * Id MKCentral du joueur créateur de la war. Vit uniquement sur Firebase
+     * (nœud currentWars) et en mémoire : volontairement absent de war.proto
+     * (DataStore) et de WarEntity (Room). Vaut 0L pour une war legacy ou pour
+     * une war reconstruite depuis le DataStore / Room.
+     */
+    val playerHostId: Long = 0L
 ): Serializable, Parcelable {
 
     constructor(war: DatastoreWar) : this(
