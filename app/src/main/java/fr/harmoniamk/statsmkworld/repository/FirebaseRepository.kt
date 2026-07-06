@@ -193,11 +193,12 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
      * le créateur (id absent → 0L, war legacy → playerHostId 0L).
      */
     override suspend fun restoreCurrentWarIfHost(war: War?) {
-        if (war == null) return
-        if (dataStoreRepository.war.firstOrNull() != null) return
-        val playerId = dataStoreRepository.mkcPlayer.firstOrNull()?.id ?: 0L
-        if (playerId != 0L && war.playerHostId == playerId) {
-            dataStoreRepository.setCurrentWar(war)
+        war?.let {
+            val hasLocalWar = dataStoreRepository.war.firstOrNull() != null
+            val playerId = dataStoreRepository.mkcPlayer.firstOrNull()?.id ?: 0L
+            if (!hasLocalWar && playerId != 0L && it.playerHostId == playerId) {
+                dataStoreRepository.setCurrentWar(it)
+            }
         }
     }
 
