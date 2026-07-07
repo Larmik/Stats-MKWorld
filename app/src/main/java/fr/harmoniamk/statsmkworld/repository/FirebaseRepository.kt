@@ -55,6 +55,7 @@ interface FirebaseRepositoryInterface {
     fun listenToCurrentWar(teamId: String): Flow<War?>
     suspend fun writeCurrentWar(war: War)
     suspend fun deleteCurrentWar(teamId: String)
+    suspend fun restoreCurrentWarIfHost(war: War?)
 
     suspend fun getAllies(teamId: String): List<User>
     suspend fun writeAlly(teamId: String, user: User)
@@ -170,11 +171,35 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
     }
 
     override suspend fun writeCurrentWar(war: War) {
-        currentRosterId()?.let { database.child("currentWars").child(it).setValue(war) }
+        // Estampille le créateur (id MKCentral) au premier écrit ; on préserve
+        // un playerHostId déjà présent (mises à jour de courses successives).
+        val warToWrite = when (war.playerHostId) {
+            0L -> war.copy(playerHostId = dataStoreRepository.mkcPlayer.firstOrNull()?.id ?: 0L)
+            else -> war
+        }
+        currentRosterId()?.let { database.child("currentWars").child(it).setValue(warToWrite) }
     }
 
     override suspend fun deleteCurrentWar(teamId: String) {
         database.child("currentWars").child(teamId).removeValue()
+    }
+
+    /**
+     * Réhydrate le DataStore war si celui-ci est vide alors que la war Firebase
+     * a été créée par le joueur courant (playerHostId == mkcPlayer.id). Permet
+     * au créateur de retrouver ses droits d'édition après un DataStore nettoyé
+     * (logout, réinstallation, autre appareil). Sans effet si la war est nulle,
+     * si le DataStore contient déjà une war, ou si le joueur courant n'est pas
+     * le créateur (id absent → 0L, war legacy → playerHostId 0L).
+     */
+    override suspend fun restoreCurrentWarIfHost(war: War?) {
+        war?.let {
+            val hasLocalWar = dataStoreRepository.war.firstOrNull() != null
+            val playerId = dataStoreRepository.mkcPlayer.firstOrNull()?.id ?: 0L
+            if (!hasLocalWar && playerId != 0L && it.playerHostId == playerId) {
+                dataStoreRepository.setCurrentWar(it)
+            }
+        }
     }
 
     override suspend fun writeAlly(teamId: String, user: User) {
@@ -216,7 +241,9 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         teamOpponent = this["teamOpponent"] as List<String>,
         tracks = this["tracks"].toMapList().parseTracks().orEmpty(),
         penalties = this["penalties"].toMapList().parsePenalties().orEmpty(),
-        scores = this["scores"].toMapList().parseScores().orEmpty()
+        scores = this["scores"].toMapList().parseScores().orEmpty(),
+        // War legacy sans playerHostId → 0L (parsing null-safe, pas de crash).
+        playerHostId = this["playerHostId"]?.toString()?.toLongOrNull() ?: 0L
     )
 
 }

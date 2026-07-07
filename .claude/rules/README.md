@@ -16,6 +16,7 @@ catégorie :
 | `30-repositories.md` | **Repositories / data sources** | `suspend` vs `Flow`, accès Room/Firebase/réseau |
 | `40-build-release.md` | **Build / release** | R8/ProGuard, DTO Moshi, signature |
 | `50-process-doc.md` | **Process / documentation** | doc `docs/` à jour, workflow |
+| `60-kotlin-style.md` | **Style / idiomes Kotlin** | idiomes transverses (`?.let` vs `if (x == null) return`…) |
 
 Pour ajouter une rule, la ranger dans la catégorie qui correspond (ex.
 `20-viewmodels.md` = 21, 22… ou une seconde rule VM dans un fichier voisin) et,

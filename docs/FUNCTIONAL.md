@@ -169,6 +169,8 @@ Pager :
 
 `isOver` = `tracks.size == 12`. `buttonsVisible` = une war en cours existe en DataStore.
 
+**Récupération des droits d'édition (DataStore vidé).** Le DataStore local peut être vide alors que la war existe encore côté Firebase (logout, réinstallation, autre appareil) : les boutons d'édition disparaîtraient. Pour éviter cela, la war courante enregistre son **créateur** via un `playerHostId` (id MKCentral) sur Firebase. À la lecture de la war courante (accueil comme écran de war en cours), si le DataStore est vide **et** que le joueur courant est le créateur (`playerHostId == mkcPlayer.id`), le DataStore est **réhydraté automatiquement** et l'édition redevient possible. Un utilisateur qui n'est pas le créateur (ou dont le profil MKCentral est lui aussi vidé) ne déclenche pas cette réhydratation. Les wars antérieures à ce mécanisme (sans `playerHostId`) restent lisibles (valeur par défaut, pas de réhydratation).
+
 ### Étape 4 — Saisie d'une course (`AddTrackScreen`, pager 4 pages)
 1. **Circuit** : grille des 30 circuits, recherche par nom/label.
 2. **Intermission (24p)** : choisir un circuit alternatif parmi `Maps.intermissionsTo(...)` ; resélectionner le même circuit l'annule.

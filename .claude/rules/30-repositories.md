@@ -56,3 +56,13 @@ transitive fragile), utiliser `suspendCancellableCoroutine { cont -> … }` avec
 
 Un accès purement **synchrone** (ex. `Firebase.auth.currentUser != null`) reste
 une fonction **non-suspend** classique : ni `suspend`, ni `Flow`.
+
+## Ne pas extraire de fonction privée pour une logique à un seul appelant
+
+Dans un `repository/` ou `datasource/`, **ne pas extraire** de fonction privée
+(helper) pour une logique **appelée une seule fois** : l'**inliner** sur le site
+d'appel. N'extraire un helper privé que s'il est **réellement réutilisé**
+(≥ 2 appelants distincts) **ou** si l'extraction clarifie nettement un bloc
+long/complexe. Un one-liner trivial (ex. `dataStoreRepository.mkcPlayer
+.firstOrNull()?.id ?: 0L`) ne justifie pas un helper, même appelé deux fois :
+l'inliner reste plus lisible que d'introduire une indirection.

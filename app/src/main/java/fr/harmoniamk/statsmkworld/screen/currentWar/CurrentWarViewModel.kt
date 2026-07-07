@@ -71,6 +71,9 @@ class CurrentWarViewModel @Inject constructor(
             .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
             .filterNotNull()
             .onEach {
+                // Réhydrate le DataStore si le créateur l'a vidé (logout, autre
+                // appareil) : ses droits d'édition sont ainsi restaurés.
+                firebaseRepository.restoreCurrentWarIfHost(it)
                 dataStoreRepository.mkcTeam.firstOrNull()?.let { teamHost ->
                     val teamOpponents = it.opponentTeams(databaseRepository)
                     val buttonsVisible = dataStoreRepository.war.firstOrNull() != null
