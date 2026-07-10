@@ -141,7 +141,7 @@ flowchart LR
 
 ### Étape 1 — Choix de l'adversaire (`AddWarScreen`, page 1)
 - **12 joueurs** : sélectionner **1** équipe. **24 joueurs** : sélectionner **3** équipes.
-- Recherche par nom/tag ; emplacements visuels pour les équipes choisies.
+- Recherche par nom/tag (insensible à la casse) ; le texte est comparé au nom et au tag de l'équipe **ainsi qu'au nom et au tag de chacun de ses rosters** — chercher le nom d'un roster fait donc remonter l'équipe parente (affichée une seule fois, avec son avatar). Aucune requête réseau (rosters déjà en local). Emplacements visuels pour les équipes choisies. Le champ de recherche **reste affiché même quand la recherche ne renvoie aucun résultat** (seule la grille est alors vide) : l'utilisateur peut corriger sa saisie sans perdre le clavier. La section recherche + grille ne disparaît qu'une fois **tous les adversaires sélectionnés** (1 en 12p, 3 en 24p).
 - **Sélection du roster adverse** : à chaque équipe choisie, l'app récupère ses rosters MK World.
   - **Un seul roster** → il est retenu automatiquement, sans étape supplémentaire.
   - **Plusieurs rosters** → un **bottomSheet** s'ouvre : liste des rosters (nom + tag), preview du roster sélectionné, bouton « Suivant » actif une fois un roster choisi. En 24p, l'étape se répète pour chaque équipe adverse ayant plusieurs rosters.
