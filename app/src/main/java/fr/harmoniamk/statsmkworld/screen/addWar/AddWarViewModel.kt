@@ -118,9 +118,13 @@ class AddWarViewModel @AssistedInject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
     fun onSearchTeam(search: String) {
-        _state.value = state.value.copy(teamList = teams.filter {
-            it.tag.lowercase()
-                .contains(search.lowercase()) || it.name.lowercase().contains(search.lowercase())
+        val query = search.lowercase()
+        _state.value = state.value.copy(teamList = teams.filter { team ->
+            team.tag.lowercase().contains(query)
+                    || team.name.lowercase().contains(query)
+                    || team.rosters.any {
+                it.name.lowercase().contains(query) || it.tag.lowercase().contains(query)
+            }
         }.sortedBy { it.name })
     }
 

@@ -119,7 +119,11 @@ fun AddWarScreen(
 
 
 
-                state.value.teamList.takeIf { it.isNotEmpty() }?.let {
+                // Tant que la sélection des adversaires n'est pas terminée, on garde le
+                // champ de recherche visible (même si la recherche ne renvoie aucune
+                // équipe), pour ne pas perdre le clavier/focus. Une fois tous les
+                // adversaires sélectionnés (nextButtonEnabled), la section disparaît.
+                if (!state.value.nextButtonEnabled) {
                     MKTextField(
                         baseModifier = Modifier.semantics { contentDescription = "Recherche equipe" },
                         value = searchTeam.value,
