@@ -117,39 +117,44 @@ class FetchUseCase @Inject constructor(
     }
 
     override suspend fun fetchTeams(): String  {
+        // Domaine exclusivement mkworld (cf. rule 31-mkworld-only) : on ne récupère
+        // et ne stocke QUE les équipes mkworld.
         val teams = mutableListOf<TeamEntity>()
         var teamPage = 1
-        var teamPageMK8 = 1
         val firstResponse = getTeams(teamPage)
-        val firstResponseMK8 = getMK8Teams(teamPageMK8)
         // TeamEntity(MKCTeam) renseigne aussi rosters {id, nom, tag} (rosters mkworld) —
         // aucune requête supplémentaire, les rosters sont déjà dans la réponse liste.
         teams.addAll(firstResponse.second?.map { TeamEntity(it) }.orEmpty())
-        teams.addAll(firstResponseMK8.second?.map { TeamEntity(it) }.orEmpty())
         while (teamPage < (firstResponse.first ?: 1)) {
             teamPage++
             val teamsToAdd = getTeams(teamPage)
             teams.addAll(teamsToAdd.second?.map { TeamEntity(it) }.orEmpty())
         }
-        while (teamPageMK8 < (firstResponseMK8.first ?: 1)) {
-            teamPageMK8++
-            val teamsToAdd = getMK8Teams(teamPageMK8)
-            teams.addAll(teamsToAdd.second?.map { TeamEntity(it) }.orEmpty())
+        // Purge + réécriture : le cache reflète EXACTEMENT la récupération mkworld
+        // courante (flushe tout reliquat périmé keyé par un ancien id — rosterId
+        // d'un schéma antérieur, équipe mk8dx d'avant la purge — cause des doublons
+        // de registre, ex. deux « Rozando la Katástrofe »). GARDE-FOU anti-wipe :
+        // on ne purge QUE si la récupération réseau a réussi (page 1 renvoyée non
+        // nulle) ; sinon on n'écrit rien pour ne pas effacer le registre sur une
+        // erreur réseau.
+        firstResponse.second?.let {
+            databaseRepository.clearTeams()
+            // Ne persiste pas une équipe sans roster mkworld : elle ne serait pas
+            // résoluble à la granularité roster (et n'a pas de line-up mkworld à jouer).
+            databaseRepository.writeTeams(teams.filter { it.rosters.isNotEmpty() })
+            // L'équipe spéciale « 6v6 Squad » (wars amicales sans adversaire MKCentral)
+            // est conservée volontairement après la purge, hors filtre roster (aucun
+            // roster mkworld).
+            databaseRepository.writeTeams(listOf(
+                TeamEntity(
+                    name = "6v6 Squad",
+                    tag = "SQ",
+                    id = "123456789",
+                    color = null,
+                    logo = null
+                )
+            ))
         }
-        // Ne persiste pas une équipe sans roster mkworld : elle ne serait pas
-        // résoluble à la granularité roster (et n'a pas de line-up mkworld à jouer).
-        databaseRepository.writeTeams(teams.filter { it.rosters.isNotEmpty() })
-        // L'équipe spéciale « 6v6 Squad » (wars amicales sans adversaire MKCentral)
-        // est conservée volontairement, hors filtre roster (aucun roster mkworld).
-        databaseRepository.writeTeams(listOf(
-            TeamEntity(
-                name = "6v6 Squad",
-                tag = "SQ",
-                id = "123456789",
-                color = null,
-                logo = null
-            )
-        ))
         return dataStoreRepository.mkcTeam.firstOrNull()?.id.toString()
     }
 
@@ -181,9 +186,9 @@ class FetchUseCase @Inject constructor(
                 if (team?.rosters?.filter { it.game == "mkworld" }?.flatMap { it.players }?.any { it.playerId == player.id } == true) {
                     mkCentralDataSource.getPlayer(player.id).successResponse?.let { mkcPlayer ->
                         val fbUser = User(mkcPlayer)
-                            firebaseRepository.writeUser(team.id.toString(), fbUser)
-                            firebaseRepository.deleteAlly(team.id.toString(), fbUser.id)
-                            databaseRepository.updateUserRoster(fbUser.id, rosterId = team.rosters.firstOrNull { it.game == "mkworld" && it.players.map { it.playerId }.contains(mkcPlayer.id.toString()) }?.id.toString())
+                        firebaseRepository.writeUser(team.id.toString(), fbUser)
+                        firebaseRepository.deleteAlly(team.id.toString(), fbUser.id)
+                        databaseRepository.updateUserRoster(fbUser.id, rosterId = team.rosters.firstOrNull { it.game == "mkworld" && it.players.map { it.playerId }.contains(mkcPlayer.id.toString()) }?.id.toString())
                     }
                 }
             }
@@ -237,11 +242,6 @@ class FetchUseCase @Inject constructor(
         return Pair(teams?.pageCount, teams?.teamList)
     }
 
-
-    private suspend fun getMK8Teams(page: Int): Pair<Int?, MKCTeamList?> {
-        val teams = mkCentralDataSource.getMK8Teams(page).successResponse
-        return Pair(teams?.pageCount, teams?.teamList)
-    }
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO
 

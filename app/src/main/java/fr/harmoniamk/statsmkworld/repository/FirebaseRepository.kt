@@ -50,6 +50,7 @@ interface FirebaseRepositoryInterface {
     suspend fun getWars(teamId: String): List<War>
     suspend fun writeWar(war: War)
     suspend fun writeWar(teamId: String, war: War)
+    suspend fun deleteWar(teamId: String, warId: String)
 
     suspend fun getCurrentWar(teamId: String): War?
     fun listenToCurrentWar(teamId: String): Flow<War?>
@@ -168,6 +169,12 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
     // nœud hôte (war.teamHost), pas sous le roster de l'utilisateur courant.
     override suspend fun writeWar(teamId: String, war: War) {
         database.child("wars").child(teamId).child(war.id.toString()).setValue(war)
+    }
+
+    // Suppression d'une war historique irrécupérable (adversaire introuvable),
+    // déclenchée manuellement depuis l'écran Debug après décision humaine.
+    override suspend fun deleteWar(teamId: String, warId: String) {
+        database.child("wars").child(teamId).child(warId).removeValue()
     }
 
     override suspend fun writeCurrentWar(war: War) {
