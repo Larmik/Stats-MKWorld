@@ -19,7 +19,6 @@ interface MKCentralDataSourceInterface {
     suspend fun getPlayer(playerId: String): NetworkResponse<MKCPlayer>
     suspend fun getTeam(teamId: String): NetworkResponse<MKCTeam>
     suspend fun getTeams(page: Int): NetworkResponse<MKCTeamResponse>
-    suspend fun getMK8Teams(page: Int): NetworkResponse<MKCTeamResponse>
     suspend fun searchPlayers(page: Int, term: String): NetworkResponse<MKCPlayerResponse>
 }
 
@@ -56,12 +55,6 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
         MKCentralApi.baseUrl,
         timeout = 60
     ).getTeams(page)
-
-    override suspend fun getMK8Teams(page: Int): NetworkResponse<MKCTeamResponse> = RetrofitUtils.createRetrofit(
-        MKCentralApi::class.java,
-        MKCentralApi.baseUrl,
-        timeout = 60
-    ).getMK8Teams(page)
 
     override suspend fun searchPlayers(page: Int, term: String): NetworkResponse<MKCPlayerResponse> = RetrofitUtils.createRetrofit(
         MKCentralApi::class.java,

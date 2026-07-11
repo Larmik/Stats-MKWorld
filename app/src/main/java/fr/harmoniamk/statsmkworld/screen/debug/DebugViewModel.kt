@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
 import fr.harmoniamk.statsmkworld.model.firebase.User
+import fr.harmoniamk.statsmkworld.model.local.MissingPlayer
+import fr.harmoniamk.statsmkworld.model.local.UnknownOpponentDiagnostic
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.DiagnosticRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.WorldRecordsRepositoryInterface
@@ -33,6 +36,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DebugViewModel @Inject constructor(
     private val fetchUseCase: FetchUseCaseInterface,
+    private val diagnosticRepository: DiagnosticRepositoryInterface,
     private val mkCentralDataSource: MKCentralDataSourceInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
@@ -45,9 +49,14 @@ class DebugViewModel @Inject constructor(
     private val _sharedLoading = MutableStateFlow<String?>(null)
 
     private val _sendNotif = MutableSharedFlow<Unit>()
+    private val _diagnostics = MutableStateFlow<List<UnknownOpponentDiagnostic>>(emptyList())
+    private val _missingPlayers = MutableStateFlow<List<MissingPlayer>>(emptyList())
+
     val sendNotif = _sendNotif.asSharedFlow()
     val sharedToast = _sharedToast.asSharedFlow()
     val sharedLoading = _sharedLoading.asStateFlow()
+    val diagnostics = _diagnostics.asStateFlow()
+    val missingPlayers = _missingPlayers.asStateFlow()
 
     val sharedMatrixMode = dataStoreRepository.matrixMode
 
@@ -149,6 +158,60 @@ class DebugViewModel @Inject constructor(
                 _sharedLoading.emit(null)
                 _sharedToast.emit("Migration des adversaires terminée")
             }.launchIn(viewModelScope)
+    }
+
+    fun onDiagnoseUnknownOpponents() {
+        viewModelScope.launch {
+            _sharedLoading.emit("Diagnostic des adversaires inconnus...")
+            _diagnostics.value = diagnosticRepository.diagnoseUnknownOpponents()
+            _sharedLoading.emit(null)
+            _sharedToast.emit("${_diagnostics.value.size} war(s) à adversaire inconnu")
+        }
+    }
+
+    // Réattribution (paquet A) : réécrit teamOpponent vers newId (résolvable
+    // localement). Action manuelle, déclenchée après décision humaine.
+    fun onReattributeOpponent(hostRosterId: String, warId: Long, rawId: String, newId: String) {
+        viewModelScope.launch {
+            _sharedLoading.emit("Réattribution en cours...")
+            diagnosticRepository.reattributeOpponent(hostRosterId, warId, rawId, newId)
+            _diagnostics.value = diagnosticRepository.diagnoseUnknownOpponents()
+            _sharedLoading.emit(null)
+            _sharedToast.emit("Réattribution effectuée")
+        }
+    }
+
+    // Suppression (paquet B) : retire la war irrécupérable de Firebase. Action
+    // destructive, déclenchée après confirmation dans l'écran.
+    fun onDeleteWar(hostRosterId: String, warId: Long) {
+        viewModelScope.launch {
+            _sharedLoading.emit("Suppression de la war...")
+            diagnosticRepository.deleteWar(hostRosterId, warId)
+            _diagnostics.value = diagnosticRepository.diagnoseUnknownOpponents()
+            _sharedLoading.emit(null)
+            _sharedToast.emit("War supprimée")
+        }
+    }
+
+    fun onDiagnoseMissingPlayers() {
+        viewModelScope.launch {
+            _sharedLoading.emit("Diagnostic des joueurs manquants...")
+            _missingPlayers.value = diagnosticRepository.diagnoseMissingPlayers()
+            _sharedLoading.emit(null)
+            _sharedToast.emit("${_missingPlayers.value.size} joueur(s) manquant(s)")
+        }
+    }
+
+    // Ajoute le joueur manquant en allié (local + Firebase newAllies) puis
+    // re-diagnostique pour qu'il disparaisse de la liste.
+    fun onAddMissingPlayerAsAlly(playerId: String) {
+        viewModelScope.launch {
+            _sharedLoading.emit("Ajout de l'allié...")
+            diagnosticRepository.addMissingPlayerAsAlly(playerId)
+            _missingPlayers.value = diagnosticRepository.diagnoseMissingPlayers()
+            _sharedLoading.emit(null)
+            _sharedToast.emit("Allié ajouté")
+        }
     }
 
     fun loadWRs() {
