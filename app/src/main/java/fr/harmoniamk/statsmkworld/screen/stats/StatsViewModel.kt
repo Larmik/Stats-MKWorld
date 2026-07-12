@@ -9,8 +9,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.withFullStats
+import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
 import fr.harmoniamk.statsmkworld.model.local.MapStats
@@ -20,6 +22,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,7 +69,14 @@ class StatsViewModel @AssistedInject constructor(
         val mapStats: MapStats? = null,
         val team: TeamEntity? = null,
         val player: PlayerEntity? = null,
-        val map: List<Maps>? = null
+        val map: List<Maps>? = null,
+        // Lot B/C — top3/flop3 adversaires par winrate/score, calculés dans le VM
+        // au périmètre de la vue (équipe = tous ; joueur = du point de vue du
+        // joueur affiché). Seuil ≥ 3 matchs (Stats.MIN_RANKING_SAMPLE).
+        val topOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val flopOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val topOpponentsByScore: List<RankingItem.OpponentRanking> = listOf(),
+        val flopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf()
     )
 
     private val wars = mutableListOf<WarDetails>()
@@ -133,8 +143,24 @@ class StatsViewModel @AssistedInject constructor(
                 }
             }
 
+            // Lot B/C — top3/flop3 adversaires par winrate/score, au périmètre de
+            // la vue : stats d'équipe (tous adversaires) ET stats joueur/individuelles
+            // (adversaires affrontés du point de vue de ce joueur). Non pertinent
+            // pour l'écran d'un adversaire précis (OpponentStats).
+            val opponentRankings = when (type) {
+                is StatsType.TeamStats -> computeOpponentRankings(userId = null)
+                is StatsType.PlayerStats -> computeOpponentRankings(userId = type.userId)
+                else -> OpponentRankings()
+            }
+
             when (type) {
-                is StatsType.PlayerStats, is StatsType.TeamStats, is StatsType.OpponentStats -> _state.value = _state.value.copy(stats = stats)
+                is StatsType.PlayerStats, is StatsType.TeamStats, is StatsType.OpponentStats -> _state.value = _state.value.copy(
+                    stats = stats,
+                    topOpponentsByWinrate = opponentRankings.topByWinrate,
+                    flopOpponentsByWinrate = opponentRankings.flopByWinrate,
+                    topOpponentsByScore = opponentRankings.topByScore,
+                    flopOpponentsByScore = opponentRankings.flopByScore
+                )
                 is StatsType.MapStats -> {
                     val finalList = mutableListOf<MapDetails>()
                     wars.forEach { mkWar ->
@@ -166,5 +192,40 @@ class StatsViewModel @AssistedInject constructor(
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+    /** Regroupe les 4 classements adversaires (top/flop × winrate/score). */
+    private data class OpponentRankings(
+        val topByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val flopByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val topByScore: List<RankingItem.OpponentRanking> = listOf(),
+        val flopByScore: List<RankingItem.OpponentRanking> = listOf()
+    )
+
+    /**
+     * Calcule les top3/flop3 adversaires par winrate ET score moyen, au périmètre
+     * de la vue courante (les wars déjà filtrées dans [wars]). `userId` non-null
+     * ⇒ point de vue du joueur (adversaires qu'IL a affrontés). Seuil d'échantillon
+     * ≥ [Stats.MIN_RANKING_SAMPLE] matchs. Calcul dans le VM (mono-consommateur) et
+     * non dans le cache worker, car le périmètre dépend de la vue (rule 32).
+     */
+    private suspend fun computeOpponentRankings(userId: String?): OpponentRankings {
+        val currentTeamId = team?.id.toString()
+        val teams = databaseRepository.getTeams().firstOrNull()
+            .orEmpty()
+            .filterNot { it.id == currentTeamId }
+        val warEntities = wars.map { WarEntity(it.war) }
+        val rankable = teams
+            .withFullTeamStats(wars = warEntities, databaseRepository = databaseRepository, userId = userId)
+            .firstOrNull()
+            .orEmpty()
+            .map { RankingItem.OpponentRanking(it.first, it.second) }
+            .filter { it.stats.warStats.warsPlayed >= Stats.MIN_RANKING_SAMPLE }
+        return OpponentRankings(
+            topByWinrate = rankable.sortedByDescending { it.winrate }.take(3),
+            flopByWinrate = rankable.sortedBy { it.winrate }.take(3),
+            topByScore = rankable.sortedByDescending { it.stats.averagePoints }.take(3),
+            flopByScore = rankable.sortedBy { it.stats.averagePoints }.take(3)
+        )
+    }
 
 }

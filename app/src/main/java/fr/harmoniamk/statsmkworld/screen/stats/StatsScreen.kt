@@ -27,9 +27,12 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
-import fr.harmoniamk.statsmkworld.ui.stats.MKMapsStatsCell
-import fr.harmoniamk.statsmkworld.ui.stats.MKPlayerScoreCell
-import fr.harmoniamk.statsmkworld.ui.stats.MKTeamStatsView
+import fr.harmoniamk.statsmkworld.ui.stats.MKAdvancedStatsCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKMapsRankingCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKOpponentsRankingCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKPositionDistributionCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKRecentFormCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKRecordsCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKTopBottomCell
 import fr.harmoniamk.statsmkworld.ui.stats.MKWarDetailsStatsView
 import fr.harmoniamk.statsmkworld.ui.stats.MKWarStatsView
@@ -56,9 +59,14 @@ fun StatsScreen(viewModel: StatsViewModel, onWarDetailsClick: (WarDetails) -> Un
                     }
                 }
                 MKWarStatsView(state.value.stats, state.value.mapStats, viewModel.type)
-                MKWarDetailsStatsView(state.value.stats, state.value.mapStats, type = viewModel.type)
-                if (viewModel.type !is StatsType.MapStats)
-                    MKPlayerScoreCell(stats = state.value.stats, type = viewModel.type)
+                // Détails (score moyen, score moyen par map / position, shocks…) :
+                // conservés pour la vue circuit (MapStats) ET l'écran DÉTAIL d'un
+                // adversaire (OpponentStats). En vue individuelle (userId non-null),
+                // ces valeurs sont celles du JOUEUR (score/position), sinon celles de
+                // l'équipe. Pour joueur/équipe (récap global), ces indicateurs sont
+                // couverts par « Forme récente » (3 fenêtres).
+                if (viewModel.type is StatsType.MapStats || viewModel.type is StatsType.OpponentStats)
+                    MKWarDetailsStatsView(state.value.stats, state.value.mapStats, type = viewModel.type)
                 if (viewModel.type is StatsType.OpponentStats) {
                     MKText(text = "Historique des wars")
                     state.value.stats?.warStats?.list?.safeSubList(0, 5)?.map {
@@ -76,10 +84,32 @@ fun StatsScreen(viewModel: StatsViewModel, onWarDetailsClick: (WarDetails) -> Un
                     Spacer(Modifier.height(10.dp))
                 }
 
-                if (viewModel.type is StatsType.PlayerStats || viewModel.type is StatsType.TeamStats)
-                    MKTeamStatsView(state.value.stats)
-                if (viewModel.type !is StatsType.MapStats)
-                    MKMapsStatsCell(stats = state.value.stats, type = viewModel.type)
+                // Lot A/B/C — sections enrichies expandables (forme récente,
+                // records/séries, indicateurs avancés, classements circuits &
+                // adversaires par winrate/score). Adversaires : vues équipe ET
+                // joueur (perspective du joueur affiché).
+                if (viewModel.type !is StatsType.MapStats) {
+                    // Plein largeur (zéro marge horizontale) mais espacement
+                    // vertical entre sections conservé pour rester lisible.
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MKRecentFormCell(stats = state.value.stats)
+                        MKRecordsCell(stats = state.value.stats, type = viewModel.type)
+                        MKAdvancedStatsCell(stats = state.value.stats, type = viewModel.type)
+                        // Distribution des positions : vue joueur uniquement.
+                        if (viewModel.type is StatsType.PlayerStats)
+                            MKPositionDistributionCell(stats = state.value.stats, type = viewModel.type)
+                        MKMapsRankingCell(stats = state.value.stats, type = viewModel.type)
+                        if (viewModel.type is StatsType.PlayerStats || viewModel.type is StatsType.TeamStats)
+                            MKOpponentsRankingCell(
+                                topByWinrate = state.value.topOpponentsByWinrate,
+                                flopByWinrate = state.value.flopOpponentsByWinrate,
+                                topByScore = state.value.topOpponentsByScore,
+                                flopByScore = state.value.flopOpponentsByScore,
+                                // Vue joueur ⇒ score du joueur ; vue équipe ⇒ écart d'équipe.
+                                userId = (viewModel.type as? StatsType.PlayerStats)?.userId
+                            )
+                    }
+                }
                 val tops = state.value.mapStats?.topsTable
                 val bottoms = state.value.mapStats?.bottomsTable
                 val indivTops = state.value.mapStats?.indivTopsTable

@@ -201,9 +201,6 @@ fun PlayerCellPreview() {
             ),
             stats = Stats(
                 WarStats(listOf()),
-                null,
-                null,
-                null,
                 listOf(),
                 listOf(),
                 listOf(),

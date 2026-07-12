@@ -216,13 +216,216 @@ Les stats se déclinent par **format** (12/24) et souvent par **Individuel / Éq
 ### Écran de stats (`StatsScreen`)
 Sections affichées selon le type :
 - Cellule joueur / équipe / circuit en tête.
-- `MKWarStatsView` : bilan global de wars.
-- `MKWarDetailsStatsView` : détails (extrêmes, moyennes…).
-- `MKPlayerScoreCell` : répartition des points par joueur (masqué pour `MapStats`).
+- `MKWarStatsView` : bilan global de wars (nombre de wars, V/N/D, winrate, courbe).
+- `MKWarDetailsStatsView` : détails (score moyen, score moyen par manche / position
+  moyenne, maps gagnées, shocks) — affiché pour la vue **circuit (`MapStats`)** et
+  pour l'**écran détail d'un adversaire (`OpponentStats`)**. En vue **individuelle**
+  (un joueur ciblé), ces valeurs sont celles **du joueur** (son score moyen, sa
+  position moyenne par manche) ; en vue équipe, celles de l'équipe. Pour les récaps
+  globaux joueur/équipe, ces indicateurs sont couverts par « Forme récente ».
 - Historique des 5 dernières wars (pour `OpponentStats`).
-- `MKTeamStatsView` (pour `PlayerStats` et `TeamStats`).
-- `MKMapsStatsCell` (masqué pour `MapStats`).
+- **Sections enrichies repliables** (accordéon animé, hors `MapStats`) :
+  - **Forme récente** (`MKRecentFormCell`) — **vue de référence des stats** :
+    compare **trois fenêtres** (all-time, 5 dernières, 10 dernières wars) sur les
+    mêmes indicateurs, une ligne par indicateur avec ses trois valeurs. Indicateurs :
+    **winrate**, **score moyen** par war, **position moyenne** (vue joueur) OU
+    **score moyen par manche** (vue équipe/adversaire), **% de manches gagnées**,
+    **shocks/war** (avec l'icône éclair). Les deux fenêtres récentes affichent un
+    **delta** vs l'all-time (chiffre + flèche ↗/↘ + couleur) dont le sens dépend de
+    l'indicateur : winrate & % manches gagnées → plus haut = mieux ; position moyenne
+    → plus **bas** = mieux (couleur inversée) ; shocks/war → direction ambiguë, donc
+    **valeur neutre** sans couleur. Si moins de wars que demandé, la fenêtre le
+    signale sans delta trompeur.
+  - **Records & séries** (`MKRecordsCell`) : série de victoires/défaites en cours,
+    records historiques de séries de victoires et de défaites, comptes Top6/Bot6
+    (affichés si > 0).
+  - **Indicateurs avancés** (`MKAdvancedStatsCell`) : contribution du joueur aux
+    points de l'équipe (vue joueur), régularité du score (écart-type + amplitude
+    min/max), marge moyenne de victoire et de défaite (séparées), position moyenne
+    en 1ʳᵉ vs 2ᵉ moitié de war (vue joueur), série d'invincibilité (V+N) en cours,
+    points perdus en pénalités.
+  - **Distribution des positions** (`MKPositionDistributionCell`, vue joueur) :
+    mini-histogramme du nombre de fois où le joueur a fini à chaque position.
+  - **Meilleurs / pires circuits** (`MKMapsRankingCell`) : top 3 / flop 3 des
+    circuits, présentés par lignes, avec **winrate ET score moyen** affichés
+    simultanément. Un circuit n'apparaît qu'à partir de 3 matchs joués.
+  - **Meilleurs / pires adversaires** (`MKOpponentsRankingCell`, vues **équipe ET
+    joueur/individuelle**) : top 3 / flop 3 des adversaires par « winrate face à »
+    et « score moyen face à » (double critère). Chaque adversaire est présenté sur
+    une **ligne pleine largeur** (cellules empilées) afin d'afficher ses trois
+    valeurs — wars jouées, winrate et score moyen — sans les tronquer, seuil de 3
+    matchs. En vue joueur, les adversaires sont ceux affrontés **du point de vue de
+    ce joueur**.
 - `MKTopBottomCell` : tops/bottoms d'équipe et positions individuelles.
+
+> Ces sections enrichies sont **12p uniquement** pour l'instant. Les anciens blocs
+> à une valeur créés au départ ont été retirés car en doublon avec les nouvelles
+> sections top3/flop3 : le bloc « circuits » (circuit le plus joué, meilleur/pire
+> circuit) et le bloc « adversaires » (adversaire le plus joué, le plus vaincu, le
+> moins vaincu). Un comparatif 12p vs 24p viendra dans un ticket dédié.
+>
+> `MKPlayerScoreCell` (pire/meilleur score, plus large victoire / plus lourde
+> défaite) a été **retiré** : ces deux indicateurs sont abandonnés car ils n'entrent
+> pas dans une comparaison de moyennes. Les indicateurs récurrents (score moyen,
+> position moyenne / score par manche, % manches gagnées, shocks/war) sont désormais
+> dans « Forme récente » sur trois fenêtres **pour les récaps globaux joueur/équipe**.
+> `MKWarDetailsStatsView` reste utilisé pour la vue **circuit** et l'**écran détail
+> d'un adversaire** (où, en vue individuelle, il montre le score moyen et la position
+> moyenne **du joueur**).
+
+### Statistiques enrichies — que veut dire chaque stat ?
+
+Cette section explique, en langage clair, le **sens** de chaque statistique
+enrichie ajoutée à l'écran de stats. Sauf mention contraire, elles se lisent du
+point de vue de **ton équipe** (ou de **toi** en vue joueur), et portent
+uniquement sur les **wars 12 joueurs** (le mode 24 joueurs arrivera plus tard).
+
+Rappels de vocabulaire : une **war** = un match ; une **manche** (ou « track ») =
+une course dans la war ; le **winrate** = pourcentage de wars gagnées ;
+« **all-time** » = sur tout l'historique.
+
+#### Séries
+
+- **Série en cours** — Ta dynamique du moment : combien de wars d'affilée tu as
+  gagnées (ex. « 3 victoires ») **ou** perdues (ex. « 2 défaites ») en comptant à
+  partir de la war la plus récente. Une seule war nulle ou un résultat inverse
+  remet la série à zéro. Affiche « Aucune » s'il n'y a pas de série nette.
+- **Record de victoires** — La plus longue série de victoires consécutives que tu
+  aies jamais réalisée (meilleur historique).
+- **Record de défaites** — À l'inverse, la plus longue série de défaites
+  consécutives subie (pire historique).
+- **Invaincu depuis** — Depuis combien de wars tu n'as plus perdu, en comptant
+  aussi les matchs nuls (victoires **et** nuls). Se réinitialise à la première
+  défaite. Utile pour visualiser une bonne passe même avec quelques nuls.
+
+Toutes les séries sont calculées dans l'**ordre chronologique** réel des wars
+(par date), condition indispensable pour qu'elles aient un sens.
+
+#### Top6 / Bot6
+
+Une manche est un **Top6** quand les **6 joueurs de l'équipe occupent les
+positions 1 à 6** (score d'équipe de la manche = 61) et un **Bot6** quand ils
+occupent les **positions 7 à 12** (score d'équipe = 21). C'est un cas **exact** :
+une manche où l'équipe est répartie entre le haut et le bas n'est ni l'un ni
+l'autre.
+
+- **Nombre de Top6 / Bot6** — Le **compte brut** de manches Top6 et Bot6 sur
+  l'historique. Chaque ligne n'apparaît que si son compte est supérieur à 0.
+- **Top6/Bot6 par circuit** — La même idée déclinée circuit par circuit (série de
+  bonnes/mauvaises manches sur chaque map), pour repérer les circuits où l'équipe
+  performe ou coince.
+
+#### Meilleurs / pires circuits
+
+Deux classements de circuits, présentés **par lignes** (top 3 et flop 3), avec les
+**deux critères affichés côte à côte** :
+
+- par **winrate** : les circuits que tu gagnes le plus souvent (top 3) et le moins
+  souvent (flop 3) ;
+- par **score moyen** : les circuits où l'équipe marque le plus / le moins de
+  points en moyenne.
+
+**Condition** : un circuit n'apparaît dans ces classements que s'il a été joué
+**au moins 3 fois** — en dessous, l'échantillon est trop faible pour être fiable,
+le circuit est donc exclu.
+
+#### Meilleurs / pires adversaires
+
+Deux classements d'adversaires (top 3 / flop 3), toujours avec **winrate ET score
+moyen** affichés ensemble sur chaque cellule (wars jouées + winrate + score moyen) :
+
+- **Meilleur / Pire winrate face à** — Les équipes contre lesquelles on gagne le
+  plus / le moins souvent.
+- **Meilleur / Pire score moyen face à** — Les équipes contre lesquelles on marque
+  le plus / le moins de points en moyenne.
+
+Le libellé est volontairement « **face à** » (et non « meilleur/pire
+adversaire »), pour bien dire de quel angle on parle. **Condition** : seuls les
+adversaires rencontrés **au moins 3 fois** entrent dans ces classements.
+
+Ces classements apparaissent dans les **stats d'équipe** comme dans les **stats de
+joueur / individuelles** — dans ce dernier cas, ce sont les adversaires affrontés
+**du point de vue du joueur** concerné (winrate/score calculés sur ses wars).
+
+#### Forme récente
+
+**Vue de référence** des stats : compare **trois fenêtres** — ta moyenne de
+toujours (**all-time**), tes **5 dernières** et tes **10 dernières** wars — sur les
+mêmes indicateurs, affichés une ligne par indicateur avec ses trois valeurs.
+
+Indicateurs :
+
+- **Winrate** — pourcentage de wars gagnées.
+- **Score moyen** par war (points du joueur en vue joueur ; écart d'équipe « +X/-X »
+  en vue équipe/adversaire).
+- **Position moyenne** (vue joueur) — ta place moyenne sur une manche.
+- **Score moyen par manche** (vue équipe/adversaire) — remplace la position moyenne.
+- **% de manches gagnées**.
+- **Shocks/war** — nombre moyen d'objets éclair pris par war (icône éclair).
+
+Lecture du **delta** (sur les fenêtres 5 et 10 dernières, vs l'all-time) : un
+**chiffre signé + une flèche + une couleur**. Le **sens** dépend de l'indicateur :
+
+- winrate, % manches gagnées, score → **plus haut = mieux** (hausse en vert).
+- **position moyenne → plus BAS = mieux** : une baisse de la position est affichée
+  en **vert** (couleur inversée).
+- **shocks/war → direction ambiguë** : valeur affichée **sans couleur** (neutre),
+  pour ne pas suggérer à tort que plus/moins est mieux.
+
+Le delta du **score moyen** est exprimé sur la même échelle que la valeur affichée :
+en vue joueur c'est un delta de points bruts, en vue équipe c'est un delta d'écart de
+score (cohérent avec l'affichage « +X / -X »).
+
+**Petit échantillon** : si tu as joué moins de wars que la fenêtre demandée (ex.
+seulement 3 wars pour la fenêtre « 10 dernières »), l'app affiche ce qui est
+disponible, le signale, et **n'affiche pas de delta trompeur**.
+
+#### Contribution du joueur (vue joueur uniquement)
+
+Le **pourcentage moyen des points de l'équipe que tu apportes toi-même**, calculé
+war par war puis moyenné. Exemple : 20 % signifie que tu marques en moyenne un
+cinquième des points de l'équipe. Utile pour situer son poids dans le collectif.
+Visible **seulement en vue joueur**.
+
+#### Régularité
+
+Mesure la **constance** de tes performances, de deux façons complémentaires :
+
+- **Écart-type** — Plus il est **bas**, plus tes scores sont réguliers d'une war à
+  l'autre ; plus il est **haut**, plus ils sont irréguliers (des hauts et des
+  bas). Affiché « ± X ».
+- **Amplitude (min – max)** — Simplement ton **pire** et ton **meilleur** score sur
+  l'historique, pour visualiser l'écart entre les deux extrêmes.
+
+#### Distribution des positions (vue joueur uniquement)
+
+Un **mini-histogramme** qui montre, pour chaque position de 1 à 12, **combien de
+fois** tu as terminé une manche à cette place. Permet de voir en un coup d'œil si
+tu finis souvent devant, ou plutôt dispersé. Visible **seulement en vue joueur**.
+
+#### Marge moyenne de victoire / de défaite
+
+Au-delà du simple bilan Victoires/Nuls/Défaites, indique **de combien** on gagne
+ou on perd en moyenne :
+
+- **Marge moyenne de victoire** — L'écart de score moyen **quand on gagne** (ex.
+  « +45 »).
+- **Marge moyenne de défaite** — L'écart de score moyen **quand on perd** (ex.
+  « -30 »).
+
+Les deux sont **séparées** : gagner souvent de justesse mais perdre lourdement
+raconte une autre histoire qu'un simple winrate.
+
+#### Performance 1ʳᵉ vs 2ᵉ moitié de war (vue joueur)
+
+Compare ta **position moyenne** sur la **première moitié** de la war (premières
+manches) et sur la **seconde moitié** (dernières manches). Permet de voir si tu
+commences fort et faiblis, ou si tu montes en puissance en fin de match.
+
+#### Points perdus en pénalités
+
+Le **total des points retirés à l'équipe par des pénalités** sur tout
+l'historique. Un repère du « coût » cumulé des pénalités.
 
 ### Statistiques individuelles (joueur)
 Bilan V/N/D, taux de victoire, score moyen/circuit, position moyenne, circuit le plus joué, meilleur/pire circuit, plus grosse victoire, meilleur/pire score, pire défaite, nombre de wars et de circuits, meilleurs/pires résultats face aux adversaires, tableau par circuit, historique.

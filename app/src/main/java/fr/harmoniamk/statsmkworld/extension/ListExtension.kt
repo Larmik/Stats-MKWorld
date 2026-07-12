@@ -9,7 +9,6 @@ import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.Stats
-import fr.harmoniamk.statsmkworld.model.local.TeamStats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarScore
@@ -132,65 +131,16 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
     }
 
-    // Comptage O(n) des adversaires (top 1 par catégorie).
-    // 12p : victoire/défaite dérivée du diff de score ; 24p : selon le rang de
-    // l'équipe hôte parmi les 3 équipes (top 2 = gagné, bottom 2 = perdu).
-    val warsWon = when (is24p) {
-        false -> warList.filterNot { it.displayedDiff.contains('-') }
-        true -> warList.filter { it.war.scores.sortedByDescending { s -> s.score }.safeSubList(0, 2).map { s -> s.teamId }.contains(it.war.teamHost) }
-    }
-    val warsLost = when (is24p) {
-        false -> warList.filter { it.displayedDiff.contains('-') }
-        true -> warList.filter { it.war.scores.sortedBy { s -> s.score }.safeSubList(0, 2).map { s -> s.teamId }.contains(it.war.teamHost) }
-    }
-
-    val mostPlayedTeams = warList.topOpponentByCount()
-    val mostDefeatedTeams = warsWon.topOpponentByCount()
-    val lessDefeatedTeams = warsLost.topOpponentByCount()
-
     return flowOf(
         Stats(
             warStats = WarStats(this, is24p = is24p),
             warScores = warScores,
             maps = maps,
             averageForMaps = averageForMaps,
-            mostPlayedTeam = null,
-            mostDefeatedTeam = null,
-            lessDefeatedTeam = null
+            userId = userId
         )
-    ).map { stats ->
-        // Une seule lecture de la table des équipes, puis indexation en mémoire.
-        // On résout un id d'adversaire aussi bien par teamId (wars legacy /
-        // normalisées) que par rosterId (granularité roster) → équipe parente.
-        val teams = databaseRepository.getTeams().firstOrNull().orEmpty()
-        val teamsById = teams.associateBy { it.id }
-        val teamByRosterId = teams.flatMap { team -> team.rosters.map { it.id to team } }.toMap()
-
-        fun List<Pair<String, Int>>.toTeamStats() = map { (id, count) ->
-            TeamStats(teamsById[id] ?: teamByRosterId[id], count)
-        }
-
-        stats.copy(
-            mostPlayedTeam = mostPlayedTeams.toTeamStats(),
-            mostDefeatedTeam = mostDefeatedTeams.toTeamStats(),
-            lessDefeatedTeam = lessDefeatedTeams.toTeamStats()
-        )
-    }
+    )
 }
-
-/**
- * Compte le nombre de wars par adversaire et renvoie le plus fréquent (top 1),
- * sous forme de liste de [Pair] (id adversaire, nombre de wars). O(n) au lieu du
- * O(n²) d'un `filter` réévalué par adversaire.
- */
-private fun List<WarDetails>.topOpponentByCount(): List<Pair<String, Int>> =
-    this.flatMap { it.war.teamOpponent }
-        .groupingBy { it }
-        .eachCount()
-        .entries
-        .sortedByDescending { it.value }
-        .safeSubList(0, 1)
-        .map { it.key to it.value }
 
 fun List<TeamEntity>.withFullTeamStats(
     wars: List<WarEntity>,

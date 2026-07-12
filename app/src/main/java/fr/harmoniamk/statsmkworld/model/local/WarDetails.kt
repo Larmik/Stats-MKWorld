@@ -54,6 +54,13 @@ data class WarDetails(val war: War): Serializable, Parcelable {
                 }
         }
     }
+
+    /**
+     * Écart de score 12p de la war du point de vue de l'hôte (signé : >0
+     * victoire, <0 défaite, 0 nul), avec pénalités. Sert aux marges moyennes
+     * victoire/défaite ([Stats.averageWinMargin] / [Stats.averageLossMargin]).
+     */
+    fun scoreMargin(): Int = scoreHostWithPenalties - scoreOpponentWithPenalties
 }
 
 @Parcelize
@@ -78,4 +85,19 @@ data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Parcelable,
     val displayedResult: String = "$teamScore - $opponentScore"
 
     val displayedDiff: String = if (diffScore > 0) "+$diffScore" else "$diffScore"
+
+    /**
+     * Résultat de la manche 12p du point de vue de l'équipe hôte : +1 gagnée,
+     * -1 perdue, 0 égalité (ou manche sans score). Sert au calcul des séries
+     * par circuit ([Stats.streaksByTrack]).
+     */
+    fun trackOutcome(): Int {
+        val opponent = teamScore.takeIf { it != 0 }
+            ?.let { ScoringConstants.MAX_POINTS_PER_TRACK_12P - it } ?: return 0
+        return when {
+            teamScore > opponent -> 1
+            teamScore < opponent -> -1
+            else -> 0
+        }
+    }
 }
