@@ -77,7 +77,8 @@ son retour ou sa validation. Ne commite pas.
 Tant que l'utilisateur n'a **pas** validé :
 
 - S'il donne des retours, **continue le même agent** `ticket-worker` via
-  `SendMessage` avec le détail des retours. Demande-lui de :
+  `SendMessage` avec le détail des retours (il garde son contexte : rules et
+  fichiers déjà lus n'ont pas à être relus). Demande-lui de :
   1. appliquer les corrections directement (toujours **sans** commit) ;
   2. **enrichir les rules** : si un retour correspond à une rule existante dans
      `.claude/rules/`, la mettre à jour ; s'il exprime une préférence générale et

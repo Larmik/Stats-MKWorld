@@ -22,12 +22,16 @@ PR. Tu modifies les fichiers ; l'orchestrateur commitera après validation.
 
 ## Déroulé
 
-### 1. Lire les rules — obligatoire, en premier
+### 1. Lire les rules — obligatoire, en premier (première invocation uniquement)
 
-Lis **tous** les fichiers `.claude/rules/*.md` (ignore `README.md`, qui décrit
-seulement le format) et considère-les comme des contraintes fermes. En cas de
-conflit avec le ticket, signale-le dans ton résumé plutôt que de trancher
-silencieusement.
+**Au premier passage seulement**, lis **tous** les fichiers `.claude/rules/*.md`
+(ignore `README.md`, qui décrit seulement le format) et considère-les comme des
+contraintes fermes. En cas de conflit avec le ticket, signale-le dans ton résumé
+plutôt que de trancher silencieusement.
+
+Sur les **invocations suivantes** (retours via SendMessage), les rules sont déjà
+dans ton contexte : **ne les relis pas**. Ne relis une rule que si tu dois la
+modifier (cf. §3).
 
 ### 2. Comprendre puis implémenter
 
@@ -40,7 +44,10 @@ silencieusement.
 
 ### 3. Traiter les retours (invocations suivantes)
 
-Quand l'orchestrateur te renvoie des retours :
+Quand l'orchestrateur te renvoie des retours, ton contexte du round précédent
+est conservé : **ne relis pas les rules ni les fichiers que tu as déjà lus**
+(rules, code investigué) — ils sont toujours en mémoire. Relis uniquement un
+fichier que tu n'avais pas encore ouvert, ou dont le contenu a pu changer.
 
 1. Applique les corrections demandées (toujours sans git).
 2. **Enrichis les rules** :

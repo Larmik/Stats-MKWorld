@@ -1,39 +1,31 @@
 # Placement UseCase ↔ Repository : une logique mono-consommateur ne va pas dans un UseCase partagé
 
-**Portée** : ajout d'une méthode d'orchestration/logique métier dans un
-`usecase/` (ex. `FetchUseCase`) ou un `repository/`. Concerne le choix de la
-couche où placer une nouvelle fonction.
+**Portée** : ajout d'une méthode d'orchestration/logique métier dans un `usecase/`
+(ex. `FetchUseCase`) ou un `repository/`.
 
-Un `usecase/` modélise une **orchestration réutilisée** : il ne se justifie que
-si sa logique est consommée par **≥ 2 appelants distincts** (plusieurs
-ViewModels/Workers). Une logique ajoutée à un UseCase mais appelée par **un seul**
-consommateur (typiquement un unique ViewModel) **ne doit pas** vivre dans le
-UseCase partagé : elle l'alourdit sans bénéfice de réutilisation.
+Un `usecase/` modélise une **orchestration réutilisée** : justifié seulement si
+consommé par **≥ 2 appelants distincts** (plusieurs ViewModels/Workers). Une logique
+appelée par **un seul** consommateur **ne doit pas** vivre dans le UseCase partagé.
 
-Où la placer alors :
+Où la placer :
 
 - Si un **repository mono-source** approprié existe (Firebase, Room, DataStore,
-  réseau…), y placer la méthode.
-- Si la logique **agrège plusieurs sources** (orchestration multi-repositories /
-  data sources) sans repository naturel, **créer un repository dédié** — interface
-  + objet `@Module @InstallIn(SingletonComponent::class)` qui `@Binds`
-  l'implémentation `@Singleton` (patron DI habituel du projet, cf.
-  `FirebaseRepository`) — plutôt que d'étendre le UseCase. Le repository dédié
-  injecte les sources nécessaires et porte la logique + ses helpers privés.
+  réseau…) → y placer la méthode.
+- Si la logique **agrège plusieurs sources** sans repository naturel → **créer un
+  repository dédié** (interface + objet `@Module @InstallIn(SingletonComponent::class)`
+  qui `@Binds` l'impl `@Singleton`, cf. `FirebaseRepository`), plutôt qu'étendre le
+  UseCase. Le repository dédié injecte les sources et porte la logique + helpers privés.
 
-Ce principe **généralise au couple UseCase↔Repository** la règle « pas
-d'extraction pour un seul appelant » déjà posée pour les fonctions privées
-(`30-repositories.md`) et les constantes (`61-no-single-use-constant.md`) : on
-n'introduit pas une indirection (méthode de UseCase partagé) pour un usage unique.
+Généralise au couple UseCase↔Repository la règle « pas d'extraction pour un seul
+appelant » (`30-repositories.md`, `61-no-single-use-constant.md`).
 
-**Exemple concret (appliqué)** : les outils de **diagnostic debug** —
-`diagnoseUnknownOpponents`, `reattributeOpponent`, `deleteWar`,
-`diagnoseMissingPlayers`, `addMissingPlayerAsAlly` et leurs helpers privés
-(`fetchAllMkworldTeams`, `resolveOpponentId`, `mkworldCandidate`, table
-`opponentOverrides`) — n'étaient consommés que par `DebugViewModel`. Ils ont été
+**Exemple appliqué** : les outils de diagnostic debug (`diagnoseUnknownOpponents`,
+`reattributeOpponent`, `deleteWar`, `diagnoseMissingPlayers`, `addMissingPlayerAsAlly`
++ helpers privés `fetchAllMkworldTeams`, `resolveOpponentId`, `mkworldCandidate`,
+table `opponentOverrides`), consommés uniquement par `DebugViewModel`, ont été
 **déplacés de `FetchUseCase` vers un `DiagnosticRepository` dédié** (interface +
-module `@Binds @Singleton`, injectant `FirebaseRepositoryInterface`,
+module `@Binds @Singleton` injectant `FirebaseRepositoryInterface`,
 `MKCentralDataSourceInterface`, `DatabaseRepositoryInterface`,
-`DataStoreRepositoryInterface`). `FetchUseCase` ne conserve que l'orchestration de
-synchro réellement partagée (`fetchData`/`fetchTeams`/`fetchWars`/`fetchTags`/
-`manageTransferts`/`migrateOpponentsToRoster`).
+`DataStoreRepositoryInterface`). `FetchUseCase` ne garde que la synchro réellement
+partagée (`fetchData`/`fetchTeams`/`fetchWars`/`fetchTags`/`manageTransferts`/
+`migrateOpponentsToRoster`).
