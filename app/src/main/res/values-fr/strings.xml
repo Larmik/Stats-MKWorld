@@ -102,6 +102,10 @@
     <string name="details_war">Details war</string>
     <string name="courses_jouees">Courses jouées :</string>
     <string name="accueil">Accueil</string>
+    <string name="wars">Wars</string>
+    <string name="classements">Classements</string>
+    <string name="profil">Profil</string>
+    <string name="rechercher">Rechercher</string>
     <string name="nouvelle_war">Nouvelle war</string>
     <string name="last_results">Derniers résultats :</string>
     <string name="welcome_text">Ton équipe n\'a pas encore enregistré de résultats sur cette application. Pour créer une nouvelle war, tu peux cliquer sur le bouton ci-dessous si tu as le rôle approprié. \n \n Si tu ne peux pas saisir de résultats, rapproche-toi d\'un leader de ton équipe pour qu\'il t\'accorde le bon rôle.</string>

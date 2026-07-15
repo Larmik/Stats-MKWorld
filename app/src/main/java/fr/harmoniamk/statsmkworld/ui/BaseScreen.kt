@@ -1,6 +1,7 @@
 package fr.harmoniamk.statsmkworld.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -8,13 +9,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import fr.harmoniamk.statsmkworld.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -73,7 +79,7 @@ class BaseViewModel @Inject constructor(dataStoreRepository: DataStoreRepository
 }
 
 @Composable
-fun BaseScreen(modifier: Modifier = Modifier, title: String? = null, subtitle: String? = null, content: @Composable ColumnScope.() -> Unit) {
+fun BaseScreen(modifier: Modifier = Modifier, title: String? = null, subtitle: String? = null, onSearch: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
 
     val viewModel: BaseViewModel = hiltViewModel()
     val colors = viewModel.colors.collectAsState()
@@ -86,6 +92,18 @@ fun BaseScreen(modifier: Modifier = Modifier, title: String? = null, subtitle: S
                 end = Offset.Infinite
             ))
     ) {
+        onSearch?.let {
+            Icon(
+                painter = painterResource(R.drawable.ic_search),
+                contentDescription = stringResource(R.string.rechercher),
+                tint = Colors.black,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 30.dp, end = 16.dp)
+                    .size(28.dp)
+                    .clickable(onClick = it)
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()

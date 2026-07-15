@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -46,14 +45,14 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 fun WelcomeScreen(
     viewModel: WelcomeViewModel = hiltViewModel(),
     onTeamProfile: () -> Unit,
-    onPlayerProfile: () -> Unit,
     onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
-    onWarListClick: () -> Unit
+    onWarListClick: () -> Unit,
+    onSearch: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    BaseScreen(title = stringResource(R.string.accueil), modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.accueil), modifier = Modifier.padding(bottom = 90.dp), onSearch = onSearch) {
 
         when (state.value.playerName.isNullOrEmpty()) {
             true -> CircularProgressIndicator()
@@ -62,14 +61,6 @@ fun WelcomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ProfileCell(
-                        title = "Joueur",
-                        modifier = Modifier.weight(1f),
-                        name = state.value.playerName.orEmpty(),
-                        image = state.value.playerLogo,
-                        onClick = onPlayerProfile
-                    )
-                    Spacer(Modifier.width(20.dp))
                     ProfileCell(
                         title = "Equipe",
                         modifier = Modifier.weight(1f),

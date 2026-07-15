@@ -160,12 +160,12 @@ when {
 | Route | Écran | Argument(s) |
 |---|---|---|
 | `Signup` | Onboarding + Discord OAuth | `code` (clé VM) |
-| `Home` | Conteneur 3 onglets (Welcome / Stats / Registry) | — |
+| `Home` | Conteneur 5 pôles (Welcome / WarList / Stats / Rankings / Profil) | — |
+| `Home/Registry` | Annuaire joueurs/équipes (via icône recherche) | — |
 | `Home/AddWar/{is24p}` | Choix adversaire(s) + composition | `Bool` |
 | `Home/CurrentWar` | War en cours (live) | — |
 | `Home/CurrentWar/AddTrack/{is24p}` | Saisie d'une course | `Bool` |
 | `Home/CurrentWar/Actions` | Pénalités / remplacements / annulation | — |
-| `Home/WarList` | Historique | — |
 | `Home/WarDetails` | Détail d'une war | `war` (savedState) |
 | `Home/WarDetails/Tab` | Génération du tableau (PDF) | `details` (savedState) |
 | `Home/TrackDetails/{editing}` | Détail d'une course | `track` + `Bool` |
@@ -176,7 +176,7 @@ when {
 | `Player/Profile/Debug` | Écran debug | — |
 | `Team/Profile/{id}` | Profil équipe | `String` |
 
-`HomeScreen` contient son **propre** `NavHost` à 3 onglets (`BottomNavItem` : WELCOME, STATS, REGISTRY) avec `saveState`/`restoreState`.
+`HomeScreen` contient son **propre** `NavHost` à 5 pôles (`BottomNavItem` : WELCOME, WARS, STATS, RANKINGS, PROFILE → routes `Home/Welcome`, `Home/WarList`, `Home/Stats`, `Home/Rankings`, `Home/Profile`) avec `saveState`/`restoreState`. Stats et Classements réutilisent le même `StatsMenuScreen` paramétré par `StatsMenuMode` (STATS / RANKINGS). Le pôle Profil héberge `PlayerProfileScreen("me")` ; ses actions déconnexion/debug remontent au graphe racine via callbacks. L'**Annuaire** (`RegistryScreen`) n'est plus un pôle : il est ouvert via une **icône recherche** ajoutée à `BaseScreen` (paramètre optionnel `onSearch`), présente sur Accueil et Classements, et navigue vers la route racine `Home/Registry`. Le bouton système ← revient à l'écran d'origine (fiche ouverte depuis Classements → retour Classements) car les fiches profils/détails sont poussées sur le graphe racine par-dessus le pôle courant. Au niveau des pôles eux-mêmes, le `BackHandler` de `HomeScreen` applique le pattern bottom-nav standard : ← depuis un pôle autre qu'Accueil ramène au **pôle Accueil** ; ← depuis Accueil **quitte** l'app. Le pôle Profil (`PlayerProfileScreen`, qui porte son propre `BackHandler`) reçoit la même navigation « retour Accueil » en `onBack`. (Cf. rule `.claude/rules/14-ui-back-onglets.md`.)
 
 **Conventions de performance Compose** (à respecter pour tout nouvel écran/cellule) :
 

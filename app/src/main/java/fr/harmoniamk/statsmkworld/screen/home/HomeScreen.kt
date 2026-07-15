@@ -19,18 +19,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
-import fr.harmoniamk.statsmkworld.screen.registry.RegistryScreen
+import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileScreen
+import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
+import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuMode
 import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuScreen
+import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
 import fr.harmoniamk.statsmkworld.screen.welcome.WelcomeScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 
 enum class BottomNavItem(var icon: Int, var route: String, val label: String) {
-    WELCOME(R.drawable.arrivee, "Home/Welcome", "Accueil"),
+    WELCOME(R.drawable.ic_home, "Home/Welcome", "Accueil"),
+    WARS(R.drawable.ic_wars, "Home/WarList", "Wars"),
     STATS(R.drawable.stats, "Home/Stats", "Statistiques"),
-    REGISTRY(R.drawable.encyclopedie, "Home/Registry", "Annuaire"),
+    RANKINGS(R.drawable.ic_podium, "Home/Rankings", "Classements"),
+    PROFILE(R.drawable.ic_profile, "Home/Profile", "Profil"),
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -38,22 +44,38 @@ enum class BottomNavItem(var icon: Int, var route: String, val label: String) {
 fun HomeScreen(
     onBack: () -> Unit,
     onTeamProfile: (String) -> Unit,
-    onPlayerProfile: (String) -> Unit,
     onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
     onStats: (StatsType) -> Unit,
     onRanking: (StatsType?) -> Unit,
-    onWarListClick: () -> Unit
+    onSearch: () -> Unit,
+    onDisconnect: () -> Unit,
+    onDebug: () -> Unit
 ) {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
-    BackHandler { onBack() }
+    // Depuis n'importe quel pôle autre qu'Accueil, ← ramène au pôle Accueil (racine du
+    // NavHost imbriqué) ; depuis Accueil, ← quitte l'app (onBack).
+    val onWelcome = currentDestination?.hierarchy?.any { it.route == BottomNavItem.WELCOME.route } == true
+    val backToWelcome: () -> Unit = {
+        navController.navigate(BottomNavItem.WELCOME.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+    BackHandler {
+        when (onWelcome) {
+            true -> onBack()
+            else -> backToWelcome()
+        }
+    }
     Scaffold(
         bottomBar = {
             NavigationBar(containerColor = Colors.black) {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
                 BottomNavItem.entries.forEach { screen ->
                     val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                     NavigationBarItem(
@@ -87,16 +109,45 @@ fun HomeScreen(
         content = {
             NavHost(navController = navController, startDestination = "Home/Welcome") {
                 composable(route = "Home/Welcome") {
-                   WelcomeScreen(onTeamProfile = { onTeamProfile("me") }, onPlayerProfile = { onPlayerProfile("me") }, onAddWar = onAddWar, onCurrentWar = onCurrentWar, onWarDetailsClick = onWarDetailsClick, onWarListClick = onWarListClick)
+                    WelcomeScreen(
+                        onTeamProfile = { onTeamProfile("me") },
+                        onAddWar = onAddWar,
+                        onCurrentWar = onCurrentWar,
+                        onWarDetailsClick = onWarDetailsClick,
+                        onWarListClick = { navController.navigate("Home/WarList") },
+                        onSearch = onSearch
+                    )
+                }
+                composable(route = "Home/WarList") {
+                    WarListScreen(onWarDetailsClick = onWarDetailsClick)
                 }
                 composable(route = "Home/Stats") {
                     StatsMenuScreen(
+                        mode = StatsMenuMode.STATS,
                         onClick = onStats,
                         onRanking = onRanking
                     )
                 }
-                composable(route = "Home/Registry") {
-                    RegistryScreen(onPlayerProfile = onPlayerProfile, onTeamProfile = onTeamProfile)
+                composable(route = "Home/Rankings") {
+                    StatsMenuScreen(
+                        mode = StatsMenuMode.RANKINGS,
+                        onClick = onStats,
+                        onRanking = onRanking,
+                        onSearch = onSearch
+                    )
+                }
+                composable(route = "Home/Profile") {
+                    PlayerProfileScreen(
+                        viewModel = hiltViewModel(
+                            key = "me",
+                            creationCallback = { factory: PlayerProfileViewModel.Factory ->
+                                factory.create("me")
+                            }
+                        ),
+                        onBack = backToWelcome,
+                        onDisconnect = onDisconnect,
+                        onDebug = onDebug
+                    )
                 }
             }
         }
