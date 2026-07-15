@@ -102,6 +102,10 @@
     <string name="details_war">War details</string>
     <string name="courses_jouees">Races played:</string>
     <string name="accueil">Home</string>
+    <string name="wars">Wars</string>
+    <string name="classements">Rankings</string>
+    <string name="profil">Profile</string>
+    <string name="rechercher">Search</string>
     <string name="nouvelle_war">New war</string>
     <string name="last_results">Latest results:</string>
     <string name="welcome_text">Your team hasn\'t yet recorded results on this app. To create a new war, click the button below if you have the appropriate role.\n\nIf you can\'t enter results, contact a team leader to grant you the correct role.</string>

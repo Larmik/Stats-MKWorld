@@ -29,6 +29,7 @@ import fr.harmoniamk.statsmkworld.screen.editTrack.EditTrackViewModel
 import fr.harmoniamk.statsmkworld.screen.home.HomeScreen
 import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileScreen
 import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
+import fr.harmoniamk.statsmkworld.screen.registry.RegistryScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
@@ -41,7 +42,6 @@ import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
-import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
 import fr.harmoniamk.statsmkworld.worker.MKWorkerBuilder
 import fr.harmoniamk.statsmkworld.worker.UpdateDataWorker
 
@@ -91,7 +91,6 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             HomeScreen(
                 onBack = onBack,
                 onTeamProfile = { navController.navigate("Team/Profile/$it") },
-                onPlayerProfile = { navController.navigate("Player/Profile/$it") },
                 onAddWar = { navController.navigate("Home/AddWar/$it") },
                 onCurrentWar = { navController.navigate("Home/CurrentWar") },
                 onWarDetailsClick = {
@@ -106,16 +105,16 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
                     navController.navigate("Stats/Ranking")
                 },
-                onWarListClick = { navController.navigate("Home/WarList") }
+                onSearch = { navController.navigate("Home/Registry") },
+                onDisconnect = { navController.navigate("Signup") },
+                onDebug = { navController.navigate("Player/Profile/Debug") }
             )
         }
 
-        composable(route = "Home/WarList") {
-            WarListScreen(
-                onWarDetailsClick = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
-                    navController.navigate("Home/WarDetails")
-                }
+        composable(route = "Home/Registry") {
+            RegistryScreen(
+                onPlayerProfile = { navController.navigate("Player/Profile/$it") },
+                onTeamProfile = { navController.navigate("Team/Profile/$it") }
             )
         }
 

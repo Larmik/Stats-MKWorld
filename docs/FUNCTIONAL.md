@@ -96,26 +96,38 @@ Gating concret :
 
 ## 5. Accueil & navigation
 
-`HomeScreen` = conteneur à **trois onglets** (barre du bas), avec conservation d'état entre onglets.
+`HomeScreen` = conteneur à **cinq pôles** (barre du bas — `Accueil · Wars · Stats · Classements · Profil`), avec conservation d'état entre onglets (`saveState`/`restoreState`). Chaque pôle est une destination du `NavHost` imbriqué de `HomeScreen`. L'**Annuaire** n'est plus un onglet : il est accessible via une **icône recherche** (loupe) dans l'app bar des écrans Accueil et Classements (route `Home/Registry` du graphe racine). Le graphe racine (`RootScreen`) conserve `startDestination = Signup` et les deep links Discord (`statsmkworld.com?...=code`) inchangés.
 
-### Onglet 1 — Accueil (`WelcomeScreen`)
-État : `teamName/teamLogo`, `playerName/playerLogo`, `buttonVisible`, `currentWar`, `wars` (5 derniers), `is24PEnabled`.
+### Pôle 1 — Accueil (`WelcomeScreen`)
+État : `teamName/teamLogo`, `buttonVisible`, `currentWar`, `wars` (5 derniers), `is24PEnabled`.
 
-- Cartes **joueur** et **équipe** (cliquables → profils).
+- Carte **équipe** (cliquable → profil équipe). La carte **joueur** a été retirée : le profil joueur est désormais accessible via le pôle **Profil** (zéro redondance intra-écran).
+- **Icône recherche** (app bar) → Annuaire.
 - Sélecteur **12 joueurs / 24 joueurs** (`onWarTypeSwitch`) — filtre tout le contenu (wars affichées, point d'entrée stats).
 - Bouton **« Nouvelle war »** si `buttonVisible` (role > 0 ou matrix) **et** aucune war en cours.
 - Carte **war en cours** si présente (→ reprend la war).
-- **Derniers résultats** : 5 wars filtrées par mode (`teamOpponent.size` = 1 pour 12p, > 1 pour 24p) ; bouton « voir plus » → historique.
+- **Derniers résultats** : 5 wars filtrées par mode (`teamOpponent.size` = 1 pour 12p, > 1 pour 24p) ; bouton « voir plus » → pôle Wars.
 
-### Onglet 2 — Statistiques (`StatsMenuScreen`)
-Sélecteur 12/24 joueurs, puis 5 entrées :
+### Pôle 2 — Wars (`WarListScreen`)
+Historique complet des wars, groupé par période (en-têtes collants), filtré par mode. Clic sur une war → détail de war.
+
+### Pôle 3 — Stats (`StatsMenuScreen`, mode `STATS`)
+Sélecteur 12/24 joueurs, puis les entrées de **statistiques détaillées** :
 1. **Statistiques individuelles** → `PlayerStats(currentPlayerId, is24p)`
 2. **Statistiques de l'équipe** → `TeamStats(is24p)`
-3. **Statistiques des joueurs** → classement `TeamStats`
-4. **Statistiques des adversaires** → classement `OpponentStats`. Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** : une équipe à plusieurs rosters apparaît en autant de lignes (chacune avec ses propres wars), affichées avec le **nom/tag du roster** et l'avatar de l'équipe. Un clic ouvre le détail filtré sur ce roster. Les wars anciennes sans granularité roster restent regroupées sous un item de niveau équipe.
-5. **Statistiques des circuits** → classement `MapStats(userId, teamId)`
 
-### Onglet 3 — Annuaire (`RegistryScreen`)
+### Pôle 4 — Classements (`StatsMenuScreen`, mode `RANKINGS`)
+Icône recherche (Annuaire) dans l'app bar, sélecteur 12/24 joueurs, puis les **classements** :
+1. **Statistiques des joueurs** → classement `TeamStats`
+2. **Statistiques des adversaires** → classement `OpponentStats`. Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** : une équipe à plusieurs rosters apparaît en autant de lignes (chacune avec ses propres wars), affichées avec le **nom/tag du roster** et l'avatar de l'équipe. Un clic ouvre le détail filtré sur ce roster. Les wars anciennes sans granularité roster restent regroupées sous un item de niveau équipe.
+3. **Statistiques des circuits** → classement `MapStats(userId, teamId)`
+
+> `StatsMenuScreen` est un composant unique paramétré par `StatsMenuMode` (`STATS` / `RANKINGS`) qui sélectionne le sous-ensemble d'entrées affiché.
+
+### Pôle 5 — Profil (`PlayerProfileScreen`)
+Profil du joueur courant (`me`), incluant déconnexion et accès debug. Le profil équipe et les profils d'autres joueurs restent atteignables depuis l'Annuaire, le profil d'équipe et les classements.
+
+### Annuaire (`RegistryScreen`, via icône recherche)
 Sélecteur **Joueurs / Équipes** :
 - **Joueurs** : recherche déclenchée à partir de **3 caractères** ; pagination de toutes les pages MKCentral. Clic → profil joueur.
 - **Équipes** : filtre local par nom/tag (insensible à la casse). Clic → profil équipe.

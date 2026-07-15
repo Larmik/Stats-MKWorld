@@ -24,10 +24,24 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 
+/** Distingue les deux destinations issues de l'ancien menu unique : le détail des stats
+ * (individuelles/équipe) et les classements (joueurs/adversaires/circuits). */
+enum class StatsMenuMode { STATS, RANKINGS }
+
 @Composable
-fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (StatsType) -> Unit, onRanking: (StatsType?) -> Unit) {
+fun StatsMenuScreen(
+    viewModel: StatsMenuViewModel = hiltViewModel(),
+    mode: StatsMenuMode,
+    onClick: (StatsType) -> Unit,
+    onRanking: (StatsType?) -> Unit,
+    onSearch: (() -> Unit)? = null
+) {
     val state = viewModel.state.collectAsState()
-    BaseScreen(title = stringResource(R.string.statistiques)) {
+    val title = when (mode) {
+        StatsMenuMode.STATS -> R.string.statistiques
+        StatsMenuMode.RANKINGS -> R.string.classements
+    }
+    BaseScreen(title = stringResource(title), onSearch = onSearch) {
         state.value.is24PEnabled?.let {
             MKSegmentedSelector(
                 items = listOf(
@@ -47,86 +61,32 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
             Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onClick(StatsType.PlayerStats(userId = state.value.currentPlayerId.orEmpty(), is24p = state.value.is24PEnabled == true)) }) {
-                    MKText(
-                        text = stringResource(R.string.statistiques_individuelles),
-                        font = Fonts.Urbanist,
-                        modifier = Modifier.padding(vertical = 20.dp)
-                    )
+            when (mode) {
+                StatsMenuMode.STATS -> {
+                    item {
+                        MenuRow(text = stringResource(R.string.statistiques_individuelles)) {
+                            onClick(StatsType.PlayerStats(userId = state.value.currentPlayerId.orEmpty(), is24p = state.value.is24PEnabled == true))
+                        }
+                    }
+                    item {
+                        MenuRow(text = stringResource(R.string.statistiques_de_l_quipe)) {
+                            onClick(StatsType.TeamStats(is24p = state.value.is24PEnabled == true))
+                        }
+                    }
                 }
-                Spacer(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Colors.blackAlphaed)
-                )
-            }
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onClick(StatsType.TeamStats(is24p = state.value.is24PEnabled == true)) }) {
-                    MKText(
-                        text = stringResource(R.string.statistiques_de_l_quipe),
-                        font = Fonts.Urbanist,
-                        modifier = Modifier.padding(vertical = 20.dp)
-                    )
-                }
-                Spacer(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Colors.blackAlphaed)
-                )
-
-            }
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onRanking(StatsType.TeamStats(is24p = state.value.is24PEnabled == true)) }) {
-                    MKText(
-                        text = stringResource(R.string.statistiques_des_joueurs),
-                        font = Fonts.Urbanist,
-                        modifier = Modifier.padding(vertical = 20.dp)
-                    )
-                }
-                Spacer(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Colors.blackAlphaed)
-                )
-
-            }
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onRanking(StatsType.OpponentStats(teamId = state.value.currentTeamId.orEmpty(), is24p = state.value.is24PEnabled == true)) }) {
-                    MKText(
-                        text = stringResource(R.string.statistiques_des_adversaires),
-                        font = Fonts.Urbanist,
-                        modifier = Modifier.padding(vertical = 20.dp)
-                    )
-                }
-                Spacer(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Colors.blackAlphaed)
-                )
-
-            }
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
+                StatsMenuMode.RANKINGS -> {
+                    item {
+                        MenuRow(text = stringResource(R.string.statistiques_des_joueurs)) {
+                            onRanking(StatsType.TeamStats(is24p = state.value.is24PEnabled == true))
+                        }
+                    }
+                    item {
+                        MenuRow(text = stringResource(R.string.statistiques_des_adversaires)) {
+                            onRanking(StatsType.OpponentStats(teamId = state.value.currentTeamId.orEmpty(), is24p = state.value.is24PEnabled == true))
+                        }
+                    }
+                    item {
+                        MenuRow(text = stringResource(R.string.statistiques_des_circuits)) {
                             onRanking(
                                 StatsType.MapStats(
                                     userId = state.value.currentPlayerId.orEmpty(),
@@ -134,24 +94,31 @@ fun StatsMenuScreen(viewModel: StatsMenuViewModel = hiltViewModel(), onClick: (S
                                     is24p = state.value.is24PEnabled == true
                                 )
                             )
-                        }) {
-                    MKText(
-                        text = stringResource(R.string.statistiques_des_circuits),
-                        font = Fonts.Urbanist,
-                        modifier = Modifier.padding(vertical = 20.dp)
-                    )
+                        }
+                    }
                 }
-                Spacer(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Colors.blackAlphaed)
-                )
-
             }
         }
-
-
     }
+}
 
+@Composable
+private fun MenuRow(text: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        MKText(
+            text = text,
+            font = Fonts.Urbanist,
+            modifier = Modifier.padding(vertical = 20.dp)
+        )
+    }
+    Spacer(
+        Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(Colors.blackAlphaed)
+    )
 }
