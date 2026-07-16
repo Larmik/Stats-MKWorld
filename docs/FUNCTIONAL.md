@@ -270,11 +270,15 @@ Sections affichées selon le type :
     ce joueur**.
 - `MKTopBottomCell` : tops/bottoms d'équipe et positions individuelles.
 
-> Ces sections enrichies sont **12p uniquement** pour l'instant. Les anciens blocs
+> Ces sections enrichies restent **affichées en 12p uniquement** pour l'instant
+> (l'affichage 24p — histogramme des positions P1→P24, comparatif 12p vs 24p —
+> viendra dans un ticket dédié). Le **moteur de calcul** sous-jacent est en revanche
+> déjà prêt pour le 24p (résultat victoire/nul/défaite et marges corrects en 24p) :
+> lorsque l'affichage 24p sera livré, les valeurs seront justes. Les anciens blocs
 > à une valeur créés au départ ont été retirés car en doublon avec les nouvelles
 > sections top3/flop3 : le bloc « circuits » (circuit le plus joué, meilleur/pire
 > circuit) et le bloc « adversaires » (adversaire le plus joué, le plus vaincu, le
-> moins vaincu). Un comparatif 12p vs 24p viendra dans un ticket dédié.
+> moins vaincu).
 >
 > `MKPlayerScoreCell` (pire/meilleur score, plus large victoire / plus lourde
 > défaite) a été **retiré** : ces deux indicateurs sont abandonnés car ils n'entrent
