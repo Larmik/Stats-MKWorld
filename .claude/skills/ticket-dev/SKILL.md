@@ -1,9 +1,9 @@
 ---
 name: ticket-dev
-description: Prend un ticket (texte collé ou URL Trello), crée une branche nommée d'après le titre, délègue les modifications de code à l'agent ticket-worker en respectant les rules du projet, itère sur les retours sans commiter, puis — sur validation explicite — commit / push / crée la PR vers master. À utiliser quand on veut traiter un ticket de bout en bout.
-arguments: [ticket-ou-url-trello]
+description: Prend un ticket (numéro/URL d'issue GitHub, ou texte collé), crée une branche nommée d'après le titre, délègue les modifications de code à l'agent ticket-worker en respectant les rules du projet, itère sur les retours sans commiter, puis — sur validation explicite — commit / push / crée la PR vers master en liant l'issue. À utiliser quand on veut traiter un ticket de bout en bout.
+arguments: [numero-ou-url-issue-github-ou-texte]
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash, WebFetch, Agent, SendMessage, AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash, Agent, SendMessage, AskUserQuestion
 ---
 
 # Traitement d'un ticket de bout en bout
@@ -20,17 +20,21 @@ pas explicitement validé** (étape 5). Ne devine jamais cette validation.
 
 ## 1. Acquérir le ticket
 
-Le ticket peut arriver sous deux formes :
+Les tickets vivent sur **GitHub Issues** (dépôt `Larmik/Stats-MKWorld`). L'entrée
+peut arriver sous trois formes :
 
+- **Numéro d'issue** (`#42` ou `42`) ou **URL d'issue GitHub** → récupère-la avec
+  `gh issue view <n> --json number,title,body,labels,milestone`. **Mémorise le
+  numéro `#N`** : il servira à lier la PR à l'issue (étape 5). Si le numéro
+  n'existe pas, **arrête-toi et demande**.
 - **Texte brut collé** (souvent au format `create-ticket` : titre préfixé
   `[BUG]`/`[FEATURE]`, sections Contexte / Description / Solutions proposées) →
-  utilise-le tel quel.
-- **URL Trello** → tente un `WebFetch` de l'URL. Si la carte est privée ou que
-  le contenu récupéré est inexploitable, **arrête-toi et demande** à
-  l'utilisateur de coller le contenu du ticket.
+  utilise-le tel quel. Il n'y a alors pas d'issue à lier (sauf si l'utilisateur en
+  fournit le numéro). Propose éventuellement de créer d'abord l'issue via
+  `/create-ticket`.
 
-Si `$0` est vide, **arrête-toi** et demande à l'utilisateur de coller le ticket
-(ou de fournir l'URL). Ne continue pas sans un titre et une description
+Si `$0` est vide, **arrête-toi** et demande à l'utilisateur le numéro/URL de
+l'issue (ou de coller le ticket). Ne continue pas sans un titre et une description
 exploitables.
 
 ## 2. Synchroniser puis créer la branche
@@ -91,6 +95,14 @@ Répète autant de fois que nécessaire.
 
 ## 5. Validation → commit / push / PR
 
+**Porte de validation — conformité maquette (avant de solliciter la validation).** Si le
+ticket touche un écran décrit dans `docs/PROTOTYPE_UX.md`, **vérifier explicitement la
+conformité à la maquette écran par écran** (sections/onglets/insights, rattachement de
+pôle, libellés FR, navigation) ET le respect des règles composants (`13`/`15` : réutiliser/
+adapter, ne pas recréer). Lister les écarts constatés. Un ticket avec écart maquette n'est
+**pas** « fait » : le signaler et rester en itération. Un ticket **purement technique /
+sans écran** est exempté de ce critère. Cf. `.claude/rules/15-ui-prototype-reference.md`.
+
 Uniquement quand l'utilisateur valide **explicitement** les changements :
 
 1. **Demande le message de commit** à l'utilisateur (l'input qu'il fournit *est*
@@ -102,12 +114,14 @@ Uniquement quand l'utilisateur valide **explicitement** les changements :
    ```
 3. `git push -u origin <nom-de-branche>`.
 4. Crée la PR **vers master** : `gh pr create --base master --head <branche>`
-   avec un titre = titre du ticket et un corps résumant le changement. Termine le
-   corps par :
+   avec un titre = titre du ticket et un corps résumant le changement. **Si le
+   ticket vient d'une issue GitHub, lie-la** en ajoutant `Closes #N` dans le corps
+   (l'issue se fermera à la fusion) ; reporte aussi le milestone de l'issue sur la
+   PR si pertinent (`--milestone`). Termine le corps par :
 
    ```
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
    ```
-5. Affiche l'URL de la PR.
+5. Affiche l'URL de la PR (et rappelle le `#N` de l'issue liée).
 
 Ne fais ces opérations git **qu'à cette étape**, et jamais avant.

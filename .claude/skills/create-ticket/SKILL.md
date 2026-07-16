@@ -1,16 +1,21 @@
 ---
 name: create-ticket
-description: Génère un ticket prêt à coller sur Trello à partir d'une description de bug ou de feature. Le ticket contient toujours trois sections — Contexte, Description, et Solutions proposées — avec une mise en page Markdown lisible. À utiliser quand on veut transformer une idée de bug/feature en ticket structuré pour le board Trello du projet.
+description: Crée une issue GitHub structurée (Contexte / Description / Solutions proposées) sur le dépôt Larmik/Stats-MKWorld à partir d'une description de bug ou de feature. À utiliser quand on veut transformer une idée de bug/feature en ticket actionnable sur GitHub Issues (remplace l'ancien flux Trello).
 arguments: [description-bug-ou-feature]
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(pbcopy *), Task
+allowed-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(gh issue *), Bash(gh label *), Bash(gh api *), Agent, AskUserQuestion
 ---
 
-# Création d'un ticket Trello
+# Création d'une issue GitHub
 
 Description fournie en entrée : **$0**
 
-Ton objectif : produire **un seul bloc Markdown final, prêt à être collé tel quel dans une carte Trello**, qui décrit proprement le bug ou la feature donné(e) en entrée.
+Ton objectif : créer **une issue GitHub** propre et actionnable sur le dépôt
+`Larmik/Stats-MKWorld`, décrivant le bug ou la feature donné(e) en entrée.
+
+> La gestion des tickets se fait sur **GitHub Issues** (le board Trello est
+> abandonné). Le dépôt est **public** : le contenu de l'issue est visible de tous
+> — pas de secret (clé, token, chemin de keystore, id Discord réel…) dans le corps.
 
 ## 1. Comprendre la demande
 
@@ -22,13 +27,11 @@ Ton objectif : produire **un seul bloc Markdown final, prêt à être collé tel
    - Pour une investigation large, délègue à un agent `Explore`.
 4. Ne sur-investigue pas : l'objectif est un ticket actionnable, pas un audit complet. Quelques pistes solides valent mieux qu'une analyse exhaustive.
 
-## 2. Rédiger le ticket
+## 2. Rédiger le corps de l'issue
 
-Respecte **exactement** cette structure (c'est le livrable). Garde un ton concis et factuel, en français.
+Respecte **exactement** cette structure (c'est le corps de l'issue, sans titre H1 — le titre part dans le champ titre de l'issue). Ton concis et factuel, en français.
 
 ````markdown
-# <Titre court et explicite — préfixé par [BUG] ou [FEATURE]>
-
 ## 🎯 Contexte
 <2 à 4 phrases : où ça se passe dans l'app, dans quelles conditions, et pourquoi
 ça compte. Donne l'environnement utile (écran, mode war 12p/24p, étape du flux…).>
@@ -53,25 +56,39 @@ le compromis (effort / risque / portée). Mets en avant la solution recommandée
 <Optionnel : effets de bord, points à valider, liens, dépendances.>
 ````
 
-## 3. Règles de mise en page Trello
+- GitHub rend le **Markdown** : titres, listes, **gras**, `code inline`, blocs de code, et **task lists** `- [ ]` (cases cliquables). Utilise `- [ ]` pour les critères d'acceptation et les étapes de solution actionnables.
+- Paragraphes courts et aérés. Les emojis de section sont volontaires (issue scannable).
 
-- Trello rend le **Markdown** : titres `#`/`##`, listes, **gras**, `code inline`, blocs de code triple-backtick, et cases à cocher `- [ ]`.
-- Utilise des **cases à cocher** `- [ ]` pour les critères d'acceptation et les étapes de solution actionnables — elles deviennent cliquables dans Trello.
-- Garde des paragraphes courts et aérés. Pas de tableaux complexes (Trello les rend mal).
-- Les emojis de section sont volontaires : ils rendent la carte scannable.
+## 3. Titre & labels
 
-## 4. Livraison
+- **Titre de l'issue** = titre court et explicite **préfixé `[BUG]` ou `[FEATURE]`**
+  (le préfixe sert au nommage de branche par `/ticket-dev`).
+- **Labels de type** : `bug` (bug) ou `enhancement` (feature).
+- **Rattachement à l'epic refonte** : si le ticket concerne la refonte UX (navigation
+  5 pôles / stats-résultats — cf. `docs/PROTOTYPE_UX.md`), ajoute le label `epic:refonte-ux`,
+  le label de pôle concerné (`pole:accueil` | `pole:wars` | `pole:stats` |
+  `pole:classements` | `pole:profil`), et le **milestone** « Refonte UX — 5 pôles ».
+  Sinon, ne mets ni milestone ni label de pôle.
+- En cas de doute sur le pôle/rattachement epic, demande à l'utilisateur (`AskUserQuestion`).
 
-Affiche le ticket final **dans un bloc de code** (fenced ```` ``` ````) pour que l'utilisateur puisse le copier d'un seul geste.
+## 4. Livraison — créer l'issue
 
-**Copie systématiquement le ticket dans le presse-papiers** (macOS) une fois rédigé : passe son contenu intégral et brut (le Markdown, sans les backticks d'entourage) à `pbcopy`, par exemple via un here-doc :
+Crée l'issue via `gh` (le corps passe par un fichier temporaire ou un here-doc pour préserver le Markdown). **Toute issue est ajoutée au board `Stats MKWorld`** (projet qui représente l'app entière — tous les tickets y vont) via `--project "Stats MKWorld"` :
 
 ```bash
-pbcopy <<'TICKET'
-<contenu Markdown intégral du ticket>
-TICKET
+gh issue create \
+  --title "[FEATURE] Titre court" \
+  --body-file - \
+  --project "Stats MKWorld" \
+  --label enhancement --label epic:refonte-ux --label pole:stats \
+  --milestone "Refonte UX — 5 pôles (stats & résultats)" <<'BODY'
+## 🎯 Contexte
+…corps Markdown intégral…
+BODY
 ```
 
-Confirme ensuite à l'utilisateur que le ticket a été copié dans le presse-papiers.
-
-**Ne crée JAMAIS de fichier** (`.md` ou autre) : la sortie reste exclusivement dans le chat. Écrire un fichier polluerait le dépôt inutilement.
+- `--project "Stats MKWorld"` est **systématique** (tout ticket, epic ou non).
+- Pour un ticket **hors epic**, retire `--milestone` et les labels `epic:*`/`pole:*` (mais garde `--project` et le label de type).
+- La nouvelle carte arrive sans **Status** (colonne « No Status » du board) : c'est normal, elle sera classée dans une colonne au démarrage.
+- Après création, **affiche l'URL de l'issue** renvoyée par `gh` et confirme le numéro `#N`.
+- **Ne crée aucun fichier `.md` dans le dépôt** : le ticket vit dans l'issue GitHub, pas dans un fichier versionné.
