@@ -128,6 +128,12 @@ Tant que l'utilisateur donne des retours :
 - Puis **re-commit (message = nom de branche) + push** sur la même branche (la PR se
   met à jour automatiquement), relaie le résumé et **attends** de nouveau.
 
+> **Périmètre du commit.** Les **rules enrichies pendant le ticket** (`.claude/rules/`)
+> sont committées **sur la branche du ticket** (dans sa PR) — elles ont évolué à cause
+> de ce ticket, c'est cohérent. Ne PAS les isoler ailleurs (pas de ballet de branches).
+> Seuls les **artefacts fondationnels pré-existants** non liés au ticket (prototype,
+> skills eux-mêmes, docs de référence transverses) se committent hors de la PR ticket.
+
 ## 7. Critère de validation / fusion — conformité maquette
 
 La **validation finale** de l'utilisateur sert à **fusionner** la PR. Avant de la
