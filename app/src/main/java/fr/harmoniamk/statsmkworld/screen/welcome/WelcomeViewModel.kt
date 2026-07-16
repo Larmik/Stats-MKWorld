@@ -38,8 +38,10 @@ class WelcomeViewModel @Inject constructor(
         val playerName: String? = null,
         val playerLogo: String? = null,
         val currentWar: War? = null,
-        // Stats équipe 12p (dashboard : momentum, chiffres clés, série).
-        val stats: Stats? = null,
+        // Les deux vues de stats 12p sont calculées une seule fois ; le segmenté
+        // Moi/Équipe du dashboard choisit celle affichée (pas de recalcul au switch).
+        val playerStats: Stats? = null,
+        val teamStats: Stats? = null,
         // 3 dernières wars 12p (résultats récents → WarDetails). Réutilise WarCell.
         val recentResults: List<WarDetails> = listOf()
     )
@@ -68,8 +70,13 @@ class WelcomeViewModel @Inject constructor(
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty()),
-                    stats = wars.takeIf { it.isNotEmpty() }
+                    // Vue équipe (userId = null) et vue joueur (userId = id MKCentral
+                    // du joueur courant, comme StatsMenuViewModel) calculées d'emblée.
+                    teamStats = wars.takeIf { it.isNotEmpty() }
                         ?.withFullStats(databaseRepository, is24p = false)
+                        ?.firstOrNull(),
+                    playerStats = wars.takeIf { it.isNotEmpty() }
+                        ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
                         ?.firstOrNull(),
                     recentResults = wars.safeSubList(0, 3)
                 )

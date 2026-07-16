@@ -19,14 +19,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Canvas
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
@@ -35,6 +43,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCell
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCellViewModel
@@ -52,21 +61,38 @@ fun WelcomeScreen(
     onSearch: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
+    // État UI local : profil affiché (0 = Moi, 1 = Équipe) et fenêtre du Momentum
+    // (0 = 5 dernières, 1 = 10 dernières). Survivent à la rotation.
+    var profileIndex by rememberSaveable { mutableIntStateOf(0) }
+    var windowIndex by rememberSaveable { mutableIntStateOf(0) }
     BaseScreen(title = stringResource(R.string.accueil), modifier = Modifier.padding(bottom = 90.dp), onSearch = onSearch) {
 
         when (state.value.playerName.isNullOrEmpty()) {
             true -> CircularProgressIndicator()
-            else -> LazyColumn(
+            else -> {
+                // Vue sélectionnée : joueur (Moi) ou équipe. Deux jeux de Stats déjà
+                // calculés côté VM → le switch ne recalcule rien.
+                val selectedStats = when (profileIndex) {
+                    0 -> state.value.playerStats
+                    else -> state.value.teamStats
+                }
+                LazyColumn(
                 Modifier.fillMaxWidth().weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // 1. Carte de salutation (→ profil).
+                // 1. Carte de salutation (→ profil) + segmenté Moi/Équipe.
                 item {
                     GreetingCard(
                         greeting = stringResource(R.string.home_greeting, state.value.playerName.orEmpty()),
                         subtitle = stringResource(R.string.home_profile_subtitle, state.value.teamName.orEmpty()),
                         image = state.value.playerLogo,
                         onClick = onTeamProfile
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    MKSegmentedSelector(
+                        items = listOf(stringResource(R.string.home_scope_me), stringResource(R.string.home_scope_team)),
+                        page = profileIndex,
+                        onClick = { profileIndex = it }
                     )
                 }
 
@@ -83,10 +109,17 @@ fun WelcomeScreen(
                     }
                 }
 
-                // 3/4/5. Momentum + chiffres clés + série (dépendent des stats calculées).
-                state.value.stats?.let { stats ->
-                    item { MomentumCard(stats) }
-                    item { KeyFiguresCard(stats) }
+                // 3/4/5. Momentum + chiffres clés + série (selon le profil sélectionné).
+                selectedStats?.let { stats ->
+                    item {
+                        MomentumCard(
+                            stats = stats,
+                            windowIndex = windowIndex,
+                            onWindowChange = { windowIndex = it },
+                            isPlayer = profileIndex == 0
+                        )
+                    }
+                    item { KeyFiguresCard(stats = stats, isPlayer = profileIndex == 0) }
                     stats.currentStreak.takeIf { it != 0 }?.let { item { StreakBanner(stats) } }
                 }
 
@@ -123,6 +156,7 @@ fun WelcomeScreen(
                             )
                         }
                     }
+                }
                 }
             }
         }
@@ -171,26 +205,66 @@ private fun GreetingCard(greeting: String, subtitle: String, image: String?, onC
 }
 
 /**
- * Carte « Momentum » : bande de forme des 5 derniers résultats (pastilles V/N/D)
- * + delta de la forme récente (10 dernières wars) vs all-time sur le winrate.
+ * Carte « Momentum » : sélecteur de fenêtre (5 / 10 dernières), bande de forme en
+ * pastilles V/N/D, sparkline des scores de la fenêtre, et delta de forme
+ * (winrate de la fenêtre vs all-time). [windowIndex] : 0 = 5 dernières, 1 = 10.
  */
 @Composable
-private fun MomentumCard(stats: Stats) {
+private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -> Unit, isPlayer: Boolean) {
+    val count = if (windowIndex == 0) 5 else 10
+    val outcomes = stats.chronologicalOutcomes.takeLast(count)
+    val scores = stats.scoreTimeline.takeLast(count)
+    val form = if (windowIndex == 0) stats.recentForm5 else stats.recentForm10
     DashboardCard(title = stringResource(R.string.home_momentum)) {
+        MKSegmentedSelector(
+            items = listOf(stringResource(R.string.home_last_5), stringResource(R.string.home_last_10)),
+            page = windowIndex,
+            onClick = onWindowChange
+        )
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            stats.recentOutcomes.forEach { OutcomePill(it) }
-            Spacer(Modifier.weight(1f))
-            MKText(text = stringResource(R.string.home_last_5), font = Fonts.NunitoIT, textColor = Colors.black, fontSize = 12)
+            outcomes.forEach { OutcomePill(it) }
         }
-        stats.recentForm10?.winrateDelta?.takeIf { it != 0 }?.let { delta ->
+        scores.takeIf { it.size >= 2 }?.let {
+            Spacer(Modifier.height(8.dp))
+            Sparkline(it)
+        }
+        form?.winrateDelta?.takeIf { it != 0 }?.let { delta ->
             Spacer(Modifier.height(6.dp))
             MKText(
-                text = stringResource(R.string.home_form_delta, if (delta > 0) "+$delta%" else "$delta%"),
+                text = stringResource(R.string.home_form_delta, if (delta > 0) "+$delta%" else "$delta%", count),
                 font = Fonts.NunitoBD,
                 textColor = if (delta > 0) Colors.green else Colors.red,
                 fontSize = 13
             )
         }
+    }
+}
+
+/**
+ * Sparkline minimale (rule 13 : pas de composant graphe soigné, aucun réutilisable
+ * dans le projet) : tracé Compose des scores de la fenêtre, normalisés entre min et
+ * max. Un seul segment par intervalle, sans axes ni polish.
+ */
+@Composable
+private fun Sparkline(values: List<Int>) {
+    val min = values.min()
+    val max = values.max()
+    val range = (max - min).takeIf { it > 0 } ?: 1
+    Canvas(Modifier.fillMaxWidth().height(40.dp)) {
+        val stepX = if (values.size > 1) size.width / (values.size - 1) else 0f
+        val path = Path()
+        values.forEachIndexed { index, value ->
+            val x = index * stepX
+            // y inversé (0 en haut) : score max en haut, min en bas.
+            val y = size.height - ((value - min).toFloat() / range) * size.height
+            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path = path, color = Colors.black, style = Stroke(width = 3f))
+        // Point sur la dernière valeur pour repérer le plus récent.
+        val lastX = (values.size - 1) * stepX
+        val lastY = size.height - ((values.last() - min).toFloat() / range) * size.height
+        drawCircle(color = Colors.black, radius = 5f, center = Offset(lastX, lastY))
     }
 }
 
@@ -210,14 +284,27 @@ private fun OutcomePill(outcome: Int) {
     }
 }
 
-/** Carte « Chiffres clés » : winrate · score moyen · position moyenne. */
+/**
+ * Carte « Chiffres clés » : winrate · score moyen · position moyenne.
+ * En vue joueur ([isPlayer]) le score est le score BRUT du joueur et la 3ᵉ colonne
+ * la position moyenne du joueur ; en vue équipe le score est l'écart moyen
+ * ([averagePointsLabel]) et la 3ᵉ colonne le % de manches gagnées.
+ */
 @Composable
-private fun KeyFiguresCard(stats: Stats) {
+private fun KeyFiguresCard(stats: Stats, isPlayer: Boolean) {
     DashboardCard(title = stringResource(R.string.home_key_figures)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             KeyFigure(value = stats.allTimeForm?.winrate?.let { "$it%" } ?: "-", label = stringResource(R.string.form_winrate))
-            KeyFigure(value = stats.averagePointsLabel, label = stringResource(R.string.form_score))
-            KeyFigure(value = stats.averagePlayerPosLabel, label = stringResource(R.string.average_position_short))
+            when (isPlayer) {
+                true -> {
+                    KeyFigure(value = stats.averagePoints.toString(), label = stringResource(R.string.form_score))
+                    KeyFigure(value = stats.averagePlayerPosLabel, label = stringResource(R.string.average_position_short))
+                }
+                else -> {
+                    KeyFigure(value = stats.averagePointsLabel, label = stringResource(R.string.form_score))
+                    KeyFigure(value = stats.mapsWon ?: "-", label = stringResource(R.string.maps_gagn_es))
+                }
+            }
         }
     }
 }
