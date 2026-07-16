@@ -7,13 +7,16 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.withFullStats
+import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,15 +72,25 @@ class StatsFullViewModel @AssistedInject constructor(
      * Tuile nommée (adversaire / circuit). Le nom vient soit d'une chaîne résolue
      * (adversaire, résolu en base), soit d'une ressource string ([labelRes], circuit
      * — résolue à l'affichage car nécessite un Context). [value] = métrique annexe
-     * (winrate, nb de matchs).
+     * (winrate, nb de matchs). Vignette : [logo] (chemin logo MKCentral d'une équipe)
+     * OU [pictureRes] (illustration `@DrawableRes` d'un circuit).
      */
-    data class NamedTile(val name: String? = null, val labelRes: Int? = null, val value: String? = null)
+    data class NamedTile(
+        val name: String? = null,
+        val labelRes: Int? = null,
+        val value: String? = null,
+        val logo: String? = null,
+        val pictureRes: Int? = null
+    )
 
     data class State(
         val loading: Boolean = true,
         // Nom/tag/pastille pour l'en-tête (joueur ou équipe selon l'onglet).
         val playerName: String? = null,
         val teamName: String? = null,
+        // Id du joueur affiché (résolu : soit userId, soit joueur courant) — sert à
+        // reconstruire un StatsType pour les cellules ui/stats/* réutilisées.
+        val targetUserId: String? = null,
         // Stats du mode courant.
         val playerStats: Stats? = null,
         val teamStats: Stats? = null,
@@ -99,7 +112,17 @@ class StatsFullViewModel @AssistedInject constructor(
         // Circuits ÉQUIPE : le + joué / meilleur / pire (winrate).
         val teamBestTrack: NamedTile? = null,
         val teamWorstTrack: NamedTile? = null,
-        val teamMostPlayedTrack: NamedTile? = null
+        val teamMostPlayedTrack: NamedTile? = null,
+        // Classements adversaires top3/flop3 (winrate ET score), au périmètre de la
+        // vue (équipe = tous ; individuelles = du point de vue du joueur affiché).
+        val topOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val flopOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val topOpponentsByScore: List<RankingItem.OpponentRanking> = listOf(),
+        val flopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf(),
+        val playerTopOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val playerFlopOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val playerTopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf(),
+        val playerFlopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf()
     )
 
     private val _state = MutableStateFlow(State())
@@ -157,10 +180,18 @@ class StatsFullViewModel @AssistedInject constructor(
             // Adversaires : le + joué / + vaincu / − vaincu (vue Équipe).
             val opponents = computeOpponentTiles(teamWarsMode)
 
+            // Classements top3/flop3 adversaires (winrate ET score), au périmètre de
+            // la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
+            // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
+            val currentTeamId = team?.id?.toString()
+            val teamRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = null, is24p = is24p)
+            val playerRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = targetUserId, is24p = is24p)
+
             State(
                 loading = false,
                 playerName = playerName,
                 teamName = teamName,
+                targetUserId = targetUserId,
                 playerStats = playerStats,
                 teamStats = teamStats,
                 playerOtherMode = playerOther,
@@ -177,9 +208,56 @@ class StatsFullViewModel @AssistedInject constructor(
                 worstPlayerTrack = playerStats?.worstMapByWinrate.toTrackTile(),
                 teamBestTrack = teamStats?.bestMapByWinrate.toTrackTile(),
                 teamWorstTrack = teamStats?.worstMapByWinrate.toTrackTile(),
-                teamMostPlayedTrack = teamStats?.mostPlayedMap?.mapLabelRes()?.let { NamedTile(labelRes = it) }
+                teamMostPlayedTrack = teamStats?.mostPlayedMap.toTrackTile(),
+                topOpponentsByWinrate = teamRankings.topByWinrate,
+                flopOpponentsByWinrate = teamRankings.flopByWinrate,
+                topOpponentsByScore = teamRankings.topByScore,
+                flopOpponentsByScore = teamRankings.flopByScore,
+                playerTopOpponentsByWinrate = playerRankings.topByWinrate,
+                playerFlopOpponentsByWinrate = playerRankings.flopByWinrate,
+                playerTopOpponentsByScore = playerRankings.topByScore,
+                playerFlopOpponentsByScore = playerRankings.flopByScore
             )
         }
+
+    /** Regroupe les 4 classements adversaires (top/flop × winrate/score). */
+    private data class OpponentRankings(
+        val topByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val flopByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val topByScore: List<RankingItem.OpponentRanking> = listOf(),
+        val flopByScore: List<RankingItem.OpponentRanking> = listOf()
+    )
+
+    /**
+     * Top3/flop3 adversaires par winrate ET score moyen, au périmètre des [wars] déjà
+     * filtrées. `userId` non-null ⇒ point de vue du joueur. Seuil ≥
+     * [Stats.MIN_RANKING_SAMPLE]. Réutilise `withFullTeamStats` (comme StatsViewModel,
+     * rule 32 : mono-consommateur, hors cache worker car dépend de la vue).
+     */
+    private suspend fun computeOpponentRankings(
+        wars: List<WarDetails>,
+        currentTeamId: String?,
+        userId: String?,
+        is24p: Boolean
+    ): OpponentRankings {
+        if (wars.isEmpty()) return OpponentRankings()
+        val teams = databaseRepository.getTeams().firstOrNull()
+            .orEmpty()
+            .filterNot { it.id == currentTeamId }
+        val warEntities = wars.map { WarEntity(it.war) }
+        val rankable = teams
+            .withFullTeamStats(wars = warEntities, databaseRepository = databaseRepository, userId = userId, is24p = is24p)
+            .firstOrNull()
+            .orEmpty()
+            .map { RankingItem.OpponentRanking(it.first, it.second) }
+            .filter { it.stats.warStats.warsPlayed >= Stats.MIN_RANKING_SAMPLE }
+        return OpponentRankings(
+            topByWinrate = rankable.sortedByDescending { it.winrate }.take(3),
+            flopByWinrate = rankable.sortedBy { it.winrate }.take(3),
+            topByScore = rankable.sortedByDescending { it.stats.averagePoints }.take(3),
+            flopByScore = rankable.sortedBy { it.stats.averagePoints }.take(3)
+        )
+    }
 
     /** Contributeurs : chaque membre du roster, part de ses points sur le total
      * cumulé des membres + winrate perso. Trié par part décroissante. */
@@ -234,17 +312,21 @@ class StatsFullViewModel @AssistedInject constructor(
         val leastBeaten = winrates.minByOrNull { it.value }
 
         return listOf(
-            mostPlayed?.let { NamedTile(name = opponentName(it.key), value = "${it.value.size}×") },
-            mostBeaten?.let { NamedTile(name = opponentName(it.key), value = "${it.value}%") },
-            leastBeaten?.let { NamedTile(name = opponentName(it.key), value = "${it.value}%") }
+            mostPlayed?.let { opponentTile(it.key, value = "${it.value.size}×") },
+            mostBeaten?.let { opponentTile(it.key, value = "${it.value}%") },
+            leastBeaten?.let { opponentTile(it.key, value = "${it.value}%") }
         ).map { it ?: NamedTile(name = "-") }
     }
 
-    /** Nom d'affichage d'un adversaire (roster si résoluble, sinon équipe) — rule 12. */
-    private suspend fun opponentName(opponentId: String): String {
+    /** Tuile d'un adversaire : nom roster>équipe (rule 12) + logo de l'équipe parente. */
+    private suspend fun opponentTile(opponentId: String, value: String): NamedTile {
         val resolved = databaseRepository.getTeam(opponentId)
         val roster = resolved?.rosters?.firstOrNull { it.id == opponentId }
-        return roster?.name ?: resolved?.name ?: "Équipe inconnue"
+        return NamedTile(
+            name = roster?.name ?: resolved?.name ?: "Équipe inconnue",
+            value = value,
+            logo = resolved?.logo
+        )
     }
 
     private fun Stats.toSummary() = ModeSummary(
@@ -257,10 +339,12 @@ class StatsFullViewModel @AssistedInject constructor(
 private fun List<fr.harmoniamk.statsmkworld.database.entities.WarEntity>.filterByMode(is24p: Boolean) =
     filter { (is24p && it.teamOpponent.size > 1) || (!is24p && it.teamOpponent.size == 1) }
 
-/** Ressource string du circuit d'un TrackStats (première map), null si non résolu. */
-private fun fr.harmoniamk.statsmkworld.model.local.TrackStats?.mapLabelRes(): Int? =
-    this?.map?.firstOrNull()?.label
+/** Première map d'un TrackStats (porte label + illustration), null si non résolue. */
+private fun fr.harmoniamk.statsmkworld.model.local.TrackStats?.firstMap() =
+    this?.map?.firstOrNull()
 
-/** Tuile circuit (winrate + libellé de map) à partir d'un TrackStats classé. */
+/** Tuile circuit (winrate + libellé + illustration de map) à partir d'un TrackStats classé. */
 private fun fr.harmoniamk.statsmkworld.model.local.TrackStats?.toTrackTile(): StatsFullViewModel.NamedTile? =
-    this?.mapLabelRes()?.let { StatsFullViewModel.NamedTile(labelRes = it, value = "${this.winRate ?: 0}%") }
+    firstMap()?.let {
+        StatsFullViewModel.NamedTile(labelRes = it.label, value = "${this?.winRate ?: 0}%", pictureRes = it.picture)
+    }

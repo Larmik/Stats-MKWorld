@@ -48,6 +48,10 @@ Règles d'usage :
   *quoi* afficher, *où*, **et** *avec quel style*.
 - Les **valeurs affichées dans la maquette sont des données de démo** (noms, scores, %) :
   ne pas les coder en dur ; elles illustrent seulement le type de donnée attendu.
+- La **pastille/tag « Nouveau »** du prototype (badge jaune sur certaines sections) est un
+  **marqueur de démo à NE PAS reproduire** : il signalait, dans la maquette, les sections
+  ajoutées pour la présentation. Ne jamais l'afficher dans l'app livrée (aucun libellé
+  « Nouveau » ne doit subsister).
 - **Divergence prototype ↔ ticket** : si un ticket demande un écran/flux qui contredit le
   prototype, le **signaler** (comme pour un conflit rule ↔ ticket) au lieu de trancher
   seul.

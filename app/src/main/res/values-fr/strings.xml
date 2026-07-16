@@ -241,7 +241,6 @@
     <string name="mode_24j">24 j</string>
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>
-    <string name="stats_new_tag">Nouveau</string>
     <string name="stats_me_tag">toi</string>
     <string name="stats_player_subtitle">Tes performances · %1$d wars · %2$d courses</string>
     <string name="stats_team_subtitle">Performances collectives · %1$d wars</string>

@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.screen.stats.full
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,14 +36,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.model.local.Stats
+import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.stats.MKAdvancedStatsCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKMapsRankingCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKOpponentsRankingCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKRecentFormCell
+import fr.harmoniamk.statsmkworld.ui.stats.MKRecordsCell
 
 private val CardRadius = RoundedCornerShape(6.dp)
 
@@ -140,7 +148,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             Tiles(
                 Tile(stats.averagePoints.toString(), stringResource(R.string.stats_points_per_war)),
                 Tile(stats.averagePlayerPosLabel, stringResource(R.string.average_position_short)),
-                Tile(stats.scoreStdDev?.let { "±$it" } ?: "-", stringResource(R.string.stats_regularity), isNew = true),
+                Tile(stats.scoreStdDev?.let { "±$it" } ?: "-", stringResource(R.string.stats_regularity)),
                 Tile(shocksPerWar(stats), stringResource(R.string.shocks_per_war_short)),
                 Tile(state.bestCourse?.name ?: "-", stringResource(R.string.stats_best_course), valueColor = Colors.green),
                 Tile(state.worstCourse?.name ?: "-", stringResource(R.string.stats_worst_course), valueColor = Colors.red)
@@ -150,7 +158,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     // 4. Contribution.
     stats.playerContribution?.let { contribution ->
         item {
-            StatCard(stringResource(R.string.stats_contribution_title), isNew = true) {
+            StatCard(stringResource(R.string.stats_contribution_title)) {
                 IconLine(
                     icon = R.drawable.stats,
                     accent = Colors.yellow,
@@ -169,7 +177,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     // 6. Distribution des positions.
     stats.positionDistribution.takeIf { it.any { entry -> entry.second > 0 } }?.let { distribution ->
         item {
-            StatCard(stringResource(R.string.stats_distribution_title), isNew = true) {
+            StatCard(stringResource(R.string.stats_distribution_title)) {
                 DistributionChart(distribution)
                 DistributionFooter(stats)
             }
@@ -177,7 +185,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     }
     // 7. Rythme de war.
     if (stats.firstHalfAvgPosition != null && stats.secondHalfAvgPosition != null) item {
-        StatCard(stringResource(R.string.stats_pace_title), isNew = true) {
+        StatCard(stringResource(R.string.stats_pace_title)) {
             PaceRow(
                 stats.firstHalfAvgPosition.toString(),
                 stats.secondHalfAvgPosition.toString()
@@ -186,7 +194,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     }
     // 8. Tes circuits.
     item {
-        StatCard(stringResource(R.string.stats_player_tracks_title), isNew = true) {
+        StatCard(stringResource(R.string.stats_player_tracks_title)) {
             TwoTiles(
                 left = { TrackBlock(stringResource(R.string.stats_best_winrate_perso), state.bestPlayerTrack, Colors.green) },
                 right = { TrackBlock(stringResource(R.string.stats_worst), state.worstPlayerTrack, Colors.red) }
@@ -223,6 +231,24 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             }
         }
     }
+
+    // --- Sections détaillées héritées de l'ancien StatsScreen (aucune perte) ------
+    // Réutilisent les cellules accordéon ui/stats/* (adaptées au style de l'écran).
+    // La distribution de positions est déjà couverte plus haut (DistributionChart).
+    val playerType = StatsType.PlayerStats(userId = state.targetUserId.orEmpty(), is24p = state.is24p)
+    item { MKRecentFormCell(stats = stats) }
+    item { MKRecordsCell(stats = stats, type = playerType) }
+    item { MKAdvancedStatsCell(stats = stats, type = playerType) }
+    item { MKMapsRankingCell(stats = stats, type = playerType) }
+    item {
+        MKOpponentsRankingCell(
+            topByWinrate = state.playerTopOpponentsByWinrate,
+            flopByWinrate = state.playerFlopOpponentsByWinrate,
+            topByScore = state.playerTopOpponentsByScore,
+            flopByScore = state.playerFlopOpponentsByScore,
+            userId = state.targetUserId
+        )
+    }
 }
 
 // =====================================================================
@@ -247,7 +273,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(state: S
             Tiles(
                 Tile(stats.averagePoints.toString(), stringResource(R.string.form_score)),
                 Tile(stats.mapsWon ?: "-", stringResource(R.string.maps_gagn_es)),
-                Tile(stats.averageWinMargin?.let { "+$it" } ?: "-", stringResource(R.string.stats_avg_win_margin_short), isNew = true, valueColor = Colors.green)
+                Tile(stats.averageWinMargin?.let { "+$it" } ?: "-", stringResource(R.string.stats_avg_win_margin_short), valueColor = Colors.green)
             )
         }
     }
@@ -255,29 +281,29 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(state: S
     item { FormStreakCard(stats, stringResource(R.string.stats_team_form_title)) }
     // 5. Contributeurs.
     if (state.contributors.isNotEmpty()) item {
-        StatCard(stringResource(R.string.stats_contributors_title), isNew = true) {
+        StatCard(stringResource(R.string.stats_contributors_title)) {
             state.contributors.forEachIndexed { index, contributor ->
                 ContributorRow(index + 1, contributor)
             }
         }
     }
-    // 6. Adversaires.
+    // 6. Adversaires (vignette = logo d'équipe).
     item {
         StatCard(stringResource(R.string.statistiques_des_adversaires)) {
             Tiles(
-                Tile(state.mostPlayedOpponent?.name ?: "-", stringResource(R.string.stats_most_played), small = true),
-                Tile(state.mostBeatenOpponent?.name ?: "-", stringResource(R.string.stats_most_beaten), small = true),
-                Tile(state.leastBeatenOpponent?.name ?: "-", stringResource(R.string.stats_least_beaten), small = true)
+                opponentTile(state.mostPlayedOpponent, stringResource(R.string.stats_most_played)),
+                opponentTile(state.mostBeatenOpponent, stringResource(R.string.stats_most_beaten)),
+                opponentTile(state.leastBeatenOpponent, stringResource(R.string.stats_least_beaten))
             )
         }
     }
-    // 7. Circuits équipe.
+    // 7. Circuits équipe (vignette = illustration de map).
     item {
         StatCard(stringResource(R.string.stats_team_tracks_title)) {
             Tiles(
-                Tile(state.teamMostPlayedTrack.trackName(), stringResource(R.string.stats_most_played), small = true),
-                Tile(state.teamBestTrack.trackName(), stringResource(R.string.stats_best), small = true, valueColor = Colors.green),
-                Tile(state.teamWorstTrack.trackName(), stringResource(R.string.stats_worst), small = true, valueColor = Colors.red)
+                trackTile(state.teamMostPlayedTrack, stringResource(R.string.stats_most_played), Colors.white),
+                trackTile(state.teamBestTrack, stringResource(R.string.stats_best), Colors.green),
+                trackTile(state.teamWorstTrack, stringResource(R.string.stats_worst), Colors.red)
             )
         }
     }
@@ -292,7 +318,41 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(state: S
             scoreLabel = stringResource(R.string.form_score)
         )
     }
+
+    // --- Sections détaillées héritées de l'ancien StatsScreen (aucune perte) ------
+    val teamType = StatsType.TeamStats(is24p = state.is24p)
+    item { MKRecentFormCell(stats = stats) }
+    item { MKRecordsCell(stats = stats, type = teamType) }
+    item { MKAdvancedStatsCell(stats = stats, type = teamType) }
+    item { MKMapsRankingCell(stats = stats, type = teamType) }
+    item {
+        MKOpponentsRankingCell(
+            topByWinrate = state.topOpponentsByWinrate,
+            flopByWinrate = state.flopOpponentsByWinrate,
+            topByScore = state.topOpponentsByScore,
+            flopByScore = state.flopOpponentsByScore
+        )
+    }
 }
+
+/** Tuile adversaire : nom + valeur + vignette logo d'équipe (fallback default_logo). */
+private fun opponentTile(tile: StatsFullViewModel.NamedTile?, label: String) = Tile(
+    value = tile?.name ?: "-",
+    label = label,
+    small = true,
+    logo = tile?.logo,
+    isTeam = true
+)
+
+/** Tuile circuit : libellé résolu à l'affichage → construit dans un @Composable. */
+@Composable
+private fun trackTile(tile: StatsFullViewModel.NamedTile?, label: String, valueColor: Color) = Tile(
+    value = tile.trackName(),
+    label = label,
+    small = true,
+    valueColor = valueColor,
+    pictureRes = tile?.pictureRes
+)
 
 // =====================================================================
 // Composants de carte (style maquette, réutilisés par les deux onglets)
@@ -302,7 +362,6 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(state: S
 @Composable
 private fun StatCard(
     title: String? = null,
-    isNew: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
@@ -312,30 +371,22 @@ private fun StatCard(
             .border(1.dp, Colors.whiteBorder, CardRadius)
             .padding(13.dp)
     ) {
-        title?.let { Eyebrow(it, isNew) }
+        title?.let { Eyebrow(it) }
         if (title != null) Spacer(Modifier.height(11.dp))
         content()
     }
 }
 
-/** Eyebrow (petit titre majuscule blanc) + pastille « Nouveau » optionnelle. */
+/** Eyebrow (petit titre majuscule blanc). */
 @Composable
-private fun Eyebrow(text: String, isNew: Boolean = false) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        MKText(
-            text = text.uppercase(),
-            fontSize = 12,
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            textAlign = TextAlign.Start
-        )
-        if (isNew) {
-            Spacer(Modifier.width(8.dp))
-            Box(Modifier.clip(RoundedCornerShape(5.dp)).background(Colors.yellow).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                MKText(text = stringResource(R.string.stats_new_tag), font = Fonts.NunitoBD, textColor = Colors.black, fontSize = 9)
-            }
-        }
-    }
+private fun Eyebrow(text: String) {
+    MKText(
+        text = text.uppercase(),
+        fontSize = 12,
+        font = Fonts.NunitoBD,
+        textColor = Colors.white,
+        textAlign = TextAlign.Start
+    )
 }
 
 /** En-tête : pastille (initiales) + nom (Bungee) + sous-titre. */
@@ -432,7 +483,7 @@ private fun FormStreakCard(stats: Stats, title: String) {
     }
     val delta = stats.recentForm10?.winrateDelta
     val record = if (isWin) stats.bestWinStreak else stats.worstLossStreak
-    StatCard(title, isNew = true) {
+    StatCard(title) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier.size(44.dp).clip(CircleShape).background(accent.copy(alpha = 0.25f)).border(1.dp, accent.copy(alpha = 0.5f), CircleShape),
@@ -460,9 +511,14 @@ private fun FormStreakCard(stats: Stats, title: String) {
 private data class Tile(
     val value: String,
     val label: String,
-    val isNew: Boolean = false,
     val valueColor: Color = Colors.white,
-    val small: Boolean = false
+    val small: Boolean = false,
+    // Vignette optionnelle : logo d'équipe (chemin MKCentral) OU illustration de map.
+    val logo: String? = null,
+    val pictureRes: Int? = null,
+    // Tuile d'équipe : affiche une vignette logo (fallback default_logo) même si le
+    // logo est absent (adversaire non résolu).
+    val isTeam: Boolean = false
 )
 
 /** Grille de tuiles 3 par ligne (style maquette `.tiles`). */
@@ -482,11 +538,43 @@ private fun RowScope.TileCell(tile: Tile) {
         Modifier
             .weight(1f)
             .background(Colors.white30, CardRadius)
-            .then(if (tile.isNew) Modifier.border(1.dp, Colors.yellow, CardRadius) else Modifier)
             .padding(10.dp)
     ) {
+        // Vignette (logo équipe / illustration de map) au-dessus de la valeur.
+        if (tile.logo != null || tile.pictureRes != null || tile.isTeam) {
+            Vignette(logo = tile.logo, pictureRes = tile.pictureRes, size = 28.dp)
+            Spacer(Modifier.height(6.dp))
+        }
         MKText(text = tile.value, font = Fonts.Urbanist, textColor = tile.valueColor, fontSize = if (tile.small) 14 else 20, textAlign = TextAlign.Start, maxLines = 1)
         MKText(text = tile.label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 6.dp))
+    }
+}
+
+/**
+ * Vignette d'une entité : logo d'**équipe** (`AsyncImage` MKCentral, fallback
+ * `default_logo`, clip cercle — même mécanisme que `TeamCell`) OU illustration de
+ * **circuit** (`painterResource`, clip arrondi — même mécanisme que `MapCell`).
+ */
+@Composable
+private fun Vignette(logo: String?, pictureRes: Int?, size: androidx.compose.ui.unit.Dp) {
+    when {
+        pictureRes != null -> Image(
+            painter = painterResource(pictureRes),
+            contentDescription = null,
+            modifier = Modifier.size(size).clip(RoundedCornerShape(4.dp))
+        )
+        else -> when (logo) {
+            null -> Image(
+                painter = painterResource(R.drawable.default_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size).clip(CircleShape)
+            )
+            else -> AsyncImage(
+                model = "https://mkcentral.com$logo",
+                contentDescription = null,
+                modifier = Modifier.size(size).clip(CircleShape)
+            )
+        }
     }
 }
 
@@ -506,7 +594,8 @@ private fun ColumnScope.TwoTiles(
 @Composable
 private fun ColumnScope.TrackBlock(label: String, tile: StatsFullViewModel.NamedTile?, color: Color) {
     MKText(text = label.uppercase(), textColor = Colors.white66, fontSize = 10, textAlign = TextAlign.Start)
-    Row(Modifier.padding(top = 5.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(Modifier.padding(top = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        tile?.pictureRes?.let { Vignette(logo = null, pictureRes = it, size = 24.dp) }
         MKText(text = tile.trackName(), font = Fonts.Urbanist, textColor = color, fontSize = 13, textAlign = TextAlign.Start, maxLines = 1)
         tile?.value?.let { MKText(text = it, textColor = Colors.white55, fontSize = 10) }
     }
@@ -515,7 +604,10 @@ private fun ColumnScope.TrackBlock(label: String, tile: StatsFullViewModel.Named
 @Composable
 private fun ColumnScope.TileBlock(label: String, tile: StatsFullViewModel.NamedTile?) {
     MKText(text = label.uppercase(), textColor = Colors.white66, fontSize = 10, textAlign = TextAlign.Start)
-    MKText(text = tile?.name ?: "-", font = Fonts.Urbanist, textColor = Colors.white, fontSize = 13, textAlign = TextAlign.Start, maxLines = 1, modifier = Modifier.padding(top = 5.dp))
+    Row(Modifier.padding(top = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Vignette(logo = tile?.logo, pictureRes = null, size = 24.dp)
+        MKText(text = tile?.name ?: "-", font = Fonts.Urbanist, textColor = Colors.white, fontSize = 13, textAlign = TextAlign.Start, maxLines = 1)
+    }
 }
 
 // --- Rythme de war (`.pace`) -------------------------------------------------
@@ -548,7 +640,7 @@ private fun ComparisonCard(
     otherScore: Int?,
     scoreLabel: String
 ) {
-    StatCard(stringResource(R.string.stats_comparison_title), isNew = true) {
+    StatCard(stringResource(R.string.stats_comparison_title)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             // Colonne du mode courant (surlignée) à gauche selon le mode.
             ComparisonColumn(

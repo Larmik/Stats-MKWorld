@@ -241,7 +241,6 @@
     <string name="mode_24j">24 p</string>
     <string name="stats_scope_individual">Individual</string>
     <string name="stats_scope_team">Team</string>
-    <string name="stats_new_tag">New</string>
     <string name="stats_me_tag">you</string>
     <string name="stats_player_subtitle">Your performances · %1$d wars · %2$d tracks</string>
     <string name="stats_team_subtitle">Team performances · %1$d wars</string>
