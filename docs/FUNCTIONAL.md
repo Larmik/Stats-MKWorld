@@ -105,13 +105,15 @@ L'accueil est un **dashboard** qui met l'essentiel à portée immédiate. **Rend
 
 1. **Carte de salutation** (cliquable → **Profil**) : pastille/avatar du joueur, « Salut, <prénom> », sous-titre « <équipe> · voir mon profil → ». Sous la carte, un **segmenté `Moi` / `Équipe`** (`Moi` actif par défaut, état UI `rememberSaveable`) **pilote la vue** des stats du dashboard (Momentum + Chiffres clés). Les deux jeux de stats étant précalculés par le VM (`playerStats` avec `userId` = id MKCentral du joueur courant ; `teamStats` avec `userId = null`), le basculement ne déclenche **aucun recalcul**.
 2. **War en cours** — bannière « En direct · N joueurs » (dégradé vert, bordure verte) cliquable (→ reprend la war courante), affichée seulement si `currentWar != null`. Le corps réutilise `CurrentWarCell` (données réelles).
-3. **Momentum** (reflète le profil sélectionné) : segmenté **`5 dernières` / `10 dernières`** pilotant la fenêtre ; bande de forme en **pastilles V/N/D** (`Stats.chronologicalOutcomes.takeLast(n)`) ; **sparkline** verte à aire dégradée des scores de la fenêtre (`Stats.scoreTimeline.takeLast(n)`, tracé Compose `Canvas`) + delta de forme (flèche ↗/↘, winrate de la fenêtre `recentForm5`/`recentForm10` vs all-time), coloré vert/rouge.
-4. **Chiffres clés** (reflète le profil sélectionné) : winrate (`allTimeForm.winrate`) · score moyen · 3ᵉ colonne. En vue **Moi** : score = score brut du joueur (`averagePoints`), 3ᵉ = position moyenne (`averagePlayerPosLabel`). En vue **Équipe** : score = écart moyen (`averagePointsLabel`), 3ᵉ = % de manches gagnées (`mapsWon`).
-5. **Bandeau highlight — série en cours** (affiché si `currentStreak != 0`) : « Série de N victoires/défaites » + « En cours — record : M » (`bestWinStreak` / `worstLossStreak`).
-6. **Derniers résultats** : 3 wars 12p (`recentResults`, cliquables → détail de war) + lien **« Voir tout »** → pôle Wars (historique). Réutilise `WarCell`.
+3. **Momentum** (reflète le profil sélectionné) : segmenté **`5 dernières` / `10 dernières`** pilotant la fenêtre ; bande de forme en **pastilles V/N/D** (`Stats.chronologicalOutcomes.takeLast(n)`) ; **sparkline** à aire dégradée des scores de la fenêtre (`Stats.scoreTimeline.takeLast(n)`, tracé Compose `Canvas`), **teintée selon la tendance** (vert si delta ≥ 0, rouge sinon) + delta de forme (flèche ↗/↘, winrate de la fenêtre `recentForm5`/`recentForm10` vs all-time), coloré vert/rouge.
+4. **Chiffres clés** (reflète le profil sélectionné) : winrate (`allTimeForm.winrate`) · score moyen · 3ᵉ colonne, toutes valeurs en blanc. En vue **Moi** : score = score brut du joueur (`averagePoints`), 3ᵉ = position moyenne (`averagePlayerPosLabel`). En vue **Équipe** : score = écart moyen (`averagePointsLabel`), 3ᵉ = % de manches gagnées (`mapsWon`).
+5. **Bandeau highlight — série en cours** (affiché si `currentStreak != 0`) : « Série de N victoires/défaites » + « En cours — record : M » (`bestWinStreak` / `worstLossStreak`). Icône flamme (`ic_flame`) teintée **verte** (série de victoires) ou **rouge** (série de défaites), dans un cercle assorti.
+6. **Derniers résultats** : 3 wars 12p (`recentResults`, cliquables → détail de war) + lien **« Voir tout »** → pôle Wars (historique). Réutilise la **cellule `WarCell` unifiée** (voir ci-dessous).
 
 - **Icône recherche** (app bar) → Annuaire.
 - Le **sélecteur 12/24 joueurs** et le bouton **« Nouvelle war »** ne figurent plus sur l'accueil : ils déménagent vers le **pôle Wars** (les destinations de navigation `Home/AddWar/{is24p}` restent inchangées).
+
+> **Cellule `WarCell` unifiée** : la cellule de résultat (`ui/cells/WarCell.kt`) est **partagée** par l'Accueil, l'historique (`WarListScreen`) et les stats (`StatsScreen`), signature publique inchangée. Elle rend **12p** avec le style pixel-perfect de l'Accueil (pastille V/N/D, pastille adversaire, « vs … » + date, score + écart + **maps gagnées**) et **24p** avec le podium des 3 équipes (style minimal, non régressé). L'ancienne implémentation dédoublée a été supprimée.
 
 ### Pôle 2 — Wars (`WarListScreen`)
 Historique complet des wars, groupé par période (en-têtes collants), filtré par mode. Clic sur une war → détail de war.
@@ -521,7 +523,7 @@ Le rendu et l'enregistrement (galerie / partage) sont décrits dans [TECHNICAL.m
 
 | Domaine | Règle |
 |---|---|
-| **Format** | `teamOpponent.size == 1` ⇒ 12 joueurs ; `> 1` (3) ⇒ 24 joueurs. Sélecteur sur l'accueil et le menu stats. |
+| **Format** | `teamOpponent.size == 1` ⇒ 12 joueurs ; `> 1` (3) ⇒ 24 joueurs. Sélecteur dans le pôle Wars (création) et le menu stats. |
 | **Composition** | Exactement **6 joueurs** sélectionnés pour démarrer ; substitutions possibles en cours de war. |
 | **Adversaires** | 1 équipe (12p) ou 3 équipes (24p) à sélectionner. |
 | **Scoring 12p** | Position→points (1ʳᵉ = 15) ; score adverse = 82 − score équipe ; pénalités déduites des totaux. |

@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,6 +52,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCell
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCellViewModel
+import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
 // Rayon uniforme des cartes du dashboard (maquette : radius 6px). Bordure blanche
@@ -146,7 +149,13 @@ fun WelcomeScreen(
                                 }
                             }
                             items(state.value.recentResults, key = { it.war.id }) { war ->
-                                ResultRow(war = war, onClick = onWarDetailsClick)
+                                WarCell(
+                                    viewModel = hiltViewModel(
+                                        key = war.war.id.toString(),
+                                        creationCallback = { factory: WarCellViewModel.Factory -> factory.create(war) }
+                                    ),
+                                    onClick = onWarDetailsClick
+                                )
                             }
                         }
                     }
@@ -454,86 +463,39 @@ private fun RowScope.KeyTile(value: String, label: String) {
     }
 }
 
-/** Bandeau highlight série : icône flamme dans un cercle vert + titre + record. */
+/**
+ * Bandeau highlight série : flamme colorée (vert = série de victoires, rouge =
+ * série de défaites) dans un cercle assorti + titre + record.
+ */
 @Composable
 private fun StreakBanner(stats: Stats) {
     val streak = stats.currentStreak
+    val isWin = streak > 0
     val (title, record) = when {
-        streak > 0 -> stringResource(R.string.home_win_streak, streak) to stats.bestWinStreak
+        isWin -> stringResource(R.string.home_win_streak, streak) to stats.bestWinStreak
         else -> stringResource(R.string.home_loss_streak, -streak) to stats.worstLossStreak
     }
+    val accent = if (isWin) Colors.green else Colors.red
     DashboardCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(Color(0x4081C995))
-                    .border(1.dp, Color(0x8081C995), CircleShape),
+                    .background(accent.copy(alpha = 0.25f))
+                    .border(1.dp, accent.copy(alpha = 0.5f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                MKText(text = "🔥", fontSize = 18)
+                Icon(
+                    painter = painterResource(R.drawable.ic_flame),
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(22.dp)
+                )
             }
             Column(Modifier.weight(1f)) {
                 MKText(text = title, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start)
                 MKText(text = stringResource(R.string.home_streak_record, record), textColor = Colors.white66, fontSize = 12, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp))
-            }
-        }
-    }
-}
-
-/**
- * Ligne de résultat façon maquette : pastille V/N/D, pastille adversaire (tag +
- * couleur), nom « vs … » + date, score + écart à droite. Réutilise
- * `WarCellViewModel` (roster/nom/tag/score/diff réels), pas les données de démo.
- */
-@Composable
-private fun ResultRow(war: WarDetails, onClick: (WarDetails) -> Unit) {
-    val viewModel = hiltViewModel<WarCellViewModel, WarCellViewModel.Factory>(
-        key = war.war.id.toString(),
-        creationCallback = { factory -> factory.create(war) }
-    )
-    val cell = viewModel.state.collectAsStateWithLifecycle()
-    val opponent = cell.value.teamOpponent?.firstOrNull()
-    val diff = cell.value.diff.orEmpty()
-    val outcome = when {
-        diff.startsWith("+") -> 1
-        diff.startsWith("-") -> -1
-        else -> 0
-    }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Colors.blackAlphaed, CardRadius)
-            .border(1.dp, Colors.whiteBorder, CardRadius)
-            .clickable { onClick(war) }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp)
-    ) {
-        OutcomeChip(outcome)
-        // Pastille adversaire (avatar équipe si dispo, sinon tag sur cercle noir).
-        when (val logo = opponent?.logo) {
-            null -> Box(
-                Modifier.size(32.dp).clip(CircleShape).background(Colors.black).border(2.dp, Colors.white85, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                MKText(text = opponent?.tag.orEmpty(), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 11, maxLines = 1)
-            }
-            else -> AsyncImage(
-                model = "https://mkcentral.com$logo",
-                contentDescription = null,
-                modifier = Modifier.size(32.dp).clip(CircleShape).border(2.dp, Colors.white85, CircleShape)
-            )
-        }
-        Column(Modifier.weight(1f)) {
-            MKText(text = stringResource(R.string.home_vs, opponent?.name.orEmpty()), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 14, textAlign = TextAlign.Start, maxLines = 1)
-            MKText(text = war.date, textColor = Colors.white55, fontSize = 11, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp))
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            MKText(text = cell.value.score.orEmpty(), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 14, maxLines = 1)
-            if (diff.isNotEmpty()) {
-                MKText(text = diff, textColor = Colors.white55, fontSize = 11, maxLines = 1)
             }
         }
     }
