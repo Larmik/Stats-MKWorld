@@ -189,12 +189,14 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             arguments = listOf(navArgument("is24p") { type = NavType.BoolType })
 
         ) {
+            // L'argument de route ne sert qu'à SEMER le mode initial du VM ; la
+            // bascule 12/24 se fait ensuite en interne (état réactif, même écran,
+            // sans re-navigation).
             val is24p = it.arguments?.getBoolean("is24p")
             AddWarScreen(
                 viewModel = hiltViewModel(
                     creationCallback = { factory: AddWarViewModel.Factory -> factory.create(is24p = is24p == true) }
                 ),
-                is24p = is24p == true,
                 onBack = {
                 navController.popBackStack()
             }, onCurrentWar = {

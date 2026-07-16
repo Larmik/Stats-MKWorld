@@ -67,3 +67,23 @@ val isEmpty = text.isEmpty()   // PAS de derivedStateOf
 | Dérivation simple (entrée ≈ sortie en fréquence) | `val x = …` en composition |
 | Dérivation d'un **paramètre** (non-`State`) | `remember(key) { … }` |
 | Donnée métier / état d'écran | `StateFlow` (ViewModel) + `collectAsState` |
+
+## Un switch/segmented/onglet met à jour l'affichage DYNAMIQUEMENT, jamais par re-navigation
+
+**Portée** : tout contrôle qui **change le contenu du même écran** (segmented, chips,
+onglets internes, toggle de vue/mode…).
+
+Un tel contrôle doit modifier un **état** (local `mutableStateOf`/`rememberSaveable`
+si purement UI, ou `StateFlow` du ViewModel si métier) et laisser l'UI se
+**recomposer** ; il ne doit **jamais** re-naviguer vers la même route (ni
+`popUpTo(self)`) pour « recharger » l'écran dans l'autre variante — cela remonte le
+composable, recrée le ViewModel et déclenche des **transitions/slides parasites**.
+
+- Si la variante dépend d'un **argument de nav** (ex. `is24p` de `Home/AddWar/{is24p}`),
+  cet argument ne sert qu'à **semer la valeur initiale** ; le toggle bascule ensuite un
+  **état interne réactif** (ex. `MutableStateFlow<Boolean>` dans le VM, exposé dans le
+  `State`), et tout ce qui dépend du mode réagit à cet état. Cas rencontré :
+  `AddWarViewModel.onModeChange` (12/24) — l'écran reste monté, la sélection est
+  réinitialisée en interne, sans re-nav.
+- La re-navigation reste réservée à un **vrai changement d'écran** (destination
+  différente), pas à une variante d'affichage du même écran.

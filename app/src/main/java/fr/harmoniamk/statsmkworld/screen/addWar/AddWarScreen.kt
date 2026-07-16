@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,6 +48,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.VerticalGrid
@@ -58,11 +60,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun AddWarScreen(
     viewModel: AddWarViewModel,
-    is24p: Boolean,
     onBack: () -> Unit,
     onCurrentWar: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
+    val is24p = state.value.is24p
     val searchTeam = remember { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { 2 })
     val rosterSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
@@ -108,6 +110,19 @@ fun AddWarScreen(
     ) {
         when (it) {
             0 -> BaseScreen(title = stringResource(R.string.pick_opponent)) {
+                // Segmenté 12/24 : c'est ICI que vit le sélecteur de mode (déménagé
+                // de l'Accueil vers le pôle Wars). Le changer met à jour l'état
+                // réactif du VM SANS re-navigation — l'écran reste monté et l'UI se
+                // recompose (nombre d'adversaires, sélection réinitialisée).
+                MKSegmentedSelector(
+                    items = listOf(
+                        stringResource(R.string.mode_12_players),
+                        stringResource(R.string.mode_24_players)
+                    ),
+                    page = if (is24p) 1 else 0,
+                    onClick = { selected -> viewModel.onModeChange(selected == 1) }
+                )
+                Spacer(Modifier.height(15.dp))
                 if (is24p)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         OpponentSlot(team = state.value.opponentSlot(0))

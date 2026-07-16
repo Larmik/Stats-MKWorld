@@ -43,15 +43,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
-import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
-import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCell
-import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCellViewModel
+import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
@@ -63,7 +62,6 @@ private val CardRadius = RoundedCornerShape(6.dp)
 fun WelcomeScreen(
     viewModel: WelcomeViewModel = hiltViewModel(),
     onTeamProfile: () -> Unit,
-    onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
     onWarListClick: () -> Unit,
@@ -214,10 +212,11 @@ private fun GreetingCard(
             }
         }
         Spacer(Modifier.height(12.dp))
-        Segmented(
+        MKSegmentedSelector(
             items = listOf(stringResource(R.string.home_scope_me), stringResource(R.string.home_scope_team)),
-            selected = profileIndex,
-            onSelect = onProfileChange
+            page = profileIndex,
+            onDark = true,
+            onClick = onProfileChange
         )
     }
 }
@@ -244,71 +243,6 @@ private fun Crest(image: String?, initials: String, color: Color) {
     }
 }
 
-/**
- * Segmenté façon maquette : conteneur blanc translucide arrondi (radius 10) ;
- * onglet actif = fond blanc/texte sombre, inactif = texte blanc.
- */
-@Composable
-private fun Segmented(items: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Colors.white30, RoundedCornerShape(10.dp))
-            .border(1.dp, Colors.whiteBorderSoft, RoundedCornerShape(10.dp))
-            .padding(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        items.forEachIndexed { index, label ->
-            val active = index == selected
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (active) Colors.white else Colors.transparent)
-                    .clickable { onSelect(index) }
-                    .padding(vertical = 9.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                MKText(text = label, font = Fonts.NunitoBD, textColor = if (active) Colors.black else Colors.white, fontSize = 13)
-            }
-        }
-    }
-}
-
-/**
- * Bannière « War en cours » : dégradé vert→sombre, bordure verte, pastille « En
- * direct · N joueurs ». Le corps (roster vs adversaire, score, courses jouées)
- * provient de la vraie war via `CurrentWarCell` existante.
- */
-@Composable
-private fun CurrentWarBanner(war: War, onClick: () -> Unit) {
-    // Nombre de joueurs : 12p (1 adversaire) → 12, 24p (3 équipes) → 24.
-    val players = if (war.teamOpponent.size > 1) 24 else 12
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.horizontalGradient(listOf(Color(0x4081C995), Colors.blackAlphaed)),
-                CardRadius
-            )
-            .border(1.dp, Colors.green, CardRadius)
-            .clickable(onClick = onClick)
-            .padding(12.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(Modifier.size(7.dp).clip(CircleShape).background(Colors.green))
-            MKText(text = stringResource(R.string.home_live_players, players), font = Fonts.NunitoBD, textColor = Colors.green, fontSize = 11, textAlign = TextAlign.Start)
-        }
-        Spacer(Modifier.height(6.dp))
-        CurrentWarCell(
-            onClick = onClick,
-            viewModel = hiltViewModel(
-                key = war.id.toString() + war.tracks.joinToString { it.id.toString() },
-                creationCallback = { factory: CurrentWarCellViewModel.Factory -> factory.create(war) }
-            )
-        )
-    }
-}
 
 /**
  * Carte « Momentum » : eyebrow, segmenté 5/10 dernières, bande de pastilles V/N/D
@@ -323,10 +257,11 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
     DashboardCard {
         Eyebrow(stringResource(R.string.home_momentum))
         Spacer(Modifier.height(11.dp))
-        Segmented(
+        MKSegmentedSelector(
             items = listOf(stringResource(R.string.home_last_5), stringResource(R.string.home_last_10)),
-            selected = windowIndex,
-            onSelect = onWindowChange
+            page = windowIndex,
+            onDark = true,
+            onClick = onWindowChange
         )
         Spacer(Modifier.height(11.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

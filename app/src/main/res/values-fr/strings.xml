@@ -226,4 +226,14 @@
     <string name="home_loss_streak">Série de %1$d défaites</string>
     <string name="home_streak_record">En cours — record : %1$d</string>
     <string name="see_all">Voir tout →</string>
+    <!-- Pôle Wars -->
+    <string name="wars_count">%1$d wars</string>
+    <string name="war_live">En direct</string>
+    <string name="war_resume">Reprendre — %1$d courses jouées</string>
+    <string name="wars_filter_all">Tous</string>
+    <string name="wars_filter_wins">Victoires</string>
+    <string name="wars_filter_ties">Nuls</string>
+    <string name="wars_filter_losses">Défaites</string>
+    <string name="mode_12_players">12 joueurs</string>
+    <string name="mode_24_players">24 joueurs</string>
 </resources>

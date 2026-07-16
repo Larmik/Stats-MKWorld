@@ -31,6 +31,16 @@ Règles d'usage :
   autorisé** dès que c'est nécessaire pour atteindre le pixel-perfect (nouveaux
   composants, nouvelles couleurs `ui/Colors.kt`, drawables/vecteurs…). Préférer
   l'adaptation quand elle suffit ; créer quand elle ne suffit pas.
+- **Segmented unique et partagé** : `ui/MKSegmentedSelector.kt` (style « pill » de la
+  maquette : conteneur arrondi, item actif = pastille blanche/texte sombre, inactif =
+  texte contrasté) est **LE** composant segmented de l'app. **Ne pas recréer** de
+  segmented local (fonction privée `Segmented` d'écran, `Row` de `Box` cliquables ad
+  hoc…) : le réutiliser partout (Accueil, Wars/AddWar, Stats, Classements, Annuaire…).
+  Il est **stateless** (sélection pilotée par `page`, `onClick` remonte l'index) et
+  porte un paramètre **`onDark`** : `true` sur carte sombre (`blackAlphaed`, dashboard
+  Accueil → texte inactif blanc), `false` (défaut) sur le fond clair du dégradé de
+  `BaseScreen` (texte inactif sombre, lisible). Adapter les couleurs via `onDark`
+  plutôt que de dupliquer le composant.
 - **Reproduire le polish visuel du prototype** (couleurs, espacements, typos, rayons,
   dégradés, animations légères) au plus près : c'est l'objet de
   `13-ui-pixel-perfect-maquette.md`. Extraire les valeurs de style depuis la source du
