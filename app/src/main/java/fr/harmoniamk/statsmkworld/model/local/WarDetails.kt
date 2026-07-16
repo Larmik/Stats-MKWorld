@@ -69,18 +69,18 @@ data class WarDetails(val war: War): Serializable, Parcelable {
     fun scoreMargin(is24p: Boolean = false): Int = when (is24p) {
         false -> scoreHostWithPenalties - scoreOpponentWithPenalties
         true -> {
-            // Score d'une équipe (24p) net de ses pénalités. Fonction locale (pas
-            // une extension) : usage strictement interne à ce bloc.
-            fun scoreWithPenalties(s: WarScore): Int =
-                s.score - war.penalties.filter { it.teamId == s.teamId }.sumOf { it.amount }
             val hostScore = war.scores.firstOrNull { it.teamId == war.teamHost }
-                ?.let { scoreWithPenalties(it) } ?: 0
+                ?.let { penaltyAdjustedScore(it) } ?: 0
             val bestOpponent = war.scores
                 .filter { war.teamOpponent.contains(it.teamId) }
-                .maxOfOrNull { scoreWithPenalties(it) } ?: 0
+                .maxOfOrNull { penaltyAdjustedScore(it) } ?: 0
             hostScore - bestOpponent
         }
     }
+
+    /** Score d'une équipe (24p) net de ses pénalités. */
+    private fun penaltyAdjustedScore(score: WarScore): Int =
+        score.score - war.penalties.filter { it.teamId == score.teamId }.sumOf { it.amount }
 }
 
 @Parcelize
