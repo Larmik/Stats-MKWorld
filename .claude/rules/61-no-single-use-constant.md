@@ -26,5 +26,23 @@ un seul appelant » (`30-repositories.md`).
 
 Une nouvelle extension va dans le **fichier existant** correspondant à son récepteur
 (`List<…>` → `extension/ListExtension.kt`, `String` → `StringExtension.kt`, `War` →
-`WarExtension.kt`…). Ne créer un nouveau `XxxExtension.kt` que pour un **type de
-récepteur non encore couvert**.
+`WarExtension.kt`, `WarScore` → `WarScoreExtension.kt`…). Ne créer un nouveau
+`XxxExtension.kt` que pour un **type de récepteur non encore couvert**.
+
+**Interdit ferme** : ne **jamais** définir une extension dans un `.kt` qui n'est pas
+celui correspondant à son type récepteur — ni comme extension top-level d'un autre
+fichier, ni comme extension **locale** dans un écran / un modèle / une fonction non
+liés au récepteur (ex. `fun WarScore.withPenalties()` posée dans `WarDetails.kt`).
+Deux issues seulement :
+
+- **usage unique** (ou capture du contexte local) → **ne pas en faire une extension**
+  du tout : inliner, ou en faire une **fonction locale** classique (`fun f(x: T)`,
+  paramètre explicite) scopée à l'appelant (rules 30/61 : pas d'extraction pour un
+  seul usage) ;
+- **réellement réutilisée** (≥ 2 appelants) → la **déplacer** dans le fichier
+  d'extension du récepteur (existant, sinon nouveau `XxxExtension.kt` si le type
+  n'est pas couvert).
+
+Exception : une extension **membre privée d'une classe** (ex. `private fun
+WarDetails.outcome()` dans `Stats`, qui capture l'état de `Stats`) reste licite —
+elle est scopée à la classe, pas posée en top-level hors de son fichier.
