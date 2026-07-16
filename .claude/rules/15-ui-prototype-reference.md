@@ -16,54 +16,60 @@ un flux de cet epic, se référer à la maquette :
 
 Règles d'usage :
 
-- **Le prototype décrit la CIBLE, pas le pixel-perfect — la fidélité n'est PAS un
-  objectif.** Il fixe l'intention : les 5 pôles et leur ordre (Accueil · Wars · Stats ·
-  Classements · Profil), le rattachement de chaque écran à son pôle, les sections/onglets
-  présents, l'ordre de ces sections, les **libellés FR** et la navigation (quel élément
-  mène à quel écran). Suivre cette structure et ces libellés. En revanche, **il est
-  attendu et acceptable que le rendu diverge de la maquette** : ne pas chercher à
-  reproduire la maquette à l'identique.
-- **Ne JAMAIS recréer de zéro un élément graphique qui existe déjà.** Réutiliser
-  systématiquement les composants/écrans existants (`MK*`, `ui/cells/`, `ui/stats/`,
-  sections déjà en place…) : on ne crée du neuf que pour ce qui n'existe pas.
-  (Complète `13-ui-minimale-phase-refonte.md`.)
-- **En revanche, ADAPTER un composant existant est autorisé** pour le rapprocher de la
-  maquette et gagner en cohérence :
-  - Faire le **minimum** — on n'est pas obligé de tout réadapter, seulement ce qui est
-    nécessaire pour se rapprocher de la maquette.
-  - **Conserver TOUS les éléments visuels existants** du composant : on n'en retire aucun.
-  - On peut **ajouter des choses à l'intérieur** d'un composant, à condition d'adapter
-    correctement l'UI (l'ajout doit s'intégrer proprement, pas casser la mise en page).
-  - Adapter/étendre ≠ recréer : rester dans le composant existant, ne pas le remplacer par
-    un nouveau.
-- **Ne pas reproduire le polish visuel du prototype** (couleurs, espacements, typos,
-  animations) : la règle `13-ui-minimale-phase-refonte.md` prime — UI minimale,
-  réutiliser les composants `MK*`/`ui/cells/`. Le prototype sert à cadrer *quoi* afficher
-  et *où*, pas *avec quel style*.
+- **Le prototype décrit la CIBLE, et la fidélité visuelle EST désormais un objectif
+  (pixel-perfect dans la mesure du possible, cf. `13-ui-pixel-perfect-maquette.md`).**
+  Il fixe à la fois : (a) la **structure** — les 5 pôles et leur ordre (Accueil · Wars ·
+  Stats · Classements · Profil), le rattachement de chaque écran à son pôle, les
+  sections/onglets présents, leur ordre, les **libellés FR** et la navigation (quel
+  élément mène à quel écran) ; (b) le **rendu visuel** — couleurs, espacements,
+  typographies, rayons, dégradés, pastilles, états… à reproduire au plus près. Suivre
+  cette structure, ces libellés **et** ce style.
+- **Réutiliser/adapter l'existant reste le premier réflexe** (cohérence, moins de
+  code) : partir des composants/écrans en place (`MK*`, `ui/cells/`, `ui/stats/`,
+  sections déjà présentes) et les **adapter** au style de la maquette. Ce n'est plus
+  une interdiction de créer : **créer ou modifier en profondeur un composant est
+  autorisé** dès que c'est nécessaire pour atteindre le pixel-perfect (nouveaux
+  composants, nouvelles couleurs `ui/Colors.kt`, drawables/vecteurs…). Préférer
+  l'adaptation quand elle suffit ; créer quand elle ne suffit pas.
+- **Reproduire le polish visuel du prototype** (couleurs, espacements, typos, rayons,
+  dégradés, animations légères) au plus près : c'est l'objet de
+  `13-ui-pixel-perfect-maquette.md`. Extraire les valeurs de style depuis la source du
+  prototype (`docs/prototype/stats-mkworld-5poles.html`). Le prototype cadre à la fois
+  *quoi* afficher, *où*, **et** *avec quel style*.
 - Les **valeurs affichées dans la maquette sont des données de démo** (noms, scores, %) :
   ne pas les coder en dur ; elles illustrent seulement le type de donnée attendu.
 - **Divergence prototype ↔ ticket** : si un ticket demande un écran/flux qui contredit le
   prototype, le **signaler** (comme pour un conflit rule ↔ ticket) au lieu de trancher
   seul.
-- La justesse des calculs de stats reste prioritaire (`13-…`) ; le prototype ne préjuge
+- **Écarts visuels résiduels** (asset/police absents du projet, contrainte technique) :
+  acceptables « dans la mesure du possible » — viser l'équivalent le plus proche et les
+  **documenter** (cf. `13`).
+- La justesse des calculs de stats reste prioritaire (`13`) ; le prototype ne préjuge
   pas des formules, seulement de leur présentation.
 
 ## Critère de validation (Definition of Done)
 
 Un ticket qui touche un **écran décrit dans `docs/PROTOTYPE_UX.md`** n'est **validé**
-(passé « Terminé » / fermé sur le board) que si **les deux** conditions sont réunies :
+(passé « Terminé » / fermé sur le board) que si **les trois** conditions sont réunies :
 
-1. **Conformité maquette** : l'écran comporte les sections/onglets/insights prévus par le
-   prototype, dans le bon rattachement de pôle, avec les libellés FR attendus et la
+1. **Conformité structurelle** : l'écran comporte les sections/onglets/insights prévus par
+   le prototype, dans le bon rattachement de pôle, avec les libellés FR attendus et la
    navigation décrite. Un écart (section/onglet/insight manquant, mauvaise destination)
    = **pas validé** → rester « À faire ».
-2. **Respect des règles composants** (`13`/`15`) : réutiliser/adapter l'existant, **ne pas
-   recréer** ; UI minimale ; on peut adapter/étendre un composant en gardant tous ses
-   éléments visuels.
+2. **Fidélité visuelle (pixel-perfect dans la mesure du possible)** : le rendu reproduit
+   le style de la maquette (couleurs, espacements, typographies, rayons, pastilles,
+   états…) au niveau du rendu de référence validé (`WelcomeScreen`, cf.
+   `13-ui-pixel-perfect-maquette.md`). Les seuls écarts admis sont ceux « dans la mesure
+   du possible » (asset/police absents), **documentés**. Un rendu « fonctionnel mais loin
+   de la maquette » = **pas validé**.
+3. **Respect des règles composants** : réutiliser/adapter l'existant en priorité ;
+   création/modification profonde autorisée quand nécessaire pour la fidélité ; ne pas
+   régresser l'existant.
 
 « Fonctionnellement présent » ne suffit pas. Au moment de valider un ticket (cf. étape de
-validation de `/ticket-dev`), **vérifier explicitement la conformité maquette écran par
-écran** et lister les écarts éventuels avant de proposer la clôture.
+validation de `/ticket-dev`), **vérifier explicitement la conformité structurelle ET la
+fidélité visuelle écran par écran** et lister les écarts éventuels avant de proposer la
+clôture.
 
 **Exemption** : un ticket **purement technique / sans écran** (calculs, perfs, migration)
 n'a pas de critère de conformité maquette — il est validé sur ses critères fonctionnels.

@@ -210,4 +210,20 @@
     <string name="notif_disabled">Notifications désactivées</string>
     <string name="multi_roster_enabled">Multi-roster activé</string>
     <string name="multi_roster_disabled">Multi-roster désactivé</string>
+    <!-- Écran Accueil / dashboard -->
+    <string name="home_greeting">Salut, %1$s</string>
+    <string name="home_profile_subtitle">%1$s · voir mon profil →</string>
+    <string name="home_scope_me">Moi</string>
+    <string name="home_scope_team">Équipe</string>
+    <string name="home_momentum">Momentum</string>
+    <string name="home_last_5">5 dernières</string>
+    <string name="home_last_10">10 dernières</string>
+    <string name="home_form_delta_cap">forme %1$d wars vs all-time</string>
+    <string name="home_live_players">En direct · %1$d joueurs</string>
+    <string name="home_vs">vs %1$s</string>
+    <string name="home_key_figures">Chiffres clés</string>
+    <string name="home_win_streak">Série de %1$d victoires</string>
+    <string name="home_loss_streak">Série de %1$d défaites</string>
+    <string name="home_streak_record">En cours — record : %1$d</string>
+    <string name="see_all">Voir tout →</string>
 </resources>

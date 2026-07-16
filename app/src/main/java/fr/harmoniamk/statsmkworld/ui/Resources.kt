@@ -18,6 +18,15 @@ object Colors{
     val black = Color(0xFF3C4043)
     val blackAlphaed = Color(0x773C4043)
     val transparent = Color(0x00FFFFFF)
+    // Blancs translucides (repris de la maquette prototype UX : bordures /
+    // libellés secondaires des cartes sombres du dashboard Accueil).
+    val whiteBorder = Color(0xEBFFFFFF) // rgba(255,255,255,.92) — bordure de carte
+    val whiteBorderSoft = Color(0x73FFFFFF) // rgba(255,255,255,.45) — bordure douce (segmented)
+    val white30 = Color(0x4DFFFFFF) // rgba(255,255,255,.30) — fond translucide (tuiles/segmented)
+    val white85 = Color(0xD9FFFFFF) // rgba(255,255,255,.85) — bordure de pastille
+    val white70 = Color(0xB3FFFFFF)
+    val white66 = Color(0xA8FFFFFF)
+    val white55 = Color(0x8CFFFFFF)
     val grey10 = Color(0xFFF5F5F5)
     val grey20 = Color(0xFFEEEEEE)
     val grey30 = Color(0xFFE0E0E0)
