@@ -535,7 +535,7 @@ le cache worker (rule 32).
 | `averagePlayerPosLabel` | position unique → `"N"` ; sinon `"first - last"` | `averagePlayerPosition` | `MKWarDetailsStatsView` « Position moyenne » (vue **joueur** — circuit/détail adversaire en vue individuelle) |
 | `mapsWon` | `averageForMaps.filter { (teamScore ?: 0) > 41 }.size × 100 / size` (ou `null` si vide) | `averageForMaps` | `MKWarDetailsStatsView` « Maps gagnées » (vue circuit + détail adversaire) |
 | `shockCount` | `Σ averageForMaps.shockCount` (shocks filtrés joueur si `userId != null`) | `averageForMaps` | `MKWarDetailsStatsView` « Shocks/War » (vue circuit + détail adversaire) |
-| `currentStreak` | parcours chronologique inversé des wars (`warScores` triés par `war.war.id` croissant) ; signé (>0 victoires, <0 défaites, 0 aucune) | `warScores`, `WarDetails.outcome()` (12p : `displayedDiff`) | `MKRecordsCell` « Série en cours » |
+| `currentStreak` | parcours chronologique inversé des wars (`warScores` triés par `war.war.id` croissant) ; signé (>0 victoires, <0 défaites, 0 aucune) | `warScores`, `WarDetails.outcome()` (12p : `displayedDiff` ; **24p : signe de `scoreMargin(is24p=true)`**) | `MKRecordsCell` « Série en cours » |
 | `bestWinStreak` / `worstLossStreak` | plus longue série consécutive de victoires / de défaites (parcours chronologique) | idem | `MKRecordsCell` « Record de victoires / de défaites » |
 | `streaksByOpponent` | `Map<opponentId, StreakStats>` : séries (courante + records) par adversaire, wars groupées par `teamOpponent` puis triées | `chronologicalWars` | Calculé (base API stats) — surfacé selon besoin |
 | `streaksByTrack` | `Map<trackIndex, StreakStats>` : séries de manches par circuit, via `WarTrackDetails.trackOutcome()` (12p) | `chronologicalWars` warTracks | Calculé (base API stats) |
@@ -548,18 +548,23 @@ le cache worker (rule 32).
 | `playerContribution` | **vue joueur** : moyenne war par war de `playerScore / scoreHost` (%, 12p) | `chronologicalScores`, `WarDetails.scoreHost` | `MKAdvancedStatsCell` (vue joueur) |
 | `scoreStdDev` | écart-type (population) des scores par war ; null si < 2 wars | `chronologicalScores.score` | `MKAdvancedStatsCell` |
 | `scoreMin` / `scoreMax` | amplitude min/max des scores par war | idem | `MKAdvancedStatsCell` |
-| `positionDistribution` | **vue joueur** : `List<Pair<pos, count>>` sur 1..12 (12p) depuis les `WarPosition` du joueur | `chronologicalWars.tracks` | `MKPositionDistributionCell` (histogramme, vue joueur) |
-| `averageWinMargin` / `averageLossMargin` | marge moyenne (écart de score 12p) des victoires / défaites, séparées | `chronologicalWars`, `WarDetails.scoreMargin()` | `MKAdvancedStatsCell` |
+| `positionDistribution` | **vue joueur** : `List<Pair<pos, count>>` sur **1..12 en 12p, 1..24 en 24p** (étendue mode-aware via `Stats.is24p`, ne tronque plus les positions 13..24 en 24p) depuis les `WarPosition` du joueur | `chronologicalWars.tracks` | `MKPositionDistributionCell` (histogramme, vue joueur — rendu couleurs P1→P24 : ticket UI dédié) |
+| `averageWinMargin` / `averageLossMargin` | marge moyenne (écart de score) des victoires / défaites, séparées ; **mode-aware** : `scoreMargin(is24p)` (12p = hôte − adversaire unique ; 24p = hôte − meilleur score adverse depuis `War.scores`, pénalités nettées par équipe) | `chronologicalWars`, `WarDetails.scoreMargin(is24p)` | `MKAdvancedStatsCell` |
 | `firstHalfAvgPosition` / `secondHalfAvgPosition` | **vue joueur** : position moyenne du joueur sur les tracks de la 1ʳᵉ / 2ᵉ moitié de war. Coupure à `tracks.size / 2` par war (war 12 manches → 6/6) | `chronologicalWars.tracks` | `MKAdvancedStatsCell` (vue joueur) |
 | `unbeatenStreak` | série W+T en cours (outcome ≥ 0), variante de `currentStreak` | `chronologicalWars` | `MKAdvancedStatsCell` (« Invaincu depuis ») |
 | `penaltyPointsLost` | Σ des `WarPenalty` de l'équipe hôte sur l'historique | `War.penalties` | `MKAdvancedStatsCell` |
 
-> **Périmètre 12p (retour utilisateur) :** ces nouvelles stats (deux tickets) sont
-> volontairement **12p uniquement**. Le comparatif 12p vs 24p et les branches 24p
-> spécifiques (marges/`teamTotalScore` 24p, distribution 1..24, seuil Top6 45,
-> `outcome`/`trackOutcome` 24p) ont été **retirés** et feront l'objet d'un ticket
-> dédié. Le support 24p **préexistant** de l'app (hors ces nouvelles stats) est
-> intact.
+> **Périmètre 24p (prérequis de calcul, #29) :** le **moteur** de ces nouvelles
+> stats prend désormais en charge le mode 24p là où le calcul l'exige — `outcome`
+> (V/N/D dérivé du signe de `scoreMargin(is24p=true)`, aligné sur la règle podium de
+> `WarStats`), `scoreMargin` 24p (hôte − meilleur score adverse depuis `War.scores`),
+> distribution des positions **1..24**. Le rythme 1ʳᵉ/2ᵉ moitié utilise la position
+> brute → déjà correct en 24p. **Restent différés (ticket UI dédié)** : le **rendu**
+> 24p (histogramme/couleurs P1→P24 dans `MKPositionDistributionCell`), le comparatif
+> de mode 12p vs 24p, et les indicateurs encore 12p (Top6/Bot6 `teamScore == 61/21`,
+> `trackOutcome`, `playerContribution` basé sur `scoreHost` 12p, `mapsWon`/manches
+> gagnées par `teamScore` de manche). Le support 24p **préexistant** de l'app (hors
+> ces nouvelles stats) est intact.
 
 Le classement des adversaires (top3/flop3 par winrate & score) est désormais porté
 par `StatsViewModel.computeOpponentRankings` (voir 9.6) et affiché par
@@ -637,12 +642,17 @@ Le résultat est affiché par `ui/cells/WarPlayersCell.kt` (grille des joueurs, 
 utilisateur). Le comparatif 12p vs 24p (`MKModeComparisonCell`, `computeModeStats`)
 et les branches 24p de ces nouvelles stats ont été retirés — ticket dédié à venir.
 
-**Tri chronologique (factorisé)** : `war.id` est un timestamp (`WarDetails.date =
-Date(war.id)`). `Stats.chronologicalWars` (et le miroir `chronologicalScores`) trie
-`warScores` par `war.war.id` croissant. C'est la **source unique de tri** partagée
-par les séries (ticket principal) ET la forme récente (`takeLast(n)`, ce ticket) —
-aucun tri parallèle. Résultat de war via `WarDetails.outcome()` (12p) ; marges via
-`scoreMargin()` (12p).
+**Tri chronologique (garanti en amont + factorisé)** : `war.id` est un timestamp
+(`WarDetails.date = Date(war.id)`). L'ordre chronologique est **garanti à la source**
+par `WarDao.getAll()` — `SELECT * FROM WarEntity ORDER BY CAST(id AS INTEGER) ASC`
+(`id` stocké en TEXT ; `CAST` en INTEGER pour un tri **numérique** et non
+lexicographique) — donc tous les consommateurs (`InitStatsWorker`, `StatsViewModel`)
+reçoivent les wars déjà triées. `Stats.chronologicalWars` (et le miroir
+`chronologicalScores`) re-trie `warScores` par `war.war.id` croissant par sécurité
+(idempotent) : c'est la **source unique de tri** partagée par les séries et la forme
+récente (`takeLast(n)`) — aucun tri parallèle. Résultat de war via
+`WarDetails.outcome()` (12p : `displayedDiff` ; 24p : signe de `scoreMargin(is24p)`) ;
+marges via `scoreMargin(is24p)` (mode-aware, cf. 9.7).
 
 | Stat (`PlayerScore`) | Comment elle est calculée | Donnée(s) source | Où on la trouve dans l'appli |
 |---|---|---|---|
@@ -657,7 +667,8 @@ aucun tri parallèle. Résultat de war via `WarDetails.outcome()` (12p) ; marges
 
 - filtre les wars selon `multiRosterEnabled` / `rosterId` (équipe hôte) et le mode `is24PEnabled` (`teamOpponent.size` 1 vs > 1) ;
 - **circuits** : `trackRankList = withTrackStats().map { TrackRanking(it) }` ; `playerTrackRankList = withTrackStats(currentPlayerId)…` ;
-- **joueurs** : pour chaque joueur, `withFullStats(userId)` → `PlayerRanking(player, stats)` ; ne garde que `warsPlayed > 0` ; groupe par `Pair(ordre, nom de roster)` (`(1,"Allies")` si roster inconnu) → `playersRankList` ;
+- **perf (#29)** : `WarDetails(War(WarEntity))` (reparse des manches + calcul des scores dérivés) est **calculé une seule fois** (`warDetailsList = warList.map { WarDetails(War(it)) }`) puis filtré par joueur, au lieu d'être reconstruit pour chaque couple (joueur × war) dans la boucle joueurs — redondance amplifiée par les tables croisées de la refonte. L'ordre chronologique est préservé (garanti par `getWars`) ;
+- **joueurs** : pour chaque joueur, `warDetailsList.filter { it.war.hasPlayer(userId) }.withFullStats(userId)` → `PlayerRanking(player, stats)` ; ne garde que `warsPlayed > 0` ; groupe par `Pair(ordre, nom de roster)` (`(1,"Allies")` si roster inconnu) → `playersRankList` ;
 - **adversaires** : sur les équipes (hors équipe courante) via `withFullTeamStats(...)` (qui appelle `withFullStats` par équipe), trié par `warsPlayed` décroissant → `opponentRankList` (équipe) et `playerOpponentRankList` (avec `userId`).
 
 ### Cache : `StatsRepository`

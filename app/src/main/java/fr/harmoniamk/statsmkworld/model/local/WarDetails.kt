@@ -56,11 +56,31 @@ data class WarDetails(val war: War): Serializable, Parcelable {
     }
 
     /**
-     * Écart de score 12p de la war du point de vue de l'hôte (signé : >0
-     * victoire, <0 défaite, 0 nul), avec pénalités. Sert aux marges moyennes
+     * Écart de score de la war du point de vue de l'hôte (signé : >0 victoire,
+     * <0 défaite, 0 nul), avec pénalités. Sert aux marges moyennes
      * victoire/défaite ([Stats.averageWinMargin] / [Stats.averageLossMargin]).
+     *
+     * - 12p : écart hôte − adversaire unique (somme des points de positions).
+     * - 24p : le score vient de [War.scores] (saisi via WarScore, 3 équipes) ;
+     *   la marge est l'écart entre le score de l'hôte et le MEILLEUR score
+     *   adverse (référence de podium), pénalités nettées par équipe — cohérent
+     *   avec la détermination victoire/défaite de [WarStats] (podium top/bottom 2).
      */
-    fun scoreMargin(): Int = scoreHostWithPenalties - scoreOpponentWithPenalties
+    fun scoreMargin(is24p: Boolean = false): Int = when (is24p) {
+        false -> scoreHostWithPenalties - scoreOpponentWithPenalties
+        true -> {
+            val hostScore = war.scores.firstOrNull { it.teamId == war.teamHost }
+                ?.let { penaltyAdjustedScore(it) } ?: 0
+            val bestOpponent = war.scores
+                .filter { war.teamOpponent.contains(it.teamId) }
+                .maxOfOrNull { penaltyAdjustedScore(it) } ?: 0
+            hostScore - bestOpponent
+        }
+    }
+
+    /** Score d'une équipe (24p) net de ses pénalités. */
+    private fun penaltyAdjustedScore(score: WarScore): Int =
+        score.score - war.penalties.filter { it.teamId == score.teamId }.sumOf { it.amount }
 }
 
 @Parcelize

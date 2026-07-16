@@ -64,6 +64,14 @@ class InitStatsWorker @AssistedInject constructor(
             statsRepository.trackRankList = warList.withTrackStats().map { RankingItem.TrackRanking(it) }
             statsRepository.playerTrackRankList = warList.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
 
+            // Perf : les tables croisées (joueur × …) multiplient les parcours de la
+            // liste de wars. WarDetails(War(WarEntity)) reparse toutes les manches et
+            // recalcule plusieurs scores dérivés — on le fait UNE fois ici puis on
+            // réutilise la liste (filtrée par joueur) au lieu de reconstruire un
+            // WarDetails par (joueur × war). Ordre chronologique préservé (getWars
+            // trie déjà, cf. WarDao).
+            val warDetailsList = warList.map { WarDetails(War(it)) }
+
             //Fetch players stats
             databaseRepository.getPlayers()
                 .mapNotNull { it.sortedBy { it.name } }
@@ -71,9 +79,8 @@ class InitStatsWorker @AssistedInject constructor(
                     val rosters = dataStoreRepository.mkcTeam.firstOrNull()?.rosters
                     val players = mutableListOf<RankingItem>()
                     userList.forEach { user ->
-                        warList
-                            .filter { war -> war.hasPlayer(user.id) }
-                            .map { WarDetails(War(it)) }
+                        warDetailsList
+                            .filter { it.war.hasPlayer(user.id) }
                             .withFullStats(databaseRepository, userId = user.id)
                             .map { players.add(RankingItem.PlayerRanking(user, it)) }
                             .firstOrNull()
