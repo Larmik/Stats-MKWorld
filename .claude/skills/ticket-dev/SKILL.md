@@ -15,8 +15,16 @@ conversation. Les modifications de code sont **déléguées** à l'agent
 `ticket-worker` ; toi, tu gères l'acquisition du ticket, la branche, les
 échanges avec l'utilisateur et **toutes** les opérations git.
 
-Règle d'or : **aucun `git commit`, `git push` ni PR tant que l'utilisateur n'a
-pas explicitement validé** (étape 5). Ne devine jamais cette validation.
+Règle d'or : **dès que `ticket-worker` a rendu la main** (première passe), tu
+**commits systématiquement** (message = **nom de la branche**), tu **push**, et tu
+**crées la PR si elle n'existe pas encore** (étape 5), **puis** tu attends les
+retours. Chaque round de retours ré-applique des modifs via le worker et **re-commit
++ push** sur la même branche (la PR se met à jour). La validation finale de
+l'utilisateur sert à **fusionner** la PR, pas à autoriser le premier commit.
+
+(Ceci est l'**exception assumée** à la règle générale « pas de git sans demande »
+de `CLAUDE.md`, propre au flux `/ticket-dev` : l'utilisateur a explicitement demandé
+ce commit/push/PR automatique après chaque passe du worker.)
 
 ## 1. Acquérir le ticket
 
@@ -73,55 +81,60 @@ avec un prompt contenant :
 continuer *le même* agent via `SendMessage` (il garde le contexte du ticket, des
 fichiers déjà modifiés et des rules).
 
-Quand l'agent rend la main, **relaie son résumé** à l'utilisateur et **attends**
-son retour ou sa validation. Ne commite pas.
+Quand l'agent rend la main (première passe), **enchaîne directement sur l'étape 5**
+(commit = nom de branche + push + PR si absente), **puis** relaie son résumé à
+l'utilisateur et **attends** ses retours.
 
-## 4. Boucle de retours (sans commit)
+## 5. Commit / push / PR (systématique, dès la fin du worker)
 
-Tant que l'utilisateur n'a **pas** validé :
+**À faire dès que le worker a rendu la main (première passe), sans attendre de
+validation** :
 
-- S'il donne des retours, **continue le même agent** `ticket-worker` via
-  `SendMessage` avec le détail des retours (il garde son contexte : rules et
-  fichiers déjà lus n'ont pas à être relus). Demande-lui de :
-  1. appliquer les corrections directement (toujours **sans** commit) ;
-  2. **enrichir les rules** : si un retour correspond à une rule existante dans
-     `.claude/rules/`, la mettre à jour ; s'il exprime une préférence générale et
-     durable sans rule correspondante, en créer une nouvelle (format : voir
-     `.claude/rules/README.md`). Un retour purement spécifique à ce ticket ne
-     doit **pas** créer de rule.
-- Relaie le résumé mis à jour et **attends** de nouveau.
-
-Répète autant de fois que nécessaire.
-
-## 5. Validation → commit / push / PR
-
-**Porte de validation — conformité maquette (avant de solliciter la validation).** Si le
-ticket touche un écran décrit dans `docs/PROTOTYPE_UX.md`, **vérifier explicitement la
-conformité à la maquette écran par écran** (sections/onglets/insights, rattachement de
-pôle, libellés FR, navigation) ET le respect des règles composants (`13`/`15` : réutiliser/
-adapter, ne pas recréer). Lister les écarts constatés. Un ticket avec écart maquette n'est
-**pas** « fait » : le signaler et rester en itération. Un ticket **purement technique /
-sans écran** est exempté de ce critère. Cf. `.claude/rules/15-ui-prototype-reference.md`.
-
-Uniquement quand l'utilisateur valide **explicitement** les changements :
-
-1. **Demande le message de commit** à l'utilisateur (l'input qu'il fournit *est*
-   le message). Attends sa réponse.
-2. `git add -A` puis commit avec ce message. Termine le message de commit par :
+1. `git add -A` puis commit avec pour **message le nom de la branche**. Termine le
+   message par :
 
    ```
    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
    ```
-3. `git push -u origin <nom-de-branche>`.
-4. Crée la PR **vers master** : `gh pr create --base master --head <branche>`
-   avec un titre = titre du ticket et un corps résumant le changement. **Si le
-   ticket vient d'une issue GitHub, lie-la** en ajoutant `Closes #N` dans le corps
-   (l'issue se fermera à la fusion) ; reporte aussi le milestone de l'issue sur la
-   PR si pertinent (`--milestone`). Termine le corps par :
+2. `git push -u origin <nom-de-branche>`.
+3. **Crée la PR si elle n'existe pas encore** (`gh pr view <branche>` pour vérifier).
+   Base = branche d'intégration du ticket : **`master`** par défaut, ou la **branche
+   epic** si le ticket appartient à une epic dotée d'une branche d'intégration (ex.
+   `epic/refonte-ux-stats-resultats`) — en cas de doute, demander. Titre = titre du
+   ticket ; corps = résumé du changement + `Closes #N` (si issue GitHub) + report du
+   milestone (`--milestone`) si pertinent. Termine le corps par :
 
    ```
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
    ```
-5. Affiche l'URL de la PR (et rappelle le `#N` de l'issue liée).
+4. Habitude doc (rule 50) : mettre à jour les sections **impactées** de
+   `docs/AUDIT.md` / `docs/TECHNICAL.md` / `docs/FUNCTIONAL.md`, puis re-commit + push
+   sur la branche de la PR.
+5. Affiche l'URL de la PR (et rappelle le `#N` de l'issue liée), puis **attends les
+   retours** de l'utilisateur.
 
-Ne fais ces opérations git **qu'à cette étape**, et jamais avant.
+## 6. Boucle de retours (chaque round re-commit + push)
+
+Tant que l'utilisateur donne des retours :
+
+- **Continue le même agent** `ticket-worker` via `SendMessage` avec le détail des
+  retours (il garde son contexte : rules et fichiers déjà lus). Demande-lui de :
+  1. appliquer les corrections directement ;
+  2. **enrichir les rules** : si un retour correspond à une rule existante dans
+     `.claude/rules/`, la mettre à jour ; s'il exprime une préférence générale et
+     durable sans rule correspondante, en créer une nouvelle (format : voir
+     `.claude/rules/README.md`). Un retour purement spécifique à ce ticket ne doit
+     **pas** créer de rule.
+- Puis **re-commit (message = nom de branche) + push** sur la même branche (la PR se
+  met à jour automatiquement), relaie le résumé et **attends** de nouveau.
+
+## 7. Critère de validation / fusion — conformité maquette
+
+La **validation finale** de l'utilisateur sert à **fusionner** la PR. Avant de la
+proposer comme « fait » : si le ticket touche un écran décrit dans
+`docs/PROTOTYPE_UX.md`, **vérifier explicitement la conformité à la maquette écran par
+écran** (sections/onglets/insights, rattachement de pôle, libellés FR, navigation) ET
+le respect des règles composants (`13`/`15` : réutiliser/adapter, ne pas recréer).
+Lister les écarts : tant qu'il en reste, le ticket **n'est pas « fait »** (rester en
+boucle de retours). Un ticket **purement technique / sans écran** est exempté de ce
+critère. Cf. `.claude/rules/15-ui-prototype-reference.md`.
