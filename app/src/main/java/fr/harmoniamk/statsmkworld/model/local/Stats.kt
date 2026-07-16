@@ -85,6 +85,13 @@ data class Stats(
     /** Série en cours (la plus récente), signée : >0 victoires, <0 défaites, 0 aucune. */
     val currentStreak: Int = currentStreakOf(chronologicalWars)
 
+    /**
+     * Issues (+1 victoire / 0 nul / -1 défaite) des 5 dernières wars, en ordre
+     * chronologique (plus ancienne → plus récente). Alimente les pastilles V/N/D
+     * du « Momentum » de l'écran Accueil (dashboard) sans dupliquer [outcome].
+     */
+    val recentOutcomes: List<Int> = chronologicalWars.takeLast(5).map { it.outcome() }
+
     /** Record de série de victoires (max historique). */
     val bestWinStreak: Int = longestStreak(chronologicalWars) { it > 0 }
 

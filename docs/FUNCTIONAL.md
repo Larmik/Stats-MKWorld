@@ -98,15 +98,20 @@ Gating concret :
 
 `HomeScreen` = conteneur à **cinq pôles** (barre du bas — `Accueil · Wars · Stats · Classements · Profil`), avec conservation d'état entre onglets (`saveState`/`restoreState`). Chaque pôle est une destination du `NavHost` imbriqué de `HomeScreen`. L'**Annuaire** n'est plus un onglet : il est accessible via une **icône recherche** (loupe) dans l'app bar des écrans Accueil et Classements (route `Home/Registry` du graphe racine). Le graphe racine (`RootScreen`) conserve `startDestination = Signup` et les deep links Discord (`statsmkworld.com?...=code`) inchangés.
 
-### Pôle 1 — Accueil (`WelcomeScreen`)
-État : `teamName/teamLogo`, `buttonVisible`, `currentWar`, `wars` (5 derniers), `is24PEnabled`.
+### Pôle 1 — Accueil (`WelcomeScreen`) — tableau de bord
+État : `teamName/teamLogo`, `playerName/playerLogo`, `currentWar`, `stats` (stats équipe 12p), `recentResults` (3 dernières wars 12p).
 
-- Carte **équipe** (cliquable → profil équipe). La carte **joueur** a été retirée : le profil joueur est désormais accessible via le pôle **Profil** (zéro redondance intra-écran).
+L'accueil est un **dashboard** qui met l'essentiel à portée immédiate. Sections dans l'ordre (calcul 12p uniquement ; le support 24p relèvera d'un ticket dédié) :
+
+1. **Carte de salutation** (cliquable → **Profil**) : pastille/avatar du joueur, « Salut, <prénom> », sous-titre « <équipe> · voir mon profil → ». (Réutilise le style de carte de l'écran.)
+2. **War en cours** — bannière cliquable (→ reprend la war courante) affichée seulement si `currentWar != null`. Réutilise `CurrentWarCell`.
+3. **Momentum** : bande de forme des **5 derniers résultats** en pastilles V/N/D (issues de `Stats.recentOutcomes`) + delta de la **forme récente** (10 dernières wars vs all-time) sur le winrate (`recentForm10.winrateDelta`), coloré vert/rouge.
+4. **Chiffres clés** : winrate (`allTimeForm.winrate`) · score moyen (`averagePointsLabel`) · position moyenne (`averagePlayerPosLabel`).
+5. **Bandeau highlight — série en cours** (affiché si `currentStreak != 0`) : « Série de N victoires/défaites » + « En cours — record : M » (`bestWinStreak` / `worstLossStreak`).
+6. **Derniers résultats** : 3 wars 12p (`recentResults`, cliquables → détail de war) + lien **« Voir tout »** → pôle Wars (historique). Réutilise `WarCell`.
+
 - **Icône recherche** (app bar) → Annuaire.
-- Sélecteur **12 joueurs / 24 joueurs** (`onWarTypeSwitch`) — filtre tout le contenu (wars affichées, point d'entrée stats).
-- Bouton **« Nouvelle war »** si `buttonVisible` (role > 0 ou matrix) **et** aucune war en cours.
-- Carte **war en cours** si présente (→ reprend la war).
-- **Derniers résultats** : 5 wars filtrées par mode (`teamOpponent.size` = 1 pour 12p, > 1 pour 24p) ; bouton « voir plus » → pôle Wars.
+- Le **sélecteur 12/24 joueurs** et le bouton **« Nouvelle war »** ne figurent plus sur l'accueil : ils déménagent vers le **pôle Wars** (les destinations de navigation `Home/AddWar/{is24p}` restent inchangées).
 
 ### Pôle 2 — Wars (`WarListScreen`)
 Historique complet des wars, groupé par période (en-têtes collants), filtré par mode. Clic sur une war → détail de war.
