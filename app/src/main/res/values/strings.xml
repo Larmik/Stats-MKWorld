@@ -218,7 +218,9 @@
     <string name="home_momentum">Momentum</string>
     <string name="home_last_5">Last 5</string>
     <string name="home_last_10">Last 10</string>
-    <string name="home_form_delta">%1$s · %2$d-war form vs all-time</string>
+    <string name="home_form_delta_cap">%1$d-war form vs all-time</string>
+    <string name="home_live_players">Live · %1$d players</string>
+    <string name="home_vs">vs %1$s</string>
     <string name="home_key_figures">Key figures</string>
     <string name="home_win_streak">%1$d-win streak</string>
     <string name="home_loss_streak">%1$d-loss streak</string>

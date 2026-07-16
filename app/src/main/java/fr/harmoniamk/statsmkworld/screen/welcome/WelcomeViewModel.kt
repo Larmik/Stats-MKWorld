@@ -35,6 +35,8 @@ class WelcomeViewModel @Inject constructor(
     data class State(
         val teamName: String? = null,
         val teamLogo: String? = null,
+        // Couleur d'équipe (ARGB, source MKCentral) : fond de la pastille joueur.
+        val teamColor: Long? = null,
         val playerName: String? = null,
         val playerLogo: String? = null,
         val currentWar: War? = null,
@@ -67,6 +69,7 @@ class WelcomeViewModel @Inject constructor(
                 State(
                     teamName = team.name,
                     teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
+                    teamColor = team.color.takeIf { it != 0L },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty()),
