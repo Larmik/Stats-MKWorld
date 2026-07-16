@@ -330,9 +330,11 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
             )
         }
         scores.takeIf { it.size >= 2 }?.let { values ->
+            // Couleur de tendance : delta ≥ 0 (ou indisponible) → vert, sinon rouge.
+            val trendColor = if ((form?.winrateDelta ?: 0) < 0) Colors.red else Colors.green
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                Sparkline(values, Modifier.width(110.dp).height(44.dp))
+                Sparkline(values, trendColor, Modifier.width(110.dp).height(44.dp))
                 Column(Modifier.weight(1f)) {
                     form?.winrateDelta?.let { delta ->
                         MKText(
@@ -373,11 +375,11 @@ private fun OutcomeChip(outcome: Int) {
 }
 
 /**
- * Sparkline stylée maquette : aire dégradée verte (opaque → transparent) sous la
- * courbe, ligne verte, point vert sur la valeur la plus récente. Padding 9 px.
+ * Sparkline stylée maquette : aire dégradée + ligne + point de fin, teintés selon
+ * la TENDANCE ([trendColor] : vert si delta ≥ 0, rouge sinon). Padding 9 px.
  */
 @Composable
-private fun Sparkline(values: List<Int>, modifier: Modifier = Modifier) {
+private fun Sparkline(values: List<Int>, trendColor: Color, modifier: Modifier = Modifier) {
     val min = values.min()
     val max = values.max()
     val range = (max - min).takeIf { it > 0 } ?: 1
@@ -389,7 +391,7 @@ private fun Sparkline(values: List<Int>, modifier: Modifier = Modifier) {
         val pointX = { index: Int -> pad + index * stepX }
         val pointY = { value: Int -> size.height - pad - ((value - min).toFloat() / range) * innerH }
 
-        // Aire dégradée sous la courbe.
+        // Aire dégradée sous la courbe (couleur de tendance : opaque → transparent).
         val fill = Path().apply {
             moveTo(pointX(0), size.height - pad)
             values.forEachIndexed { index, value -> lineTo(pointX(index), pointY(value)) }
@@ -398,7 +400,7 @@ private fun Sparkline(values: List<Int>, modifier: Modifier = Modifier) {
         }
         drawPath(
             path = fill,
-            brush = Brush.verticalGradient(listOf(Color(0x7381C995), Color(0x0081C995)))
+            brush = Brush.verticalGradient(listOf(trendColor.copy(alpha = 0.45f), trendColor.copy(alpha = 0f)))
         )
         // Ligne.
         val line = Path().apply {
@@ -406,9 +408,9 @@ private fun Sparkline(values: List<Int>, modifier: Modifier = Modifier) {
                 if (index == 0) moveTo(pointX(index), pointY(value)) else lineTo(pointX(index), pointY(value))
             }
         }
-        drawPath(path = line, color = Colors.green, style = Stroke(width = 6f))
+        drawPath(path = line, color = trendColor, style = Stroke(width = 6f))
         // Point sur la dernière valeur.
-        drawCircle(color = Colors.green, radius = 9f, center = Offset(pointX(values.size - 1), pointY(values.last())))
+        drawCircle(color = trendColor, radius = 9f, center = Offset(pointX(values.size - 1), pointY(values.last())))
     }
 }
 
@@ -422,7 +424,7 @@ private fun KeyFiguresCard(stats: Stats, isPlayer: Boolean) {
         Eyebrow(stringResource(R.string.home_key_figures))
         Spacer(Modifier.height(11.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            KeyTile(value = stats.allTimeForm?.winrate?.let { "$it%" } ?: "-", label = stringResource(R.string.form_winrate), accent = true)
+            KeyTile(value = stats.allTimeForm?.winrate?.let { "$it%" } ?: "-", label = stringResource(R.string.form_winrate))
             when (isPlayer) {
                 true -> {
                     KeyTile(value = stats.averagePoints.toString(), label = stringResource(R.string.form_score))
@@ -437,9 +439,9 @@ private fun KeyFiguresCard(stats: Stats, isPlayer: Boolean) {
     }
 }
 
-/** Tuile d'un chiffre clé : grande valeur (verte si accent) + libellé. */
+/** Tuile d'un chiffre clé : grande valeur (blanche) + libellé. */
 @Composable
-private fun RowScope.KeyTile(value: String, label: String, accent: Boolean = false) {
+private fun RowScope.KeyTile(value: String, label: String) {
     Column(
         Modifier
             .weight(1f)
@@ -447,7 +449,7 @@ private fun RowScope.KeyTile(value: String, label: String, accent: Boolean = fal
             .padding(vertical = 12.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        MKText(text = value, font = Fonts.NunitoBD, textColor = if (accent) Colors.green else Colors.white, fontSize = 22, textAlign = TextAlign.Center)
+        MKText(text = value, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 22, textAlign = TextAlign.Center)
         MKText(text = label, textColor = Colors.white70, fontSize = 11, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
     }
 }
