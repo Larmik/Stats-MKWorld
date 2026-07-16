@@ -162,7 +162,7 @@ when {
 | `Signup` | Onboarding + Discord OAuth | `code` (clé VM) |
 | `Home` | Conteneur 5 pôles (Welcome / WarList / Stats / Rankings / Profil) | — |
 | `Home/Registry` | Annuaire joueurs/équipes (via icône recherche) | — |
-| `Home/AddWar/{is24p}` | Choix adversaire(s) + composition | `Bool` |
+| `Home/AddWar/{is24p}` | Segmenté 12/24 + choix adversaire(s) + composition | `Bool` |
 | `Home/CurrentWar` | War en cours (live) | — |
 | `Home/CurrentWar/AddTrack/{is24p}` | Saisie d'une course | `Bool` |
 | `Home/CurrentWar/Actions` | Pénalités / remplacements / annulation | — |
@@ -175,6 +175,8 @@ when {
 | `Player/Profile/{id}` | Profil joueur (`me` ou id) | `String` |
 | `Player/Profile/Debug` | Écran debug | — |
 | `Team/Profile/{id}` | Profil équipe | `String` |
+
+**Pôle Wars & sélecteur de mode.** Le CTA « Nouvelle war » et le segmenté 12/24 vivent dans le pôle Wars (plus sur l'Accueil). `WarListScreen` reçoit `onAddWar` (câblé au callback `Home/AddWar/{is24p}` du graphe racine, via `HomeScreen`) et `onCurrentWar`. Le segmenté 12/24 est **sur `AddWarScreen`** : le changer déclenche `onModeChange(is24p)`, qui **re-navigue** vers `Home/AddWar/{is24p}` en remplaçant l'entrée courante (`popUpTo("Home/AddWar/{is24p}") { inclusive = true }` + `launchSingleTop`) — l'`AddWarViewModel` (assisted factory sur `is24p`) est ainsi recréé proprement dans le nouveau mode, sans état mutable de mode dans le VM. `WelcomeScreen` a perdu son paramètre `onAddWar` (plus utilisé).
 
 `HomeScreen` contient son **propre** `NavHost` à 5 pôles (`BottomNavItem` : WELCOME, WARS, STATS, RANKINGS, PROFILE → routes `Home/Welcome`, `Home/WarList`, `Home/Stats`, `Home/Rankings`, `Home/Profile`) avec `saveState`/`restoreState`. Stats et Classements réutilisent le même `StatsMenuScreen` paramétré par `StatsMenuMode` (STATS / RANKINGS). Le pôle Profil héberge `PlayerProfileScreen("me")` ; ses actions déconnexion/debug remontent au graphe racine via callbacks. L'**Annuaire** (`RegistryScreen`) n'est plus un pôle : il est ouvert via une **icône recherche** ajoutée à `BaseScreen` (paramètre optionnel `onSearch`), présente sur Accueil et Classements, et navigue vers la route racine `Home/Registry`. Le bouton système ← revient à l'écran d'origine (fiche ouverte depuis Classements → retour Classements) car les fiches profils/détails sont poussées sur le graphe racine par-dessus le pôle courant. Au niveau des pôles eux-mêmes, le `BackHandler` de `HomeScreen` applique le pattern bottom-nav standard : ← depuis un pôle autre qu'Accueil ramène au **pôle Accueil** ; ← depuis Accueil **quitte** l'app. Le pôle Profil (`PlayerProfileScreen`, qui porte son propre `BackHandler`) reçoit la même navigation « retour Accueil » en `onBack`. (Cf. rule `.claude/rules/14-ui-back-onglets.md`.)
 

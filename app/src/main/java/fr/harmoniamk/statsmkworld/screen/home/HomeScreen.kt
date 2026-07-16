@@ -46,6 +46,8 @@ fun HomeScreen(
     onTeamProfile: (String) -> Unit,
     onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
+    // onAddWar est désormais consommé par le pôle Wars (WarListScreen), plus par
+    // l'Accueil : le sélecteur/CTA « Nouvelle war » a déménagé vers le pôle Wars.
     onWarDetailsClick: (WarDetails) -> Unit,
     onStats: (StatsType) -> Unit,
     onRanking: (StatsType?) -> Unit,
@@ -111,7 +113,6 @@ fun HomeScreen(
                 composable(route = "Home/Welcome") {
                     WelcomeScreen(
                         onTeamProfile = { onTeamProfile("me") },
-                        onAddWar = onAddWar,
                         onCurrentWar = onCurrentWar,
                         onWarDetailsClick = onWarDetailsClick,
                         onWarListClick = { navController.navigate("Home/WarList") },
@@ -119,7 +120,11 @@ fun HomeScreen(
                     )
                 }
                 composable(route = "Home/WarList") {
-                    WarListScreen(onWarDetailsClick = onWarDetailsClick)
+                    WarListScreen(
+                        onWarDetailsClick = onWarDetailsClick,
+                        onAddWar = onAddWar,
+                        onCurrentWar = onCurrentWar
+                    )
                 }
                 composable(route = "Home/Stats") {
                     StatsMenuScreen(

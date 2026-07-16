@@ -195,6 +195,15 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     creationCallback = { factory: AddWarViewModel.Factory -> factory.create(is24p = is24p == true) }
                 ),
                 is24p = is24p == true,
+                // Bascule 12/24 : on re-navigue avec l'autre mode en remplaçant
+                // l'entrée courante (popUpTo self inclusive) → le VM est recréé
+                // proprement avec le nouveau `is24p` (assisted factory).
+                onModeChange = { newIs24p ->
+                    navController.navigate("Home/AddWar/$newIs24p") {
+                        popUpTo("Home/AddWar/{is24p}") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
                 onBack = {
                 navController.popBackStack()
             }, onCurrentWar = {

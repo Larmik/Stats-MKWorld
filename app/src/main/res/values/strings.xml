@@ -226,4 +226,14 @@
     <string name="home_loss_streak">%1$d-loss streak</string>
     <string name="home_streak_record">Ongoing — record: %1$d</string>
     <string name="see_all">See all →</string>
+    <!-- Wars pole -->
+    <string name="wars_count">%1$d wars</string>
+    <string name="war_live">Live</string>
+    <string name="war_resume">Resume — %1$d tracks played</string>
+    <string name="wars_filter_all">All</string>
+    <string name="wars_filter_wins">Wins</string>
+    <string name="wars_filter_ties">Ties</string>
+    <string name="wars_filter_losses">Losses</string>
+    <string name="mode_12_players">12 players</string>
+    <string name="mode_24_players">24 players</string>
 </resources>

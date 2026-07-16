@@ -43,15 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
-import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
-import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCell
-import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarCellViewModel
+import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
@@ -63,7 +61,6 @@ private val CardRadius = RoundedCornerShape(6.dp)
 fun WelcomeScreen(
     viewModel: WelcomeViewModel = hiltViewModel(),
     onTeamProfile: () -> Unit,
-    onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
     onWarListClick: () -> Unit,
@@ -272,41 +269,6 @@ private fun Segmented(items: List<String>, selected: Int, onSelect: (Int) -> Uni
                 MKText(text = label, font = Fonts.NunitoBD, textColor = if (active) Colors.black else Colors.white, fontSize = 13)
             }
         }
-    }
-}
-
-/**
- * Bannière « War en cours » : dégradé vert→sombre, bordure verte, pastille « En
- * direct · N joueurs ». Le corps (roster vs adversaire, score, courses jouées)
- * provient de la vraie war via `CurrentWarCell` existante.
- */
-@Composable
-private fun CurrentWarBanner(war: War, onClick: () -> Unit) {
-    // Nombre de joueurs : 12p (1 adversaire) → 12, 24p (3 équipes) → 24.
-    val players = if (war.teamOpponent.size > 1) 24 else 12
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.horizontalGradient(listOf(Color(0x4081C995), Colors.blackAlphaed)),
-                CardRadius
-            )
-            .border(1.dp, Colors.green, CardRadius)
-            .clickable(onClick = onClick)
-            .padding(12.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(Modifier.size(7.dp).clip(CircleShape).background(Colors.green))
-            MKText(text = stringResource(R.string.home_live_players, players), font = Fonts.NunitoBD, textColor = Colors.green, fontSize = 11, textAlign = TextAlign.Start)
-        }
-        Spacer(Modifier.height(6.dp))
-        CurrentWarCell(
-            onClick = onClick,
-            viewModel = hiltViewModel(
-                key = war.id.toString() + war.tracks.joinToString { it.id.toString() },
-                creationCallback = { factory: CurrentWarCellViewModel.Factory -> factory.create(war) }
-            )
-        )
     }
 }
 
