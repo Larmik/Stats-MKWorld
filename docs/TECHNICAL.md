@@ -170,15 +170,16 @@ when {
 | `Home/WarDetails/Tab` | Génération du tableau (PDF) | `details` (savedState) |
 | `Home/TrackDetails/{editing}` | Détail d'une course | `track` + `Bool` |
 | `Home/EditTrack/{is24p}` | Édition d'une course | `track` + `Bool` |
-| `Stats` | Stats d'une catégorie | `type: StatsType` |
+| `Stats` | Stats d'une catégorie (détail adversaire/circuit, via classements) | `type: StatsType` |
 | `Stats/Ranking` | Classements | `type: StatsType` |
+| `Statsfull/{userId}` | Stats détaillées d'un joueur donné (vue Individuelles paramétrée) | `String` |
 | `Player/Profile/{id}` | Profil joueur (`me` ou id) | `String` |
 | `Player/Profile/Debug` | Écran debug | — |
 | `Team/Profile/{id}` | Profil équipe | `String` |
 
 **Pôle Wars & sélecteur de mode.** Le CTA « Nouvelle war » et le segmenté 12/24 vivent dans le pôle Wars (plus sur l'Accueil). `WarListScreen` reçoit `onAddWar` (câblé au callback `Home/AddWar/{is24p}` du graphe racine, via `HomeScreen`) et `onCurrentWar`. Le segmenté 12/24 est **sur `AddWarScreen`** et bascule le mode **dynamiquement sur le même écran, sans re-navigation** : l'argument de route `{is24p}` ne sert qu'à **semer la valeur initiale** passée à la factory `@AssistedInject` (`initialIs24p`) ; le mode est ensuite un **état interne réactif** du VM (`private var is24p`, exposé dans `State.is24p`). Le segmenté appelle `viewModel.onModeChange(is24p)`, qui met à jour l'état **et réinitialise la sélection d'adversaires** (le nombre attendu change, 1 vs 3) ; l'écran reste monté et se recompose (pas de transition slide). Tout ce qui dépend du mode (nombre d'`OpponentSlot`, `nextButtonEnabled` dans `commitTeam`/`onRemoveTeam`, `createWar`) lit `is24p`/`State.is24p`. Cf. rule `.claude/rules/11-compose-state.md` (« un switch met à jour l'affichage dynamiquement, jamais par re-navigation »). `WelcomeScreen` a perdu son paramètre `onAddWar` (plus utilisé).
 
-`HomeScreen` contient son **propre** `NavHost` à 5 pôles (`BottomNavItem` : WELCOME, WARS, STATS, RANKINGS, PROFILE → routes `Home/Welcome`, `Home/WarList`, `Home/Stats`, `Home/Rankings`, `Home/Profile`) avec `saveState`/`restoreState`. Stats et Classements réutilisent le même `StatsMenuScreen` paramétré par `StatsMenuMode` (STATS / RANKINGS). Le pôle Profil héberge `PlayerProfileScreen("me")` ; ses actions déconnexion/debug remontent au graphe racine via callbacks. L'**Annuaire** (`RegistryScreen`) n'est plus un pôle : il est ouvert via une **icône recherche** ajoutée à `BaseScreen` (paramètre optionnel `onSearch`), présente sur Accueil et Classements, et navigue vers la route racine `Home/Registry`. Le bouton système ← revient à l'écran d'origine (fiche ouverte depuis Classements → retour Classements) car les fiches profils/détails sont poussées sur le graphe racine par-dessus le pôle courant. Au niveau des pôles eux-mêmes, le `BackHandler` de `HomeScreen` applique le pattern bottom-nav standard : ← depuis un pôle autre qu'Accueil ramène au **pôle Accueil** ; ← depuis Accueil **quitte** l'app. Le pôle Profil (`PlayerProfileScreen`, qui porte son propre `BackHandler`) reçoit la même navigation « retour Accueil » en `onBack`. (Cf. rule `.claude/rules/14-ui-back-onglets.md`.)
+`HomeScreen` contient son **propre** `NavHost` à 5 pôles (`BottomNavItem` : WELCOME, WARS, STATS, RANKINGS, PROFILE → routes `Home/Welcome`, `Home/WarList`, `Home/Stats`, `Home/Rankings`, `Home/Profile`) avec `saveState`/`restoreState`. Le pôle **Stats** héberge `StatsFullScreen` (écran riche à onglets Individuelles/Équipe pour le joueur courant, `showTabs = true`, cf. §Stats ci-dessous) ; le pôle **Classements** conserve `StatsMenuScreen` (désormais réduit au seul mode `RANKINGS`, le mode `STATS` ayant été retiré). Le pôle Profil héberge `PlayerProfileScreen("me")` ; ses actions déconnexion/debug remontent au graphe racine via callbacks. L'**Annuaire** (`RegistryScreen`) n'est plus un pôle : il est ouvert via une **icône recherche** ajoutée à `BaseScreen` (paramètre optionnel `onSearch`), présente sur Accueil et Classements, et navigue vers la route racine `Home/Registry`. Le bouton système ← revient à l'écran d'origine (fiche ouverte depuis Classements → retour Classements) car les fiches profils/détails sont poussées sur le graphe racine par-dessus le pôle courant. Au niveau des pôles eux-mêmes, le `BackHandler` de `HomeScreen` applique le pattern bottom-nav standard : ← depuis un pôle autre qu'Accueil ramène au **pôle Accueil** ; ← depuis Accueil **quitte** l'app. Le pôle Profil (`PlayerProfileScreen`, qui porte son propre `BackHandler`) reçoit la même navigation « retour Accueil » en `onBack`. (Cf. rule `.claude/rules/14-ui-back-onglets.md`.)
 
 **Conventions de performance Compose** (à respecter pour tout nouvel écran/cellule) :
 
@@ -686,6 +687,20 @@ var playerTrackRankList: List<RankingItem>
 ```
 
 `RankingItem` (interface scellée) : `PlayerRanking(player, stats)`, `OpponentRanking(team, stats)` (expose `winrate`, labels), `TrackRanking(stats: TrackStats)`.
+
+### 9.11 Écran Statistiques (`screen/stats/full/`, ticket #25)
+
+`StatsFullScreen` + `StatsFullViewModel` portent le **pôle Stats** (onglets Individuelles/Équipe) **et** la vue `statsfull` d'un joueur donné, mutualisées :
+
+- **`StatsFullViewModel`** (`@AssistedInject`, `Factory.create(userId: String?, showTabs: Boolean)`) : `userId` null ⇒ joueur courant (résolu via `dataStoreRepository.mkcPlayer`). Il **réutilise `withFullStats`** (aucun recalcul UI) et calcule, par émission :
+  - `playerStats` / `teamStats` du **mode courant** (12/24) + `playerOtherMode` / `teamOtherMode` (résumés winrate + score de l'**autre** mode, pour le comparatif 12/24) ;
+  - `contributors` : chaque **membre du roster** (`getPlayers()` filtré par `rosterId` du roster mkworld courant) avec sa **part de points** (points du joueur ÷ total cumulé des membres) et son winrate, trié décroissant ;
+  - `mostPlayed/mostBeaten/leastBeaten` **adversaires** (regroupement par id d'opposant ; vaincus soumis au seuil `Stats.MIN_RANKING_SAMPLE`, nom résolu **roster > équipe** via `getTeam` — rule 12) ;
+  - tuiles **circuits** (meilleur/pire winrate perso et équipe, le + joué) dérivées de `Stats.bestMapByWinrate`/`worstMapByWinrate`/`mostPlayedMap` ; les libellés de circuit transitent en **`@StringRes`** (`NamedTile.labelRes`) et sont résolus à l'affichage (Context).
+  - Le toggle **12 j / 24 j** écrit `dataStoreRepository.set24PEnabled(...)` ; `state` observe `is24PEnabled` (`flatMapLatest`) ⇒ bascule **réactive** sans re-navigation (rule 11).
+- **Calculs ajoutés à `Stats.kt`** (rule 61, dans le récepteur) : `bestCoursePoints` / `worstCoursePoints` (meilleur/pire score du joueur sur une manche, vue joueur) et `mostPlayedMap` (circuit le plus joué). Le reste réutilise l'existant (`allTimeForm`, `positionDistribution`, `firstHalfAvgPosition`/`secondHalfAvgPosition`, `averageWinMargin`, `playerContribution`, `bestWinStreak`, etc.).
+- **Rendu pixel-perfect** (`StatsFullScreen`, rules 13/15) : cartes translucides, eyebrows + pastille « Nouveau », tuiles, barre V/N/D proportionnelle, flamme de séries, histogramme de distribution P1→P12 avec pied Top6/Bot6, comparatif 12/24 en deux colonnes (mode courant surligné), mini-classement contributeurs. Composants privés au fichier (reprennent le vocabulaire visuel de `WelcomeScreen`). **Saisons masquées** (#30 non livré) : « record N » sans suffixe saison.
+- **Navigation** : pôle Stats → `StatsFullScreen(showTabs = true)` (route `Home/Stats`) ; route racine `Statsfull/{userId}` → `StatsFullScreen(showTabs = false)` (vue Individuelles paramétrée, barre retour + sous-titre = nom du joueur). Points d'entrée Classements/#26 & fiche joueur à câbler par leurs tickets.
 
 ---
 

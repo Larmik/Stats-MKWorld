@@ -24,9 +24,13 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 
-/** Distingue les deux destinations issues de l'ancien menu unique : le détail des stats
- * (individuelles/équipe) et les classements (joueurs/adversaires/circuits). */
-enum class StatsMenuMode { STATS, RANKINGS }
+/**
+ * Ancien menu de stats à deux destinations. Le mode `STATS` (individuelles/équipe) a été
+ * remplacé par l'écran riche à onglets `StatsFullScreen` (ticket #25) ; il ne reste que
+ * `RANKINGS` (classements joueurs/adversaires/circuits, pôle Classements #26). L'enum est
+ * conservé le temps de la refonte du pôle Classements.
+ */
+enum class StatsMenuMode { RANKINGS }
 
 @Composable
 fun StatsMenuScreen(
@@ -37,11 +41,7 @@ fun StatsMenuScreen(
     onSearch: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsState()
-    val title = when (mode) {
-        StatsMenuMode.STATS -> R.string.statistiques
-        StatsMenuMode.RANKINGS -> R.string.classements
-    }
-    BaseScreen(title = stringResource(title), onSearch = onSearch) {
+    BaseScreen(title = stringResource(R.string.classements), onSearch = onSearch) {
         state.value.is24PEnabled?.let {
             MKSegmentedSelector(
                 items = listOf(
@@ -61,41 +61,25 @@ fun StatsMenuScreen(
             Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            when (mode) {
-                StatsMenuMode.STATS -> {
-                    item {
-                        MenuRow(text = stringResource(R.string.statistiques_individuelles)) {
-                            onClick(StatsType.PlayerStats(userId = state.value.currentPlayerId.orEmpty(), is24p = state.value.is24PEnabled == true))
-                        }
-                    }
-                    item {
-                        MenuRow(text = stringResource(R.string.statistiques_de_l_quipe)) {
-                            onClick(StatsType.TeamStats(is24p = state.value.is24PEnabled == true))
-                        }
-                    }
+            item {
+                MenuRow(text = stringResource(R.string.statistiques_des_joueurs)) {
+                    onRanking(StatsType.TeamStats(is24p = state.value.is24PEnabled == true))
                 }
-                StatsMenuMode.RANKINGS -> {
-                    item {
-                        MenuRow(text = stringResource(R.string.statistiques_des_joueurs)) {
-                            onRanking(StatsType.TeamStats(is24p = state.value.is24PEnabled == true))
-                        }
-                    }
-                    item {
-                        MenuRow(text = stringResource(R.string.statistiques_des_adversaires)) {
-                            onRanking(StatsType.OpponentStats(teamId = state.value.currentTeamId.orEmpty(), is24p = state.value.is24PEnabled == true))
-                        }
-                    }
-                    item {
-                        MenuRow(text = stringResource(R.string.statistiques_des_circuits)) {
-                            onRanking(
-                                StatsType.MapStats(
-                                    userId = state.value.currentPlayerId.orEmpty(),
-                                    teamId = state.value.currentTeamId.orEmpty(),
-                                    is24p = state.value.is24PEnabled == true
-                                )
-                            )
-                        }
-                    }
+            }
+            item {
+                MenuRow(text = stringResource(R.string.statistiques_des_adversaires)) {
+                    onRanking(StatsType.OpponentStats(teamId = state.value.currentTeamId.orEmpty(), is24p = state.value.is24PEnabled == true))
+                }
+            }
+            item {
+                MenuRow(text = stringResource(R.string.statistiques_des_circuits)) {
+                    onRanking(
+                        StatsType.MapStats(
+                            userId = state.value.currentPlayerId.orEmpty(),
+                            teamId = state.value.currentTeamId.orEmpty(),
+                            is24p = state.value.is24PEnabled == true
+                        )
+                    )
                 }
             }
         }

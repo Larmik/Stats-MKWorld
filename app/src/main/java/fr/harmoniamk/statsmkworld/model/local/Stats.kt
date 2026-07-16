@@ -452,6 +452,27 @@ data class Stats(
         war.war.penalties.filter { it.teamId == war.war.teamHost }.sumOf { it.amount }
     }
 
+    // --- Écran Stats (ticket #25) : meilleure/pire course (vue joueur) --------
+    // Points marqués par le joueur sur une manche (barème position→points). La
+    // « meilleure » = max, la « pire » = min sur toutes ses manches. Null hors vue
+    // joueur ou sans manche exploitable.
+    private val playerTrackPoints: List<Int> = when (userId) {
+        null -> listOf()
+        else -> chronologicalWars
+            .flatMap { it.war.tracks }
+            .mapNotNull { track ->
+                track.positions.firstOrNull { it.playerId == userId }?.position?.positionToPoints(is24p)
+            }
+    }
+    /** Meilleur score du joueur sur une manche (points), null hors vue joueur. */
+    val bestCoursePoints: Int? = playerTrackPoints.maxOrNull()
+    /** Pire score du joueur sur une manche (points), null hors vue joueur. */
+    val worstCoursePoints: Int? = playerTrackPoints.minOrNull()
+
+    // --- Écran Stats (ticket #25) : circuit le plus joué ----------------------
+    /** Circuit le plus joué (≥ 1 passage), toutes maps confondues ; null si aucune. */
+    val mostPlayedMap: TrackStats? = maps.maxByOrNull { it.totalPlayed }
+
     companion object {
         // Seuil d'échantillon minimal pour figurer dans les classements
         // winrate/score (maps ET adversaires). Cf. DÉCISION PRODUIT du ticket.
