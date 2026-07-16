@@ -11,7 +11,12 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface WarDao {
 
-    @Query("SELECT * FROM WarEntity")
+    // id = timestamp de création (war.id, epoch millis) stocké en TEXT : tri
+    // chronologique croissant garanti EN AMONT de tous les calculs de stats
+    // (séries, forme récente…). CAST en INTEGER pour un tri numérique et non
+    // lexicographique. Source de vérité de l'ordre pour worker + ViewModels ;
+    // Stats.kt re-trie par sécurité mais s'appuie sur cette garantie.
+    @Query("SELECT * FROM WarEntity ORDER BY CAST(id AS INTEGER) ASC")
     fun getAll(): Flow<List<WarEntity>>
 
     @Query("SELECT * FROM WarEntity WHERE id=(:id) LIMIT 1")

@@ -52,14 +52,34 @@ data class Stats(
     val chronologicalWars: List<WarDetails> =
         warScores.sortedBy { it.war.war.id }.map { it.war }
 
+    // Mode de la war courante (12p vs 24p), propagé depuis WarStats. Détermine la
+    // base de calcul des marges/outcomes et l'étendue de la distribution des
+    // positions (P1→P12 ou P1→P24).
+    private val is24p: Boolean = warStats.is24p
+
     /**
-     * Résultat d'une war 12p du point de vue de l'équipe hôte : +1 victoire,
-     * -1 défaite, 0 égalité (dérivé de l'écart de score).
+     * Résultat d'une war du point de vue de l'équipe hôte : +1 victoire, -1
+     * défaite, 0 égalité.
+     *
+     * - 12p : dérivé de l'écart de score ([WarDetails.displayedDiff]).
+     * - 24p : dérivé du podium ([War.scores] à 3 équipes) — même règle que
+     *   [WarStats] : hôte dans le top 2 des scores = victoire, dans le bottom 2
+     *   = défaite. Une position médiane possible (2ᵉ sur 3) compte donc à la fois
+     *   comme "non-défaite" côté séries d'invincibilité selon la marge.
      */
-    private fun WarDetails.outcome(): Int = when {
-        displayedDiff.contains('+') -> 1
-        displayedDiff.contains('-') -> -1
-        else -> 0
+    private fun WarDetails.outcome(): Int = when (is24p) {
+        false -> when {
+            displayedDiff.contains('+') -> 1
+            displayedDiff.contains('-') -> -1
+            else -> 0
+        }
+        true -> scoreMargin(is24p = true).let {
+            when {
+                it > 0 -> 1
+                it < 0 -> -1
+                else -> 0
+            }
+        }
     }
 
     /** Série en cours (la plus récente), signée : >0 victoires, <0 défaites, 0 aucune. */
@@ -350,9 +370,14 @@ data class Stats(
 
     // --- Vague 2 : distribution complète des positions P1→P12 (vue joueur) ---
     /**
-     * Nombre de manches où le joueur a fini à chaque position (1..12, 12p). Vide
-     * hors vue joueur. Étend le principe des tables individuelles de MapStats à
-     * l'ensemble des positions.
+     * Nombre de manches où le joueur a fini à chaque position (1..12 en 12p,
+     * 1..24 en 24p). Vide hors vue joueur. Étend le principe des tables
+     * individuelles de MapStats à l'ensemble des positions. L'étendue suit le
+     * mode ([is24p]) pour ne pas tronquer les positions 13..24 en 24p.
+     *
+     * NB : le RENDU de cette distribution (histogramme P1→P24, couleurs 24p)
+     * relève du ticket UI dédié — ici on garantit seulement la justesse des
+     * données produites.
      */
     val positionDistribution: List<Pair<Int, Int>> = when (userId) {
         null -> listOf()
@@ -360,7 +385,8 @@ data class Stats(
             val positions = chronologicalWars
                 .flatMap { it.war.tracks }
                 .mapNotNull { track -> track.positions.firstOrNull { it.playerId == userId }?.position }
-            (1..12).map { pos -> pos to positions.count { it == pos } }
+            val range = if (is24p) 1..24 else 1..12
+            range.map { pos -> pos to positions.count { it == pos } }
         }
     }
 
@@ -371,7 +397,7 @@ data class Stats(
     val averageLossMargin: Int? = warMargins { it < 0 }
 
     private fun warMargins(predicate: (Int) -> Boolean): Int? = chronologicalWars
-        .map { it.scoreMargin() }
+        .map { it.scoreMargin(is24p = is24p) }
         .filter { predicate(it) }
         .takeIf { it.isNotEmpty() }
         ?.let { margins -> margins.sumOf { kotlin.math.abs(it) } / margins.size }
