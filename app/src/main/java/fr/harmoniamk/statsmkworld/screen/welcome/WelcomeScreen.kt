@@ -48,6 +48,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
@@ -211,10 +212,11 @@ private fun GreetingCard(
             }
         }
         Spacer(Modifier.height(12.dp))
-        Segmented(
+        MKSegmentedSelector(
             items = listOf(stringResource(R.string.home_scope_me), stringResource(R.string.home_scope_team)),
-            selected = profileIndex,
-            onSelect = onProfileChange
+            page = profileIndex,
+            onDark = true,
+            onClick = onProfileChange
         )
     }
 }
@@ -241,36 +243,6 @@ private fun Crest(image: String?, initials: String, color: Color) {
     }
 }
 
-/**
- * Segmenté façon maquette : conteneur blanc translucide arrondi (radius 10) ;
- * onglet actif = fond blanc/texte sombre, inactif = texte blanc.
- */
-@Composable
-private fun Segmented(items: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Colors.white30, RoundedCornerShape(10.dp))
-            .border(1.dp, Colors.whiteBorderSoft, RoundedCornerShape(10.dp))
-            .padding(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        items.forEachIndexed { index, label ->
-            val active = index == selected
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (active) Colors.white else Colors.transparent)
-                    .clickable { onSelect(index) }
-                    .padding(vertical = 9.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                MKText(text = label, font = Fonts.NunitoBD, textColor = if (active) Colors.black else Colors.white, fontSize = 13)
-            }
-        }
-    }
-}
 
 /**
  * Carte « Momentum » : eyebrow, segmenté 5/10 dernières, bande de pastilles V/N/D
@@ -285,10 +257,11 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
     DashboardCard {
         Eyebrow(stringResource(R.string.home_momentum))
         Spacer(Modifier.height(11.dp))
-        Segmented(
+        MKSegmentedSelector(
             items = listOf(stringResource(R.string.home_last_5), stringResource(R.string.home_last_10)),
-            selected = windowIndex,
-            onSelect = onWindowChange
+            page = windowIndex,
+            onDark = true,
+            onClick = onWindowChange
         )
         Spacer(Modifier.height(11.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
