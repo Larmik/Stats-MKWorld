@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = AddWarViewModel.Factory::class)
 class AddWarViewModel @AssistedInject constructor(
-    @Assisted val is24p: Boolean,
+    @Assisted initialIs24p: Boolean,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
@@ -44,6 +44,11 @@ class AddWarViewModel @AssistedInject constructor(
     interface Factory {
         fun create(is24p: Boolean): AddWarViewModel
     }
+
+    // Mode 12/24 : état interne réactif (initialisé depuis l'argument de nav). Le
+    // segmenté de l'écran le change via [onModeChange] SANS re-navigation : l'écran
+    // reste monté, l'UI se recompose dynamiquement.
+    private var is24p: Boolean = initialIs24p
 
     /**
      * État de l'étape intermédiaire de choix du roster adverse.
@@ -59,6 +64,9 @@ class AddWarViewModel @AssistedInject constructor(
     )
 
     data class State(
+        // Mode courant : pilote le nombre d'adversaires (1 en 12p, 3 en 24p) et
+        // l'affichage des emplacements adverses côté écran.
+        val is24p: Boolean = false,
         val teamList: List<TeamEntity> = listOf(),
         val playerList: Map<String, List<PlayerSelector>> = mapOf(),
         val teamSelected: List<TeamEntity>? = null,
@@ -82,7 +90,7 @@ class AddWarViewModel @AssistedInject constructor(
         }
     }
 
-    private val _state = MutableStateFlow(State())
+    private val _state = MutableStateFlow(State(is24p = initialIs24p))
     private var teams = listOf<TeamEntity>()
     private var players = listOf<PlayerEntity>()
     private var currentTeam: MKCTeam? = null
@@ -107,6 +115,7 @@ class AddWarViewModel @AssistedInject constructor(
             this.players = players
             this.currentTeam = team
             State(
+                is24p = is24p,
                 teamList = teams,
                 playerList = players.map { PlayerSelector(it, false) }.groupBy { selector ->
                     val roster = team?.rosters?.firstOrNull { it.id.toString() == selector.player.rosterId }
@@ -116,6 +125,26 @@ class AddWarViewModel @AssistedInject constructor(
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+    /**
+     * Bascule 12↔24 sur le MÊME écran (pas de re-navigation) : met à jour le mode
+     * réactif et **réinitialise la sélection d'adversaires** (le nombre d'équipes
+     * attendu change, 1 vs 3), en réaffichant la liste complète des équipes.
+     */
+    fun onModeChange(is24p: Boolean) {
+        if (is24p == this.is24p) return
+        this.is24p = is24p
+        selectedRosterIds = listOf()
+        _state.value = state.value.copy(
+            is24p = is24p,
+            teamList = teams,
+            teamSelected = null,
+            rostersSelected = listOf(),
+            nextButtonEnabled = false,
+            warName = null,
+            rosterSelection = null
+        )
+    }
 
     fun onSearchTeam(search: String) {
         val query = search.lowercase()

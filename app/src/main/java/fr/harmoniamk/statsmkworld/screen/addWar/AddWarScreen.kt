@@ -60,12 +60,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun AddWarScreen(
     viewModel: AddWarViewModel,
-    is24p: Boolean,
-    onModeChange: (Boolean) -> Unit,
     onBack: () -> Unit,
     onCurrentWar: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
+    val is24p = state.value.is24p
     val searchTeam = remember { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { 2 })
     val rosterSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
@@ -112,18 +111,16 @@ fun AddWarScreen(
         when (it) {
             0 -> BaseScreen(title = stringResource(R.string.pick_opponent)) {
                 // Segmenté 12/24 : c'est ICI que vit le sélecteur de mode (déménagé
-                // de l'Accueil vers le pôle Wars). Le changer relance la création
-                // de war dans l'autre mode (VM recréé via onModeChange).
+                // de l'Accueil vers le pôle Wars). Le changer met à jour l'état
+                // réactif du VM SANS re-navigation — l'écran reste monté et l'UI se
+                // recompose (nombre d'adversaires, sélection réinitialisée).
                 MKSegmentedSelector(
                     items = listOf(
                         stringResource(R.string.mode_12_players),
                         stringResource(R.string.mode_24_players)
                     ),
                     page = if (is24p) 1 else 0,
-                    onClick = { selected ->
-                        val newIs24p = selected == 1
-                        if (newIs24p != is24p) onModeChange(newIs24p)
-                    }
+                    onClick = { selected -> viewModel.onModeChange(selected == 1) }
                 )
                 Spacer(Modifier.height(15.dp))
                 if (is24p)

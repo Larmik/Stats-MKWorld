@@ -125,6 +125,8 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 3. **Historique complet**, groupé par mois (en-têtes collants), triés du plus récent au plus ancien. **Tous les modes sont mélangés (12j ET 24j)** — l'ancien filtrage par mode (`is24PEnabled`) a été retiré. Clic sur une war → détail de war. Réutilise la cellule `WarCell` unifiée.
 
 > **Composant `CurrentWarBanner` partagé** (`ui/cells/CurrentWarBanner.kt`) : la bannière « War en cours » (dégradé vert, pastille « En direct », corps = `CurrentWarCell`) est extraite de l'Accueil et **partagée** par l'Accueil et le pôle Wars. Un paramètre `withPlayers` choisit le libellé de pastille (« En direct · N joueurs » côté Accueil, « En direct » côté Wars) et un `callToAction` optionnel affiche « Reprendre — N courses jouées » côté Wars.
+>
+> **Cellule `CurrentWarCell` restylée** (`ui/cells/CurrentWarCell.kt`) : alignée sur le style des cellules de résultat (`WarCell12p`) — carte `blackAlphaed` + bordure, pastille adversaire (avatar équipe ou tag), « vs … », score + écart — et affiche en sous-ligne le **nombre de courses restantes** (`12 − courses jouées`). En 24p, podium des 3 logos + score de l'hôte + courses restantes. Le « courses restantes » (cellule) et le « N courses jouées » du `callToAction` (bannière, côté Wars) sont complémentaires et cohérents (jouées + restantes = 12).
 
 ### Pôle 3 — Stats (`StatsMenuScreen`, mode `STATS`)
 Sélecteur 12/24 joueurs, puis les entrées de **statistiques détaillées** :
@@ -167,7 +169,7 @@ flowchart LR
 ```
 
 ### Étape 1 — Choix de l'adversaire (`AddWarScreen`, page 1)
-- **Segmenté 12/24 joueurs** en tête de page (composant partagé `MKSegmentedSelector`) : c'est le point d'entrée du choix de mode (déménagé de l'Accueil). Le changer relance la création dans l'autre mode — techniquement, l'écran re-navigue vers `Home/AddWar/{is24p}` en remplaçant l'entrée courante (`popUpTo self, inclusive`), ce qui recrée proprement `AddWarViewModel` avec le nouveau `is24p` (assisted factory) et réinitialise la sélection.
+- **Segmenté 12/24 joueurs** en tête de page (composant partagé `MKSegmentedSelector`) : c'est le point d'entrée du choix de mode (déménagé de l'Accueil). Le changer bascule le mode **dynamiquement sur le même écran** (pas de re-navigation ni de transition slide) : l'argument de nav ne fait que semer la valeur initiale, puis `AddWarViewModel.onModeChange` met à jour un état interne réactif et **réinitialise la sélection d'adversaires** (1 équipe en 12p, 3 en 24p) ; l'affichage (nombre d'emplacements, libellés, CTA) se recompose.
 - **12 joueurs** : sélectionner **1** équipe. **24 joueurs** : sélectionner **3** équipes.
 - Recherche par nom/tag (insensible à la casse) ; le texte est comparé au nom et au tag de l'équipe **ainsi qu'au nom et au tag de chacun de ses rosters** — chercher le nom d'un roster fait donc remonter l'équipe parente (affichée une seule fois, avec son avatar). Aucune requête réseau (rosters déjà en local). Emplacements visuels pour les équipes choisies. Le champ de recherche **reste affiché même quand la recherche ne renvoie aucun résultat** (seule la grille est alors vide) : l'utilisateur peut corriger sa saisie sans perdre le clavier. La section recherche + grille ne disparaît qu'une fois **tous les adversaires sélectionnés** (1 en 12p, 3 en 24p).
 - **Sélection du roster adverse** : à chaque équipe choisie, l'app récupère ses rosters MK World.
