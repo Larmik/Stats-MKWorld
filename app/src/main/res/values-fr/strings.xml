@@ -237,8 +237,6 @@
     <string name="mode_12_players">12 joueurs</string>
     <string name="mode_24_players">24 joueurs</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
-    <string name="mode_12j">12 j</string>
-    <string name="mode_24j">24 j</string>
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>
     <string name="stats_me_tag">toi</string>
@@ -249,7 +247,6 @@
     <string name="stats_player_indicators">Tes indicateurs</string>
     <string name="stats_team_details">Détails équipe</string>
     <string name="stats_points_per_war">Points / war</string>
-    <string name="stats_points_per_war_short">Pts/war</string>
     <string name="stats_regularity">Régularité</string>
     <string name="stats_contribution_title">Ta contribution</string>
     <string name="stats_contribution_value">%1$d %% des points de l\'équipe</string>
@@ -259,10 +256,6 @@
     <string name="stats_form_delta">Forme %1$s %% sur 10 wars</string>
     <string name="stats_form_record">%1$s · record %2$d</string>
     <string name="stats_distribution_title">Ta distribution de positions</string>
-    <string name="stats_pace_title">Ton rythme de war</string>
-    <string name="stats_pace_first">Courses 1–6</string>
-    <string name="stats_pace_second">Courses 7–12</string>
-    <string name="stats_comparison_title">Comparatif 12J / 24J</string>
     <string name="stats_contributors_title">Contributeurs</string>
     <string name="stats_points_share">%1$d %% des points</string>
     <string name="stats_podium_top">Top 3</string>

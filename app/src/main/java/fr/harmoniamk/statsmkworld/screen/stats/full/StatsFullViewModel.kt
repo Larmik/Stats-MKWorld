@@ -22,10 +22,8 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 /**
  * ViewModel de l'écran Statistiques (pôle Stats, ticket #25) : porte À LA FOIS la
@@ -39,9 +37,8 @@ import kotlinx.coroutines.launch
  * - [userId] null ⇒ le joueur courant (« mes stats ») ; [showTabs] = true ⇒ onglets
  *   Individuelles / Équipe.
  *
- * Le toggle 12 j / 24 j est un état réactif ([onWarTypeSwitch]) : la bascule
- * recompute les Stats du mode sélectionné (rule 11, aucune re-navigation). Le
- * comparatif 12/24 est fourni par les résumés de l'AUTRE mode ([ModeSummary]).
+ * Le support 24 j est **temporairement retiré** (ticket #37) : l'écran ne présente
+ * que le 12p (`is24p` figé à `false`). Pas de toggle, pas de comparatif 12/24.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel(assistedFactory = StatsFullViewModel.Factory::class)
@@ -56,9 +53,6 @@ class StatsFullViewModel @AssistedInject constructor(
     interface Factory {
         fun create(@Assisted("userId") userId: String?, showTabs: Boolean): StatsFullViewModel
     }
-
-    /** Résumé d'un mode (12 j / 24 j) pour le comparatif : winrate + score/points moyen. */
-    data class ModeSummary(val winrate: Int?, val averageScore: Int?)
 
     /** Un contributeur du roster (vue Équipe) : joueur, part de points, winrate. */
     data class Contributor(
@@ -80,13 +74,9 @@ class StatsFullViewModel @AssistedInject constructor(
         // Id du joueur affiché (résolu : soit userId, soit joueur courant) — sert à
         // reconstruire un StatsType pour les cellules ui/stats/* réutilisées.
         val targetUserId: String? = null,
-        // Stats du mode courant.
+        // Stats (12p uniquement — 24p retiré, ticket #37).
         val playerStats: Stats? = null,
         val teamStats: Stats? = null,
-        // Comparatif : résumé de l'AUTRE mode (celui non affiché).
-        val playerOtherMode: ModeSummary? = null,
-        val teamOtherMode: ModeSummary? = null,
-        val is24p: Boolean = false,
         // Vue Équipe : contributeurs du roster.
         val contributors: List<Contributor> = listOf(),
         // Classements adversaires top3/flop3 (winrate ET score), au périmètre de la
@@ -101,20 +91,16 @@ class StatsFullViewModel @AssistedInject constructor(
         val playerFlopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf()
     )
 
+    // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
+    private val is24p = false
+
     private val _state = MutableStateFlow(State())
 
-    val state = dataStoreRepository.is24PEnabled
-        .flatMapLatest { is24p -> compute(is24p) }
+    val state = compute()
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
-    fun onWarTypeSwitch(index: Int) {
-        viewModelScope.launch {
-            dataStoreRepository.set24PEnabled(index == 1)
-        }
-    }
-
-    private suspend fun compute(is24p: Boolean) = databaseRepository.getWars()
+    private fun compute() = databaseRepository.getWars()
         .map { warEntities ->
             val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
             val targetUserId = userId ?: currentPlayer?.id?.toString()
@@ -123,11 +109,11 @@ class StatsFullViewModel @AssistedInject constructor(
             val rosterId = currentPlayer?.rosters
                 ?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
 
-            // Wars de l'équipe (host = notre roster, sauf multi-roster qui prend tout).
-            val teamWarsAll = warEntities
+            // Wars 12p de l'équipe (host = notre roster, sauf multi-roster qui prend tout).
+            val teamWarsMode = warEntities
                 .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-            val teamWarsMode = teamWarsAll.filterByMode(is24p).map { WarDetails(War(it)) }
-            val teamWarsOther = teamWarsAll.filterByMode(!is24p).map { WarDetails(War(it)) }
+                .filter { it.teamOpponent.size == 1 }
+                .map { WarDetails(War(it)) }
 
             val playerName = targetUserId
                 ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
@@ -143,32 +129,24 @@ class StatsFullViewModel @AssistedInject constructor(
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { "https://mkcentral.com$it" }
 
-            // Stats mode courant (player + team) + résumé de l'autre mode.
+            // Stats 12p (player + team).
             val playerStats = teamWarsMode
                 .withFullStats(databaseRepository, userId = targetUserId, is24p = is24p)
                 .firstOrNull()
             val teamStats = teamWarsMode
                 .withFullStats(databaseRepository, is24p = is24p)
                 .firstOrNull()
-            val playerOther = teamWarsOther
-                .withFullStats(databaseRepository, userId = targetUserId, is24p = !is24p)
-                .firstOrNull()
-                ?.toSummary()
-            val teamOther = teamWarsOther
-                .withFullStats(databaseRepository, is24p = !is24p)
-                .firstOrNull()
-                ?.toSummary()
 
             // Contributeurs du roster (vue Équipe) : chaque membre, part de points +
-            // winrate, sur les wars du mode courant.
-            val contributors = computeContributors(teamWarsMode, targetUserId, is24p)
+            // winrate, sur les wars.
+            val contributors = computeContributors(teamWarsMode, targetUserId)
 
             // Classements top3/flop3 adversaires (winrate ET score), au périmètre de
             // la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
             // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
             val currentTeamId = team?.id?.toString()
-            val teamRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = null, is24p = is24p)
-            val playerRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = targetUserId, is24p = is24p)
+            val teamRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = null)
+            val playerRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = targetUserId)
 
             State(
                 loading = false,
@@ -179,9 +157,6 @@ class StatsFullViewModel @AssistedInject constructor(
                 targetUserId = targetUserId,
                 playerStats = playerStats,
                 teamStats = teamStats,
-                playerOtherMode = playerOther,
-                teamOtherMode = teamOther,
-                is24p = is24p,
                 contributors = contributors,
                 topOpponentsByWinrate = teamRankings.topByWinrate,
                 flopOpponentsByWinrate = teamRankings.flopByWinrate,
@@ -211,8 +186,7 @@ class StatsFullViewModel @AssistedInject constructor(
     private suspend fun computeOpponentRankings(
         wars: List<WarDetails>,
         currentTeamId: String?,
-        userId: String?,
-        is24p: Boolean
+        userId: String?
     ): OpponentRankings {
         if (wars.isEmpty()) return OpponentRankings()
         val teams = databaseRepository.getTeams().firstOrNull()
@@ -237,8 +211,7 @@ class StatsFullViewModel @AssistedInject constructor(
      * cumulé des membres + winrate perso. Trié par part décroissante. */
     private suspend fun computeContributors(
         wars: List<WarDetails>,
-        meId: String?,
-        is24p: Boolean
+        meId: String?
     ): List<StatsFullViewModel.Contributor> {
         val roster = dataStoreRepository.mkcTeam.firstOrNull()?.rosters
         val members = databaseRepository.getPlayers().firstOrNull()
@@ -266,13 +239,4 @@ class StatsFullViewModel @AssistedInject constructor(
             }
             .sortedByDescending { it.pointsShare }
     }
-
-    private fun Stats.toSummary() = ModeSummary(
-        winrate = allTimeForm?.winrate,
-        averageScore = averagePoints
-    )
 }
-
-/** Filtre les wars par mode (24 j = ≥ 2 adversaires, 12 j = 1 adversaire). */
-private fun List<fr.harmoniamk.statsmkworld.database.entities.WarEntity>.filterByMode(is24p: Boolean) =
-    filter { (is24p && it.teamOpponent.size > 1) || (!is24p && it.teamOpponent.size == 1) }

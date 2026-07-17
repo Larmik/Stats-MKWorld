@@ -129,20 +129,19 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 > **Cellule `CurrentWarCell` restylée** (`ui/cells/CurrentWarCell.kt`) : alignée sur le style des cellules de résultat (`WarCell12p`) — carte `blackAlphaed` + bordure, pastille adversaire (avatar équipe ou tag), « vs … », score + écart — et affiche en sous-ligne le **nombre de courses restantes** (`12 − courses jouées`). En 24p, podium des 3 logos + score de l'hôte + courses restantes. Le « courses restantes » (cellule) et le « N courses jouées » du `callToAction` (bannière, côté Wars) sont complémentaires et cohérents (jouées + restantes = 12).
 
 ### Pôle 3 — Stats (`StatsFullScreen`)
-Écran riche à **onglets Individuelles / Équipe** (toggle **12 j / 24 j** au-dessus, réactif — la bascule recalcule les stats du mode choisi sans re-navigation), au niveau maquette (pôle Stats du prototype UX).
+Écran riche à **onglets Individuelles / Équipe**, au niveau maquette (pôle Stats du prototype UX). **12p uniquement** pour l'instant : le sélecteur 12 j / 24 j et le comparatif 12/24 sont **temporairement retirés** (réintégration prévue au ticket #37).
 
-- **En-tête** : **photo de profil du joueur** (Individuelles) ou **logo de l'équipe** (Équipe) — vignette MKCentral, fallback initiales/`default_logo` — + nom + sous-titre (« Tes performances · N wars » / « Performances collectives · N wars »). Le nombre de courses n'est plus affiché.
-- **Bilan** : gros winrate + V/N/D + barre proportionnelle. Le décompte V/N/D **et** le nombre de wars sont désormais calculés sur la portée affichée (voir note technique) : en Individuelles ils ne comptent que les wars où le joueur a joué, en Équipe toutes les wars de l'équipe.
-- **Indicateurs** : tuiles avec **sélecteur all-time / 5 dernières / 10 dernières** qui recalcule la section (winrate, points/war ou score, position/score-manche, % maps gagnées, régularité, amplitude min–max, marges V/D, shocks/war), avec **progression en %** (delta vs all-time, flèche ↗/↘ colorée) sur les métriques comparables. Distinction stricte joueur (points/war, position) vs équipe (points d'équipe/war, score moyen/manche). Valeurs en blanc, seuls les deltas sont colorés.
+- **En-tête** : **photo de profil du joueur** (Individuelles) ou **logo de l'équipe** (Équipe) — vignette MKCentral, fallback initiales/`default_logo` — + nom + sous-titre (« Tes performances · N wars » / « Performances collectives · N wars »). Pas de nombre de courses.
+- **Bilan** : gros winrate + V/N/D + barre proportionnelle. Le décompte V/N/D **et** le nombre de wars sont calculés sur la portée affichée : en Individuelles seules les wars où le joueur a joué, en Équipe toutes les wars de l'équipe.
+- **Indicateurs** (Individuelles) / **Détails équipe** (Équipe) : **grille régulière** de tuiles de même taille, avec **sélecteur all-time / 5 dernières / 10 dernières** qui recalcule la section, et **progression en %** (delta vs all-time, flèche ↗/↘ colorée) sur les métriques comparables. Distinction stricte : Individuelles = **points/war** + position ; Équipe = **écart de points** (le « Score moyen » affiche une différence, pas le total) + score moyen/manche. Tuiles communes : winrate, maps gagnées, régularité, marges V/D, **pénalités** (points perdus), shocks/war. Valeurs en blanc, seuls les deltas colorés.
 - **Contribution** (Individuelles) : % des points de l'équipe + rang de contributeur.
-- **Forme & séries** + **Records & séries** (tuiles : série en cours, records V/D, Top6/Bot6, invaincu).
+- **Forme & séries** + **Records & séries** (grille régulière de tuiles : série en cours, **amplitude du score** (min–max, placée sous la série), records V/D, Top6/Bot6, invaincu).
 - **Distribution de positions** : barres P1→P12 **ancrées sur une ligne de base commune** (labels alignés) + pied Top6/Bot6 avec %.
-- **Rythme de war** (Individuelles) : position moyenne courses 1–6 → 7–12.
-- **Comparatif 12J/24J** (winrate + pts/war ou score selon la portée).
-- **Podium circuits** : Top 3 / Flop 3 via la **cellule circuit** (`MapCell`, illustration + infos) + sélecteur **winrate / score**.
-- **Podium adversaires** : Top 3 / Flop 3 via la **cellule adversaire** (`TeamCell`, logo) + sélecteur **winrate / score**. Perspective joueur (score du joueur) en Individuelles, équipe (écart d'équipe) en Équipe.
+- **Podium circuits** : Top 3 / Flop 3 (**chacun sur une ligne**, 3 cellules compactes) via la **cellule circuit** (`MapCell`, illustration + infos) + sélecteur **winrate / score**.
+- **Podium adversaires** : Top 3 / Flop 3 (**chacun sur une ligne**) via la **cellule adversaire** (`TeamCell`, logo) + sélecteur **winrate / score**. Perspective joueur (score du joueur) en Individuelles, équipe (écart d'équipe) en Équipe.
 - **Contributeurs** (Équipe) : mini-classement du roster (% de points + winrate, « toi » mis en évidence).
-- Une section dépliable résiduelle (invaincu, points perdus en pénalités) complète, sans perte, les indicateurs de l'ancien écran.
+
+> Les sections « Rythme de war », « Comparatif 12/24 » et l'accordéon « Indicateurs avancés » ont été retirés : leurs indicateurs sont surfacés dans les tuiles ci-dessus (régularité, marges, pénalités, invaincu, amplitude), **sauf la position moyenne 1ʳᵉ/2ᵉ moitié de war** qui disparaît avec le rythme (choix produit assumé).
 
 > **`statsfull` — vue « pour un joueur donné »** : même rendu que l'onglet Individuelles, paramétré par `userId` (`StatsFullScreen(showTabs = false)`, route `Statsfull/{userId}`), avec barre de retour et sous-titre = nom du joueur. Mutualisé avec la vue Individuelles. Les **points d'entrée** (Classements onglet Joueurs #26, fiche joueur « Voir ses statistiques ») relèvent d'autres tickets ; la route réutilisable est déjà en place.
 >
