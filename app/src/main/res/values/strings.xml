@@ -242,7 +242,7 @@
     <string name="stats_scope_individual">Individual</string>
     <string name="stats_scope_team">Team</string>
     <string name="stats_me_tag">you</string>
-    <string name="stats_player_subtitle">Your performances · %1$d wars · %2$d tracks</string>
+    <string name="stats_player_subtitle">Your performances · %1$d wars</string>
     <string name="stats_team_subtitle">Team performances · %1$d wars</string>
     <string name="stats_balance_title">Your record</string>
     <string name="stats_results_link">Results →</string>
@@ -251,9 +251,6 @@
     <string name="stats_points_per_war">Points / war</string>
     <string name="stats_points_per_war_short">Pts/war</string>
     <string name="stats_regularity">Consistency</string>
-    <string name="stats_best_course">Best track</string>
-    <string name="stats_worst_course">Worst track</string>
-    <string name="stats_avg_win_margin_short">Avg. win margin</string>
     <string name="stats_contribution_title">Your contribution</string>
     <string name="stats_contribution_value">%1$d %% of team points</string>
     <string name="stats_contribution_rank">Roster contributor #%1$d</string>
@@ -265,16 +262,11 @@
     <string name="stats_pace_title">Your war pace</string>
     <string name="stats_pace_first">Tracks 1–6</string>
     <string name="stats_pace_second">Tracks 7–12</string>
-    <string name="stats_player_tracks_title">Your tracks</string>
-    <string name="stats_team_tracks_title">Tracks (team)</string>
-    <string name="stats_tracks_title">Tracks</string>
-    <string name="stats_best_winrate_perso">Best (personal winrate)</string>
-    <string name="stats_best">Best</string>
-    <string name="stats_worst">Worst</string>
-    <string name="stats_most_played">Most played</string>
-    <string name="stats_most_beaten">Most beaten</string>
-    <string name="stats_least_beaten">Least beaten</string>
     <string name="stats_comparison_title">12P / 24P comparison</string>
     <string name="stats_contributors_title">Contributors</string>
     <string name="stats_points_share">%1$d %% of points</string>
+    <string name="stats_podium_top">Top 3</string>
+    <string name="stats_podium_flop">Flop 3</string>
+    <string name="stats_sort_winrate">Winrate</string>
+    <string name="stats_sort_score">Score</string>
 </resources>

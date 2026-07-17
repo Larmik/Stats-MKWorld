@@ -317,6 +317,21 @@ data class Stats(
                 total.toFloat() / list.size
             }
 
+        // Régularité (écart-type) & amplitude min/max des scores sur la fenêtre.
+        val windowScores = scores.map { it.score }
+        val stdDev = windowScores
+            .takeIf { it.size >= 2 }
+            ?.let { values ->
+                val mean = values.average()
+                Math.round(Math.sqrt(values.sumOf { (it - mean) * (it - mean) } / values.size)).toInt()
+            }
+        val scoreMin = windowScores.minOrNull()
+        val scoreMax = windowScores.maxOrNull()
+        // Marges moyennes de victoire / défaite sur la fenêtre (écart de score signé).
+        val margins = wars.map { it.scoreMargin(is24p = is24p) }
+        val winMargin = margins.filter { it > 0 }.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size }
+        val lossMargin = margins.filter { it < 0 }.takeIf { it.isNotEmpty() }?.let { m -> m.sumOf { kotlin.math.abs(it) } / m.size }
+
         val base = allTimeForm
         return FormStats(
             sampleSize = scores.size,
@@ -327,6 +342,11 @@ data class Stats(
             averageMapScore = avgMapScore,
             mapsWonPercent = mapsWonPct,
             shocksPerWar = shocksPerWar,
+            scoreStdDev = stdDev,
+            scoreMin = scoreMin,
+            scoreMax = scoreMax,
+            winMargin = winMargin,
+            lossMargin = lossMargin,
             // Deltas vs all-time : null pour l'all-time (base == null) et si un terme manque.
             winrateDelta = delta(winrate, base?.winrate),
             scoreDelta = delta(avgScore, base?.averageScore),
@@ -452,26 +472,6 @@ data class Stats(
         war.war.penalties.filter { it.teamId == war.war.teamHost }.sumOf { it.amount }
     }
 
-    // --- Écran Stats (ticket #25) : meilleure/pire course (vue joueur) --------
-    // Points marqués par le joueur sur une manche (barème position→points). La
-    // « meilleure » = max, la « pire » = min sur toutes ses manches. Null hors vue
-    // joueur ou sans manche exploitable.
-    private val playerTrackPoints: List<Int> = when (userId) {
-        null -> listOf()
-        else -> chronologicalWars
-            .flatMap { it.war.tracks }
-            .mapNotNull { track ->
-                track.positions.firstOrNull { it.playerId == userId }?.position?.positionToPoints(is24p)
-            }
-    }
-    /** Meilleur score du joueur sur une manche (points), null hors vue joueur. */
-    val bestCoursePoints: Int? = playerTrackPoints.maxOrNull()
-    /** Pire score du joueur sur une manche (points), null hors vue joueur. */
-    val worstCoursePoints: Int? = playerTrackPoints.minOrNull()
-
-    // --- Écran Stats (ticket #25) : circuit le plus joué ----------------------
-    /** Circuit le plus joué (≥ 1 passage), toutes maps confondues ; null si aucune. */
-    val mostPlayedMap: TrackStats? = maps.maxByOrNull { it.totalPlayed }
 
     companion object {
         // Seuil d'échantillon minimal pour figurer dans les classements
@@ -500,6 +500,13 @@ data class FormStats(
     val averageMapScore: Int?,
     val mapsWonPercent: Int?,
     val shocksPerWar: Float?,
+    // Ticket #36 — régularité/amplitude/marges déclinées par fenêtre (all-time/5/10)
+    // pour alimenter le sélecteur de la section Indicateurs de StatsFullScreen.
+    val scoreStdDev: Int? = null,
+    val scoreMin: Int? = null,
+    val scoreMax: Int? = null,
+    val winMargin: Int? = null,
+    val lossMargin: Int? = null,
     val winrateDelta: Int?,
     val scoreDelta: Int?,
     val positionDelta: Int?,

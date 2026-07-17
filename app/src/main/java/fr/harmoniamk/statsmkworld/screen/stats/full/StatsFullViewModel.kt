@@ -68,26 +68,15 @@ class StatsFullViewModel @AssistedInject constructor(
         val isMe: Boolean
     )
 
-    /**
-     * Tuile nommée (adversaire / circuit). Le nom vient soit d'une chaîne résolue
-     * (adversaire, résolu en base), soit d'une ressource string ([labelRes], circuit
-     * — résolue à l'affichage car nécessite un Context). [value] = métrique annexe
-     * (winrate, nb de matchs). Vignette : [logo] (chemin logo MKCentral d'une équipe)
-     * OU [pictureRes] (illustration `@DrawableRes` d'un circuit).
-     */
-    data class NamedTile(
-        val name: String? = null,
-        val labelRes: Int? = null,
-        val value: String? = null,
-        val logo: String? = null,
-        val pictureRes: Int? = null
-    )
-
     data class State(
         val loading: Boolean = true,
-        // Nom/tag/pastille pour l'en-tête (joueur ou équipe selon l'onglet).
+        // Nom/pastille pour l'en-tête (joueur ou équipe selon l'onglet).
         val playerName: String? = null,
         val teamName: String? = null,
+        // Vignettes d'en-tête : avatar MKCentral du joueur (Individuelles) et logo de
+        // l'équipe (Équipe), déjà préfixés par l'hôte MKCentral. Fallback à l'affichage.
+        val playerLogo: String? = null,
+        val teamLogo: String? = null,
         // Id du joueur affiché (résolu : soit userId, soit joueur courant) — sert à
         // reconstruire un StatsType pour les cellules ui/stats/* réutilisées.
         val targetUserId: String? = null,
@@ -98,21 +87,8 @@ class StatsFullViewModel @AssistedInject constructor(
         val playerOtherMode: ModeSummary? = null,
         val teamOtherMode: ModeSummary? = null,
         val is24p: Boolean = false,
-        // Vue Équipe.
+        // Vue Équipe : contributeurs du roster.
         val contributors: List<Contributor> = listOf(),
-        val mostPlayedOpponent: NamedTile? = null,
-        val mostBeatenOpponent: NamedTile? = null,
-        val leastBeatenOpponent: NamedTile? = null,
-        // Meilleure / pire course du joueur (points sur une manche).
-        val bestCourse: NamedTile? = null,
-        val worstCourse: NamedTile? = null,
-        // Circuits perso : meilleur / pire winrate du joueur.
-        val bestPlayerTrack: NamedTile? = null,
-        val worstPlayerTrack: NamedTile? = null,
-        // Circuits ÉQUIPE : le + joué / meilleur / pire (winrate).
-        val teamBestTrack: NamedTile? = null,
-        val teamWorstTrack: NamedTile? = null,
-        val teamMostPlayedTrack: NamedTile? = null,
         // Classements adversaires top3/flop3 (winrate ET score), au périmètre de la
         // vue (équipe = tous ; individuelles = du point de vue du joueur affiché).
         val topOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
@@ -156,6 +132,16 @@ class StatsFullViewModel @AssistedInject constructor(
             val playerName = targetUserId
                 ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
             val teamName = team?.name
+            // Avatar joueur (comme WelcomeViewModel) : seulement résoluble pour le
+            // joueur COURANT (userSettings.avatar en DataStore). Pour un autre joueur
+            // (statsfull via userId), fallback initiales (avatar non caché localement).
+            val isCurrentPlayer = userId == null || userId == currentPlayer?.id?.toString()
+            val playerLogo = currentPlayer?.userSettings?.avatar
+                ?.takeIf { it.isNotEmpty() && isCurrentPlayer }
+                ?.let { "https://mkcentral.com$it" }
+            val teamLogo = team?.logo
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { "https://mkcentral.com$it" }
 
             // Stats mode courant (player + team) + résumé de l'autre mode.
             val playerStats = teamWarsMode
@@ -177,9 +163,6 @@ class StatsFullViewModel @AssistedInject constructor(
             // winrate, sur les wars du mode courant.
             val contributors = computeContributors(teamWarsMode, targetUserId, is24p)
 
-            // Adversaires : le + joué / + vaincu / − vaincu (vue Équipe).
-            val opponents = computeOpponentTiles(teamWarsMode)
-
             // Classements top3/flop3 adversaires (winrate ET score), au périmètre de
             // la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
             // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
@@ -191,6 +174,8 @@ class StatsFullViewModel @AssistedInject constructor(
                 loading = false,
                 playerName = playerName,
                 teamName = teamName,
+                playerLogo = playerLogo,
+                teamLogo = teamLogo,
                 targetUserId = targetUserId,
                 playerStats = playerStats,
                 teamStats = teamStats,
@@ -198,17 +183,6 @@ class StatsFullViewModel @AssistedInject constructor(
                 teamOtherMode = teamOther,
                 is24p = is24p,
                 contributors = contributors,
-                mostPlayedOpponent = opponents.getOrNull(0),
-                mostBeatenOpponent = opponents.getOrNull(1),
-                leastBeatenOpponent = opponents.getOrNull(2),
-                bestCourse = playerStats?.bestCoursePoints?.let { NamedTile(name = "+$it") },
-                worstCourse = playerStats?.worstCoursePoints?.let { NamedTile(name = it.toString()) },
-                // « Tes circuits » : meilleur/pire winrate perso (vue joueur).
-                bestPlayerTrack = playerStats?.bestMapByWinrate.toTrackTile(),
-                worstPlayerTrack = playerStats?.worstMapByWinrate.toTrackTile(),
-                teamBestTrack = teamStats?.bestMapByWinrate.toTrackTile(),
-                teamWorstTrack = teamStats?.worstMapByWinrate.toTrackTile(),
-                teamMostPlayedTrack = teamStats?.mostPlayedMap.toTrackTile(),
                 topOpponentsByWinrate = teamRankings.topByWinrate,
                 flopOpponentsByWinrate = teamRankings.flopByWinrate,
                 topOpponentsByScore = teamRankings.topByScore,
@@ -293,42 +267,6 @@ class StatsFullViewModel @AssistedInject constructor(
             .sortedByDescending { it.pointsShare }
     }
 
-    /** Adversaires : le + joué, le + vaincu (winrate haut), le − vaincu (winrate bas),
-     * seuil ≥ [Stats.MIN_RANKING_SAMPLE] pour les vaincus. Résout nom via TeamEntity. */
-    private suspend fun computeOpponentTiles(wars: List<WarDetails>): List<NamedTile> {
-        if (wars.isEmpty()) return listOf()
-        // Regroupe par identifiant d'opposant (rosterId/teamId).
-        val byOpponent = wars.flatMap { war -> war.war.teamOpponent.map { it to war } }
-            .groupBy({ it.first }, { it.second })
-        if (byOpponent.isEmpty()) return listOf()
-
-        val mostPlayed = byOpponent.maxByOrNull { it.value.size }
-        val winrates = byOpponent
-            .filter { it.value.size >= Stats.MIN_RANKING_SAMPLE }
-            .mapValues { (_, opponentWars) ->
-                (opponentWars.count { it.displayedDiff.contains('+') } * 100) / opponentWars.size
-            }
-        val mostBeaten = winrates.maxByOrNull { it.value }
-        val leastBeaten = winrates.minByOrNull { it.value }
-
-        return listOf(
-            mostPlayed?.let { opponentTile(it.key, value = "${it.value.size}×") },
-            mostBeaten?.let { opponentTile(it.key, value = "${it.value}%") },
-            leastBeaten?.let { opponentTile(it.key, value = "${it.value}%") }
-        ).map { it ?: NamedTile(name = "-") }
-    }
-
-    /** Tuile d'un adversaire : nom roster>équipe (rule 12) + logo de l'équipe parente. */
-    private suspend fun opponentTile(opponentId: String, value: String): NamedTile {
-        val resolved = databaseRepository.getTeam(opponentId)
-        val roster = resolved?.rosters?.firstOrNull { it.id == opponentId }
-        return NamedTile(
-            name = roster?.name ?: resolved?.name ?: "Équipe inconnue",
-            value = value,
-            logo = resolved?.logo
-        )
-    }
-
     private fun Stats.toSummary() = ModeSummary(
         winrate = allTimeForm?.winrate,
         averageScore = averagePoints
@@ -338,13 +276,3 @@ class StatsFullViewModel @AssistedInject constructor(
 /** Filtre les wars par mode (24 j = ≥ 2 adversaires, 12 j = 1 adversaire). */
 private fun List<fr.harmoniamk.statsmkworld.database.entities.WarEntity>.filterByMode(is24p: Boolean) =
     filter { (is24p && it.teamOpponent.size > 1) || (!is24p && it.teamOpponent.size == 1) }
-
-/** Première map d'un TrackStats (porte label + illustration), null si non résolue. */
-private fun fr.harmoniamk.statsmkworld.model.local.TrackStats?.firstMap() =
-    this?.map?.firstOrNull()
-
-/** Tuile circuit (winrate + libellé + illustration de map) à partir d'un TrackStats classé. */
-private fun fr.harmoniamk.statsmkworld.model.local.TrackStats?.toTrackTile(): StatsFullViewModel.NamedTile? =
-    firstMap()?.let {
-        StatsFullViewModel.NamedTile(labelRes = it.label, value = "${this?.winRate ?: 0}%", pictureRes = it.picture)
-    }

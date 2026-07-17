@@ -133,7 +133,12 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
     return flowOf(
         Stats(
-            warStats = WarStats(this, is24p = is24p),
+            // WarStats sur la liste FILTRÉE (warList) : en vue joueur, ne compter que
+            // les wars où le joueur a joué ; en vue adversaire, celles face à cet
+            // adversaire. `warList == this` quand userId/teamId sont null (vue équipe),
+            // donc le comportement équipe est inchangé. Corrige V/N/D & nb de wars qui,
+            // sinon, comptaient TOUTES les wars de la liste même en vue joueur.
+            warStats = WarStats(warList, is24p = is24p),
             warScores = warScores,
             maps = maps,
             averageForMaps = averageForMaps,

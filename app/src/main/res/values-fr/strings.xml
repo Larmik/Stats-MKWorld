@@ -242,7 +242,7 @@
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>
     <string name="stats_me_tag">toi</string>
-    <string name="stats_player_subtitle">Tes performances · %1$d wars · %2$d courses</string>
+    <string name="stats_player_subtitle">Tes performances · %1$d wars</string>
     <string name="stats_team_subtitle">Performances collectives · %1$d wars</string>
     <string name="stats_balance_title">Ton bilan</string>
     <string name="stats_results_link">Résultats →</string>
@@ -251,9 +251,6 @@
     <string name="stats_points_per_war">Points / war</string>
     <string name="stats_points_per_war_short">Pts/war</string>
     <string name="stats_regularity">Régularité</string>
-    <string name="stats_best_course">Meilleure course</string>
-    <string name="stats_worst_course">Pire course</string>
-    <string name="stats_avg_win_margin_short">Marge moy. V</string>
     <string name="stats_contribution_title">Ta contribution</string>
     <string name="stats_contribution_value">%1$d %% des points de l\'équipe</string>
     <string name="stats_contribution_rank">%1$dᵉ contributeur du roster</string>
@@ -265,16 +262,11 @@
     <string name="stats_pace_title">Ton rythme de war</string>
     <string name="stats_pace_first">Courses 1–6</string>
     <string name="stats_pace_second">Courses 7–12</string>
-    <string name="stats_player_tracks_title">Tes circuits</string>
-    <string name="stats_team_tracks_title">Circuits (équipe)</string>
-    <string name="stats_tracks_title">Circuits</string>
-    <string name="stats_best_winrate_perso">Meilleur (winrate perso)</string>
-    <string name="stats_best">Meilleur</string>
-    <string name="stats_worst">Pire</string>
-    <string name="stats_most_played">Le + joué</string>
-    <string name="stats_most_beaten">Le + vaincu</string>
-    <string name="stats_least_beaten">Le − vaincu</string>
     <string name="stats_comparison_title">Comparatif 12J / 24J</string>
     <string name="stats_contributors_title">Contributeurs</string>
     <string name="stats_points_share">%1$d %% des points</string>
+    <string name="stats_podium_top">Top 3</string>
+    <string name="stats_podium_flop">Flop 3</string>
+    <string name="stats_sort_winrate">Winrate</string>
+    <string name="stats_sort_score">Score</string>
 </resources>
