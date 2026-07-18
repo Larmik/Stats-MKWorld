@@ -106,30 +106,36 @@ class StatsRankingViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    /** Une entrée « En bref » (insight) : libellé + nom + winrate. */
-    data class Insight(val label: Int, val name: String, val winrate: Int)
+    /**
+     * Section de l'onglet Joueurs : membres de l'équipe vs alliés (deux en-têtes). Un
+     * allié a `rosterId` non résolvable parmi les rosters mkworld de l'équipe (dans le
+     * cache `playersRankList`, clé `Pair(1, "Allies")`) ; un membre = `Pair(0, roster)`.
+     */
+    data class PlayerSection(val titleRes: Int, val players: List<RankingItem.PlayerRanking>)
 
     data class State(
         val tab: RankingTab = RankingTab.PLAYERS,
         val sort: SortType = SortType.WINRATE,
         val search: String = "",
-        // Onglet Joueurs : lignes triées à plat (le regroupement roster/allies n'est
-        // plus affiché dans le prototype, une simple liste triée suffit).
-        val players: List<RankingItem.PlayerRanking> = listOf(),
+        // Onglet Joueurs : deux sections (Membres / Alliés), chacune triée.
+        val playerSections: List<PlayerSection> = listOf(),
         // Onglets Adversaires / Circuits : entrées triées.
         val opponents: List<RankingItem.OpponentRanking> = listOf(),
         val tracks: List<RankingItem.TrackRanking> = listOf(),
-        // Cartes « En bref » (adversaires : domine/bête noire ; circuits : meilleur/pire).
-        val bestInsight: Insight? = null,
-        val worstInsight: Insight? = null,
+        // Filtre « occurrences minimum » (slider) : min = 1, max = plus haut compteur de
+        // l'onglet courant ; la liste ne montre que les entrées à sampleSize >= min.
+        val minOccurrences: Int = 1,
+        val maxOccurrences: Int = 1,
         val currentUserId: String? = null,
         val is24PEnabled: Boolean? = null
     )
 
     private val _state = MutableStateFlow(State())
     private var currentUser: MKCPlayer? = null
-    // Listes brutes (non filtrées/triées) mémorisées pour re-filtrer à chaque recherche/tri.
-    private var allPlayers: List<RankingItem.PlayerRanking> = listOf()
+    // Listes brutes (non filtrées/triées) mémorisées pour re-filtrer à chaque interaction.
+    // Joueurs : conservés PAR SECTION (membre = clé Pair(0,…), allié = Pair(1,"Allies")).
+    private var allMembers: List<RankingItem.PlayerRanking> = listOf()
+    private var allAllies: List<RankingItem.PlayerRanking> = listOf()
     private var allOpponents: List<RankingItem.OpponentRanking> = listOf()
     private var allTracks: List<RankingItem.TrackRanking> = listOf()
 
@@ -137,24 +143,28 @@ class StatsRankingViewModel @Inject constructor(
         .map {
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             val is24p = dataStoreRepository.is24PEnabled.firstOrNull()
-            allPlayers = statsRepository.playersRankList.values.flatten()
-                .filter { it.stats.warStats.warsPlayed > 0 }
-            // Perspective ÉQUIPE pour adversaires/circuits (« On domine », winrate
-            // global de l'équipe), conforme au prototype qui n'a pas de switch indiv/équipe.
+            val playersByGroup = statsRepository.playersRankList
+                .mapValues { entry -> entry.value.filter { it.stats.warStats.warsPlayed > 0 } }
+            // Clé Pair.first : 0 = membre (rattaché à un roster mkworld), 1 = allié.
+            allMembers = playersByGroup.filterKeys { it.first == 0 }.values.flatten()
+            allAllies = playersByGroup.filterKeys { it.first == 1 }.values.flatten()
+            // Perspective ÉQUIPE pour adversaires/circuits (winrate global de l'équipe),
+            // conforme au prototype qui n'a pas de switch indiv/équipe.
             allOpponents = statsRepository.opponentRankList.mapNotNull { it as? RankingItem.OpponentRanking }
             allTracks = statsRepository.trackRankList.mapNotNull { it as? RankingItem.TrackRanking }
             _state.value.copy(
                 currentUserId = currentUser?.id.toString(),
                 is24PEnabled = is24p
-            ).recompute()
+            ).recompute(resetOccurrences = true)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
     fun onTabSelected(index: Int) {
         val tab = RankingTab.entries.getOrElse(index) { RankingTab.PLAYERS }
-        // Nouvel onglet : on repart du tri par défaut (Winrate) et d'une recherche vide.
-        _state.value = _state.value.copy(tab = tab, sort = SortType.WINRATE, search = "").recompute()
+        // Nouvel onglet : tri par défaut (Winrate), recherche vide, curseur réinitialisé.
+        _state.value = _state.value.copy(tab = tab, sort = SortType.WINRATE, search = "")
+            .recompute(resetOccurrences = true)
     }
 
     fun onSortSelected(index: Int) {
@@ -166,76 +176,74 @@ class StatsRankingViewModel @Inject constructor(
         _state.value = _state.value.copy(search = search).recompute()
     }
 
-    /** Applique recherche + tri + insight sur les listes brutes selon l'onglet courant. */
-    private fun State.recompute(): State {
+    /** Valeur du curseur « occurrences minimum » (bornée [1, maxOccurrences]). */
+    fun onMinOccurrencesChange(value: Int) {
+        _state.value = _state.value.copy(
+            minOccurrences = value.coerceIn(1, _state.value.maxOccurrences)
+        ).recompute()
+    }
+
+    /**
+     * Applique recherche + filtre « occurrences min » + tri sur les listes brutes de
+     * l'onglet courant. [resetOccurrences] recalcule le max du curseur (plus haut
+     * compteur de l'onglet) et remet le min à 1 (changement d'onglet / (re)chargement).
+     */
+    private fun State.recompute(resetOccurrences: Boolean = false): State {
         val query = search.trim().lowercase()
+        // Compteur max de l'onglet (borne haute du curseur) — sur les données non filtrées.
+        val newMax = when (tab) {
+            RankingTab.PLAYERS -> (allMembers + allAllies)
+            RankingTab.OPPONENTS -> allOpponents
+            RankingTab.TRACKS -> allTracks
+        }.maxOfOrNull { it.sampleSize }?.coerceAtLeast(1) ?: 1
+        val newMin = if (resetOccurrences) 1 else minOccurrences.coerceIn(1, newMax)
+
         return when (tab) {
             RankingTab.PLAYERS -> {
-                val filtered = allPlayers.filter {
-                    query.isEmpty() || it.player.name.lowercase().contains(query)
-                }
-                copy(
-                    players = filtered.sortedByRanking(sort) { it.stats.averagePoints },
-                    opponents = listOf(),
-                    tracks = listOf(),
-                    // Pas de carte « En bref » sur l'onglet Joueurs (absente du prototype).
-                    bestInsight = null,
-                    worstInsight = null
-                )
+                val sections = listOf(
+                    PlayerSection(R.string.rankings_section_members,
+                        allMembers.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints })),
+                    PlayerSection(R.string.rankings_section_allies,
+                        allAllies.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints }))
+                ).filter { it.players.isNotEmpty() }
+                copy(playerSections = sections, opponents = listOf(), tracks = listOf(),
+                    minOccurrences = newMin, maxOccurrences = newMax)
             }
 
-            RankingTab.OPPONENTS -> {
-                val filtered = allOpponents.filter {
-                    query.isEmpty() || it.team.name.lowercase().contains(query)
-                }
-                copy(
-                    players = listOf(),
-                    opponents = filtered.sortedByRanking(sort) { it.stats.averagePoints },
-                    tracks = listOf(),
-                    bestInsight = allOpponents.bestByWinrate()
-                        ?.let { Insight(R.string.rankings_insight_dominate, it.team.name, it.winratePercent) },
-                    worstInsight = allOpponents.worstByWinrate()
-                        ?.let { Insight(R.string.rankings_insight_nemesis, it.team.name, it.winratePercent) }
-                )
-            }
+            RankingTab.OPPONENTS -> copy(
+                playerSections = listOf(),
+                opponents = allOpponents.finalize(sort, query, newMin, { it.team.name }, { it.stats.averagePoints }),
+                tracks = listOf(),
+                minOccurrences = newMin, maxOccurrences = newMax
+            )
 
-            RankingTab.TRACKS -> {
-                val filtered = allTracks.filter {
-                    query.isEmpty() || it.trackName().lowercase().contains(query)
-                }
-                copy(
-                    players = listOf(),
-                    opponents = listOf(),
-                    tracks = filtered.sortedByRanking(sort) { it.stats.teamScore ?: 0 },
-                    bestInsight = allTracks.bestByWinrate()
-                        ?.let { Insight(R.string.rankings_insight_best, it.trackName(), it.winratePercent) },
-                    worstInsight = allTracks.worstByWinrate()
-                        ?.let { Insight(R.string.rankings_insight_worst, it.trackName(), it.winratePercent) }
-                )
-            }
+            RankingTab.TRACKS -> copy(
+                playerSections = listOf(),
+                opponents = listOf(),
+                tracks = allTracks.finalize(sort, query, newMin, { it.trackName() }, { it.stats.teamScore ?: 0 }),
+                minOccurrences = newMin, maxOccurrences = newMax
+            )
         }
     }
 
-    private fun RankingItem.TrackRanking.trackName(): String =
-        stats.map?.joinToString { context.getString(it.label) }.orEmpty()
-
-    // Tri : WINRATE (seuil MIN_RANKING_SAMPLE appliqué, petits échantillons rejetés en
-    // fin de liste) / AVERAGE (score moyen) / COUNT (nb de matchs).
-    private fun <T : RankingItem> List<T>.sortedByRanking(sort: SortType, average: (T) -> Int): List<T> =
-        when (sort) {
-            SortType.WINRATE -> sortedWith(
-                compareByDescending<T> { it.sampleSize >= Stats.MIN_RANKING_SAMPLE }
-                    .thenByDescending { it.winratePercent }
-            )
-            SortType.AVERAGE -> sortedByDescending(average)
-            SortType.COUNT -> sortedByDescending { it.sampleSize }
+    /** Recherche (par [name]) + filtre occurrences (`sampleSize >= min`) + tri [sort]. */
+    private fun <T : RankingItem> List<T>.finalize(
+        sort: SortType,
+        query: String,
+        min: Int,
+        name: (T) -> String,
+        average: (T) -> Int
+    ): List<T> = this
+        .filter { query.isEmpty() || name(it).lowercase().contains(query) }
+        .filter { it.sampleSize >= min }
+        .let { list ->
+            when (sort) {
+                SortType.WINRATE -> list.sortedByDescending { it.winratePercent }
+                SortType.AVERAGE -> list.sortedByDescending(average)
+                SortType.COUNT -> list.sortedByDescending { it.sampleSize }
+            }
         }
 
-    // Insight winrate : uniquement les entrées ayant atteint le seuil d'échantillon
-    // (MIN_RANKING_SAMPLE), pour éviter le biais des petites confrontations.
-    private fun <T : RankingItem> List<T>.bestByWinrate(): T? =
-        filter { it.sampleSize >= Stats.MIN_RANKING_SAMPLE }.maxByOrNull { it.winratePercent }
-
-    private fun <T : RankingItem> List<T>.worstByWinrate(): T? =
-        filter { it.sampleSize >= Stats.MIN_RANKING_SAMPLE }.minByOrNull { it.winratePercent }
+    private fun RankingItem.TrackRanking.trackName(): String =
+        stats.map?.joinToString { context.getString(it.label) }.orEmpty()
 }

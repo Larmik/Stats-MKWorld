@@ -1,29 +1,27 @@
 package fr.harmoniamk.statsmkworld.screen.stats.ranking
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -31,18 +29,17 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
-import fr.harmoniamk.statsmkworld.ui.VerticalGrid
-import fr.harmoniamk.statsmkworld.ui.cells.MapCell
-import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
-import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
-
-private val CardRadius = RoundedCornerShape(6.dp)
+import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
+import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
+import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 
 /**
  * Pôle Classements (#26) — écran unique à sous-onglets Joueurs / Adversaires /
  * Circuits (plus de menu intermédiaire). Palmarès triable (Winrate défaut / Score
- * moy. / compteur) et cherchable ; chaque ligne mène à sa fiche statistique. Onglets
- * Adversaires/Circuits : carte « En bref » (meilleur/pire winrate, seuil échantillon).
+ * moy. / compteur), cherchable, avec un **curseur « occurrences minimum »** (wars pour
+ * Joueurs/Adversaires, maps pour Circuits) filtrant la liste. Chaque ligne mène à sa
+ * fiche statistique. Cellules mutualisées avec les podiums de `StatsFullScreen`
+ * (`PodiumCell`). L'onglet Joueurs est **sectionné** Membres / Alliés.
  *
  * Navigation vers les fiches : réutilise l'existant (`StatsType.PlayerStats` /
  * `OpponentStats` / `MapStats`) tant que les fiches dédiées adversaire/circuit (#27)
@@ -75,12 +72,6 @@ fun StatsRankingScreen(
         )
         Spacer(Modifier.height(11.dp))
 
-        // Carte « En bref » (adversaires / circuits uniquement).
-        state.bestInsight?.let { best ->
-            InsightCard(best = best, worst = state.worstInsight)
-            Spacer(Modifier.height(11.dp))
-        }
-
         // Recherche.
         MKTextField(
             value = state.search,
@@ -112,125 +103,152 @@ fun StatsRankingScreen(
         )
         Spacer(Modifier.height(11.dp))
 
-        val listModifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
-        when (state.tab) {
-            RankingTab.PLAYERS -> VerticalGrid(listModifier) {
-                state.players.forEach { player ->
-                    PlayerCell(
-                        modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
-                        textColor = Colors.white,
-                        backgroundColor = Colors.blackAlphaed,
-                        onClick = { onStats(StatsType.PlayerStats(player.player.id, is24p = is24p)) },
-                        playerRanking = player,
-                        player = null
-                    )
-                }
-            }
+        // Curseur « occurrences minimum » (min = 1, max = plus haut compteur de l'onglet).
+        MinOccurrencesSlider(
+            value = state.minOccurrences,
+            max = state.maxOccurrences,
+            onChange = viewModel::onMinOccurrencesChange
+        )
 
-            RankingTab.OPPONENTS -> VerticalGrid(listModifier) {
-                state.opponents.forEach { opponent ->
-                    TeamCell(
-                        modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
-                        teamRanking = opponent,
-                        team = null,
-                        onClick = {
-                            onStats(
-                                StatsType.OpponentStats(
-                                    teamId = opponent.team.id,
-                                    is24p = is24p
-                                )
-                            )
-                        }
-                    )
+        // Liste par onglet — cellules PodiumCell (3 par ligne).
+        LazyColumn(
+            Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            when (state.tab) {
+                RankingTab.PLAYERS -> state.playerSections.forEach { section ->
+                    item(key = "section-${section.titleRes}") { SectionHeader(stringResource(section.titleRes)) }
+                    podiumRows(section.players.map { it.toPodiumEntry() }) { player ->
+                        onStats(StatsType.PlayerStats(player.player.id, is24p = is24p))
+                    }
                 }
-            }
 
-            RankingTab.TRACKS -> VerticalGrid(listModifier) {
-                state.tracks.forEach { track ->
-                    MapCell(
-                        modifier = Modifier.padding(5.dp).fillMaxWidth(0.48f),
-                        trackRanking = track,
-                        is24p = is24p,
-                        onClick = { maps ->
-                            onStats(
-                                StatsType.MapStats(
-                                    trackIndex = maps.map { it.ordinal },
-                                    is24p = is24p
-                                )
-                            )
-                        }
+                RankingTab.OPPONENTS -> podiumRows(state.opponents.map { it.toPodiumEntry() }) { opponent ->
+                    onStats(StatsType.OpponentStats(teamId = opponent.team.id, is24p = is24p))
+                }
+
+                RankingTab.TRACKS -> podiumRows(state.tracks.map { it.toPodiumEntry(is24p) }) { track ->
+                    onStats(
+                        StatsType.MapStats(
+                            trackIndex = track.stats.map?.map { it.ordinal },
+                            is24p = is24p
+                        )
                     )
                 }
             }
         }
     }
+}
+
+// =====================================================================
+// Rendu des grilles (rows de 3 PodiumCell) + entrées PodiumEntry
+// =====================================================================
+
+/**
+ * Ajoute à un `LazyListScope` les lignes de 3 `PodiumCell` correspondant à [items].
+ * [onClick] reçoit l'entrée métier cliquée (via son index dans la ligne).
+ */
+private fun <T> LazyListScope.podiumRows(
+    items: List<Pair<PodiumEntry, T>>,
+    onClick: (T) -> Unit
+) {
+    items.chunked(3).forEachIndexed { rowIndex, rowItems ->
+        item(key = "row-$rowIndex-${rowItems.firstOrNull()?.first?.name ?: rowItems.firstOrNull()?.first?.labelRes}") {
+            Column {
+                PodiumRow(
+                    entries = rowItems.map { it.first },
+                    onClick = { indexInRow -> onClick(rowItems[indexInRow].second) }
+                )
+            }
+        }
+    }
+}
+
+private fun RankingItem.PlayerRanking.toPodiumEntry(): Pair<PodiumEntry, RankingItem.PlayerRanking> =
+    PodiumEntry(
+        name = player.name,
+        initials = initialsOf(player.name),
+        stats = listOf(
+            R.string.times_played_short to warsPlayedLabel,
+            R.string.form_winrate to winrateLabel,
+            R.string.form_score to averageLabel
+        )
+    ) to this
+
+private fun RankingItem.OpponentRanking.toPodiumEntry(): Pair<PodiumEntry, RankingItem.OpponentRanking> =
+    // Rule 12 : nom/tag du roster (porté par TeamEntity), avatar de l'équipe (logo), et
+    // adversaire non résolu déjà dégradé en « Équipe inconnue » côté données (non effacé).
+    PodiumEntry(
+        name = team.name,
+        logo = team.logo,
+        stats = listOf(
+            R.string.times_played_short to warsPlayedLabel,
+            R.string.form_winrate to winrateLabel,
+            R.string.form_score to averageLabel
+        )
+    ) to this
+
+private fun RankingItem.TrackRanking.toPodiumEntry(is24p: Boolean): Pair<PodiumEntry, RankingItem.TrackRanking> {
+    val map = stats.map?.firstOrNull()
+    val scoreValue = when (is24p) {
+        true -> stats.teamScore?.toString() ?: "-"
+        else -> stats.teamScore?.trackScoreToDiff(false) ?: "-"
+    }
+    return PodiumEntry(
+        labelRes = map?.label,
+        pictureRes = map?.picture,
+        stats = listOf(
+            R.string.times_played_short to stats.totalPlayed.toString(),
+            R.string.form_winrate to "${stats.winRate ?: 0}%",
+            R.string.form_score to scoreValue
+        )
+    ) to this
+}
+
+// =====================================================================
+// Composants locaux
+// =====================================================================
+
+/** En-tête de section (Membres / Alliés) sur l'onglet Joueurs. */
+@Composable
+private fun SectionHeader(text: String) {
+    MKText(
+        text = text.uppercase(),
+        font = Fonts.NunitoBD,
+        textColor = Colors.black,
+        fontSize = 13,
+        textAlign = TextAlign.Start,
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 2.dp)
+    )
 }
 
 /**
- * Carte « En bref » (insight) : deux blocs côte à côte — meilleur (vert) / pire (rouge),
- * chacun libellé + nom + winrate. Reprend le style `.insight` de la maquette.
+ * Curseur « occurrences minimum » : `Slider` Material3 stylé aux couleurs de la maquette
+ * (piste active verte, pouce blanc). Masqué si le max ne dépasse pas 1 (rien à filtrer).
  */
 @Composable
-private fun ColumnScope.InsightCard(
-    best: StatsRankingViewModel.Insight,
-    worst: StatsRankingViewModel.Insight?
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(Colors.blackAlphaed, CardRadius)
-            .border(1.dp, Colors.whiteBorder, CardRadius)
-            .padding(13.dp)
-    ) {
+private fun ColumnScope.MinOccurrencesSlider(value: Int, max: Int, onChange: (Int) -> Unit) {
+    if (max <= 1) return
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onChange(it.toInt()) },
+            valueRange = 1f..max.toFloat(),
+            steps = (max - 2).coerceAtLeast(0),
+            colors = SliderDefaults.colors(
+                thumbColor = Colors.white,
+                activeTrackColor = Colors.green,
+                inactiveTrackColor = Colors.blackAlphaed
+            ),
+            modifier = Modifier.weight(1f)
+        )
         MKText(
-            text = stringResource(R.string.rankings_insight_title).uppercase(),
+            text = stringResource(R.string.rankings_min_occurrences, value),
+            textColor = Colors.black,
+            font = Fonts.NunitoBD,
             fontSize = 12,
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.padding(bottom = 11.dp)
-        )
-        Row(
-            Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(9.dp)
-        ) {
-            InsightBlock(best, Colors.green)
-            worst?.let { InsightBlock(it, Colors.red) }
-        }
-    }
-}
-
-@Composable
-private fun RowScope.InsightBlock(insight: StatsRankingViewModel.Insight, valueColor: Color) {
-    Column(
-        Modifier
-            .weight(1f)
-            .background(Colors.white30, CardRadius)
-            .padding(11.dp)
-    ) {
-        MKText(
-            text = stringResource(insight.label).uppercase(),
-            fontSize = 10,
-            font = Fonts.NunitoBD,
-            textColor = Colors.white66,
-            textAlign = TextAlign.Start
-        )
-        MKText(
-            text = insight.name,
-            fontSize = 13,
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            textAlign = TextAlign.Start,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 6.dp)
-        )
-        MKText(
-            text = "${insight.winrate}%",
-            fontSize = 16,
-            font = Fonts.Urbanist,
-            textColor = valueColor,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.padding(top = 2.dp)
+            modifier = Modifier.padding(start = 10.dp)
         )
     }
+    Spacer(Modifier.height(11.dp))
 }

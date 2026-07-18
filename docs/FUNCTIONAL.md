@@ -147,12 +147,14 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 > **Saisons masquées** : les libellés de saison (« Record 8 · S2 25 ») dépendent du ticket #30 (non livré) → non affichés (« record 8 » sans suffixe).
 
 ### Pôle 4 — Classements (`StatsRankingScreen`)
-Écran **unique à sous-onglets** `Joueurs / Adversaires / Circuits` (`MKSegmentedSelector`), **sans menu intermédiaire** (l'ancien `StatsMenuScreen` a été supprimé). Titre **CLASSEMENTS**, hint « Palmarès triable. Touche une ligne pour ouvrir sa fiche statistique. » Chaque onglet propose une **recherche par nom** et un **tri à 3 chips** (Winrate par défaut, décroissant) :
-1. **Joueurs** — chips `Winrate / Score moy. / Wars`. Lignes = membres du roster (+ alliés ayant joué), chacune → stats joueur (`StatsType.PlayerStats`).
-2. **Adversaires** — chips `Winrate / Score moy. / Occurrences`. Carte **« En bref »** : *On domine* (meilleur winrate) + *Bête noire* (pire winrate). Champ « Rechercher une équipe ». Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** (nom/tag du roster, avatar de l'équipe) ; les wars legacy restent sous un item de niveau équipe. Ligne → détail adversaire (`StatsType.OpponentStats`).
-3. **Circuits** — chips `Winrate / Score moy. / Fréquence`. Carte **« En bref »** : *Meilleur* + *Pire* (winrate). Champ « Rechercher un circuit ». Ligne → détail circuit (`StatsType.MapStats`).
+Écran **unique à sous-onglets** `Joueurs / Adversaires / Circuits` (`MKSegmentedSelector`), **sans menu intermédiaire** (l'ancien `StatsMenuScreen` a été supprimé). Titre **CLASSEMENTS**, hint « Palmarès triable. Touche une ligne pour ouvrir sa fiche statistique. » Chaque onglet propose : **recherche par nom**, **tri à 3 chips** (Winrate par défaut, décroissant), **curseur « occurrences minimum »**, et une **grille de cellules podium** (`PodiumCell` mutualisée avec le pôle Stats) — avatar + nom + 3 lignes (occurrences / winrate / score moyen) :
+1. **Joueurs** — chips `Winrate / Score moy. / Wars`. Liste **sectionnée** en **Membres** (joueurs de l'équipe) et **Alliés** (deux en-têtes). Cellule = pastille d'initiales + nom. Ligne → stats joueur (`StatsType.PlayerStats`).
+2. **Adversaires** — chips `Winrate / Score moy. / Occurrences`. Champ « Rechercher une équipe ». Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** (nom/tag du roster, avatar de l'équipe) ; les wars legacy restent sous un item de niveau équipe. Ligne → détail adversaire (`StatsType.OpponentStats`).
+3. **Circuits** — chips `Winrate / Score moy. / Fréquence`. Champ « Rechercher un circuit ». Cellule = illustration du circuit + nom. Ligne → détail circuit (`StatsType.MapStats`).
 
-Le **tri Winrate** et les cartes « En bref » n'incluent que les entrées ayant atteint le **seuil d'échantillon** `Stats.MIN_RANKING_SAMPLE` (3 matchs) — pour éviter le biais des petites confrontations ; sous le seuil, l'entrée reste listée mais reléguée en bas du tri winrate. L'onglet **Joueurs n'a pas** de carte « En bref » (conforme au prototype).
+**Curseur « occurrences minimum »** (`Slider`, état réactif) : filtre la liste sur le nombre de matchs (**wars** pour Joueurs/Adversaires, **maps jouées** pour Circuits). Min = 1, max = le plus haut compteur de l'onglet courant ; seules les entrées à `occurrences ≥ valeur` sont affichées. Ce filtre utilisateur **remplace, pour l'affichage**, l'ancien seuil fixe : il n'y a plus de carte « En bref » ni de relégation automatique — l'utilisateur choisit lui-même l'échantillon minimum. Le curseur est masqué s'il n'y a rien à filtrer (max ≤ 1). La constante `Stats.MIN_RANKING_SAMPLE` reste utilisée par les **podiums du pôle Stats** (calculs de biais), pas par cet écran.
+
+**Divergence assumée vs prototype** : la maquette prévoit une carte « En bref » (On domine / Bête noire ; Meilleur / Pire) sur les onglets Adversaires et Circuits. Elle a été **retirée sur décision explicite de l'utilisateur** (remplacée par le curseur d'occurrences), au profit d'un contrôle direct de l'échantillon.
 
 Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global de l'équipe** (le prototype n'a pas de switch individuel/équipe sur les Classements). Les fiches dédiées adversaire/circuit (#27) n'existant pas encore, la navigation réutilise l'existant (`StatsType.OpponentStats` / `MapStats` → écran `Stats`).
 
@@ -485,14 +487,14 @@ Bilan V/N/D, taux de victoire, score moyen/circuit, position moyenne, circuit le
 Mêmes agrégats au niveau équipe + détail par joueur.
 
 ### Classements (`StatsRankingScreen`)
-Écran unique à **sous-onglets** `Joueurs / Adversaires / Circuits` (`RankingTab`, `MKSegmentedSelector`), pilotés par un **état interne réactif** (pas de re-navigation, cf. rule 11). Chaque onglet : recherche par nom + tri à **3 chips** (`SortType`, `MKSegmentedSelector`).
-- **Joueurs** : grille de `PlayerCell` (membres du roster + alliés ayant joué), tri `Winrate / Score moy. / Wars`. Clic → stats individuelles (`StatsType.PlayerStats`).
-- **Adversaires** : grille de `TeamCell`, tri `Winrate / Score moy. / Occurrences` + carte « En bref » (On domine / Bête noire). Clic → `StatsType.OpponentStats`.
-- **Circuits** : grille de `MapCell`, tri `Winrate / Score moy. / Fréquence` + carte « En bref » (Meilleur / Pire). Clic → `StatsType.MapStats`.
-- **Tri** (`SortType`) : `WINRATE` (défaut, desc — seuil `Stats.MIN_RANKING_SAMPLE` = 3 matchs appliqué, petits échantillons relégués), `AVERAGE` (score moyen, desc), `COUNT` (nb de matchs, desc). L'ancien tri `NAME` (chip « Nom ») a été **retiré** (absent du prototype).
-- **« En bref »** : meilleur/pire winrate, filtrés au seuil `Stats.MIN_RANKING_SAMPLE`. **Pas** de carte « En bref » sur l'onglet Joueurs (conforme au prototype).
+Écran unique à **sous-onglets** `Joueurs / Adversaires / Circuits` (`RankingTab`, `MKSegmentedSelector`), pilotés par un **état interne réactif** (pas de re-navigation, cf. rule 11). Chaque onglet : recherche par nom + tri à **3 chips** (`SortType`, `MKSegmentedSelector`) + **curseur d'occurrences minimum** (`Slider`). Cellules = `PodiumCell` **mutualisée** (extraite de `StatsFullScreen` vers `ui/stats/MKPodiumCell.kt`), rendue en lignes de 3.
+- **Joueurs** : liste **sectionnée** Membres / Alliés (`PlayerSection`), cellule avatar-initiales + nom, tri `Winrate / Score moy. / Wars`. Clic → stats individuelles (`StatsType.PlayerStats`). La distinction membre/allié vient du cache `playersRankList` (clé `Pair(0, roster)` = membre, `Pair(1, "Allies")` = allié).
+- **Adversaires** : cellule logo d'équipe + nom (rule 12), tri `Winrate / Score moy. / Occurrences`. Clic → `StatsType.OpponentStats`.
+- **Circuits** : cellule illustration + nom, tri `Winrate / Score moy. / Fréquence`. Clic → `StatsType.MapStats`.
+- **Tri** (`SortType`) : `WINRATE` (défaut, desc), `AVERAGE` (score moyen, desc), `COUNT` (nb de matchs, desc). L'ancien tri `NAME` (chip « Nom ») a été **retiré** (absent du prototype).
+- **Curseur d'occurrences** : `minOccurrences` (état réactif) filtre par `sampleSize ≥ min` ; `maxOccurrences` = plus haut compteur de l'onglet (borne haute). Remplace, à l'affichage, le seuil fixe ; **plus de carte « En bref »** (retrait décidé par l'utilisateur). `Stats.MIN_RANKING_SAMPLE` n'est plus utilisé par cet écran (il reste employé par les podiums du pôle Stats).
 
-Sources : les classements sont pré-calculés par `InitStatsWorker` et lus depuis le cache. Perspective **équipe** pour adversaires/circuits (`opponentRankList` / `trackRankList`, pas de switch individuel/équipe) ; `playersRankList` pour les joueurs.
+Sources : les classements sont pré-calculés par `InitStatsWorker` et lus depuis le cache. Perspective **équipe** pour adversaires/circuits (`opponentRankList` / `trackRankList`, pas de switch individuel/équipe) ; `playersRankList` (groupé membre/allié) pour les joueurs.
 
 ---
 

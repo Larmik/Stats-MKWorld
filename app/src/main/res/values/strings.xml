@@ -190,11 +190,9 @@
     <string name="rankings_search_player">Search for a player</string>
     <string name="rankings_search_opponent">Search for a team</string>
     <string name="rankings_search_track">Search for a track</string>
-    <string name="rankings_insight_title">In brief</string>
-    <string name="rankings_insight_dominate">We dominate</string>
-    <string name="rankings_insight_nemesis">Nemesis</string>
-    <string name="rankings_insight_best">Best</string>
-    <string name="rankings_insight_worst">Worst</string>
+    <string name="rankings_section_members">Members</string>
+    <string name="rankings_section_allies">Allies</string>
+    <string name="rankings_min_occurrences">Minimum: %1$d</string>
     <string name="rankings_wars_count">%1$s wars</string>
     <string name="rankings_confrontations_count">%1$s confrontations</string>
     <string name="rankings_played_count">Played %1$s times</string>

@@ -190,11 +190,9 @@
     <string name="rankings_search_player">Rechercher un joueur</string>
     <string name="rankings_search_opponent">Rechercher une équipe</string>
     <string name="rankings_search_track">Rechercher un circuit</string>
-    <string name="rankings_insight_title">En bref</string>
-    <string name="rankings_insight_dominate">On domine</string>
-    <string name="rankings_insight_nemesis">Bête noire</string>
-    <string name="rankings_insight_best">Meilleur</string>
-    <string name="rankings_insight_worst">Pire</string>
+    <string name="rankings_section_members">Membres</string>
+    <string name="rankings_section_allies">Alliés</string>
+    <string name="rankings_min_occurrences">Minimum : %1$d</string>
     <string name="rankings_wars_count">%1$s wars</string>
     <string name="rankings_confrontations_count">%1$s confrontations</string>
     <string name="rankings_played_count">Joué %1$s fois</string>
