@@ -264,4 +264,7 @@
     <string name="stats_sort_score">Score</string>
     <string name="stats_amplitude_min">Score min</string>
     <string name="stats_amplitude_max">Score max</string>
+    <string name="stats_sort_occurrences">Occurrences</string>
+    <string name="times_played_short">Joué</string>
+    <string name="stats_no_data">Aucune donnée sur cette période</string>
 </resources>

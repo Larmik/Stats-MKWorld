@@ -77,18 +77,22 @@ class StatsFullViewModel @AssistedInject constructor(
         // Stats (12p uniquement — 24p retiré, ticket #37).
         val playerStats: Stats? = null,
         val teamStats: Stats? = null,
-        // Vue Équipe : contributeurs du roster.
-        val contributors: List<Contributor> = listOf(),
-        // Classements adversaires top3/flop3 (winrate ET score), au périmètre de la
-        // vue (équipe = tous ; individuelles = du point de vue du joueur affiché).
-        val topOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
-        val flopOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
-        val topOpponentsByScore: List<RankingItem.OpponentRanking> = listOf(),
-        val flopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf(),
-        val playerTopOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
-        val playerFlopOpponentsByWinrate: List<RankingItem.OpponentRanking> = listOf(),
-        val playerTopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf(),
-        val playerFlopOpponentsByScore: List<RankingItem.OpponentRanking> = listOf()
+        // Vue Équipe : contributeurs du roster par fenêtre (0 = all-time, 1 = 5, 2 = 10).
+        val contributorsByWindow: Map<Int, List<Contributor>> = mapOf(),
+        // Classements adversaires top3/flop3 (occurrences, winrate ET score), au
+        // périmètre de la vue (équipe = tous ; individuelles = du point de vue du joueur).
+        val teamOpponents: OpponentPodiums = OpponentPodiums(),
+        val playerOpponents: OpponentPodiums = OpponentPodiums()
+    )
+
+    /** Les 6 classements adversaires d'un podium (top/flop × occurrences/winrate/score). */
+    data class OpponentPodiums(
+        val topByCount: List<RankingItem.OpponentRanking> = listOf(),
+        val flopByCount: List<RankingItem.OpponentRanking> = listOf(),
+        val topByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val flopByWinrate: List<RankingItem.OpponentRanking> = listOf(),
+        val topByScore: List<RankingItem.OpponentRanking> = listOf(),
+        val flopByScore: List<RankingItem.OpponentRanking> = listOf()
     )
 
     // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
@@ -137,16 +141,15 @@ class StatsFullViewModel @AssistedInject constructor(
                 .withFullStats(databaseRepository, is24p = is24p)
                 .firstOrNull()
 
-            // Contributeurs du roster (vue Équipe) : chaque membre, part de points +
-            // winrate, sur les wars.
-            val contributors = computeContributors(teamWarsMode, targetUserId)
+            // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10).
+            val contributorsByWindow = computeContributorsByWindow(teamWarsMode, targetUserId)
 
-            // Classements top3/flop3 adversaires (winrate ET score), au périmètre de
-            // la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
+            // Classements top3/flop3 adversaires (occurrences/winrate/score), au périmètre
+            // de la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
             // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
             val currentTeamId = team?.id?.toString()
-            val teamRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = null)
-            val playerRankings = computeOpponentRankings(teamWarsMode, currentTeamId, userId = targetUserId)
+            val teamOpponents = computeOpponentRankings(teamWarsMode, currentTeamId, userId = null)
+            val playerOpponents = computeOpponentRankings(teamWarsMode, currentTeamId, userId = targetUserId)
 
             State(
                 loading = false,
@@ -157,49 +160,38 @@ class StatsFullViewModel @AssistedInject constructor(
                 targetUserId = targetUserId,
                 playerStats = playerStats,
                 teamStats = teamStats,
-                contributors = contributors,
-                topOpponentsByWinrate = teamRankings.topByWinrate,
-                flopOpponentsByWinrate = teamRankings.flopByWinrate,
-                topOpponentsByScore = teamRankings.topByScore,
-                flopOpponentsByScore = teamRankings.flopByScore,
-                playerTopOpponentsByWinrate = playerRankings.topByWinrate,
-                playerFlopOpponentsByWinrate = playerRankings.flopByWinrate,
-                playerTopOpponentsByScore = playerRankings.topByScore,
-                playerFlopOpponentsByScore = playerRankings.flopByScore
+                contributorsByWindow = contributorsByWindow,
+                teamOpponents = teamOpponents,
+                playerOpponents = playerOpponents
             )
         }
 
-    /** Regroupe les 4 classements adversaires (top/flop × winrate/score). */
-    private data class OpponentRankings(
-        val topByWinrate: List<RankingItem.OpponentRanking> = listOf(),
-        val flopByWinrate: List<RankingItem.OpponentRanking> = listOf(),
-        val topByScore: List<RankingItem.OpponentRanking> = listOf(),
-        val flopByScore: List<RankingItem.OpponentRanking> = listOf()
-    )
-
     /**
-     * Top3/flop3 adversaires par winrate ET score moyen, au périmètre des [wars] déjà
-     * filtrées. `userId` non-null ⇒ point de vue du joueur. Seuil ≥
-     * [Stats.MIN_RANKING_SAMPLE]. Réutilise `withFullTeamStats` (comme StatsViewModel,
-     * rule 32 : mono-consommateur, hors cache worker car dépend de la vue).
+     * Top3/flop3 adversaires par **occurrences** (nb de confrontations), winrate ET
+     * score moyen, au périmètre des [wars] déjà filtrées. `userId` non-null ⇒ point de
+     * vue du joueur. winrate/score filtrent à ≥ [Stats.MIN_RANKING_SAMPLE] ; les
+     * occurrences classent TOUS les adversaires (« le moins joué » a du sens sous le
+     * seuil). Réutilise `withFullTeamStats` (comme StatsViewModel, rule 32).
      */
     private suspend fun computeOpponentRankings(
         wars: List<WarDetails>,
         currentTeamId: String?,
         userId: String?
-    ): OpponentRankings {
-        if (wars.isEmpty()) return OpponentRankings()
+    ): OpponentPodiums {
+        if (wars.isEmpty()) return OpponentPodiums()
         val teams = databaseRepository.getTeams().firstOrNull()
             .orEmpty()
             .filterNot { it.id == currentTeamId }
         val warEntities = wars.map { WarEntity(it.war) }
-        val rankable = teams
+        val all = teams
             .withFullTeamStats(wars = warEntities, databaseRepository = databaseRepository, userId = userId, is24p = is24p)
             .firstOrNull()
             .orEmpty()
             .map { RankingItem.OpponentRanking(it.first, it.second) }
-            .filter { it.stats.warStats.warsPlayed >= Stats.MIN_RANKING_SAMPLE }
-        return OpponentRankings(
+        val rankable = all.filter { it.stats.warStats.warsPlayed >= Stats.MIN_RANKING_SAMPLE }
+        return OpponentPodiums(
+            topByCount = all.sortedByDescending { it.stats.warStats.warsPlayed }.take(3),
+            flopByCount = all.sortedBy { it.stats.warStats.warsPlayed }.take(3),
             topByWinrate = rankable.sortedByDescending { it.winrate }.take(3),
             flopByWinrate = rankable.sortedBy { it.winrate }.take(3),
             topByScore = rankable.sortedByDescending { it.stats.averagePoints }.take(3),
@@ -207,19 +199,39 @@ class StatsFullViewModel @AssistedInject constructor(
         )
     }
 
-    /** Contributeurs : chaque membre du roster, part de ses points sur le total
-     * cumulé des membres + winrate perso. Trié par part décroissante. */
-    private suspend fun computeContributors(
+    /**
+     * Contributeurs du roster pour les **3 fenêtres** (all-time / 5 / 10 dernières wars),
+     * keyées par index (0/1/2) pour le sélecteur de la section. Chaque membre : part de
+     * ses points (÷ total cumulé des membres) + winrate, sur la fenêtre. Trié décroissant.
+     */
+    private suspend fun computeContributorsByWindow(
         wars: List<WarDetails>,
         meId: String?
-    ): List<StatsFullViewModel.Contributor> {
+    ): Map<Int, List<Contributor>> {
         val roster = dataStoreRepository.mkcTeam.firstOrNull()?.rosters
         val members = databaseRepository.getPlayers().firstOrNull()
             .orEmpty()
             // Membres du roster mkworld courant uniquement (les alliés n'ont pas de rosterId matché).
             .filter { player -> roster?.any { it.id.toString() == player.rosterId } == true }
+        return listOf(0 to null, 1 to 5, 2 to 10).associate { (index, lastN) ->
+            index to computeContributors(wars, members, meId, lastN)
+        }
+    }
+
+    /** Contributeurs sur une fenêtre : [lastN] null = all-time, sinon N dernières wars
+     * de l'ÉQUIPE (fenêtre commune à tous les membres, triée chrono par war.id). */
+    private suspend fun computeContributors(
+        wars: List<WarDetails>,
+        members: List<PlayerEntity>,
+        meId: String?,
+        lastN: Int?
+    ): List<Contributor> {
+        // Fenêtre commune : N dernières wars de l'équipe (chrono), puis part de chaque
+        // membre DANS cette fenêtre.
+        val windowWars = wars.sortedBy { it.war.id }
+            .let { list -> lastN?.let { list.takeLast(it) } ?: list }
         val perPlayer = members.mapNotNull { player ->
-            wars.filter { it.war.hasPlayer(player.id) }
+            windowWars.filter { it.war.hasPlayer(player.id) }
                 .withFullStats(databaseRepository, userId = player.id, is24p = is24p)
                 .firstOrNull()
                 ?.takeIf { it.warStats.warsPlayed > 0 }
@@ -229,10 +241,9 @@ class StatsFullViewModel @AssistedInject constructor(
             .takeIf { it > 0 } ?: return listOf()
         return perPlayer
             .map { (player, stats) ->
-                val playerPoints = stats.warScores.sumOf { it.score }
                 Contributor(
                     player = player,
-                    pointsShare = (playerPoints * 100) / totalPoints,
+                    pointsShare = (stats.warScores.sumOf { it.score } * 100) / totalPoints,
                     winrate = stats.allTimeForm?.winrate ?: 0,
                     isMe = player.id == meId
                 )

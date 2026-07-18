@@ -245,6 +245,13 @@ data class Stats(
         mapsRankable.sortedByDescending { it.rankingScore }.take(3)
     val flopMapsByScore: List<TrackStats> =
         mapsRankable.sortedBy { it.rankingScore }.take(3)
+    /** Top 3 / Flop 3 des maps par NOMBRE de fois jouées (occurrences). Le seuil
+     * MIN_RANKING_SAMPLE n'est PAS appliqué ici : « le moins joué » a du sens même
+     * sous le seuil, donc on classe sur toutes les maps rencontrées. */
+    val topMapsByCount: List<TrackStats> =
+        maps.sortedByDescending { it.totalPlayed }.take(3)
+    val flopMapsByCount: List<TrackStats> =
+        maps.filter { it.totalPlayed > 0 }.sortedBy { it.totalPlayed }.take(3)
 
     // =====================================================================
     // Stats supplémentaires (bis) — Vagues 1/2/3
@@ -339,6 +346,11 @@ data class Stats(
         val windowTracks = wars.flatMap { it.warTracks }
         val windowTop6 = windowTracks.count { it.teamScore == 61 }
         val windowBot6 = windowTracks.count { it.teamScore == 21 }
+        // Points perdus en pénalités par l'équipe hôte, sur la FENÊTRE (même définition
+        // que penaltyPointsLost all-time mais restreinte aux wars fenêtrées).
+        val windowPenalty = wars.sumOf { war ->
+            war.war.penalties.filter { it.teamId == war.war.teamHost }.sumOf { it.amount }
+        }
 
         val base = allTimeForm
         return FormStats(
@@ -359,6 +371,7 @@ data class Stats(
             worstLossStreak = windowLosses,
             top6Count = windowTop6,
             bot6Count = windowBot6,
+            penaltyPointsLost = windowPenalty,
             // Deltas vs all-time : null pour l'all-time (base == null) et si un terme manque.
             winrateDelta = delta(winrate, base?.winrate),
             scoreDelta = delta(avgScore, base?.averageScore),
@@ -426,10 +439,18 @@ data class Stats(
      * relève du ticket UI dédié — ici on garantit seulement la justesse des
      * données produites.
      */
-    val positionDistribution: List<Pair<Int, Int>> = when (userId) {
+    val positionDistribution: List<Pair<Int, Int>> = positionDistributionFor(lastN = null)
+
+    /**
+     * Distribution des positions du joueur sur une FENÊTRE : [lastN] = null (all-time),
+     * 5 ou 10 dernières wars (triées chrono). Vide hors vue joueur. Alimente le
+     * sélecteur de fenêtre de la section « Répartition des positions » (ticket #36).
+     */
+    fun positionDistributionFor(lastN: Int?): List<Pair<Int, Int>> = when (userId) {
         null -> listOf()
         else -> {
-            val positions = chronologicalWars
+            val windowWars = lastN?.let { chronologicalWars.takeLast(it) } ?: chronologicalWars
+            val positions = windowWars
                 .flatMap { it.war.tracks }
                 .mapNotNull { track -> track.positions.firstOrNull { it.playerId == userId }?.position }
             val range = if (is24p) 1..24 else 1..12
@@ -524,6 +545,7 @@ data class FormStats(
     val worstLossStreak: Int = 0,
     val top6Count: Int = 0,
     val bot6Count: Int = 0,
+    val penaltyPointsLost: Int = 0,
     val winrateDelta: Int?,
     val scoreDelta: Int?,
     val positionDelta: Int?,
