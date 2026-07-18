@@ -262,4 +262,6 @@
     <string name="stats_podium_flop">Flop 3</string>
     <string name="stats_sort_winrate">Winrate</string>
     <string name="stats_sort_score">Score</string>
+    <string name="stats_amplitude_min">Score min</string>
+    <string name="stats_amplitude_max">Score max</string>
 </resources>

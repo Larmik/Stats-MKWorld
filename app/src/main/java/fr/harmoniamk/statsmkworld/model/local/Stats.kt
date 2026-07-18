@@ -331,6 +331,14 @@ data class Stats(
         val margins = wars.map { it.scoreMargin(is24p = is24p) }
         val winMargin = margins.filter { it > 0 }.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size }
         val lossMargin = margins.filter { it < 0 }.takeIf { it.isNotEmpty() }?.let { m -> m.sumOf { kotlin.math.abs(it) } / m.size }
+        // Records de série (max) & comptes Top6/Bot6 sur la FENÊTRE (mêmes définitions
+        // que les champs all-time : longestStreak sur les wars fenêtrées, Top6 =
+        // teamScore de manche == 61, Bot6 == 21). `scores` est déjà trié chrono.
+        val windowWins = longestStreak(wars) { it > 0 }
+        val windowLosses = longestStreak(wars) { it < 0 }
+        val windowTracks = wars.flatMap { it.warTracks }
+        val windowTop6 = windowTracks.count { it.teamScore == 61 }
+        val windowBot6 = windowTracks.count { it.teamScore == 21 }
 
         val base = allTimeForm
         return FormStats(
@@ -347,6 +355,10 @@ data class Stats(
             scoreMax = scoreMax,
             winMargin = winMargin,
             lossMargin = lossMargin,
+            bestWinStreak = windowWins,
+            worstLossStreak = windowLosses,
+            top6Count = windowTop6,
+            bot6Count = windowBot6,
             // Deltas vs all-time : null pour l'all-time (base == null) et si un terme manque.
             winrateDelta = delta(winrate, base?.winrate),
             scoreDelta = delta(avgScore, base?.averageScore),
@@ -500,13 +512,18 @@ data class FormStats(
     val averageMapScore: Int?,
     val mapsWonPercent: Int?,
     val shocksPerWar: Float?,
-    // Ticket #36 — régularité/amplitude/marges déclinées par fenêtre (all-time/5/10)
-    // pour alimenter le sélecteur de la section Indicateurs de StatsFullScreen.
+    // Ticket #36 — régularité/amplitude/marges + records de série et Top6/Bot6
+    // déclinés par fenêtre (all-time/5/10) pour les sélecteurs de fenêtre des
+    // sections Indicateurs ET Records & séries de StatsFullScreen.
     val scoreStdDev: Int? = null,
     val scoreMin: Int? = null,
     val scoreMax: Int? = null,
     val winMargin: Int? = null,
     val lossMargin: Int? = null,
+    val bestWinStreak: Int = 0,
+    val worstLossStreak: Int = 0,
+    val top6Count: Int = 0,
+    val bot6Count: Int = 0,
     val winrateDelta: Int?,
     val scoreDelta: Int?,
     val positionDelta: Int?,

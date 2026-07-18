@@ -48,20 +48,27 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
-import fr.harmoniamk.statsmkworld.ui.cells.MapCell
-import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
 
 private val CardRadius = RoundedCornerShape(6.dp)
 
-/** États hissés des sélecteurs de section (fenêtre Indicateurs, tri podiums). */
+/** États hissés des sélecteurs de section (fenêtres Indicateurs & Records, tri podiums). */
 private class SectionSelectors(
     val windowIndex: Int,
     val onWindowChange: (Int) -> Unit,
+    val recordsWindowIndex: Int,
+    val onRecordsWindowChange: (Int) -> Unit,
     val trackSortIndex: Int,
     val onTrackSortChange: (Int) -> Unit,
     val opponentSortIndex: Int,
     val onOpponentSortChange: (Int) -> Unit
 )
+
+/** FormStats de la fenêtre sélectionnée (0 = all-time, 1 = 5, 2 = 10). */
+private fun Stats.windowForm(index: Int) = when (index) {
+    1 -> recentForm5
+    2 -> recentForm10
+    else -> allTimeForm
+}
 
 /**
  * Écran Statistiques du pôle Stats (ticket #25). Deux portées :
@@ -84,8 +91,10 @@ fun StatsFullScreen(
     var scopeIndex by rememberSaveable { mutableIntStateOf(0) }
     // États UI locaux des sélecteurs de section (rule 11), hissés ici car les
     // sections sont des extensions LazyListScope. Survivent à la rotation.
-    // Fenêtre des Indicateurs : 0 = all-time, 1 = 5 dernières, 2 = 10 dernières.
+    // Fenêtres (0 = all-time, 1 = 5 dernières, 2 = 10 dernières) : une pour les
+    // Indicateurs, une indépendante pour Records & séries.
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
+    var recordsWindowIndex by rememberSaveable { mutableIntStateOf(0) }
     // Critère des podiums circuits / adversaires : 0 = winrate, 1 = score.
     var trackSortIndex by rememberSaveable { mutableIntStateOf(0) }
     var opponentSortIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -97,6 +106,8 @@ fun StatsFullScreen(
     val selectors = SectionSelectors(
         windowIndex = windowIndex,
         onWindowChange = { windowIndex = it },
+        recordsWindowIndex = recordsWindowIndex,
+        onRecordsWindowChange = { recordsWindowIndex = it },
         trackSortIndex = trackSortIndex,
         onTrackSortChange = { trackSortIndex = it },
         opponentSortIndex = opponentSortIndex,
@@ -182,7 +193,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     }
     // 5. Forme & séries + Records (tuiles : série en cours, amplitude, Top6/Bot6, invaincu).
     item { FormStreakCard(stats, stringResource(R.string.stats_player_form_title)) }
-    item { RecordsTilesCard(stats) }
+    item { RecordsTilesCard(stats, selectors) }
     // 6. Distribution des positions (barres ancrées en bas, labels alignés).
     stats.positionDistribution.takeIf { it.any { entry -> entry.second > 0 } }?.let { distribution ->
         item {
@@ -235,7 +246,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     item { IndicatorsCard(stats = stats, isPlayer = false, selectors = selectors) }
     // 4. Forme & séries équipe + Records (tuiles).
     item { FormStreakCard(stats, stringResource(R.string.stats_team_form_title)) }
-    item { RecordsTilesCard(stats) }
+    item { RecordsTilesCard(stats, selectors) }
     // 5. Contributeurs.
     if (state.contributors.isNotEmpty()) item {
         StatCard(stringResource(R.string.stats_contributors_title)) {
@@ -274,11 +285,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
  */
 @Composable
 private fun IndicatorsCard(stats: Stats, isPlayer: Boolean, selectors: SectionSelectors) {
-    val window = when (selectors.windowIndex) {
-        1 -> stats.recentForm5
-        2 -> stats.recentForm10
-        else -> stats.allTimeForm
-    }
+    val window = stats.windowForm(selectors.windowIndex)
     // Deltas seulement hors all-time (index 0 = pas de comparaison).
     val showDelta = selectors.windowIndex != 0
     val title = if (isPlayer) stringResource(R.string.stats_player_indicators) else stringResource(R.string.stats_team_details)
@@ -332,85 +339,113 @@ private data class MetricTile(
     val polarity: DeltaPolarity
 )
 
+// Hauteur RÉSERVÉE pour la ligne de progression (delta %) : occupée même quand le
+// delta est absent → la tuile ne change JAMAIS de taille selon la fenêtre choisie
+// (ticket #36 point 1 : plus de « saut » de layout). Cale toutes les tuiles sur la
+// hauteur de la plus grande (celle avec delta).
+private val DeltaSlotHeight = 15.dp
+
 /**
- * Grille RÉGULIÈRE de tuiles d'indicateur : 3 colonnes à poids égal, **hauteur
- * uniforme par ligne** (`IntrinsicSize.Min` + `fillMaxHeight`) → toutes les tuiles
- * ont la même taille même quand certaines portent un delta (ticket #36 point 1).
+ * Grille RÉGULIÈRE de tuiles : [columns] colonnes à poids égal, toutes les tuiles de
+ * même taille. Chaque tuile réserve la place du delta ([DeltaSlotHeight]) qu'il soit
+ * présent ou non → aucun redimensionnement au changement de fenêtre.
  */
 @Composable
-private fun ColumnScope.MetricTiles(tiles: List<MetricTile>) {
-    tiles.chunked(3).forEach { rowTiles ->
+private fun ColumnScope.MetricTiles(tiles: List<MetricTile>, columns: Int = 3) {
+    tiles.chunked(columns).forEach { rowTiles ->
         Row(
-            Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(bottom = 8.dp),
+            Modifier.fillMaxWidth().padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             rowTiles.forEach { tile -> MetricTileCell(tile) }
-            repeat(3 - rowTiles.size) { Spacer(Modifier.weight(1f)) }
+            repeat(columns - rowTiles.size) { Spacer(Modifier.weight(1f)) }
         }
     }
 }
 
 @Composable
 private fun RowScope.MetricTileCell(tile: MetricTile) {
-    Column(Modifier.weight(1f).fillMaxHeight().background(Colors.white30, CardRadius).padding(10.dp)) {
-        // Valeur : toujours BLANCHE (point 4 du ticket #36 : aucune couleur).
+    Column(Modifier.weight(1f).background(Colors.white30, CardRadius).padding(10.dp)) {
+        // Valeur : toujours BLANCHE (aucune couleur).
         MKText(text = tile.value, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 18, textAlign = TextAlign.Start, maxLines = 1)
-        // Delta coloré (uniquement, cf. Momentum) : ↗ vert / ↘ rouge selon la polarité.
-        tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
-            val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
-            val arrow = if (delta > 0) "↗" else "↘"
-            MKText(
-                text = "${if (delta > 0) "+" else ""}$delta${tile.deltaSuffix} $arrow",
-                font = Fonts.NunitoBD,
-                textColor = if (improved) Colors.green else Colors.red,
-                fontSize = 10,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.padding(top = 3.dp)
-            )
+        // Ligne de progression à hauteur RÉSERVÉE (même vide) : la place du delta est
+        // toujours occupée → hauteur de tuile figée sur la plus grande (avec delta).
+        Box(Modifier.height(DeltaSlotHeight).padding(top = 3.dp)) {
+            tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
+                val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
+                val arrow = if (delta > 0) "↗" else "↘"
+                MKText(
+                    text = "${if (delta > 0) "+" else ""}$delta${tile.deltaSuffix} $arrow",
+                    font = Fonts.NunitoBD,
+                    textColor = if (improved) Colors.green else Colors.red,
+                    fontSize = 10,
+                    textAlign = TextAlign.Start
+                )
+            }
         }
         MKText(text = tile.label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
 // =====================================================================
-// Section Records & séries (restylée en tuiles) — ticket #36 point 8
+// Section Records & séries — grille 3×2 + sélecteur de fenêtre (ticket #36)
 // =====================================================================
 
-/** Records & séries en tuiles (même vocabulaire visuel que les Indicateurs). */
+/**
+ * Records & séries : sélecteur de fenêtre (all-time / 5 / 10) + grille **3 lignes ×
+ * 2 colonnes**, calculée sur la fenêtre choisie (`FormStats`). La « série en cours »
+ * n'est PAS ici (elle est dans « Forme & séries »).
+ * - Ligne 1 : Amplitude → deux cellules (min | max).
+ * - Ligne 2 : record de victoires | record de défaites.
+ * - Ligne 3 : Top 6 | Bot 6 (compte).
+ */
 @Composable
-private fun RecordsTilesCard(stats: Stats) {
-    val amplitude = if (stats.scoreMin != null && stats.scoreMax != null) "${stats.scoreMin} – ${stats.scoreMax}" else "-"
+private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors) {
+    val window = stats.windowForm(selectors.recordsWindowIndex)
     StatCard(stringResource(R.string.records_series)) {
+        MKSegmentedSelector(
+            items = listOf(
+                stringResource(R.string.all_time),
+                stringResource(R.string.last_n_short, 5),
+                stringResource(R.string.last_n_short, 10)
+            ),
+            page = selectors.recordsWindowIndex,
+            onDark = true,
+            onClick = selectors.onRecordsWindowChange
+        )
+        Spacer(Modifier.height(11.dp))
         val tiles = buildList {
-            // Série en cours puis, juste dessous, l'amplitude du score (déplacée depuis
-            // les Indicateurs — ticket #36 point 2) ; Top6/Bot6 décalés d'un cran.
-            add(MetricTile(stringResource(R.string.current_streak), streakValue(stats.currentStreak), null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.score_amplitude), amplitude, null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.best_win_streak), stats.bestWinStreak.toString(), null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.worst_loss_streak), stats.worstLossStreak.toString(), null, "", DeltaPolarity.NONE))
-            if (stats.top6Count > 0) add(MetricTile(stringResource(R.string.top6_count), stats.top6Count.toString(), null, "", DeltaPolarity.NONE))
-            if (stats.bot6Count > 0) add(MetricTile(stringResource(R.string.bot6_count), stats.bot6Count.toString(), null, "", DeltaPolarity.NONE))
-            if (stats.unbeatenStreak > 0) add(MetricTile(stringResource(R.string.unbeaten_streak), stats.unbeatenStreak.toString(), null, "", DeltaPolarity.NONE))
+            // Ligne 1 — Amplitude scindée en min | max (par fenêtre).
+            add(MetricTile(stringResource(R.string.stats_amplitude_min), window?.scoreMin?.toString() ?: "-", null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.stats_amplitude_max), window?.scoreMax?.toString() ?: "-", null, "", DeltaPolarity.NONE))
+            // Ligne 2 — records de série (par fenêtre).
+            add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
+            // Ligne 3 — Top6 / Bot6 (compte, par fenêtre).
+            add(MetricTile(stringResource(R.string.top6_count), (window?.top6Count ?: 0).toString(), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.bot6_count), (window?.bot6Count ?: 0).toString(), null, "", DeltaPolarity.NONE))
         }
-        MetricTiles(tiles)
+        MetricTiles(tiles, columns = 2)
     }
-}
-
-/** Série en cours signée → « N V » / « N D » / « — ». */
-private fun streakValue(streak: Int): String = when {
-    streak > 0 -> "$streak V"
-    streak < 0 -> "${-streak} D"
-    else -> "—"
 }
 
 // =====================================================================
 // Podiums circuits & adversaires (Top3/Flop3 + sélecteur) — ticket #36
 // =====================================================================
 
+/** Données d'affichage compactes d'une entrée de podium (circuit OU adversaire). */
+private class PodiumEntry(
+    val labelRes: Int? = null,     // circuit : @StringRes du nom de map
+    val name: String? = null,      // adversaire : nom (roster > équipe)
+    val pictureRes: Int? = null,   // circuit : illustration @DrawableRes
+    val logo: String? = null,      // adversaire : chemin logo MKCentral
+    val value: String              // valeur (winrate % ou score) selon le tri
+)
+
 /**
- * Podium circuits : sélecteur **winrate / score**, puis Top 3 / Flop 3 chacun sur
- * **une seule ligne** (3 `MapCell` compactes côte à côte). Perspective joueur
- * ([userId] non-null) ou équipe (null) — `MapCell` adapte déjà le score. 12p only.
+ * Podium circuits : sélecteur **winrate / score**, Top 3 / Flop 3 chacun sur **une
+ * ligne** de 3 `PodiumCell` compactes (illustration + nom + valeur). Perspective
+ * joueur ([userId] non-null : score du joueur) ou équipe (null : score d'équipe).
  */
 @Composable
 private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: String?) {
@@ -418,33 +453,30 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
     val top = if (byWinrate) stats.topMapsByWinrate else stats.topMapsByScore
     val flop = if (byWinrate) stats.flopMapsByWinrate else stats.flopMapsByScore
     if (top.isEmpty() && flop.isEmpty()) return
+    val toEntry: (fr.harmoniamk.statsmkworld.model.local.TrackStats) -> PodiumEntry = { track ->
+        val map = track.map?.firstOrNull()
+        val value = when {
+            byWinrate -> "${track.winRate ?: 0}%"
+            userId != null -> (track.playerScore ?: 0).toString()
+            else -> (track.teamScore ?: 0).toString()
+        }
+        PodiumEntry(labelRes = map?.label, pictureRes = map?.picture, value = value)
+    }
     StatCard(stringResource(R.string.best_maps_section)) {
         SortSelector(selectors.trackSortIndex, selectors.onTrackSortChange)
         Spacer(Modifier.height(11.dp))
         PodiumLabel(stringResource(R.string.stats_podium_top))
-        PodiumRow(top.size) { track ->
-            MapCell(
-                modifier = Modifier.fillMaxWidth(),
-                track = null, userId = userId, is24p = false,
-                trackRanking = RankingItem.TrackRanking(top[track]), onClick = {}
-            )
-        }
+        PodiumRow(top.map(toEntry))
         Spacer(Modifier.height(8.dp))
         PodiumLabel(stringResource(R.string.stats_podium_flop))
-        PodiumRow(flop.size) { track ->
-            MapCell(
-                modifier = Modifier.fillMaxWidth(),
-                track = null, userId = userId, is24p = false,
-                trackRanking = RankingItem.TrackRanking(flop[track]), onClick = {}
-            )
-        }
+        PodiumRow(flop.map(toEntry))
     }
 }
 
 /**
  * Podium adversaires : sélecteur **winrate / score**, Top 3 / Flop 3 chacun sur **une
- * seule ligne** (3 `TeamCell` compactes côte à côte). [userId] non-null ⇒ score du
- * joueur (Individuelles) ; null ⇒ écart d'équipe (Équipe).
+ * ligne** de 3 `PodiumCell` compactes (logo + nom + valeur). [userId] non-null ⇒ score
+ * du joueur (Individuelles) ; null ⇒ écart d'équipe (Équipe).
  */
 @Composable
 private fun OpponentsPodiumCard(
@@ -459,33 +491,85 @@ private fun OpponentsPodiumCard(
     val top = if (byWinrate) topByWinrate else topByScore
     val flop = if (byWinrate) flopByWinrate else flopByScore
     if (top.isEmpty() && flop.isEmpty()) return
+    val toEntry: (RankingItem.OpponentRanking) -> PodiumEntry = { opponent ->
+        val value = when {
+            byWinrate -> "${opponent.winrate}%"
+            userId != null -> opponent.stats.averagePoints.toString() // score du joueur
+            else -> opponent.stats.averagePointsLabel               // écart d'équipe
+        }
+        PodiumEntry(name = opponent.team.name, logo = opponent.team.logo, value = value)
+    }
     StatCard(stringResource(R.string.best_opponents_section)) {
         SortSelector(selectors.opponentSortIndex, selectors.onOpponentSortChange)
         Spacer(Modifier.height(11.dp))
         PodiumLabel(stringResource(R.string.stats_podium_top))
-        PodiumRow(top.size) { index ->
-            TeamCell(modifier = Modifier.fillMaxWidth(), team = null, teamRanking = top[index], userId = userId, tagVisible = false, onClick = {})
-        }
+        PodiumRow(top.map(toEntry))
         Spacer(Modifier.height(8.dp))
         PodiumLabel(stringResource(R.string.stats_podium_flop))
-        PodiumRow(flop.size) { index ->
-            TeamCell(modifier = Modifier.fillMaxWidth(), team = null, teamRanking = flop[index], userId = userId, tagVisible = false, onClick = {})
-        }
+        PodiumRow(flop.map(toEntry))
     }
 }
 
 /**
- * Une ligne de podium : jusqu'à 3 cellules compactes à poids égal, hauteur uniforme
+ * Une ligne de podium : jusqu'à 3 `PodiumCell` à poids égal, hauteur uniforme
  * (`IntrinsicSize.Min`). Comble avec des `Spacer` si moins de 3 entrées.
  */
 @Composable
-private fun ColumnScope.PodiumRow(count: Int, cell: @Composable (Int) -> Unit) {
+private fun ColumnScope.PodiumRow(entries: List<PodiumEntry>) {
     Row(
         Modifier.fillMaxWidth().height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        repeat(count) { index -> Box(Modifier.weight(1f)) { cell(index) } }
-        repeat(3 - count) { Spacer(Modifier.weight(1f)) }
+        entries.forEach { entry -> PodiumCell(entry) }
+        repeat(3 - entries.size) { Spacer(Modifier.weight(1f)) }
+    }
+}
+
+/**
+ * Cellule podium compacte, **structure identique circuit/adversaire** : image en haut
+ * (illustration de map arrondie OU logo d'équipe en cercle, fallback `default_logo`),
+ * nom au centre (2 lignes max), valeur (winrate/score) en gras dessous.
+ */
+@Composable
+private fun RowScope.PodiumCell(entry: PodiumEntry) {
+    Column(
+        Modifier
+            .weight(1f)
+            .fillMaxHeight()
+            .background(Colors.white30, CardRadius)
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        when {
+            entry.pictureRes != null -> Image(
+                painter = painterResource(entry.pictureRes),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(5.dp))
+            )
+            else -> when (entry.logo) {
+                null -> Image(
+                    painter = painterResource(R.drawable.default_logo),
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                )
+                else -> AsyncImage(
+                    model = "https://mkcentral.com${entry.logo}",
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        MKText(
+            text = entry.labelRes?.let { stringResource(it) } ?: entry.name ?: "-",
+            font = Fonts.NunitoBD,
+            textColor = Colors.white,
+            fontSize = 11,
+            maxLines = 2,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(4.dp))
+        MKText(text = entry.value, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 14)
     }
 }
 
