@@ -177,6 +177,27 @@
     <string name="worst_winrate_vs">Pire winrate face à</string>
     <string name="best_score_vs">Meilleur score moyen face à</string>
     <string name="worst_score_vs">Pire score moyen face à</string>
+    <!-- Pôle Classements (#26) -->
+    <string name="rankings_hint">Palmarès triable. Touche une ligne pour ouvrir sa fiche statistique.</string>
+    <string name="rankings_tab_players">Joueurs</string>
+    <string name="rankings_tab_opponents">Adversaires</string>
+    <string name="rankings_tab_tracks">Circuits</string>
+    <string name="rankings_sort_winrate">Winrate</string>
+    <string name="rankings_sort_score">Score moy.</string>
+    <string name="rankings_sort_wars">Wars</string>
+    <string name="rankings_sort_occurrences">Occurrences</string>
+    <string name="rankings_sort_frequency">Fréquence</string>
+    <string name="rankings_search_player">Rechercher un joueur</string>
+    <string name="rankings_search_opponent">Rechercher une équipe</string>
+    <string name="rankings_search_track">Rechercher un circuit</string>
+    <string name="rankings_insight_title">En bref</string>
+    <string name="rankings_insight_dominate">On domine</string>
+    <string name="rankings_insight_nemesis">Bête noire</string>
+    <string name="rankings_insight_best">Meilleur</string>
+    <string name="rankings_insight_worst">Pire</string>
+    <string name="rankings_wars_count">%1$s wars</string>
+    <string name="rankings_confrontations_count">%1$s confrontations</string>
+    <string name="rankings_played_count">Joué %1$s fois</string>
     <!-- Stats supplémentaires (bis) : forme récente, contribution, régularité… -->
     <string name="recent_form_section">Forme récente</string>
     <string name="advanced_stats_section">Indicateurs avancés</string>

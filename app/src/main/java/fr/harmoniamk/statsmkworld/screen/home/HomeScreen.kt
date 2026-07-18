@@ -27,8 +27,7 @@ import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
-import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuMode
-import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuScreen
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
 import fr.harmoniamk.statsmkworld.screen.welcome.WelcomeScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -52,7 +51,6 @@ fun HomeScreen(
     // l'Accueil : le sélecteur/CTA « Nouvelle war » a déménagé vers le pôle Wars.
     onWarDetailsClick: (WarDetails) -> Unit,
     onStats: (StatsType) -> Unit,
-    onRanking: (StatsType?) -> Unit,
     onSearch: () -> Unit,
     onDisconnect: () -> Unit,
     onDebug: () -> Unit
@@ -143,11 +141,12 @@ fun HomeScreen(
                     )
                 }
                 composable(route = "Home/Rankings") {
-                    StatsMenuScreen(
-                        mode = StatsMenuMode.RANKINGS,
-                        onClick = onStats,
-                        onRanking = onRanking,
-                        onSearch = onSearch
+                    // Pôle Classements (#26) : écran unique à sous-onglets Joueurs /
+                    // Adversaires / Circuits (plus de menu intermédiaire). Les lignes
+                    // mènent aux fiches statistiques via onStats.
+                    StatsRankingScreen(
+                        viewModel = hiltViewModel(key = "rankings"),
+                        onStats = onStats
                     )
                 }
                 composable(route = "Home/Profile") {

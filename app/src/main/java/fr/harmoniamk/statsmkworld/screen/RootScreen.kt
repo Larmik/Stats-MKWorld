@@ -36,8 +36,6 @@ import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
-import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen
-import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingViewModel
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileScreen
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
@@ -103,10 +101,6 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
                     navController.navigate("Stats")
                 },
-                onRanking = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
-                    navController.navigate("Stats/Ranking")
-                },
                 onSearch = { navController.navigate("Home/Registry") },
                 onDisconnect = { navController.navigate("Signup") },
                 onDebug = { navController.navigate("Player/Profile/Debug") }
@@ -154,22 +148,6 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 ),
                 onBack = { navController.popBackStack() },
                 onResults = { navController.navigate("Home/WarList") }
-            )
-        }
-
-        composable("Stats/Ranking") {
-            val type =
-                navController.previousBackStackEntry?.savedStateHandle?.get<StatsType>("type")
-            StatsRankingScreen(
-                viewModel = hiltViewModel(
-                    creationCallback = { factory: StatsRankingViewModel.Factory ->
-                        factory.create(type)
-                    }
-                ),
-                onStats = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("type", it)
-                    navController.navigate("Stats")
-                }
             )
         }
 

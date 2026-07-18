@@ -177,6 +177,27 @@
     <string name="worst_winrate_vs">Worst winrate against</string>
     <string name="best_score_vs">Best average score against</string>
     <string name="worst_score_vs">Worst average score against</string>
+    <!-- Rankings pole (#26) -->
+    <string name="rankings_hint">Sortable leaderboard. Tap a row to open its stats sheet.</string>
+    <string name="rankings_tab_players">Players</string>
+    <string name="rankings_tab_opponents">Opponents</string>
+    <string name="rankings_tab_tracks">Tracks</string>
+    <string name="rankings_sort_winrate">Winrate</string>
+    <string name="rankings_sort_score">Avg. score</string>
+    <string name="rankings_sort_wars">Wars</string>
+    <string name="rankings_sort_occurrences">Occurrences</string>
+    <string name="rankings_sort_frequency">Frequency</string>
+    <string name="rankings_search_player">Search for a player</string>
+    <string name="rankings_search_opponent">Search for a team</string>
+    <string name="rankings_search_track">Search for a track</string>
+    <string name="rankings_insight_title">In brief</string>
+    <string name="rankings_insight_dominate">We dominate</string>
+    <string name="rankings_insight_nemesis">Nemesis</string>
+    <string name="rankings_insight_best">Best</string>
+    <string name="rankings_insight_worst">Worst</string>
+    <string name="rankings_wars_count">%1$s wars</string>
+    <string name="rankings_confrontations_count">%1$s confrontations</string>
+    <string name="rankings_played_count">Played %1$s times</string>
     <!-- Stats supplémentaires (bis) : forme récente, contribution, régularité… -->
     <string name="recent_form_section">Recent form</string>
     <string name="advanced_stats_section">Advanced indicators</string>
