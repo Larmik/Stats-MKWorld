@@ -286,4 +286,31 @@
     <string name="stats_sort_occurrences">Occurrences</string>
     <string name="times_played_short">Joué</string>
     <string name="stats_no_data">Aucune donnée sur cette période</string>
+    <!-- Fiches détail Adversaire & Circuit (ticket #27) -->
+    <string name="opponent_detail_title">Adversaire</string>
+    <string name="opponent_detail_header">%1$d confrontations · dernier : %2$s</string>
+    <string name="opponent_detail_balance">Bilan face à eux</string>
+    <string name="opponent_detail_winrate_sub">de winrate\nsur %1$d wars</string>
+    <string name="opponent_detail_recent">5 dernières face à eux</string>
+    <string name="opponent_detail_streaks_scores">Séries &amp; scores</string>
+    <string name="opponent_detail_current_streak">Série en cours</string>
+    <string name="opponent_detail_record">Record</string>
+    <string name="opponent_detail_avg_for">Score moy. pour</string>
+    <string name="opponent_detail_avg_against">Score moy. contre</string>
+    <string name="opponent_detail_best_track">Meilleur circuit contre eux</string>
+    <string name="opponent_detail_best_track_sub">joué %1$d fois</string>
+    <string name="opponent_detail_history">Historique des wars</string>
+    <string name="map_detail_title">Circuit</string>
+    <string name="map_detail_header">joué %1$d fois</string>
+    <string name="map_detail_cup">coupe</string>
+    <string name="map_detail_performance">Performance</string>
+    <string name="map_detail_winrate_sub">de winrate\nsur %1$d passages</string>
+    <string name="map_detail_avg_scores">Scores moyens</string>
+    <string name="map_detail_team_score">Score équipe</string>
+    <string name="map_detail_avg_position">Position moy.</string>
+    <string name="map_detail_top_bottom">Top 6 / Bot 6</string>
+    <string name="map_detail_top6">Places Top 6</string>
+    <string name="map_detail_bot6">Places Bot 6</string>
+    <string name="map_detail_best_pilot">Meilleur pilote ici</string>
+    <string name="map_detail_pilot_score">score perso %1$d</string>
 </resources>

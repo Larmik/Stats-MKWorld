@@ -49,11 +49,16 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
+import fr.harmoniamk.statsmkworld.ui.stats.StatCard
+import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
+import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
+import fr.harmoniamk.statsmkworld.ui.stats.WinTieLossBar
 import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 
-private val CardRadius = RoundedCornerShape(6.dp)
+private val CardRadius = StatCardRadius
 
 /** États hissés des sélecteurs de section (fenêtres par section, tri podiums). */
 private class SectionSelectors(
@@ -215,7 +220,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     // 4. Contribution (rang lu sur le classement all-time des contributeurs).
     stats.playerContribution?.let { contribution ->
         item {
-            StatCard(stringResource(R.string.stats_contribution_title)) {
+            StatCard(title = stringResource(R.string.stats_contribution_title)) {
                 IconLine(
                     icon = R.drawable.stats,
                     accent = Colors.yellow,
@@ -292,7 +297,7 @@ private fun IndicatorsCard(stats: Stats, isPlayer: Boolean, selectors: SectionSe
     // Deltas seulement hors all-time (index 0 = pas de comparaison).
     val showDelta = selectors.windowIndex != 0
     val title = if (isPlayer) stringResource(R.string.stats_player_indicators) else stringResource(R.string.stats_team_details)
-    StatCard(title) {
+    StatCard(title = title) {
         WindowSelector(selectors.windowIndex, selectors.onWindowChange)
         val tiles = buildList {
             add(MetricTile(stringResource(R.string.form_winrate), window?.winrate?.let { "$it%" } ?: "-", if (showDelta) window?.winrateDelta else null, "%", DeltaPolarity.HIGHER))
@@ -400,7 +405,7 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
 @Composable
 private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors) {
     val window = stats.windowForm(selectors.recordsWindowIndex)
-    StatCard(stringResource(R.string.records_series)) {
+    StatCard(title = stringResource(R.string.records_series)) {
         WindowSelector(selectors.recordsWindowIndex, selectors.onRecordsWindowChange)
         val tiles = buildList {
             // Ligne 1 — Amplitude scindée en min | max (par fenêtre).
@@ -452,7 +457,7 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
             )
         )
     }
-    StatCard(stringResource(R.string.best_maps_section)) {
+    StatCard(title = stringResource(R.string.best_maps_section)) {
         SortSelector(selectors.trackSortIndex, selectors.onTrackSortChange)
         Spacer(Modifier.height(11.dp))
         PodiumLabel(stringResource(R.string.stats_podium_top))
@@ -496,7 +501,7 @@ private fun OpponentsPodiumCard(
             )
         )
     }
-    StatCard(stringResource(R.string.best_opponents_section)) {
+    StatCard(title = stringResource(R.string.best_opponents_section)) {
         SortSelector(selectors.opponentSortIndex, selectors.onOpponentSortChange)
         Spacer(Modifier.height(11.dp))
         PodiumLabel(stringResource(R.string.stats_podium_top))
@@ -531,73 +536,21 @@ private fun PodiumLabel(text: String) {
 // Composants de carte (style maquette, réutilisés par les deux onglets)
 // =====================================================================
 
-/** Carte translucide (fond sombre, bordure blanche, radius 6, padding 13). */
-@Composable
-private fun StatCard(
-    title: String? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(Colors.blackAlphaed, CardRadius)
-            .border(1.dp, Colors.whiteBorder, CardRadius)
-            .padding(13.dp)
-    ) {
-        title?.let { Eyebrow(it) }
-        if (title != null) Spacer(Modifier.height(11.dp))
-        content()
-    }
-}
-
-/** Eyebrow (petit titre majuscule blanc). */
-@Composable
-private fun Eyebrow(text: String) {
-    MKText(
-        text = text.uppercase(),
-        fontSize = 12,
-        font = Fonts.NunitoBD,
-        textColor = Colors.white,
-        textAlign = TextAlign.Start
-    )
-}
-
 /**
  * En-tête : vignette (photo joueur / logo équipe) + nom (Bungee) + sous-titre.
  * [logo] = URL MKCentral déjà préfixée (avatar joueur en Individuelles, logo équipe
- * en Équipe) ; fallback = pastille d'initiales sur fond [color].
+ * en Équipe) ; fallback = pastille d'initiales (joueur) ou default_logo (équipe).
+ * Délègue à [StatHeaderCard] partagé (rule 16).
  */
 @Composable
 private fun HeaderCard(name: String, subtitle: String, color: Color, logo: String?, isTeam: Boolean) {
-    StatCard {
-        Row(horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
-            when (logo) {
-                null -> Box(
-                    Modifier.size(52.dp).clip(CircleShape).background(color).border(2.dp, Colors.white85, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Équipe sans logo → default_logo ; joueur sans avatar → initiales.
-                    when (isTeam) {
-                        true -> Image(
-                            painter = painterResource(R.drawable.default_logo),
-                            contentDescription = null,
-                            modifier = Modifier.size(52.dp).clip(CircleShape)
-                        )
-                        else -> MKText(text = initialsOf(name), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 16)
-                    }
-                }
-                else -> AsyncImage(
-                    model = logo,
-                    contentDescription = null,
-                    modifier = Modifier.size(52.dp).clip(CircleShape).border(2.dp, Colors.white85, CircleShape)
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                MKText(text = name, font = Fonts.Bungee, textColor = Colors.white, fontSize = 17, textAlign = TextAlign.Start)
-                MKText(text = subtitle, textColor = Colors.white66, fontSize = 12, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 4.dp))
-            }
-        }
-    }
+    StatHeaderCard(
+        name = name,
+        subtitle = subtitle,
+        color = color,
+        logo = logo,
+        fallbackText = if (isTeam) null else initialsOf(name)
+    )
 }
 
 /** Carte « bilan » : gros winrate + V/N/D + barre V/N/D (+ lien Résultats optionnel). */
@@ -632,19 +585,6 @@ private fun BalanceCard(stats: Stats, showResultsLink: Boolean, onResults: (() -
     }
 }
 
-/** Barre horizontale V/N/D proportionnelle (vert / blanc / rouge). */
-@Composable
-private fun WinTieLossBar(won: Int, tied: Int, loss: Int) {
-    val total = (won + tied + loss).takeIf { it > 0 } ?: 1
-    Row(
-        Modifier.fillMaxWidth().height(13.dp).clip(RoundedCornerShape(20.dp)).background(Color(0x38000000))
-    ) {
-        if (won > 0) Box(Modifier.weight(won.toFloat() / total).fillMaxHeight().background(Colors.green))
-        if (tied > 0) Box(Modifier.weight(tied.toFloat() / total).fillMaxHeight().background(Colors.white))
-        if (loss > 0) Box(Modifier.weight(loss.toFloat() / total).fillMaxHeight().background(Colors.red))
-    }
-}
-
 /** Ligne icône + gros titre + sous-titre (contribution). */
 @Composable
 private fun IconLine(icon: Int, accent: Color, title: String, subtitle: String) {
@@ -675,7 +615,7 @@ private fun FormStreakCard(stats: Stats, title: String) {
     }
     val delta = stats.recentForm10?.winrateDelta
     val record = if (isWin) stats.bestWinStreak else stats.worstLossStreak
-    StatCard(title) {
+    StatCard(title = title) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
                 Modifier.size(44.dp).clip(CircleShape).background(accent.copy(alpha = 0.25f)).border(1.dp, accent.copy(alpha = 0.5f), CircleShape),
@@ -709,7 +649,7 @@ private fun FormStreakCard(stats: Stats, title: String) {
 private fun DistributionCard(stats: Stats, selectors: SectionSelectors) {
     val distribution = stats.positionDistributionFor(windowLastN(selectors.distributionWindowIndex))
     if (distribution.none { it.second > 0 }) return
-    StatCard(stringResource(R.string.stats_distribution_title)) {
+    StatCard(title = stringResource(R.string.stats_distribution_title)) {
         WindowSelector(selectors.distributionWindowIndex, selectors.onDistributionWindowChange)
         DistributionChart(distribution)
         DistributionFooter(distribution)
@@ -781,7 +721,7 @@ private fun ContributorsCard(
     selectors: SectionSelectors
 ) {
     val contributors = byWindow[selectors.contributorsWindowIndex].orEmpty()
-    StatCard(stringResource(R.string.stats_contributors_title)) {
+    StatCard(title = stringResource(R.string.stats_contributors_title)) {
         WindowSelector(selectors.contributorsWindowIndex, selectors.onContributorsWindowChange)
         when {
             contributors.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 12)

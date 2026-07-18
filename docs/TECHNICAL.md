@@ -715,6 +715,16 @@ var playerTrackRankList: List<RankingItem>
 - **Rendu pixel-perfect** (rules 13/15) : cartes translucides, eyebrows, tuiles (grilles régulières), barre V/N/D proportionnelle, flamme de séries, histogramme P1→P12 + pied Top6/Bot6, contributeurs, podiums 3-par-ligne. En-tête : vignette photo joueur / logo équipe via `AsyncImage` (fallback initiales/`default_logo`). **Pas de pastille « Nouveau »** (rule 15). **Saisons masquées** (#30). Nombre de courses retiré de l'en-tête.
 - **Navigation** : pôle Stats → `StatsFullScreen(showTabs = true)` (route `Home/Stats`) ; route racine `Statsfull/{userId}` → `StatsFullScreen(showTabs = false)`. Points d'entrée Classements/#26 & fiche joueur à câbler par leurs tickets.
 
+### 9.12 Fiches détail Adversaire & Circuit (`screen/stats/opponent/`, `screen/stats/map/`, ticket #27)
+
+Fiches profil pixel-perfect (écrans `opp`/`map` du prototype), atteintes depuis le pôle Classements. **12p uniquement**.
+
+- **Cartes partagées** : les primitives de carte translucide de `StatsFullScreen` ont été **extraites** dans **`ui/stats/MKStatCard.kt`** (rule 16) — `StatCard`, `Eyebrow`, `StatHeaderCard`, `BalanceCard`, `WinTieLossBar`, `StatTiles`/`StatTile`, `StatCardRadius`. `StatsFullScreen` importe désormais ces versions publiques (son `HeaderCard` délègue à `StatHeaderCard`, sa `BalanceCard`/`WinTieLossBar` locales inchangées côté logique). `StatHeaderCard` attend un **logo déjà préfixé** (`https://mkcentral.com…`) ; les fiches préfixent le `TeamEntity.logo` brut au site d'appel.
+- **`OpponentDetailScreen` + `OpponentDetailViewModel`** (route `Opponent/{teamId}`, `@AssistedInject Factory(teamId)`) : observe `getWars()`, filtre les wars 12p face à cet opposant, réutilise `withFullStats(teamId=…)` (V/N/D, séries, `bestMapByWinrate`) et dérive dernière rencontre, 5 dernières issues (chrono), score moyen pour/contre (`scoreHostWithPenalties`/`scoreOpponentWithPenalties`), historique (plus récente en tête). Nom/tag = roster, avatar = équipe (rule 12), adversaire non résolu dégradé « Équipe inconnue »/« ??? ».
+- **`MapDetailScreen` + `MapDetailViewModel`** (route `Map/{trackIndex}` CSV, `@AssistedInject Factory(trackIndex: List<Int>)`) : construit un `MapStats` équipe sur les manches du circuit (winrate de manche, `teamScore`, `playerPosition`, `topsTable["Top 6"]`/`bottomsTable["Bot 6"]`), et calcule le **meilleur pilote** (winrate perso = manches en top 6 / total, seuil `MIN_RANKING_SAMPLE`, départage score perso moyen ; nom via cache `getPlayers()`).
+- **Routage par type** : `RootScreen.onStats` dispatche `StatsType.OpponentStats`→`Opponent/{teamId}`, `MapStats`→`Map/{trackIndex}`, autres→`Stats` (`StatsRankingScreen`/`HomeScreen` inchangés, `onStats: (StatsType) -> Unit` conservé). Retour par `BackHandler` (geste/bouton système, comme `WarDetailsScreen`).
+- **Écarts documentés** : nom de coupe absent des ressources (icône seule) → en-tête circuit = icône + « coupe » ; pas de flèche `←` dans l'app bar (`BaseScreen` n'en propose pas).
+
 ---
 
 ## 10. Persistance

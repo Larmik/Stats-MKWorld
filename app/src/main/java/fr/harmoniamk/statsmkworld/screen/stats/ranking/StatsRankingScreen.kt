@@ -40,9 +40,9 @@ import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
  * fiche statistique. Cellules mutualisées avec les podiums de `StatsFullScreen`
  * (`PodiumCell`). L'onglet Joueurs est **sectionné** Membres / Alliés.
  *
- * Navigation vers les fiches : réutilise l'existant (`StatsType.PlayerStats` /
- * `OpponentStats` / `MapStats`) tant que les fiches dédiées adversaire/circuit (#27)
- * ne sont pas créées.
+ * Navigation vers les fiches : `StatsType.PlayerStats` → écran Stats joueur ;
+ * `OpponentStats` / `MapStats` → fiches dédiées Adversaire/Circuit (#27), routées par
+ * type dans `RootScreen` (`Opponent/{teamId}`, `Map/{trackIndex}`).
  */
 @Composable
 fun StatsRankingScreen(
