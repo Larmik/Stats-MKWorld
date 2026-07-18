@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -56,11 +57,14 @@ class PodiumEntry(
  * Une ligne de podium : jusqu'à [columns] `PodiumCell` à poids égal, hauteur uniforme
  * (`IntrinsicSize.Min`). Comble avec des `Spacer` si moins de [columns] entrées (podiums
  * Top3/Flop3). [onClick] optionnel (Classements → fiche stats) ; index passé à l'appelant.
+ * [contentColor] pilote la couleur du texte (défaut blanc — carte sombre du pôle Stats ;
+ * les Classements passent noir).
  */
 @Composable
 fun ColumnScope.PodiumRow(
     entries: List<PodiumEntry>,
     columns: Int = 3,
+    contentColor: Color = Colors.white,
     onClick: ((Int) -> Unit)? = null
 ) {
     Row(
@@ -68,7 +72,7 @@ fun ColumnScope.PodiumRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         entries.forEachIndexed { index, entry ->
-            PodiumCell(entry, onClick = onClick?.let { { it(index) } })
+            PodiumCell(entry, contentColor = contentColor, onClick = onClick?.let { { it(index) } })
         }
         repeat(columns - entries.size) { Spacer(Modifier.weight(1f)) }
     }
@@ -79,9 +83,18 @@ fun ColumnScope.PodiumRow(
  * (illustration de circuit arrondie, logo d'équipe en cercle, pastille d'initiales joueur,
  * fallback `default_logo`), nom (2 lignes max), puis les lignes de stats empilées
  * (libellé + valeur en gras).
+ *
+ * [contentColor] : couleur du **nom** et des **valeurs** (défaut `Colors.white` — carte
+ * sombre du pôle Stats ; le pôle Classements passe `Colors.black`). Le libellé secondaire
+ * en dérive à 66 % d'alpha. Les initiales restent blanches sur leur pastille colorée.
  */
 @Composable
-fun RowScope.PodiumCell(entry: PodiumEntry, onClick: (() -> Unit)? = null) {
+fun RowScope.PodiumCell(
+    entry: PodiumEntry,
+    contentColor: Color = Colors.white,
+    onClick: (() -> Unit)? = null
+) {
+    val labelColor = contentColor.copy(alpha = 0.66f)
     Column(
         Modifier
             .weight(1f)
@@ -118,7 +131,7 @@ fun RowScope.PodiumCell(entry: PodiumEntry, onClick: (() -> Unit)? = null) {
         MKText(
             text = entry.labelRes?.let { stringResource(it) } ?: entry.name ?: "-",
             font = Fonts.NunitoBD,
-            textColor = Colors.white,
+            textColor = contentColor,
             fontSize = 11,
             maxLines = 2,
             textAlign = TextAlign.Center
@@ -130,8 +143,8 @@ fun RowScope.PodiumCell(entry: PodiumEntry, onClick: (() -> Unit)? = null) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MKText(text = stringResource(labelRes), textColor = Colors.white70, fontSize = 9, maxLines = 1)
-                MKText(text = value, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 10, maxLines = 1)
+                MKText(text = stringResource(labelRes), textColor = labelColor, fontSize = 9, maxLines = 1)
+                MKText(text = value, font = Fonts.NunitoBD, textColor = contentColor, fontSize = 10, maxLines = 1)
             }
         }
     }

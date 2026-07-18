@@ -3,7 +3,6 @@ package fr.harmoniamk.statsmkworld.screen.stats.ranking
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,8 +14,8 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -85,18 +84,20 @@ fun StatsRankingScreen(
         )
         Spacer(Modifier.height(11.dp))
 
-        // Chips de tri (3 par onglet, Winrate défaut). Le 3ᵉ libellé change selon l'onglet.
+        // Chips de tri (3 par onglet) : le chip d'OCCURRENCES est en 1ʳᵉ position et
+        // sélectionné par défaut (libellé variable Wars / Occurrences / Fréquence),
+        // suivi de Winrate puis Score moy. — ordre calé sur SortType.entries (COUNT en 0).
         MKSegmentedSelector(
             items = listOf(
-                stringResource(R.string.rankings_sort_winrate),
-                stringResource(R.string.rankings_sort_score),
                 stringResource(
                     when (state.tab) {
                         RankingTab.PLAYERS -> R.string.rankings_sort_wars
                         RankingTab.OPPONENTS -> R.string.rankings_sort_occurrences
                         RankingTab.TRACKS -> R.string.rankings_sort_frequency
                     }
-                )
+                ),
+                stringResource(R.string.rankings_sort_winrate),
+                stringResource(R.string.rankings_sort_score)
             ),
             page = state.sort.ordinal,
             onClick = viewModel::onSortSelected
@@ -146,7 +147,8 @@ fun StatsRankingScreen(
 
 /**
  * Ajoute à un `LazyListScope` les lignes de 3 `PodiumCell` correspondant à [items].
- * [onClick] reçoit l'entrée métier cliquée (via son index dans la ligne).
+ * [onClick] reçoit l'entrée métier cliquée (via son index dans la ligne). Texte en
+ * **noir** ([contentColor]) sur le fond clair de l'écran Classements.
  */
 private fun <T> LazyListScope.podiumRows(
     items: List<Pair<PodiumEntry, T>>,
@@ -157,6 +159,7 @@ private fun <T> LazyListScope.podiumRows(
             Column {
                 PodiumRow(
                     entries = rowItems.map { it.first },
+                    contentColor = Colors.black,
                     onClick = { indexInRow -> onClick(rowItems[indexInRow].second) }
                 )
             }
@@ -223,32 +226,37 @@ private fun SectionHeader(text: String) {
 }
 
 /**
- * Curseur « occurrences minimum » : `Slider` Material3 stylé aux couleurs de la maquette
- * (piste active verte, pouce blanc). Masqué si le max ne dépasse pas 1 (rien à filtrer).
+ * Curseur « occurrences minimum » : `Slider` Material3 **continu** (piste sans
+ * graduations : pas de tick marks — `steps = 0` + `tickColors` transparents), **pouce
+ * cercle plein blanc opaque**, piste active verte. Le libellé de valeur est placé
+ * **au-dessus** (pas à côté), et le Slider a un léger padding horizontal, pour que le
+ * pouce en position minimale reste **entièrement visible** (pas de rognage à gauche).
+ * Masqué si le max ne dépasse pas 1 (rien à filtrer).
  */
 @Composable
 private fun ColumnScope.MinOccurrencesSlider(value: Int, max: Int, onChange: (Int) -> Unit) {
     if (max <= 1) return
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Slider(
-            value = value.toFloat(),
-            onValueChange = { onChange(it.toInt()) },
-            valueRange = 1f..max.toFloat(),
-            steps = (max - 2).coerceAtLeast(0),
-            colors = SliderDefaults.colors(
-                thumbColor = Colors.white,
-                activeTrackColor = Colors.green,
-                inactiveTrackColor = Colors.blackAlphaed
-            ),
-            modifier = Modifier.weight(1f)
-        )
-        MKText(
-            text = stringResource(R.string.rankings_min_occurrences, value),
-            textColor = Colors.black,
-            font = Fonts.NunitoBD,
-            fontSize = 12,
-            modifier = Modifier.padding(start = 10.dp)
-        )
-    }
+    MKText(
+        text = stringResource(R.string.rankings_min_occurrences, value),
+        textColor = Colors.black,
+        font = Fonts.NunitoBD,
+        fontSize = 12,
+        textAlign = TextAlign.Start,
+        modifier = Modifier.fillMaxWidth()
+    )
+    Slider(
+        value = value.toFloat(),
+        onValueChange = { onChange(it.toInt()) },
+        valueRange = 1f..max.toFloat(),
+        steps = 0, // piste continue, aucune graduation
+        colors = SliderDefaults.colors(
+            thumbColor = Colors.white,
+            activeTrackColor = Colors.green,
+            inactiveTrackColor = Colors.blackAlphaed,
+            activeTickColor = Color.Transparent,
+            inactiveTickColor = Color.Transparent
+        ),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp)
+    )
     Spacer(Modifier.height(11.dp))
 }

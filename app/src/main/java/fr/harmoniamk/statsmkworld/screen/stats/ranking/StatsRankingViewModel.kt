@@ -30,12 +30,12 @@ import javax.inject.Inject
 enum class RankingTab { PLAYERS, OPPONENTS, TRACKS }
 
 /**
- * Critères de tri du prototype : Winrate (défaut) / Score moyen / compteur (Wars ·
- * Occurrences · Fréquence selon l'onglet). L'ancien `SortType.NAME` (chip « Nom »)
- * n'apparaît pas dans le prototype → il n'est plus proposé comme chip ; le tri par
- * défaut est WINRATE décroissant.
+ * Critères de tri : compteur (Wars · Occurrences · Fréquence selon l'onglet, **défaut**),
+ * Winrate, Score moyen. L'ordre de l'enum = ordre des chips affichés (COUNT en 1ʳᵉ
+ * position et sélectionné par défaut, tri décroissant par occurrences). L'ancien
+ * `SortType.NAME` (chip « Nom ») n'apparaît pas dans le prototype → non proposé.
  */
-enum class SortType { WINRATE, AVERAGE, COUNT }
+enum class SortType { COUNT, WINRATE, AVERAGE }
 
 sealed interface RankingItem {
 
@@ -115,7 +115,7 @@ class StatsRankingViewModel @Inject constructor(
 
     data class State(
         val tab: RankingTab = RankingTab.PLAYERS,
-        val sort: SortType = SortType.WINRATE,
+        val sort: SortType = SortType.COUNT,
         val search: String = "",
         // Onglet Joueurs : deux sections (Membres / Alliés), chacune triée.
         val playerSections: List<PlayerSection> = listOf(),
@@ -162,13 +162,13 @@ class StatsRankingViewModel @Inject constructor(
 
     fun onTabSelected(index: Int) {
         val tab = RankingTab.entries.getOrElse(index) { RankingTab.PLAYERS }
-        // Nouvel onglet : tri par défaut (Winrate), recherche vide, curseur réinitialisé.
-        _state.value = _state.value.copy(tab = tab, sort = SortType.WINRATE, search = "")
+        // Nouvel onglet : tri par défaut (occurrences), recherche vide, curseur réinitialisé.
+        _state.value = _state.value.copy(tab = tab, sort = SortType.COUNT, search = "")
             .recompute(resetOccurrences = true)
     }
 
     fun onSortSelected(index: Int) {
-        val sort = SortType.entries.getOrElse(index) { SortType.WINRATE }
+        val sort = SortType.entries.getOrElse(index) { SortType.COUNT }
         _state.value = _state.value.copy(sort = sort).recompute()
     }
 
