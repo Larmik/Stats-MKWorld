@@ -52,7 +52,9 @@ fun StatsRankingScreen(
     val state by viewModel.state.collectAsState()
     val is24p = state.is24PEnabled == true
 
-    BaseScreen(title = stringResource(R.string.classements)) {
+    // padding bas = hauteur de la bottom bar des 5 pôles, pour que le dernier élément de
+    // la grille reste visible au-dessus d'elle (même valeur/approche que Accueil/Stats : 90.dp).
+    BaseScreen(title = stringResource(R.string.classements), modifier = Modifier.padding(bottom = 90.dp)) {
         MKText(
             text = stringResource(R.string.rankings_hint),
             textColor = Colors.white66,
