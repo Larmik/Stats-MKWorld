@@ -128,10 +128,23 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 >
 > **Cellule `CurrentWarCell` restylée** (`ui/cells/CurrentWarCell.kt`) : alignée sur le style des cellules de résultat (`WarCell12p`) — carte `blackAlphaed` + bordure, pastille adversaire (avatar équipe ou tag), « vs … », score + écart — et affiche en sous-ligne le **nombre de courses restantes** (`12 − courses jouées`). En 24p, podium des 3 logos + score de l'hôte + courses restantes. Le « courses restantes » (cellule) et le « N courses jouées » du `callToAction` (bannière, côté Wars) sont complémentaires et cohérents (jouées + restantes = 12).
 
-### Pôle 3 — Stats (`StatsMenuScreen`, mode `STATS`)
-Sélecteur 12/24 joueurs, puis les entrées de **statistiques détaillées** :
-1. **Statistiques individuelles** → `PlayerStats(currentPlayerId, is24p)`
-2. **Statistiques de l'équipe** → `TeamStats(is24p)`
+### Pôle 3 — Stats (`StatsFullScreen`)
+Écran riche à **onglets Individuelles / Équipe**, au niveau maquette (pôle Stats du prototype UX). **12p uniquement** pour l'instant : le sélecteur 12 j / 24 j et le comparatif 12/24 sont **temporairement retirés** (réintégration prévue au ticket #37).
+
+- **En-tête** : **photo de profil du joueur** (Individuelles) ou **logo de l'équipe** (Équipe) — vignette MKCentral, fallback initiales/`default_logo` — + nom + sous-titre (« Tes performances · N wars » / « Performances collectives · N wars »). Pas de nombre de courses.
+- **Bilan** : gros winrate + V/N/D + barre proportionnelle. Le décompte V/N/D **et** le nombre de wars sont calculés sur la portée affichée : en Individuelles seules les wars où le joueur a joué, en Équipe toutes les wars de l'équipe.
+- **Indicateurs** (Individuelles) / **Détails équipe** (Équipe) : **grille régulière** de tuiles **toutes de la même taille** (la place de la ligne de progression **et** du libellé sur 2 lignes est réservée en permanence → aucune tuile ne change de taille, ni au changement de fenêtre ni selon la longueur du libellé), avec **sélecteur all-time / 5 dernières / 10 dernières** qui recalcule la section, et **progression en %** (delta vs all-time, flèche ↗/↘ colorée) sur les métriques comparables. Distinction stricte : Individuelles = **points/war** + position ; Équipe = **écart de points** (le « Score moyen » affiche une différence, pas le total) + score moyen/manche. Tuiles communes : winrate, maps gagnées, régularité, marges V/D, **pénalités** (points perdus), shocks/war. **Position moyenne** et **pénalités** se mettent à jour avec la fenêtre. Valeurs en blanc, seuls les deltas colorés.
+- **Contribution** (Individuelles) : % des points de l'équipe + rang de contributeur.
+- **Forme & séries** (série en cours + forme sur 10 wars) puis **Records & séries** : **grille 3 lignes × 2 colonnes** avec son propre **sélecteur all-time / 5 / 10** — ligne 1 amplitude (**score min | score max**), ligne 2 (**record V | record D**), ligne 3 (**Top 6 | Bot 6**).
+- **Répartition des positions** : **sélecteur all-time / 5 / 10** (recalcul par fenêtre) + barres P1→P12 **ancrées sur une ligne de base commune** (labels alignés) + pied Top6/Bot6 avec %.
+- **Podium circuits** et **Podium adversaires** : Top 3 / Flop 3 (**chacun sur une ligne**, 3 cellules) + sélecteur **Occurrences (défaut) / Winrate / Score**. « Occurrences » classe par nombre de fois joué (circuit) / de confrontations (adversaire) — Top 3 = les plus joués, Flop 3 = les moins joués. Les deux podiums partagent la **même cellule**, qui reprend **toutes** les infos des cellules historiques (image, nom, puis *nb de fois joué / confrontations*, *winrate*, *score équipe ou position/score joueur*) ; seule l'image change (illustration de circuit vs logo d'équipe). Perspective joueur (score du joueur) en Individuelles, équipe (écart) en Équipe.
+- **Contributeurs** (Équipe) : **sélecteur all-time / 5 / 10** + mini-classement du roster recalculé par fenêtre (% de points + winrate, « toi » mis en évidence).
+
+> Les sections « Rythme de war », « Comparatif 12/24 » et l'accordéon « Indicateurs avancés » ont été retirés : leurs indicateurs sont surfacés ailleurs (régularité, marges, pénalités → Indicateurs ; amplitude, records, invaincu → Records), **sauf la position moyenne 1ʳᵉ/2ᵉ moitié de war** qui disparaît avec le rythme (choix produit assumé).
+
+> **`statsfull` — vue « pour un joueur donné »** : même rendu que l'onglet Individuelles, paramétré par `userId` (`StatsFullScreen(showTabs = false)`, route `Statsfull/{userId}`), avec barre de retour et sous-titre = nom du joueur. Mutualisé avec la vue Individuelles. Les **points d'entrée** (Classements onglet Joueurs #26, fiche joueur « Voir ses statistiques ») relèvent d'autres tickets ; la route réutilisable est déjà en place.
+>
+> **Saisons masquées** : les libellés de saison (« Record 8 · S2 25 ») dépendent du ticket #30 (non livré) → non affichés (« record 8 » sans suffixe).
 
 ### Pôle 4 — Classements (`StatsMenuScreen`, mode `RANKINGS`)
 Icône recherche (Annuaire) dans l'app bar, sélecteur 12/24 joueurs, puis les **classements** :
@@ -139,7 +152,7 @@ Icône recherche (Annuaire) dans l'app bar, sélecteur 12/24 joueurs, puis les *
 2. **Statistiques des adversaires** → classement `OpponentStats`. Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** : une équipe à plusieurs rosters apparaît en autant de lignes (chacune avec ses propres wars), affichées avec le **nom/tag du roster** et l'avatar de l'équipe. Un clic ouvre le détail filtré sur ce roster. Les wars anciennes sans granularité roster restent regroupées sous un item de niveau équipe.
 3. **Statistiques des circuits** → classement `MapStats(userId, teamId)`
 
-> `StatsMenuScreen` est un composant unique paramétré par `StatsMenuMode` (`STATS` / `RANKINGS`) qui sélectionne le sous-ensemble d'entrées affiché.
+> `StatsMenuScreen` ne sert plus qu'au pôle **Classements** (`StatsMenuMode.RANKINGS`) : le mode `STATS` (ancien menu à 2 boutons Individuelles/Équipe) a été remplacé par l'écran riche `StatsFullScreen` (ticket #25).
 
 ### Pôle 5 — Profil (`PlayerProfileScreen`)
 Profil du joueur courant (`me`), incluant déconnexion et accès debug. Le profil équipe et les profils d'autres joueurs restent atteignables depuis l'Annuaire, le profil d'équipe et les classements.

@@ -236,4 +236,35 @@
     <string name="wars_filter_losses">Défaites</string>
     <string name="mode_12_players">12 joueurs</string>
     <string name="mode_24_players">24 joueurs</string>
+    <!-- Pôle Stats — écran Statistiques (ticket #25) -->
+    <string name="stats_scope_individual">Individuelles</string>
+    <string name="stats_scope_team">Équipe</string>
+    <string name="stats_me_tag">toi</string>
+    <string name="stats_player_subtitle">Tes performances · %1$d wars</string>
+    <string name="stats_team_subtitle">Performances collectives · %1$d wars</string>
+    <string name="stats_balance_title">Ton bilan</string>
+    <string name="stats_results_link">Résultats →</string>
+    <string name="stats_player_indicators">Tes indicateurs</string>
+    <string name="stats_team_details">Détails équipe</string>
+    <string name="stats_points_per_war">Points / war</string>
+    <string name="stats_regularity">Régularité</string>
+    <string name="stats_contribution_title">Ta contribution</string>
+    <string name="stats_contribution_value">%1$d %% des points de l\'équipe</string>
+    <string name="stats_contribution_rank">%1$dᵉ contributeur du roster</string>
+    <string name="stats_player_form_title">Ta forme &amp; tes séries</string>
+    <string name="stats_team_form_title">Forme &amp; séries équipe</string>
+    <string name="stats_form_delta">Forme %1$s %% sur 10 wars</string>
+    <string name="stats_form_record">%1$s · record %2$d</string>
+    <string name="stats_distribution_title">Ta distribution de positions</string>
+    <string name="stats_contributors_title">Contributeurs</string>
+    <string name="stats_points_share">%1$d %% des points</string>
+    <string name="stats_podium_top">Top 3</string>
+    <string name="stats_podium_flop">Flop 3</string>
+    <string name="stats_sort_winrate">Winrate</string>
+    <string name="stats_sort_score">Score</string>
+    <string name="stats_amplitude_min">Score min</string>
+    <string name="stats_amplitude_max">Score max</string>
+    <string name="stats_sort_occurrences">Occurrences</string>
+    <string name="times_played_short">Joué</string>
+    <string name="stats_no_data">Aucune donnée sur cette période</string>
 </resources>

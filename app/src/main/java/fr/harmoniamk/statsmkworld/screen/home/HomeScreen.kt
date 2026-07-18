@@ -25,6 +25,8 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileScreen
 import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
+import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
+import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuMode
 import fr.harmoniamk.statsmkworld.screen.stats.menu.StatsMenuScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
@@ -127,10 +129,17 @@ fun HomeScreen(
                     )
                 }
                 composable(route = "Home/Stats") {
-                    StatsMenuScreen(
-                        mode = StatsMenuMode.STATS,
-                        onClick = onStats,
-                        onRanking = onRanking
+                    // Pôle Stats (ticket #25) : écran riche à onglets Individuelles /
+                    // Équipe pour le joueur courant (« mes stats »). userId = null →
+                    // le VM résout le joueur courant.
+                    StatsFullScreen(
+                        viewModel = hiltViewModel(
+                            key = "me-stats",
+                            creationCallback = { factory: StatsFullViewModel.Factory ->
+                                factory.create(userId = null, showTabs = true)
+                            }
+                        ),
+                        onResults = { navController.navigate("Home/WarList") }
                     )
                 }
                 composable(route = "Home/Rankings") {

@@ -245,6 +245,13 @@ data class Stats(
         mapsRankable.sortedByDescending { it.rankingScore }.take(3)
     val flopMapsByScore: List<TrackStats> =
         mapsRankable.sortedBy { it.rankingScore }.take(3)
+    /** Top 3 / Flop 3 des maps par NOMBRE de fois jouées (occurrences). Le seuil
+     * MIN_RANKING_SAMPLE n'est PAS appliqué ici : « le moins joué » a du sens même
+     * sous le seuil, donc on classe sur toutes les maps rencontrées. */
+    val topMapsByCount: List<TrackStats> =
+        maps.sortedByDescending { it.totalPlayed }.take(3)
+    val flopMapsByCount: List<TrackStats> =
+        maps.filter { it.totalPlayed > 0 }.sortedBy { it.totalPlayed }.take(3)
 
     // =====================================================================
     // Stats supplémentaires (bis) — Vagues 1/2/3
@@ -317,6 +324,34 @@ data class Stats(
                 total.toFloat() / list.size
             }
 
+        // Régularité (écart-type) & amplitude min/max des scores sur la fenêtre.
+        val windowScores = scores.map { it.score }
+        val stdDev = windowScores
+            .takeIf { it.size >= 2 }
+            ?.let { values ->
+                val mean = values.average()
+                Math.round(Math.sqrt(values.sumOf { (it - mean) * (it - mean) } / values.size)).toInt()
+            }
+        val scoreMin = windowScores.minOrNull()
+        val scoreMax = windowScores.maxOrNull()
+        // Marges moyennes de victoire / défaite sur la fenêtre (écart de score signé).
+        val margins = wars.map { it.scoreMargin(is24p = is24p) }
+        val winMargin = margins.filter { it > 0 }.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size }
+        val lossMargin = margins.filter { it < 0 }.takeIf { it.isNotEmpty() }?.let { m -> m.sumOf { kotlin.math.abs(it) } / m.size }
+        // Records de série (max) & comptes Top6/Bot6 sur la FENÊTRE (mêmes définitions
+        // que les champs all-time : longestStreak sur les wars fenêtrées, Top6 =
+        // teamScore de manche == 61, Bot6 == 21). `scores` est déjà trié chrono.
+        val windowWins = longestStreak(wars) { it > 0 }
+        val windowLosses = longestStreak(wars) { it < 0 }
+        val windowTracks = wars.flatMap { it.warTracks }
+        val windowTop6 = windowTracks.count { it.teamScore == 61 }
+        val windowBot6 = windowTracks.count { it.teamScore == 21 }
+        // Points perdus en pénalités par l'équipe hôte, sur la FENÊTRE (même définition
+        // que penaltyPointsLost all-time mais restreinte aux wars fenêtrées).
+        val windowPenalty = wars.sumOf { war ->
+            war.war.penalties.filter { it.teamId == war.war.teamHost }.sumOf { it.amount }
+        }
+
         val base = allTimeForm
         return FormStats(
             sampleSize = scores.size,
@@ -327,6 +362,16 @@ data class Stats(
             averageMapScore = avgMapScore,
             mapsWonPercent = mapsWonPct,
             shocksPerWar = shocksPerWar,
+            scoreStdDev = stdDev,
+            scoreMin = scoreMin,
+            scoreMax = scoreMax,
+            winMargin = winMargin,
+            lossMargin = lossMargin,
+            bestWinStreak = windowWins,
+            worstLossStreak = windowLosses,
+            top6Count = windowTop6,
+            bot6Count = windowBot6,
+            penaltyPointsLost = windowPenalty,
             // Deltas vs all-time : null pour l'all-time (base == null) et si un terme manque.
             winrateDelta = delta(winrate, base?.winrate),
             scoreDelta = delta(avgScore, base?.averageScore),
@@ -394,10 +439,18 @@ data class Stats(
      * relève du ticket UI dédié — ici on garantit seulement la justesse des
      * données produites.
      */
-    val positionDistribution: List<Pair<Int, Int>> = when (userId) {
+    val positionDistribution: List<Pair<Int, Int>> = positionDistributionFor(lastN = null)
+
+    /**
+     * Distribution des positions du joueur sur une FENÊTRE : [lastN] = null (all-time),
+     * 5 ou 10 dernières wars (triées chrono). Vide hors vue joueur. Alimente le
+     * sélecteur de fenêtre de la section « Répartition des positions » (ticket #36).
+     */
+    fun positionDistributionFor(lastN: Int?): List<Pair<Int, Int>> = when (userId) {
         null -> listOf()
         else -> {
-            val positions = chronologicalWars
+            val windowWars = lastN?.let { chronologicalWars.takeLast(it) } ?: chronologicalWars
+            val positions = windowWars
                 .flatMap { it.war.tracks }
                 .mapNotNull { track -> track.positions.firstOrNull { it.playerId == userId }?.position }
             val range = if (is24p) 1..24 else 1..12
@@ -452,6 +505,7 @@ data class Stats(
         war.war.penalties.filter { it.teamId == war.war.teamHost }.sumOf { it.amount }
     }
 
+
     companion object {
         // Seuil d'échantillon minimal pour figurer dans les classements
         // winrate/score (maps ET adversaires). Cf. DÉCISION PRODUIT du ticket.
@@ -479,6 +533,19 @@ data class FormStats(
     val averageMapScore: Int?,
     val mapsWonPercent: Int?,
     val shocksPerWar: Float?,
+    // Ticket #36 — régularité/amplitude/marges + records de série et Top6/Bot6
+    // déclinés par fenêtre (all-time/5/10) pour les sélecteurs de fenêtre des
+    // sections Indicateurs ET Records & séries de StatsFullScreen.
+    val scoreStdDev: Int? = null,
+    val scoreMin: Int? = null,
+    val scoreMax: Int? = null,
+    val winMargin: Int? = null,
+    val lossMargin: Int? = null,
+    val bestWinStreak: Int = 0,
+    val worstLossStreak: Int = 0,
+    val top6Count: Int = 0,
+    val bot6Count: Int = 0,
+    val penaltyPointsLost: Int = 0,
     val winrateDelta: Int?,
     val scoreDelta: Int?,
     val positionDelta: Int?,

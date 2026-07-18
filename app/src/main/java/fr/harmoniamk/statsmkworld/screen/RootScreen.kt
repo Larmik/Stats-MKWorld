@@ -34,6 +34,8 @@ import fr.harmoniamk.statsmkworld.screen.signup.SignupScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
+import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
+import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingViewModel
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileScreen
@@ -131,6 +133,27 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
                     navController.navigate("Home/WarDetails")
                 }
+            )
+        }
+
+        // statsfull (ticket #25) : stats détaillées d'un joueur donné (variante
+        // « pour un joueur donné » de la vue Individuelles, mutualisée). Atteinte
+        // depuis les Classements (#26) et la fiche joueur (Profil) — points d'entrée
+        // relevant d'autres tickets ; ici la route réutilisable est en place.
+        composable(
+            route = "Statsfull/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) {
+            val userId = it.arguments?.getString("userId")
+            StatsFullScreen(
+                viewModel = hiltViewModel(
+                    key = userId,
+                    creationCallback = { factory: StatsFullViewModel.Factory ->
+                        factory.create(userId = userId, showTabs = false)
+                    }
+                ),
+                onBack = { navController.popBackStack() },
+                onResults = { navController.navigate("Home/WarList") }
             )
         }
 
