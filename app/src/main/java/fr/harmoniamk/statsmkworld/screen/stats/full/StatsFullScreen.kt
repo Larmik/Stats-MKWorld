@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,6 +49,9 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
+import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
+import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 
 private val CardRadius = RoundedCornerShape(6.dp)
 
@@ -420,19 +422,6 @@ private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors) {
 // =====================================================================
 
 /**
- * Entrée de podium (circuit OU adversaire), **structure identique** : image + nom +
- * un tag optionnel + une liste de lignes de stats (libellé → valeur). Reprend toutes
- * les infos de `MapCell`/`TeamCell` (occurrences, winrate, score/position…).
- */
-private class PodiumEntry(
-    val labelRes: Int? = null,       // circuit : @StringRes du nom de map
-    val name: String? = null,        // adversaire : nom (roster > équipe)
-    val pictureRes: Int? = null,     // circuit : illustration @DrawableRes
-    val logo: String? = null,        // adversaire : chemin logo MKCentral
-    val stats: List<Pair<Int, String>> // lignes @StringRes(label) → valeur
-)
-
-/**
  * Podium circuits : sélecteur **occurrences / winrate / score**, Top 3 / Flop 3 chacun
  * sur **une ligne** de 3 `PodiumCell`. Chaque cellule reprend les infos de `MapCell`
  * (nb de fois joué, winrate, score équipe / position joueur). [userId] non-null ⇒
@@ -515,77 +504,6 @@ private fun OpponentsPodiumCard(
         Spacer(Modifier.height(8.dp))
         PodiumLabel(stringResource(R.string.stats_podium_flop))
         PodiumRow(flop.map(toEntry))
-    }
-}
-
-/**
- * Une ligne de podium : jusqu'à 3 `PodiumCell` à poids égal, hauteur uniforme
- * (`IntrinsicSize.Min`). Comble avec des `Spacer` si moins de 3 entrées.
- */
-@Composable
-private fun ColumnScope.PodiumRow(entries: List<PodiumEntry>) {
-    Row(
-        Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        entries.forEach { entry -> PodiumCell(entry) }
-        repeat(3 - entries.size) { Spacer(Modifier.weight(1f)) }
-    }
-}
-
-/**
- * Cellule podium, **structure identique circuit/adversaire** : image en haut
- * (illustration de map arrondie OU logo d'équipe en cercle, fallback `default_logo`),
- * nom (2 lignes max), puis les lignes de stats empilées (libellé + valeur en gras) —
- * reprenant toutes les infos de `MapCell`/`TeamCell`.
- */
-@Composable
-private fun RowScope.PodiumCell(entry: PodiumEntry) {
-    Column(
-        Modifier
-            .weight(1f)
-            .fillMaxHeight()
-            .background(Colors.white30, CardRadius)
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        when {
-            entry.pictureRes != null -> Image(
-                painter = painterResource(entry.pictureRes),
-                contentDescription = null,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(5.dp))
-            )
-            entry.logo == null -> Image(
-                painter = painterResource(R.drawable.default_logo),
-                contentDescription = null,
-                modifier = Modifier.size(40.dp).clip(CircleShape)
-            )
-            else -> AsyncImage(
-                model = "https://mkcentral.com${entry.logo}",
-                contentDescription = null,
-                modifier = Modifier.size(40.dp).clip(CircleShape)
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        MKText(
-            text = entry.labelRes?.let { stringResource(it) } ?: entry.name ?: "-",
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            fontSize = 11,
-            maxLines = 2,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(6.dp))
-        entry.stats.forEach { (labelRes, value) ->
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                MKText(text = stringResource(labelRes), textColor = Colors.white70, fontSize = 9, maxLines = 1)
-                MKText(text = value, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 10, maxLines = 1)
-            }
-        }
     }
 }
 
@@ -909,14 +827,3 @@ private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributo
         }
     }
 }
-
-// --- Helpers -----------------------------------------------------------------
-
-private fun initialsOf(name: String?): String = name
-    ?.trim()
-    ?.split(" ", "_", "-")
-    ?.filter { it.isNotBlank() }
-    ?.take(2)
-    ?.joinToString("") { it.first().uppercase() }
-    ?.takeIf { it.isNotEmpty() }
-    ?: "?"

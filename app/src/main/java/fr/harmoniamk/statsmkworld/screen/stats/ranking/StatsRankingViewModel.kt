@@ -3,24 +3,17 @@ package fr.harmoniamk.statsmkworld.screen.stats.ranking
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
-import fr.harmoniamk.statsmkworld.extension.pointsToPosition
-import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
-import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
-import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,17 +21,40 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
-enum class SortType(val label: String) {
-    OCCURENCES("Occurences"),
-    NAME("Nom"),
-    WINRATE("Winrate"),
-    AVERAGE("Score/Position"),
-}
+/**
+ * Onglets du pôle Classements (#26) : Joueurs / Adversaires / Circuits, présentés
+ * directement sur l'écran (plus de menu intermédiaire). L'ordre = ordre du prototype.
+ */
+enum class RankingTab { PLAYERS, OPPONENTS, TRACKS }
+
+/**
+ * Critères de tri : compteur (Wars · Occurrences · Fréquence selon l'onglet, **défaut**),
+ * Winrate, Score moyen. L'ordre de l'enum = ordre des chips affichés (COUNT en 1ʳᵉ
+ * position et sélectionné par défaut, tri décroissant par occurrences). L'ancien
+ * `SortType.NAME` (chip « Nom ») n'apparaît pas dans le prototype → non proposé.
+ */
+enum class SortType { COUNT, WINRATE, AVERAGE }
 
 sealed interface RankingItem {
 
+    /** Winrate en % (0 si aucune war jouée) — base du tri/insight winrate. */
+    val winratePercent: Int
+
+    /** Nombre de matchs de l'entrée (wars / confrontations / fois jouée) — base du seuil. */
+    val sampleSize: Int
+
     class PlayerRanking(val player: PlayerEntity, val stats: Stats) : RankingItem {
+
+        override val sampleSize: Int
+            get() = stats.warStats.warsPlayed
+
+        override val winratePercent: Int
+            get() = when (stats.warStats.warsPlayed) {
+                0 -> 0
+                else -> (stats.warStats.warsWon * 100) / stats.warStats.warsPlayed
+            }
 
         val averageLabel: String
             get() = stats.averagePoints.toString()
@@ -47,13 +63,13 @@ sealed interface RankingItem {
             get() = stats.warStats.warsPlayed.toString()
 
         val winrateLabel: String
-            get() = when (stats.warStats.warsPlayed) {
-                0 -> "0 %"
-                else -> "${(stats.warStats.warsWon * 100) / stats.warStats.warsPlayed} %"
-            }
+            get() = "$winratePercent %"
     }
 
     class OpponentRanking(val team: TeamEntity, val stats: Stats) : RankingItem {
+
+        override val sampleSize: Int
+            get() = stats.warStats.warsPlayed
 
         val averageLabel: String
             get() = stats.averagePointsLabel
@@ -64,205 +80,170 @@ sealed interface RankingItem {
         val winrate: Int
             get() = (stats.warStats.warsWon * 100) / stats.warStats.warsPlayed
 
-        val winrateLabel: String
+        override val winratePercent: Int
             get() = when (stats.warStats.warsPlayed) {
-                0 -> "0 %"
-                else -> "$winrate %"
+                0 -> 0
+                else -> winrate
             }
+
+        val winrateLabel: String
+            get() = "$winratePercent %"
     }
 
-    class TrackRanking(val stats: TrackStats) : RankingItem
+    class TrackRanking(val stats: TrackStats) : RankingItem {
+        override val sampleSize: Int
+            get() = stats.totalPlayed
+        override val winratePercent: Int
+            get() = stats.winRate ?: 0
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel(assistedFactory = StatsRankingViewModel.Factory::class)
-class StatsRankingViewModel @AssistedInject constructor(
-    @Assisted val type: StatsType?,
+@HiltViewModel
+class StatsRankingViewModel @Inject constructor(
     dataStoreRepository: DataStoreRepositoryInterface,
     private val statsRepository: StatsRepositoryInterface,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    @AssistedFactory
-    interface Factory {
-        fun create(type: StatsType?): StatsRankingViewModel
-    }
+    /**
+     * Section de l'onglet Joueurs : membres de l'équipe vs alliés (deux en-têtes). Un
+     * allié a `rosterId` non résolvable parmi les rosters mkworld de l'équipe (dans le
+     * cache `playersRankList`, clé `Pair(1, "Allies")`) ; un membre = `Pair(0, roster)`.
+     */
+    data class PlayerSection(val titleRes: Int, val players: List<RankingItem.PlayerRanking>)
 
     data class State(
-        val title: Int? = null,
-        val userId: String? = null,
-        val teamId: String? = null,
-        val list: List<RankingItem> = listOf(),
-        val playerList: Map<Pair<Int, String>, List<RankingItem.PlayerRanking>> = mapOf(),
-        val index: Int = 0,
+        val tab: RankingTab = RankingTab.PLAYERS,
+        val sort: SortType = SortType.COUNT,
+        val search: String = "",
+        // Onglet Joueurs : deux sections (Membres / Alliés), chacune triée.
+        val playerSections: List<PlayerSection> = listOf(),
+        // Onglets Adversaires / Circuits : entrées triées.
+        val opponents: List<RankingItem.OpponentRanking> = listOf(),
+        val tracks: List<RankingItem.TrackRanking> = listOf(),
+        // Filtre « occurrences minimum » (slider) : min = 1, max = plus haut compteur de
+        // l'onglet courant ; la liste ne montre que les entrées à sampleSize >= min.
+        val minOccurrences: Int = 1,
+        val maxOccurrences: Int = 1,
         val currentUserId: String? = null,
-        val is24PEnabled: Boolean? = null,
-        val sortItems: List<Pair<SortType, Boolean>> = listOf(
-            Pair(SortType.OCCURENCES, true),
-            Pair(SortType.NAME, false),
-            Pair(SortType.WINRATE, false),
-            Pair(SortType.AVERAGE, false)
-        )
+        val is24PEnabled: Boolean? = null
     )
 
     private val _state = MutableStateFlow(State())
     private var currentUser: MKCPlayer? = null
-
+    // Listes brutes (non filtrées/triées) mémorisées pour re-filtrer à chaque interaction.
+    // Joueurs : conservés PAR SECTION (membre = clé Pair(0,…), allié = Pair(1,"Allies")).
+    private var allMembers: List<RankingItem.PlayerRanking> = listOf()
+    private var allAllies: List<RankingItem.PlayerRanking> = listOf()
+    private var allOpponents: List<RankingItem.OpponentRanking> = listOf()
+    private var allTracks: List<RankingItem.TrackRanking> = listOf()
 
     val state = flowOf(Unit)
         .map {
-            val title = when (type) {
-                is StatsType.TeamStats -> R.string.statistiques_des_joueurs
-                is StatsType.OpponentStats -> R.string.statistiques_des_adversaires
-                else -> R.string.statistiques_des_circuits
-            }
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
-            when (type) {
-                is StatsType.TeamStats -> _state.value.copy(
-                    title = title,
-                    playerList = statsRepository.playersRankList
-                )
-
-                is StatsType.OpponentStats -> _state.value.copy(
-                    list = statsRepository.playerOpponentRankList,
-                    title = title,
-                    userId = type.userId,
-                    teamId = type.teamId,
-                    currentUserId = currentUser?.id.toString().takeIf { _state.value.index == 0 }
-                )
-
-                is StatsType.MapStats -> _state.value.copy(
-                    list = statsRepository.playerTrackRankList,
-                    title = title,
-                    userId = type.userId,
-                    teamId = type.teamId,
-                    currentUserId = currentUser?.id.toString().takeIf { _state.value.index == 0 }
-                )
-
-                else -> _state.value.copy(title = title)
-            }
-        }
-        .map {
             val is24p = dataStoreRepository.is24PEnabled.firstOrNull()
-            it.copy(is24PEnabled = is24p)
+            val playersByGroup = statsRepository.playersRankList
+                .mapValues { entry -> entry.value.filter { it.stats.warStats.warsPlayed > 0 } }
+            // Clé Pair.first : 0 = membre (rattaché à un roster mkworld), 1 = allié.
+            allMembers = playersByGroup.filterKeys { it.first == 0 }.values.flatten()
+            allAllies = playersByGroup.filterKeys { it.first == 1 }.values.flatten()
+            // Perspective ÉQUIPE pour adversaires/circuits (winrate global de l'équipe),
+            // conforme au prototype qui n'a pas de switch indiv/équipe.
+            allOpponents = statsRepository.opponentRankList.mapNotNull { it as? RankingItem.OpponentRanking }
+            allTracks = statsRepository.trackRankList.mapNotNull { it as? RankingItem.TrackRanking }
+            _state.value.copy(
+                currentUserId = currentUser?.id.toString(),
+                is24PEnabled = is24p
+            ).recompute(resetOccurrences = true)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
-    fun onIndivSwitch(index: Int) {
-        val isIndiv = index == 0
-        val list = when (type) {
-            is StatsType.OpponentStats ->
-                when (isIndiv) {
-                    true -> statsRepository.playerOpponentRankList
-                    else -> statsRepository.opponentRankList
-                }
+    fun onTabSelected(index: Int) {
+        val tab = RankingTab.entries.getOrElse(index) { RankingTab.PLAYERS }
+        // Nouvel onglet : tri par défaut (occurrences), recherche vide, curseur réinitialisé.
+        _state.value = _state.value.copy(tab = tab, sort = SortType.COUNT, search = "")
+            .recompute(resetOccurrences = true)
+    }
 
-            is StatsType.MapStats ->
-                when (isIndiv) {
-                    true -> statsRepository.playerTrackRankList
-                    else -> statsRepository.trackRankList
-                }
-
-            else -> listOf()
-        }
-        _state.value = state.value.copy(
-            list = list,
-            index = index,
-            sortItems = listOf(
-                Pair(SortType.OCCURENCES, true),
-                Pair(SortType.NAME, false),
-                Pair(SortType.WINRATE, false),
-                Pair(SortType.AVERAGE, false)
-            ),
-            currentUserId = currentUser?.id.toString().takeIf { isIndiv })
+    fun onSortSelected(index: Int) {
+        val sort = SortType.entries.getOrElse(index) { SortType.COUNT }
+        _state.value = _state.value.copy(sort = sort).recompute()
     }
 
     fun onSearch(search: String) {
-        val opponentList = when (state.value.currentUserId) {
-            null -> statsRepository.opponentRankList
-            else -> statsRepository.playerOpponentRankList
-        }.filter {
-            when (search.isEmpty()) {
-                true -> true
-                else -> (it as? RankingItem.OpponentRanking)?.team?.name?.lowercase()
-                    ?.contains(search.lowercase()) == true
-            }
-        }.takeIf { type is StatsType.OpponentStats }.orEmpty()
-
-        val mapList = when (state.value.currentUserId) {
-            null -> statsRepository.trackRankList
-            else -> statsRepository.playerTrackRankList
-        }.filter {
-            when (search.isEmpty()) {
-                true -> true
-                else -> (it as? RankingItem.TrackRanking)?.stats?.map?.joinToString { context.getString(it.label) }?.lowercase()?.contains(search.lowercase()) == true
-            }
-        }.takeIf { type is StatsType.MapStats }.orEmpty()
-
-        _state.value = state.value.copy(list = opponentList + mapList)
-        state.value.sortItems.singleOrNull { it.second }?.let {
-            onSortItemSelected(it.first)
-        }
-
+        _state.value = _state.value.copy(search = search).recompute()
     }
 
-    fun onSortItemSelected(sortItem: SortType) {
-        val updatedItems = state.value.sortItems.map {
-            when (it.first == sortItem) {
-                true -> it.copy(second = true)
-                else -> it.copy(second = false)
+    /** Valeur du curseur « occurrences minimum » (bornée [1, maxOccurrences]). */
+    fun onMinOccurrencesChange(value: Int) {
+        _state.value = _state.value.copy(
+            minOccurrences = value.coerceIn(1, _state.value.maxOccurrences)
+        ).recompute()
+    }
+
+    /**
+     * Applique recherche + filtre « occurrences min » + tri sur les listes brutes de
+     * l'onglet courant. [resetOccurrences] recalcule le max du curseur (plus haut
+     * compteur de l'onglet) et remet le min à 1 (changement d'onglet / (re)chargement).
+     */
+    private fun State.recompute(resetOccurrences: Boolean = false): State {
+        val query = search.trim().lowercase()
+        // Compteur max de l'onglet (borne haute du curseur) — sur les données non filtrées.
+        val newMax = when (tab) {
+            RankingTab.PLAYERS -> (allMembers + allAllies)
+            RankingTab.OPPONENTS -> allOpponents
+            RankingTab.TRACKS -> allTracks
+        }.maxOfOrNull { it.sampleSize }?.coerceAtLeast(1) ?: 1
+        val newMin = if (resetOccurrences) 1 else minOccurrences.coerceIn(1, newMax)
+
+        return when (tab) {
+            RankingTab.PLAYERS -> {
+                val sections = listOf(
+                    PlayerSection(R.string.rankings_section_members,
+                        allMembers.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints })),
+                    PlayerSection(R.string.rankings_section_allies,
+                        allAllies.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints }))
+                ).filter { it.players.isNotEmpty() }
+                copy(playerSections = sections, opponents = listOf(), tracks = listOf(),
+                    minOccurrences = newMin, maxOccurrences = newMax)
+            }
+
+            RankingTab.OPPONENTS -> copy(
+                playerSections = listOf(),
+                opponents = allOpponents.finalize(sort, query, newMin, { it.team.name }, { it.stats.averagePoints }),
+                tracks = listOf(),
+                minOccurrences = newMin, maxOccurrences = newMax
+            )
+
+            RankingTab.TRACKS -> copy(
+                playerSections = listOf(),
+                opponents = listOf(),
+                tracks = allTracks.finalize(sort, query, newMin, { it.trackName() }, { it.stats.teamScore ?: 0 }),
+                minOccurrences = newMin, maxOccurrences = newMax
+            )
+        }
+    }
+
+    /** Recherche (par [name]) + filtre occurrences (`sampleSize >= min`) + tri [sort]. */
+    private fun <T : RankingItem> List<T>.finalize(
+        sort: SortType,
+        query: String,
+        min: Int,
+        name: (T) -> String,
+        average: (T) -> Int
+    ): List<T> = this
+        .filter { query.isEmpty() || name(it).lowercase().contains(query) }
+        .filter { it.sampleSize >= min }
+        .let { list ->
+            when (sort) {
+                SortType.WINRATE -> list.sortedByDescending { it.winratePercent }
+                SortType.AVERAGE -> list.sortedByDescending(average)
+                SortType.COUNT -> list.sortedByDescending { it.sampleSize }
             }
         }
 
-        val updatedOpponents = when (sortItem) {
-            SortType.OCCURENCES -> state.value.list
-                .mapNotNull { it as? RankingItem.OpponentRanking }
-                .sortedByDescending { it.stats.warStats.warsPlayed }
-
-            SortType.NAME -> state.value.list
-                .mapNotNull { it as? RankingItem.OpponentRanking }
-                .sortedBy { it.team.name }
-            SortType.AVERAGE -> state.value.list
-                .mapNotNull { it as? RankingItem.OpponentRanking }
-                .sortedByDescending {
-                    when (state.value.currentUserId) {
-                        null -> it.stats.averagePoints
-                        else -> -(it.stats.averagePlayerPosition.firstOrNull() ?: 0)
-
-                } }
-
-            SortType.WINRATE -> state.value.list
-                .mapNotNull { it as? RankingItem.OpponentRanking }
-                .sortedByDescending { it.winrate }
-
-        }
-            .takeIf { type is StatsType.OpponentStats }
-            .orEmpty()
-
-        val updatedMaps = when (sortItem) {
-            SortType.OCCURENCES -> state.value.list
-                .mapNotNull { it as? RankingItem.TrackRanking }
-                .sortedByDescending { it.stats.totalPlayed }
-            SortType.NAME -> state.value.list
-                .mapNotNull { it as? RankingItem.TrackRanking }
-                .sortedBy { it.stats.map?.joinToString { context.getString(it.label) } ?: "" }
-            SortType.AVERAGE -> state.value.list
-                .mapNotNull { it as? RankingItem.TrackRanking }
-                .sortedByDescending {
-                    when (state.value.currentUserId) {
-                        null -> it.stats.teamScore?.trackScoreToDiff(state.value.is24PEnabled == true)?.substringAfter("+")
-                            ?.toIntOrNull() ?: 0
-                        else -> it.stats.playerScore?.pointsToPosition(state.value.is24PEnabled == true)?.firstOrNull()?.let { -it }
-                    }
-                }
-            SortType.WINRATE -> state.value.list
-                .mapNotNull { it as? RankingItem.TrackRanking }
-                .sortedByDescending { it.stats.winRate }
-        }
-
-            .takeIf { type is StatsType.MapStats }
-            .orEmpty()
-        _state.value = state.value.copy(sortItems = updatedItems, list = updatedOpponents + updatedMaps)
-    }
+    private fun RankingItem.TrackRanking.trackName(): String =
+        stats.map?.joinToString { context.getString(it.label) }.orEmpty()
 }

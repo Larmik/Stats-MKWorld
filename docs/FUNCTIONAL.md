@@ -146,13 +146,17 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 >
 > **Saisons masquées** : les libellés de saison (« Record 8 · S2 25 ») dépendent du ticket #30 (non livré) → non affichés (« record 8 » sans suffixe).
 
-### Pôle 4 — Classements (`StatsMenuScreen`, mode `RANKINGS`)
-Icône recherche (Annuaire) dans l'app bar, sélecteur 12/24 joueurs, puis les **classements** :
-1. **Statistiques des joueurs** → classement `TeamStats`
-2. **Statistiques des adversaires** → classement `OpponentStats`. Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** : une équipe à plusieurs rosters apparaît en autant de lignes (chacune avec ses propres wars), affichées avec le **nom/tag du roster** et l'avatar de l'équipe. Un clic ouvre le détail filtré sur ce roster. Les wars anciennes sans granularité roster restent regroupées sous un item de niveau équipe.
-3. **Statistiques des circuits** → classement `MapStats(userId, teamId)`
+### Pôle 4 — Classements (`StatsRankingScreen`)
+Écran **unique à sous-onglets** `Joueurs / Adversaires / Circuits` (`MKSegmentedSelector`), **sans menu intermédiaire** (l'ancien `StatsMenuScreen` a été supprimé). Titre **CLASSEMENTS**, hint « Palmarès triable. Touche une ligne pour ouvrir sa fiche statistique. » Chaque onglet propose : **recherche par nom**, **tri à 3 chips** (le chip d'**occurrences en 1ʳᵉ position et sélectionné par défaut**, tri décroissant), **curseur « occurrences minimum »**, et une **grille de cellules podium** (`PodiumCell` mutualisée avec le pôle Stats, **texte noir** sur cet écran clair) — avatar + nom + 3 lignes (occurrences / winrate / score moyen) :
+1. **Joueurs** — chips `Wars (défaut) / Winrate / Score moy.`. Liste **sectionnée** en **Membres** (joueurs de l'équipe) et **Alliés** (deux en-têtes). Cellule = pastille d'initiales + nom. Ligne → stats joueur (`StatsType.PlayerStats`).
+2. **Adversaires** — chips `Occurrences (défaut) / Winrate / Score moy.`. Champ « Rechercher une équipe ». Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** (nom/tag du roster, avatar de l'équipe) ; les wars legacy restent sous un item de niveau équipe. Ligne → détail adversaire (`StatsType.OpponentStats`).
+3. **Circuits** — chips `Fréquence (défaut) / Winrate / Score moy.`. Champ « Rechercher un circuit ». Cellule = illustration du circuit + nom. Ligne → détail circuit (`StatsType.MapStats`).
 
-> `StatsMenuScreen` ne sert plus qu'au pôle **Classements** (`StatsMenuMode.RANKINGS`) : le mode `STATS` (ancien menu à 2 boutons Individuelles/Équipe) a été remplacé par l'écran riche `StatsFullScreen` (ticket #25).
+**Curseur « occurrences minimum »** (`Slider`, état réactif) : filtre la liste sur le nombre de matchs (**wars** pour Joueurs/Adversaires, **maps jouées** pour Circuits). Min = 1, max = le plus haut compteur de l'onglet courant ; seules les entrées à `occurrences ≥ valeur` sont affichées. Ce filtre utilisateur **remplace, pour l'affichage**, l'ancien seuil fixe : il n'y a plus de carte « En bref » ni de relégation automatique — l'utilisateur choisit lui-même l'échantillon minimum. Le curseur est masqué s'il n'y a rien à filtrer (max ≤ 1). La constante `Stats.MIN_RANKING_SAMPLE` reste utilisée par les **podiums du pôle Stats** (calculs de biais), pas par cet écran.
+
+**Divergence assumée vs prototype** : la maquette prévoit une carte « En bref » (On domine / Bête noire ; Meilleur / Pire) sur les onglets Adversaires et Circuits. Elle a été **retirée sur décision explicite de l'utilisateur** (remplacée par le curseur d'occurrences), au profit d'un contrôle direct de l'échantillon.
+
+Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global de l'équipe** (le prototype n'a pas de switch individuel/équipe sur les Classements). Les fiches dédiées adversaire/circuit (#27) n'existant pas encore, la navigation réutilise l'existant (`StatsType.OpponentStats` / `MapStats` → écran `Stats`).
 
 ### Pôle 5 — Profil (`PlayerProfileScreen`)
 Profil du joueur courant (`me`), incluant déconnexion et accès debug. Le profil équipe et les profils d'autres joueurs restent atteignables depuis l'Annuaire, le profil d'équipe et les classements.
@@ -483,11 +487,14 @@ Bilan V/N/D, taux de victoire, score moyen/circuit, position moyenne, circuit le
 Mêmes agrégats au niveau équipe + détail par joueur.
 
 ### Classements (`StatsRankingScreen`)
-- **Adversaires / Circuits** : sélecteur **Individuel / Équipe**, recherche (nom d'équipe ou de circuit), tri. Grille de `TeamCell`/`MapCell`. Clic → écran de stats détaillé correspondant.
-- **Joueurs** : liste pré-calculée groupée par roster (en-têtes collants), grille de cellules joueur. Clic → stats individuelles.
-- **Tri** (`SortType`) : `OCCURENCES` (wars jouées, desc), `NAME` (nom, asc), `WINRATE` (taux, desc), `AVERAGE` (points/position moyens, desc).
+Écran unique à **sous-onglets** `Joueurs / Adversaires / Circuits` (`RankingTab`, `MKSegmentedSelector`), pilotés par un **état interne réactif** (pas de re-navigation, cf. rule 11). Chaque onglet : recherche par nom + tri à **3 chips** (`SortType`, `MKSegmentedSelector`) + **curseur d'occurrences minimum** (`Slider`). Cellules = `PodiumCell` **mutualisée** (extraite de `StatsFullScreen` vers `ui/stats/MKPodiumCell.kt`, param `contentColor` = **noir** ici, blanc côté Stats), rendue en lignes de 3.
+- **Joueurs** : liste **sectionnée** Membres / Alliés (`PlayerSection`), cellule avatar-initiales + nom, tri `Wars (défaut) / Winrate / Score moy.`. Clic → stats individuelles (`StatsType.PlayerStats`). La distinction membre/allié vient du cache `playersRankList` (clé `Pair(0, roster)` = membre, `Pair(1, "Allies")` = allié).
+- **Adversaires** : cellule logo d'équipe + nom (rule 12), tri `Occurrences (défaut) / Winrate / Score moy.`. Clic → `StatsType.OpponentStats`.
+- **Circuits** : cellule illustration + nom, tri `Fréquence (défaut) / Winrate / Score moy.`. Clic → `StatsType.MapStats`.
+- **Tri** (`SortType`, ordre = ordre des chips) : `COUNT` (**défaut**, nb de matchs, desc), `WINRATE` (desc), `AVERAGE` (score moyen, desc). L'ancien tri `NAME` (chip « Nom ») a été **retiré** (absent du prototype).
+- **Curseur d'occurrences** : `Slider` **continu** (piste sans graduations, pouce cercle plein blanc), `minOccurrences` (état réactif) filtre par `sampleSize ≥ min` ; `maxOccurrences` = plus haut compteur de l'onglet (borne haute). Remplace, à l'affichage, le seuil fixe ; **plus de carte « En bref »** (retrait décidé par l'utilisateur). `Stats.MIN_RANKING_SAMPLE` n'est plus utilisé par cet écran (il reste employé par les podiums du pôle Stats).
 
-Sources : les classements sont pré-calculés par `InitStatsWorker` et lus depuis le cache (`opponentRankList`/`playerOpponentRankList`, `trackRankList`/`playerTrackRankList`, `playersRankList`).
+Sources : les classements sont pré-calculés par `InitStatsWorker` et lus depuis le cache. Perspective **équipe** pour adversaires/circuits (`opponentRankList` / `trackRankList`, pas de switch individuel/équipe) ; `playersRankList` (groupé membre/allié) pour les joueurs.
 
 ---
 
