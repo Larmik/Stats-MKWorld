@@ -642,6 +642,19 @@ class MapStats(
         null -> "${playerPosition.firstOrNull()} - ${playerPosition.lastOrNull()}"
         else -> single.toString()
     }
+
+    /**
+     * Position moyenne de l'ÉQUIPE hôte sur ces manches : moyenne arithmétique de TOUTES
+     * les positions saisies (6 par manche), arrondie. À utiliser en vue équipe (userId
+     * null), où [averagePlayerPosLabel] n'a pas de sens (aucune position filtrée). `null`
+     * si aucune position. Position réelle (1..12), pas un score.
+     */
+    val teamAveragePosition: Int? = list
+        .flatMap { it.warTrack.track.positions }
+        .map { it.position }
+        .takeIf { it.isNotEmpty() }
+        ?.let { Math.round(it.average()).toInt() }
+
     // Tables d'équipe : pour chaque top/bottom N, on compte les manches où les N
     // meilleures/pires positions sont toutes dans le seuil. Une seule passe sur la liste.
     val topsTable = when {
@@ -676,5 +689,21 @@ class MapStats(
         it.warTrack.track.shocks?.filter { (isIndiv && it.playerId == userId) || !isIndiv }
             ?.sumOf { it.count }
     }.sum()
+
+    /**
+     * Répartition des positions (position → nombre d'occurrences) sur l'ensemble des
+     * manches de cette sélection. En vue **individuelle** (userId non-null) : positions
+     * DU JOUEUR ; sinon : toutes les positions de l'ÉQUIPE hôte (6 par manche). Étendue
+     * P1→P12 (12p) / P1→P24 (24p). Alimente l'histogramme mutualisé
+     * (`ui/stats/MKDistributionCard.kt`) des fiches détail Adversaire/Circuit (#27).
+     */
+    val positionDistribution: List<Pair<Int, Int>> = run {
+        val positions = list
+            .flatMap { it.warTrack.track.positions }
+            .filter { (isIndiv && it.playerId == userId) || !isIndiv }
+            .map { it.position }
+        val range = if (is24p) 1..24 else 1..12
+        range.map { pos -> pos to positions.count { it == pos } }
+    }
 
 }

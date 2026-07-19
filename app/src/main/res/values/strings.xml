@@ -286,4 +286,35 @@
     <string name="stats_sort_occurrences">Occurrences</string>
     <string name="times_played_short">Played</string>
     <string name="stats_no_data">No data for this period</string>
+    <!-- Opponent &amp; Track detail sheets (ticket #27) -->
+    <string name="opponent_detail_title">Opponent</string>
+    <string name="opponent_detail_header">%1$d matchups · last: %2$s</string>
+    <string name="opponent_detail_scope_indiv">Player</string>
+    <string name="opponent_detail_scope_team">Team</string>
+    <string name="opponent_detail_balance">Record against them</string>
+    <string name="opponent_detail_winrate_sub">winrate\nover %1$d wars</string>
+    <string name="opponent_detail_recent">Last 5 against them</string>
+    <string name="opponent_detail_streaks_scores">Streaks &amp; scores</string>
+    <string name="opponent_detail_current_streak">Current streak</string>
+    <string name="opponent_detail_record_wins">Best win streak</string>
+    <string name="opponent_detail_record_losses">Worst loss streak</string>
+    <string name="opponent_detail_avg_diff">Avg score diff</string>
+    <string name="opponent_detail_player_score">Your avg score</string>
+    <string name="opponent_detail_best_tracks">Tracks against them</string>
+    <string name="opponent_detail_history">War history</string>
+    <string name="map_detail_title">Track</string>
+    <string name="map_detail_header">played %1$d times</string>
+    <string name="map_detail_performance">Performance</string>
+    <string name="map_detail_winrate_sub">winrate\nover %1$d runs</string>
+    <string name="map_detail_scope_indiv">Player</string>
+    <string name="map_detail_scope_team">Team</string>
+    <string name="map_detail_avg_scores">Average scores</string>
+    <string name="map_detail_team_score">Team score</string>
+    <string name="map_detail_player_position">Your avg position</string>
+    <string name="map_detail_pilots">Pilots on this track</string>
+    <string name="stats_distribution_title_generic">Position distribution</string>
+    <string name="stats_top_bottom_title">Top / Bot</string>
+    <string name="stats_shocks_played">Shocks played</string>
+    <string name="stats_shocks_per_war">Shocks/War</string>
+    <string name="stats_see_full_ranking">See full ranking →</string>
 </resources>
