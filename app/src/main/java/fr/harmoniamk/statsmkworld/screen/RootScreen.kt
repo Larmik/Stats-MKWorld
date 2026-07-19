@@ -152,11 +152,11 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             route = "Opponent/{teamId}/{userId}",
             arguments = listOf(
                 navArgument("teamId") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType }
+                navArgument("userId") { type = NavType.StringType; nullable = true }
             )
         ) {
             val teamId = it.arguments?.getString("teamId").orEmpty()
-            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
+            val userId = it.arguments?.getString("userId")
             OpponentDetailScreen(
                 viewModel = hiltViewModel(
                     key = "$teamId-$userId",
@@ -178,11 +178,11 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             route = "Opponent/{teamId}/{userId}/Tracks",
             arguments = listOf(
                 navArgument("teamId") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType }
+                navArgument("userId") { type = NavType.StringType; nullable = true }
             )
         ) {
             val teamId = it.arguments?.getString("teamId").orEmpty()
-            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
+            val userId = it.arguments?.getString("userId")
             OpponentTracksRankingScreen(
                 viewModel = hiltViewModel(
                     key = "$teamId-$userId-tracks",
@@ -200,14 +200,14 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             route = "Map/{trackIndex}/{userId}",
             arguments = listOf(
                 navArgument("trackIndex") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType }
+                navArgument("userId") { type = NavType.StringType; nullable = true }
             )
         ) {
             val trackIndex = it.arguments?.getString("trackIndex")
                 ?.split(",")
                 ?.mapNotNull { part -> part.toIntOrNull() }
                 .orEmpty()
-            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
+            val userId = it.arguments?.getString("userId")
             val csv = trackIndex.joinToString(",")
             MapDetailScreen(
                 viewModel = hiltViewModel(
@@ -226,14 +226,14 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             route = "Map/{trackIndex}/{userId}/Pilots",
             arguments = listOf(
                 navArgument("trackIndex") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType }
+                navArgument("userId") { type = NavType.StringType; nullable = true }
             )
         ) {
             val trackIndex = it.arguments?.getString("trackIndex")
                 ?.split(",")
                 ?.mapNotNull { part -> part.toIntOrNull() }
                 .orEmpty()
-            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
+            val userId = it.arguments?.getString("userId")
             MapPilotsRankingScreen(
                 viewModel = hiltViewModel(
                     key = "${trackIndex.joinToString(",")}-$userId-pilots",
