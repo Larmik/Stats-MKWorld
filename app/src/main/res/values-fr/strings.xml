@@ -289,8 +289,8 @@
     <!-- Fiches détail Adversaire & Circuit (ticket #27) -->
     <string name="opponent_detail_title">Adversaire</string>
     <string name="opponent_detail_header">%1$d confrontations · dernier : %2$s</string>
-    <string name="opponent_detail_scope_indiv">Rencontrés par le joueur</string>
-    <string name="opponent_detail_scope_team">Rencontrés par l\'équipe</string>
+    <string name="opponent_detail_scope_indiv">Joueur</string>
+    <string name="opponent_detail_scope_team">Équipe</string>
     <string name="opponent_detail_balance">Bilan face à eux</string>
     <string name="opponent_detail_winrate_sub">de winrate\nsur %1$d wars</string>
     <string name="opponent_detail_recent">5 dernières face à eux</string>
@@ -305,8 +305,8 @@
     <string name="map_detail_cup">coupe</string>
     <string name="map_detail_performance">Performance</string>
     <string name="map_detail_winrate_sub">de winrate\nsur %1$d passages</string>
-    <string name="map_detail_scope_indiv">Joués par le joueur</string>
-    <string name="map_detail_scope_team">Joués par l\'équipe</string>
+    <string name="map_detail_scope_indiv">Joueur</string>
+    <string name="map_detail_scope_team">Équipe</string>
     <string name="map_detail_avg_scores">Scores moyens</string>
     <string name="map_detail_team_score">Score équipe</string>
     <string name="map_detail_your_score">Ton score</string>

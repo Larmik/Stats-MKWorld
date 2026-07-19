@@ -289,8 +289,8 @@
     <!-- Opponent &amp; Track detail sheets (ticket #27) -->
     <string name="opponent_detail_title">Opponent</string>
     <string name="opponent_detail_header">%1$d matchups · last: %2$s</string>
-    <string name="opponent_detail_scope_indiv">Faced by the player</string>
-    <string name="opponent_detail_scope_team">Faced by the team</string>
+    <string name="opponent_detail_scope_indiv">Player</string>
+    <string name="opponent_detail_scope_team">Team</string>
     <string name="opponent_detail_balance">Record against them</string>
     <string name="opponent_detail_winrate_sub">winrate\nover %1$d wars</string>
     <string name="opponent_detail_recent">Last 5 against them</string>
@@ -305,8 +305,8 @@
     <string name="map_detail_cup">cup</string>
     <string name="map_detail_performance">Performance</string>
     <string name="map_detail_winrate_sub">winrate\nover %1$d runs</string>
-    <string name="map_detail_scope_indiv">Played by the player</string>
-    <string name="map_detail_scope_team">Played by the team</string>
+    <string name="map_detail_scope_indiv">Player</string>
+    <string name="map_detail_scope_team">Team</string>
     <string name="map_detail_avg_scores">Average scores</string>
     <string name="map_detail_team_score">Team score</string>
     <string name="map_detail_your_score">Your score</string>
