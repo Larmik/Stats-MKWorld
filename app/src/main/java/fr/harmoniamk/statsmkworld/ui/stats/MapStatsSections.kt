@@ -13,9 +13,11 @@ import kotlinx.coroutines.FlowPreview
  * reprennent les mêmes calculs/rendus que l'écran Statistiques (`StatsFullScreen`) :
  *
  * 1. **Répartition des positions** — histogramme P1→P12 ([DistributionChart]) + pied
- *    Top6/Bot6 ([DistributionFooter]), sur les positions de l'ÉQUIPE ;
- * 2. **Top / Bot** — compteurs Top 2→6 et Bot 2→6 ([TopBottomColumns]) ;
- * 3. **Shocks** — nombre total d'objets éclair subis sur ces manches.
+ *    Top6/Bot6 ([DistributionFooter]), sur les positions du joueur (indiv) ou de l'ÉQUIPE ;
+ * 2. **Top / Bot** — compteurs Top 2→6 et Bot 2→6 ([TopBottomColumns]).
+ *
+ * (Les shocks ne sont PLUS une section autonome : ils sont intégrés à « Séries & scores »
+ * de la fiche adversaire / aux « Scores moyens » de la fiche circuit.)
  *
  * Chaque bloc est ajouté comme un `item` distinct (espacement vertical du LazyColumn hôte
  * conservé). Rien n'est ajouté si la sélection est vide.
@@ -34,21 +36,6 @@ fun LazyListScope.mapStatsDetailSections(mapStats: MapStats) {
     if (mapStats.topsTable.any { it.second > 0 } || mapStats.bottomsTable.any { it.second > 0 }) item {
         StatCard(title = stringResource(R.string.stats_top_bottom_title)) {
             TopBottomColumns(tops = mapStats.topsTable, bottoms = mapStats.bottomsTable)
-        }
-    }
-
-    // Shocks — masqué si aucun.
-    if (mapStats.shockCount > 0) item {
-        StatCard(title = stringResource(R.string.stats_shocks_title)) {
-            StatTiles(
-                tiles = listOf(
-                    StatTile(
-                        label = stringResource(R.string.stats_shocks_total),
-                        value = mapStats.shockCount.toString()
-                    )
-                ),
-                columns = 1
-            )
         }
     }
 }

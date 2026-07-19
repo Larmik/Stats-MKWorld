@@ -29,8 +29,8 @@ import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
-import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
 import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
+import fr.harmoniamk.statsmkworld.ui.stats.podiumRows
 
 /**
  * Pôle Classements (#26) — écran unique à sous-onglets Joueurs / Adversaires /
@@ -144,30 +144,8 @@ fun StatsRankingScreen(
 }
 
 // =====================================================================
-// Rendu des grilles (rows de 3 PodiumCell) + entrées PodiumEntry
+// Entrées PodiumEntry (grille `podiumRows` mutualisée — ui/stats/PodiumGrid.kt)
 // =====================================================================
-
-/**
- * Ajoute à un `LazyListScope` les lignes de 3 `PodiumCell` correspondant à [items].
- * [onClick] reçoit l'entrée métier cliquée (via son index dans la ligne). Texte en
- * **noir** ([contentColor]) sur le fond clair de l'écran Classements.
- */
-private fun <T> LazyListScope.podiumRows(
-    items: List<Pair<PodiumEntry, T>>,
-    onClick: (T) -> Unit
-) {
-    items.chunked(3).forEachIndexed { rowIndex, rowItems ->
-        item(key = "row-$rowIndex-${rowItems.firstOrNull()?.first?.name ?: rowItems.firstOrNull()?.first?.labelRes}") {
-            Column {
-                PodiumRow(
-                    entries = rowItems.map { it.first },
-                    contentColor = Colors.black,
-                    onClick = { indexInRow -> onClick(rowItems[indexInRow].second) }
-                )
-            }
-        }
-    }
-}
 
 private fun RankingItem.PlayerRanking.toPodiumEntry(): Pair<PodiumEntry, RankingItem.PlayerRanking> =
     PodiumEntry(

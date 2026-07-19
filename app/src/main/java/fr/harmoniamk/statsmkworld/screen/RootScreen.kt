@@ -38,8 +38,10 @@ import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.map.MapDetailScreen
 import fr.harmoniamk.statsmkworld.screen.stats.map.MapDetailViewModel
+import fr.harmoniamk.statsmkworld.screen.stats.map.MapPilotsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentDetailScreen
 import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentDetailViewModel
+import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentTracksRankingScreen
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileScreen
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
@@ -103,10 +105,11 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 },
                 onStats = { type ->
                     // Fiches dédiées Adversaire (#27) et Circuit (#27) ; les autres portées
-                    // (joueur/équipe) restent sur l'écran Stats générique.
+                    // (joueur/équipe) restent sur l'écran Stats générique. Le userId (nullable)
+                    // sème le mode initial Indiv/Équipe de la fiche (rule 11) ; « null » = Équipe.
                     when (type) {
-                        is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}")
-                        is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}")
+                        is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}/${type.userId ?: "null"}")
+                        is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}/${type.userId ?: "null"}")
                         else -> {
                             navController.currentBackStackEntry?.savedStateHandle?.set("type", type)
                             navController.navigate("Stats")
@@ -143,42 +146,99 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
         }
 
         // Fiche détail ADVERSAIRE (#27) : atteinte depuis les Classements/Résultats
-        // (et, à terme, la fiche équipe publique #28). teamId = identifiant d'opposant.
+        // (et, à terme, la fiche équipe publique #28). teamId = identifiant d'opposant ;
+        // userId (« null » = Équipe) sème le mode initial Indiv/Équipe.
         composable(
-            route = "Opponent/{teamId}",
-            arguments = listOf(navArgument("teamId") { type = NavType.StringType })
+            route = "Opponent/{teamId}/{userId}",
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.StringType }
+            )
         ) {
             val teamId = it.arguments?.getString("teamId").orEmpty()
+            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
             OpponentDetailScreen(
                 viewModel = hiltViewModel(
-                    key = teamId,
+                    key = "$teamId-$userId",
                     creationCallback = { factory: OpponentDetailViewModel.Factory ->
-                        factory.create(teamId = teamId)
+                        factory.create(teamId = teamId, initialUserId = userId)
                     }
                 ),
                 onBack = { navController.popBackStack() },
                 onWarDetailsClick = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
                     navController.navigate("Home/WarDetails")
-                }
+                },
+                onTracksRanking = { navController.navigate("Opponent/$teamId/$userId/Tracks") }
+            )
+        }
+
+        // Classement complet des circuits joués contre l'adversaire (« Voir en entier »).
+        composable(
+            route = "Opponent/{teamId}/{userId}/Tracks",
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) {
+            val teamId = it.arguments?.getString("teamId").orEmpty()
+            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
+            OpponentTracksRankingScreen(
+                viewModel = hiltViewModel(
+                    key = "$teamId-$userId-tracks",
+                    creationCallback = { factory: OpponentDetailViewModel.Factory ->
+                        factory.create(teamId = teamId, initialUserId = userId)
+                    }
+                ),
+                onBack = { navController.popBackStack() }
             )
         }
 
         // Fiche détail CIRCUIT (#27) : atteinte depuis les Classements. trackIndex =
-        // index(es) de map, sérialisés en CSV dans la route.
+        // index(es) de map (CSV) ; userId (« null » = Équipe) sème le mode initial.
         composable(
-            route = "Map/{trackIndex}",
-            arguments = listOf(navArgument("trackIndex") { type = NavType.StringType })
+            route = "Map/{trackIndex}/{userId}",
+            arguments = listOf(
+                navArgument("trackIndex") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.StringType }
+            )
         ) {
             val trackIndex = it.arguments?.getString("trackIndex")
                 ?.split(",")
                 ?.mapNotNull { part -> part.toIntOrNull() }
                 .orEmpty()
+            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
+            val csv = trackIndex.joinToString(",")
             MapDetailScreen(
                 viewModel = hiltViewModel(
-                    key = trackIndex.joinToString(","),
+                    key = "$csv-$userId",
                     creationCallback = { factory: MapDetailViewModel.Factory ->
-                        factory.create(trackIndex = trackIndex)
+                        factory.create(trackIndex = trackIndex, initialUserId = userId)
+                    }
+                ),
+                onBack = { navController.popBackStack() },
+                onPilotsRanking = { navController.navigate("Map/$csv/$userId/Pilots") }
+            )
+        }
+
+        // Classement complet des pilotes sur le circuit (« Voir en entier »).
+        composable(
+            route = "Map/{trackIndex}/{userId}/Pilots",
+            arguments = listOf(
+                navArgument("trackIndex") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) {
+            val trackIndex = it.arguments?.getString("trackIndex")
+                ?.split(",")
+                ?.mapNotNull { part -> part.toIntOrNull() }
+                .orEmpty()
+            val userId = it.arguments?.getString("userId")?.takeIf { id -> id != "null" }
+            MapPilotsRankingScreen(
+                viewModel = hiltViewModel(
+                    key = "${trackIndex.joinToString(",")}-$userId-pilots",
+                    creationCallback = { factory: MapDetailViewModel.Factory ->
+                        factory.create(trackIndex = trackIndex, initialUserId = userId)
                     }
                 ),
                 onBack = { navController.popBackStack() }

@@ -642,6 +642,19 @@ class MapStats(
         null -> "${playerPosition.firstOrNull()} - ${playerPosition.lastOrNull()}"
         else -> single.toString()
     }
+
+    /**
+     * Position moyenne de l'ÉQUIPE hôte sur ces manches : moyenne arithmétique de TOUTES
+     * les positions saisies (6 par manche), arrondie. À utiliser en vue équipe (userId
+     * null), où [averagePlayerPosLabel] n'a pas de sens (aucune position filtrée). `null`
+     * si aucune position. Position réelle (1..12), pas un score.
+     */
+    val teamAveragePosition: Int? = list
+        .flatMap { it.warTrack.track.positions }
+        .map { it.position }
+        .takeIf { it.isNotEmpty() }
+        ?.let { Math.round(it.average()).toInt() }
+
     // Tables d'équipe : pour chaque top/bottom N, on compte les manches où les N
     // meilleures/pires positions sont toutes dans le seuil. Une seule passe sur la liste.
     val topsTable = when {

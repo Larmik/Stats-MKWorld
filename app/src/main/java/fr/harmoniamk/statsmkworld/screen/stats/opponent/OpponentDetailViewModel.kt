@@ -7,6 +7,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
@@ -14,58 +15,73 @@ import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * Fiche détail d'un ADVERSAIRE (`opp` du prototype, pôle Classements #27). Vue au
- * périmètre ÉQUIPE (toutes les wars face à cet adversaire), 12p. Réutilise le calcul
- * [withFullStats] (V/N/D, séries, score moyen, meilleurs circuits) déjà partagé, et
- * dérive ici les éléments spécifiques à la fiche : dernière rencontre, 5 dernières
- * confrontations, score moyen pour/contre, meilleur circuit contre eux, historique.
+ * Fiche détail d'un ADVERSAIRE (`opp` du prototype, pôle Classements #27). Deux modes
+ * (rule 11, sélecteur `MKSegmentedSelector`) : **Équipe** (toutes les wars face à cet
+ * adversaire) et **Individuel** (les wars du joueur courant face à eux). Le mode est un
+ * état interne réactif ([isIndiv]) semé par [initialUserId] (non-null ⇒ Individuel) ; le
+ * toggle bascule les données SANS re-navigation (l'écran reste monté). 12p uniquement.
  *
- * Le [teamId] est un identifiant d'opposant (rosterId, ou teamId legacy). L'affichage
- * du nom/tag suit le roster ciblé et l'avatar l'équipe parente (rule 12).
+ * Le [teamId] est un identifiant d'opposant (rosterId, ou teamId legacy). L'affichage du
+ * nom/tag suit le roster ciblé et l'avatar l'équipe parente (rule 12).
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel(assistedFactory = OpponentDetailViewModel.Factory::class)
 class OpponentDetailViewModel @AssistedInject constructor(
     @Assisted val teamId: String,
-    private val databaseRepository: DatabaseRepositoryInterface
+    @Assisted("initialUserId") val initialUserId: String?,
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val dataStoreRepository: DataStoreRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
-        fun create(teamId: String): OpponentDetailViewModel
+        fun create(
+            teamId: String,
+            @Assisted("initialUserId") initialUserId: String?
+        ): OpponentDetailViewModel
     }
 
     data class State(
         val loading: Boolean = true,
+        // Mode courant : true = Individuel (joueur courant), false = Équipe.
+        val isIndiv: Boolean = false,
         val team: TeamEntity? = null,
         val stats: Stats? = null,
         // Date de la dernière confrontation (la plus récente).
         val lastMeeting: String? = null,
         // 5 dernières confrontations, plus récente en dernier (V=1 / N=0 / D=-1).
         val recentOutcomes: List<Int> = listOf(),
-        // Score moyen d'équipe pour / contre (points, pénalités incluses).
-        val averageScoreFor: Int = 0,
-        val averageScoreAgainst: Int = 0,
-        // Meilleur circuit face à eux (par winrate, seuil MIN_RANKING_SAMPLE).
-        val bestTrack: TrackStats? = null,
-        // Stats de manche (équipe) sur toutes les manches face à eux : Top/Bot 2→6,
-        // distribution des positions, shocks — mêmes calculs que MapStats (scopé adversaire).
+        // Différence de score moyenne (pour − contre) par war, pénalités incluses.
+        val averageScoreDiff: Int = 0,
+        // Nombre de shocks joués (par le joueur en indiv, par l'équipe sinon).
+        val shockCount: Int = 0,
+        // Top3 / Flop3 des circuits joués contre eux (par score moyen).
+        val topTracks: List<TrackStats> = listOf(),
+        val flopTracks: List<TrackStats> = listOf(),
+        // Classement complet des circuits joués contre eux (par score moyen, décroissant).
+        val allTracks: List<TrackStats> = listOf(),
+        // Stats de manche (Top/Bot 2→6, distribution) scopées à l'adversaire et au mode.
         val mapStats: MapStats? = null,
         // Historique des wars face à eux (plus récente en premier).
         val history: List<WarDetails> = listOf()
     )
 
-    private val _state = MutableStateFlow(State())
+    private val _state = MutableStateFlow(State(isIndiv = initialUserId != null))
+    // Mode réactif (rule 11) : semé par initialUserId, basculé par onModeChange.
+    private val isIndiv = MutableStateFlow(initialUserId != null)
 
     val state = databaseRepository.getWars()
         .map { wars ->
@@ -75,10 +91,23 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 .filter { it.teamOpponent.size == 1 }
                 .map { WarDetails(War(it)) }
         }
-        .flatMapLatest { wars ->
-            wars.withFullStats(databaseRepository, teamId = teamId).map { stats -> wars to stats }
+        .combine(isIndiv) { wars, indiv -> wars to indiv }
+        .flatMapLatest { (wars, indiv) ->
+            // userId courant seulement en mode Individuel.
+            val userId = when (indiv) {
+                true -> dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
+                else -> null
+            }
+            // En indiv, ne garder que les wars où le joueur courant a joué.
+            val scopedWars = when (userId) {
+                null -> wars
+                else -> wars.filter { it.war.hasPlayer(userId) }
+            }
+            scopedWars.withFullStats(databaseRepository, teamId = teamId, userId = userId)
+                .map { stats -> Triple(scopedWars, indiv, Pair(userId, stats)) }
         }
-        .map { (wars, stats) ->
+        .map { (wars, indiv, userIdAndStats) ->
+            val (userId, stats) = userIdAndStats
             // teamId peut être un rosterId : avatar de l'équipe parente, nom/tag du roster.
             val team = databaseRepository.getTeam(teamId)?.let { resolved ->
                 val roster = resolved.rosters.firstOrNull { it.id == teamId }
@@ -89,8 +118,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 )
             } ?: TeamEntity(id = teamId, name = "Équipe inconnue", tag = "???", color = null, logo = null)
 
-            // Wars triées chronologiquement (war.id = timestamp) pour dernière rencontre,
-            // 5 dernières et score pour/contre.
+            // Wars triées chronologiquement (war.id = timestamp).
             val chronological = wars.sortedBy { it.war.id }
             val recentOutcomes = chronological.takeLast(5).map { war ->
                 when {
@@ -99,33 +127,43 @@ class OpponentDetailViewModel @AssistedInject constructor(
                     else -> 0
                 }
             }
-            val averageFor = chronological
-                .map { it.scoreHostWithPenalties }
-                .takeIf { it.isNotEmpty() }?.let { it.sum() / it.size } ?: 0
-            val averageAgainst = chronological
-                .map { it.scoreOpponentWithPenalties }
+            // Score moyen = DIFFÉRENCE (pour − contre) par war, pénalités incluses.
+            val averageDiff = chronological
+                .map { it.scoreHostWithPenalties - it.scoreOpponentWithPenalties }
                 .takeIf { it.isNotEmpty() }?.let { it.sum() / it.size } ?: 0
 
-            // Stats de manche (équipe) sur toutes les manches face à eux : mêmes calculs
-            // que MapStats, mais sur l'ensemble des circuits (Top/Bot 2→6, distribution, shocks).
+            // Stats de manche (équipe OU joueur selon le mode) sur toutes les manches face
+            // à eux : Top/Bot 2→6, distribution des positions, shocks joués.
             val mapDetails = chronological.flatMap { war ->
                 war.warTracks.map { track -> MapDetails(war = war, warTrack = track, position = null) }
             }
             val mapStats = mapDetails.takeIf { it.isNotEmpty() }
-                ?.let { MapStats(list = it, userId = null, is24p = false) }
+                ?.let { MapStats(list = it, userId = userId, is24p = false) }
 
             _state.value.copy(
                 loading = false,
+                isIndiv = indiv,
                 team = team,
                 stats = stats,
                 lastMeeting = chronological.lastOrNull()?.date,
                 recentOutcomes = recentOutcomes,
-                averageScoreFor = averageFor,
-                averageScoreAgainst = averageAgainst,
-                bestTrack = stats.bestMapByWinrate,
+                averageScoreDiff = averageDiff,
+                shockCount = mapStats?.shockCount ?: 0,
+                topTracks = stats.topMapsByScore,
+                flopTracks = stats.flopMapsByScore,
+                // Classement complet des circuits par score moyen (perso en indiv, équipe sinon).
+                allTracks = stats.maps.sortedByDescending { track ->
+                    (if (userId != null) track.playerScore else track.teamScore) ?: 0
+                },
                 mapStats = mapStats,
                 history = chronological.reversed()
             )
         }
+        .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+    /** Bascule Indiv/Équipe (rule 11) : met à jour l'état réactif, l'écran se recompose. */
+    fun onModeChange(indiv: Boolean) {
+        isIndiv.value = indiv
+    }
 }

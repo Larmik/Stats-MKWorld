@@ -1,7 +1,6 @@
 package fr.harmoniamk.statsmkworld.screen.stats.opponent
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,8 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,40 +28,45 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 import fr.harmoniamk.statsmkworld.ui.stats.BalanceCard
+import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
+import fr.harmoniamk.statsmkworld.ui.stats.PodiumSectionCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatTile
 import fr.harmoniamk.statsmkworld.ui.stats.StatTiles
 import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
+import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
+import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Fiche détail ADVERSAIRE (`opp` du prototype, pôle Classements #27). Sections, dans
- * l'ordre de la maquette :
- * 1. En-tête (logo/tag, nb de confrontations, dernière rencontre) ;
+ * Fiche détail ADVERSAIRE (`opp` du prototype, pôle Classements #27). Sélecteur
+ * Indiv/Équipe (rule 11 : état réactif du VM, l'écran reste monté). Sections :
+ * 1. Sélecteur Indiv/Équipe + en-tête (logo/tag, nb de confrontations, dernière rencontre) ;
  * 2. Bilan face à eux (winrate + V/N/D + barre) ;
  * 3. 5 dernières face à eux (pastilles V/N/D) ;
- * 4. Séries & scores (série en cours, record, score moyen pour/contre) ;
- * 5. Meilleur circuit contre eux ;
- * 6. Sections détaillées (répartition des positions, Top/Bot 2→6, shocks), scopées à
- *    l'adversaire et mutualisées avec l'écran Statistiques (rule 16) ;
+ * 4. Séries & scores (série en cours, record, différence de score moyenne, shocks joués) ;
+ * 5. Circuits contre eux (podium Top3/Flop3 par score moyen + « Voir le classement en entier ») ;
+ * 6. Sections détaillées (répartition des positions, Top/Bot 2→6), scopées à l'adversaire
+ *    et mutualisées avec l'écran Statistiques (rule 16) ;
  * 7. Historique des wars → WarDetailsScreen.
  *
- * Rendu pixel-perfect maquette (rules 13/15), cartes partagées ([StatCard]…), données
- * réelles uniquement.
+ * Rendu pixel-perfect maquette (rules 13/15), cartes/podiums partagés, données réelles.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
 fun OpponentDetailScreen(
     viewModel: OpponentDetailViewModel,
     onBack: () -> Unit,
-    onWarDetailsClick: (WarDetails) -> Unit
+    onWarDetailsClick: (WarDetails) -> Unit,
+    onTracksRanking: () -> Unit
 ) {
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -75,6 +77,16 @@ fun OpponentDetailScreen(
             else -> {
                 val team = state.team
                 val stats = state.stats
+                // Sélecteur Indiv/Équipe (rule 15 : composant partagé).
+                MKSegmentedSelector(
+                    items = listOf(
+                        stringResource(R.string.opponent_detail_scope_indiv),
+                        stringResource(R.string.opponent_detail_scope_team)
+                    ),
+                    page = if (state.isIndiv) 0 else 1,
+                    onClick = { index -> viewModel.onModeChange(index == 0) }
+                )
+                Spacer(Modifier.height(11.dp))
                 LazyColumn(
                     Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(11.dp)
@@ -134,45 +146,36 @@ fun OpponentDetailScreen(
                                             accent = Colors.green
                                         ),
                                         StatTile(
-                                            label = stringResource(R.string.opponent_detail_avg_for),
-                                            value = state.averageScoreFor.toString()
+                                            // Score moyen = DIFFÉRENCE (pour − contre), signée.
+                                            label = stringResource(R.string.opponent_detail_avg_diff),
+                                            value = with(state.averageScoreDiff) { if (this > 0) "+$this" else toString() },
+                                            accent = when {
+                                                state.averageScoreDiff > 0 -> Colors.green
+                                                state.averageScoreDiff < 0 -> Colors.red
+                                                else -> Colors.white
+                                            }
                                         ),
                                         StatTile(
-                                            label = stringResource(R.string.opponent_detail_avg_against),
-                                            value = state.averageScoreAgainst.toString()
+                                            // Shocks joués (par le joueur en indiv, par l'équipe sinon).
+                                            label = stringResource(R.string.stats_shocks_played),
+                                            value = state.shockCount.toString()
                                         )
                                     )
                                 )
                             }
                         }
                     }
-                    // 5. Meilleur circuit contre eux.
-                    state.bestTrack?.let { track ->
-                        track.map?.firstOrNull()?.let { map ->
-                            item {
-                                StatCard(title = stringResource(R.string.opponent_detail_best_track)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        Image(
-                                            painter = painterResource(map.picture),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(6.dp))
-                                        )
-                                        Column(Modifier.weight(1f)) {
-                                            MKText(text = stringResource(map.label), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start)
-                                            MKText(
-                                                text = stringResource(R.string.opponent_detail_best_track_sub, track.totalPlayed),
-                                                textColor = Colors.white66, fontSize = 12, textAlign = TextAlign.Start,
-                                                modifier = Modifier.padding(top = 3.dp)
-                                            )
-                                        }
-                                        MKText(text = "${track.winRate ?: 0}%", font = Fonts.Urbanist, textColor = Colors.green, fontSize = 18)
-                                    }
-                                }
-                            }
-                        }
+                    // 5. Circuits contre eux (podium Top3/Flop3 par score moyen) + voir en entier.
+                    if (state.topTracks.isNotEmpty() || state.flopTracks.isNotEmpty()) item {
+                        PodiumSectionCard(
+                            title = stringResource(R.string.opponent_detail_best_tracks),
+                            top = state.topTracks.map { it.toPodiumEntry(state.isIndiv) },
+                            flop = state.flopTracks.map { it.toPodiumEntry(state.isIndiv) },
+                            onSeeAll = onTracksRanking
+                        )
                     }
                     // 6. Sections détaillées mutualisées (mêmes calculs que StatsFullScreen,
-                    //    scopées à cet adversaire) : répartition des positions, Top/Bot 2→6, shocks.
+                    //    scopées à cet adversaire) : répartition des positions, Top/Bot 2→6.
                     state.mapStats?.let { mapStatsDetailSections(it) }
                     // 7. Historique des wars → WarDetailsScreen.
                     if (state.history.isNotEmpty()) {
@@ -233,4 +236,27 @@ private fun streakColor(streak: Int) = when {
     streak > 0 -> Colors.green
     streak < 0 -> Colors.red
     else -> Colors.white
+}
+
+/**
+ * Circuit → entrée de podium (illustration + nb joué + winrate + score). Score = écart
+ * d'équipe (`trackScoreToDiff`) en vue équipe, points perso en vue individuelle — même
+ * convention que le podium circuits de `StatsFullScreen`. Partagé avec le classement
+ * complet [OpponentTracksRankingScreen].
+ */
+internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
+    val map = map?.firstOrNull()
+    val scoreValue = when {
+        isIndiv -> playerScore?.toString() ?: "-"
+        else -> teamScore?.trackScoreToDiff(false) ?: "-"
+    }
+    return PodiumEntry(
+        labelRes = map?.label,
+        pictureRes = map?.picture,
+        stats = listOf(
+            R.string.times_played_short to totalPlayed.toString(),
+            R.string.form_winrate to "${winRate ?: 0}%",
+            R.string.form_score to scoreValue
+        )
+    )
 }
