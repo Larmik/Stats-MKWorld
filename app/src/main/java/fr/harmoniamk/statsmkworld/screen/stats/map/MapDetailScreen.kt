@@ -140,15 +140,16 @@ fun MapDetailScreen(
 }
 
 /**
- * Pilote → entrée de podium (initiales, score perso moyen + winrate). Partagé entre la
- * fiche (podium Top3/Flop3) et le classement complet [MapPilotsRankingScreen].
+ * Pilote → entrée de podium (initiales, **position moyenne** + winrate). Partagé entre la
+ * fiche (podium Top3/Flop3) et le classement complet [MapPilotsRankingScreen]. Le tri reste
+ * par score perso moyen (VM) ; c'est la **position moyenne** qui est AFFICHÉE (point 2).
  */
 internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
         name = player.name,
         initials = initialsOf(player.name),
         stats = listOf(
-            R.string.form_score to averageScore.toString(),
+            R.string.average_position_short to averagePosition.toString(),
             R.string.form_winrate to "$winrate%"
         )
     )

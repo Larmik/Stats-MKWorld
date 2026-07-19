@@ -1,11 +1,14 @@
 package fr.harmoniamk.statsmkworld.screen.stats.opponent
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,11 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -37,11 +43,10 @@ import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumSectionCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
-import fr.harmoniamk.statsmkworld.ui.stats.StatTile
-import fr.harmoniamk.statsmkworld.ui.stats.StatTiles
 import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.SortType
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -128,65 +133,19 @@ fun OpponentDetailScreen(
                             }
                         }
                     }
-                    // 4. Séries & scores.
-                    stats?.let { s ->
-                        item {
-                            // Shocks joués « N (ratio/war) » — décimale localisée (virgule en FR).
-                            val shocksValue = "${state.shockCount} (${
-                                String.format(java.util.Locale.getDefault(), "%.1f", state.shocksPerWar)
-                            })"
-                            // Score : mode Indiv = score moyen du JOUEUR ; mode Équipe = différence
-                            // moyenne signée.
-                            val scoreTile = when (state.isIndiv) {
-                                true -> StatTile(
-                                    label = stringResource(R.string.opponent_detail_player_score),
-                                    value = state.playerAverageScore.toString()
-                                )
-                                else -> StatTile(
-                                    label = stringResource(R.string.opponent_detail_avg_diff),
-                                    value = with(state.averageScoreDiff) { if (this > 0) "+$this" else toString() },
-                                    accent = when {
-                                        state.averageScoreDiff > 0 -> Colors.green
-                                        state.averageScoreDiff < 0 -> Colors.red
-                                        else -> Colors.white
-                                    }
-                                )
-                            }
-                            StatCard(title = stringResource(R.string.opponent_detail_streaks_scores)) {
-                                StatTiles(
-                                    tiles = listOf(
-                                        StatTile(
-                                            label = stringResource(R.string.opponent_detail_current_streak),
-                                            value = streakLabel(s.currentStreak),
-                                            accent = streakColor(s.currentStreak)
-                                        ),
-                                        StatTile(
-                                            label = stringResource(R.string.opponent_detail_record_wins),
-                                            value = "${s.bestWinStreak} ${stringResource(R.string.v)}",
-                                            accent = Colors.green
-                                        ),
-                                        StatTile(
-                                            label = stringResource(R.string.opponent_detail_record_losses),
-                                            value = "${s.worstLossStreak} ${stringResource(R.string.d)}",
-                                            accent = Colors.red
-                                        ),
-                                        scoreTile,
-                                        StatTile(
-                                            label = stringResource(R.string.stats_shocks_played),
-                                            value = shocksValue
-                                        )
-                                    )
-                                )
-                            }
-                        }
-                    }
-                    // 5. Circuits contre eux (podium Top3/Flop3 par score moyen) + voir en entier.
+                    // 4. Séries & scores — grille 3 lignes × 2 cellules.
+                    stats?.let { s -> item { StreaksScoresCard(state, s) } }
+                    // 5. Circuits contre eux (podium Top3/Flop3 trié) + sélecteur + voir en entier.
                     if (state.topTracks.isNotEmpty() || state.flopTracks.isNotEmpty()) item {
                         PodiumSectionCard(
                             title = stringResource(R.string.opponent_detail_best_tracks),
                             top = state.topTracks.map { it.toPodiumEntry(state.isIndiv) },
                             flop = state.flopTracks.map { it.toPodiumEntry(state.isIndiv) },
-                            onSeeAll = onTracksRanking
+                            onSeeAll = onTracksRanking,
+                            selector = {
+                                // Sélecteur de tri (sur carte sombre → onDark).
+                                TracksSortSelector(state.tracksSort, onDark = true, onSelect = viewModel::onTracksSortSelected)
+                            }
                         )
                     }
                     // 6. Sections détaillées mutualisées (mêmes calculs que StatsFullScreen,
@@ -251,6 +210,107 @@ private fun streakColor(streak: Int) = when {
     streak > 0 -> Colors.green
     streak < 0 -> Colors.red
     else -> Colors.white
+}
+
+/**
+ * Section « Séries & scores » — grille **3 lignes × 2 cellules** (points 3/4) :
+ * - L1 : Score/diff (mode-aware) · Série en cours
+ * - L2 : Record série de victoires · Record série de défaites
+ * - L3 : Shocks joués · Shocks/War — chacune avec l'**illustration shock** à gauche,
+ *   centrée verticalement (uniquement sur cette ligne).
+ */
+@Composable
+private fun StreaksScoresCard(state: OpponentDetailViewModel.State, stats: Stats) {
+    // Cellule score : Indiv = score moyen du joueur ; Équipe = différence moyenne signée.
+    val scoreValue: String
+    val scoreColor: Color
+    val scoreLabel: String
+    when (state.isIndiv) {
+        true -> {
+            scoreValue = state.playerAverageScore.toString()
+            scoreColor = Colors.white
+            scoreLabel = stringResource(R.string.opponent_detail_player_score)
+        }
+        else -> {
+            scoreValue = with(state.averageScoreDiff) { if (this > 0) "+$this" else toString() }
+            scoreColor = when {
+                state.averageScoreDiff > 0 -> Colors.green
+                state.averageScoreDiff < 0 -> Colors.red
+                else -> Colors.white
+            }
+            scoreLabel = stringResource(R.string.opponent_detail_avg_diff)
+        }
+    }
+    val ratioValue = String.format(java.util.Locale.getDefault(), "%.1f", state.shocksPerWar)
+
+    StatCard(title = stringResource(R.string.opponent_detail_streaks_scores)) {
+        // L1
+        StreakRow {
+            StreakCell(scoreLabel, scoreValue, scoreColor)
+            StreakCell(stringResource(R.string.opponent_detail_current_streak), streakLabel(stats.currentStreak), streakColor(stats.currentStreak))
+        }
+        Spacer(Modifier.height(8.dp))
+        // L2
+        StreakRow {
+            StreakCell(stringResource(R.string.opponent_detail_record_wins), "${stats.bestWinStreak} ${stringResource(R.string.v)}", Colors.green)
+            StreakCell(stringResource(R.string.opponent_detail_record_losses), "${stats.worstLossStreak} ${stringResource(R.string.d)}", Colors.red)
+        }
+        Spacer(Modifier.height(8.dp))
+        // L3 — cellules avec illustration shock à gauche.
+        StreakRow {
+            ShockCell(stringResource(R.string.stats_shocks_played), state.shockCount.toString())
+            ShockCell(stringResource(R.string.stats_shocks_per_war), ratioValue)
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.StreakRow(content: @Composable RowScope.() -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), content = content)
+}
+
+/** Cellule valeur + libellé (fond translucide), même style que StatTiles. */
+@Composable
+private fun RowScope.StreakCell(label: String, value: String, valueColor: Color) {
+    Column(Modifier.weight(1f).background(Colors.white30, RoundedCornerShape(6.dp)).padding(10.dp)) {
+        MKText(text = value, font = Fonts.Urbanist, textColor = valueColor, fontSize = 18, textAlign = TextAlign.Start, maxLines = 1)
+        MKText(text = label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, maxLines = 2, modifier = Modifier.padding(top = 6.dp))
+    }
+}
+
+/** Cellule « shock » : illustration éclair à gauche (centrée verticalement) + valeur/libellé. */
+@Composable
+private fun RowScope.ShockCell(label: String, value: String) {
+    Row(
+        Modifier.weight(1f).background(Colors.white30, RoundedCornerShape(6.dp)).padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Image(painter = painterResource(R.drawable.shock), contentDescription = null, modifier = Modifier.size(24.dp))
+        Column(Modifier.weight(1f)) {
+            MKText(text = value, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 18, textAlign = TextAlign.Start, maxLines = 1)
+            MKText(text = label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, maxLines = 2, modifier = Modifier.padding(top = 6.dp))
+        }
+    }
+}
+
+/**
+ * Sélecteur de tri des circuits (Occurrences / Winrate / Score moy.) — mêmes libellés que
+ * l'écran Classements (rule 15/16). [onDark] = sur carte sombre (fiche) ; false = fond clair
+ * (écran complet).
+ */
+@Composable
+internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int) -> Unit) {
+    MKSegmentedSelector(
+        items = listOf(
+            stringResource(R.string.rankings_sort_occurrences),
+            stringResource(R.string.rankings_sort_winrate),
+            stringResource(R.string.rankings_sort_score)
+        ),
+        page = sort.ordinal,
+        onDark = onDark,
+        onClick = onSelect
+    )
 }
 
 /**

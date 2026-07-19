@@ -1,6 +1,7 @@
 package fr.harmoniamk.statsmkworld.ui.stats
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,14 +23,16 @@ import fr.harmoniamk.statsmkworld.ui.MKText
  * classement en entier » ([onSeeAll]).
  *
  * [top] / [flop] = entrées déjà mappées en [PodiumEntry] (3 max chacune, l'appelant décide
- * du critère de tri). Rien n'est affiché si les deux sont vides.
+ * du critère de tri). [selector] optionnel (ex. sélecteur de tri) est rendu en tête du
+ * contenu. Rien n'est affiché si les deux listes sont vides.
  */
 @Composable
 fun PodiumSectionCard(
     title: String,
     top: List<PodiumEntry>,
     flop: List<PodiumEntry>,
-    onSeeAll: (() -> Unit)? = null
+    onSeeAll: (() -> Unit)? = null,
+    selector: (@Composable ColumnScope.() -> Unit)? = null
 ) {
     if (top.isEmpty() && flop.isEmpty()) return
     StatCard(
@@ -46,6 +49,10 @@ fun PodiumSectionCard(
             }
         }
     ) {
+        selector?.let {
+            it()
+            Spacer(Modifier.height(11.dp))
+        }
         PodiumSubLabel(stringResource(R.string.stats_podium_top))
         PodiumRow(top)
         if (flop.isNotEmpty()) {

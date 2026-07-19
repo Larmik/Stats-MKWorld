@@ -51,11 +51,13 @@ class MapDetailViewModel @AssistedInject constructor(
         ): MapDetailViewModel
     }
 
-    /** Un pilote de l'équipe classé sur ce circuit (score perso moyen + winrate). */
+    /** Un pilote de l'équipe classé sur ce circuit. */
     data class PilotRanking(
         val player: PlayerEntity,
-        // Score perso moyen (points) sur le circuit — critère de tri.
+        // Score perso moyen (points) sur le circuit — critère de TRI.
         val averageScore: Int,
+        // Position moyenne réelle (1..12) sur le circuit — valeur AFFICHÉE.
+        val averagePosition: Int,
         val winrate: Int
     )
 
@@ -158,9 +160,10 @@ class MapDetailViewModel @AssistedInject constructor(
                 // Exclure les alliés (rosterId sentinelle « -1 ») — membres uniquement.
                 if (player.rosterId == "-1") return@mapNotNull null
                 val averageScore = positions.sumOf { it.positionToPoints(false) } / positions.size
+                val averagePosition = positions.sum() / positions.size
                 val wonCount = positions.count { it.positionToPoints(false) > 6 }
                 val winrate = (wonCount * 100) / positions.size
-                PilotRanking(player = player, averageScore = averageScore, winrate = winrate)
+                PilotRanking(player = player, averageScore = averageScore, averagePosition = averagePosition, winrate = winrate)
             }
             .sortedByDescending { it.averageScore }
     }

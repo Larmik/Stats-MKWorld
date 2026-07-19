@@ -17,6 +17,7 @@ import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.SortType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,10 +73,12 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val shockCount: Int = 0,
         // Ratio shocks joués / war (affiché entre parenthèses).
         val shocksPerWar: Float = 0f,
-        // Top3 / Flop3 des circuits joués contre eux (par score moyen).
+        // Tri courant des circuits (Occurrences / Winrate / Score moy. — comme Classements).
+        val tracksSort: SortType = SortType.COUNT,
+        // Top3 / Flop3 des circuits joués contre eux (selon [tracksSort]).
         val topTracks: List<TrackStats> = listOf(),
         val flopTracks: List<TrackStats> = listOf(),
-        // Classement complet des circuits joués contre eux (par score moyen, décroissant).
+        // Classement complet des circuits joués contre eux (selon [tracksSort]).
         val allTracks: List<TrackStats> = listOf(),
         // Stats de manche (Top/Bot 2→6, distribution) scopées à l'adversaire et au mode.
         val mapStats: MapStats? = null,
@@ -86,6 +89,8 @@ class OpponentDetailViewModel @AssistedInject constructor(
     private val _state = MutableStateFlow(State(isIndiv = initialUserId != null))
     // Mode réactif (rule 11) : semé par initialUserId, basculé par onModeChange.
     private val isIndiv = MutableStateFlow(initialUserId != null)
+    // Tri réactif des circuits (Occurrences par défaut, comme l'écran Classements).
+    private val tracksSort = MutableStateFlow(SortType.COUNT)
 
     val state = databaseRepository.getWars()
         .map { wars ->
@@ -110,7 +115,9 @@ class OpponentDetailViewModel @AssistedInject constructor(
             scopedWars.withFullStats(databaseRepository, teamId = teamId, userId = userId)
                 .map { stats -> Triple(scopedWars, indiv, Pair(userId, stats)) }
         }
-        .map { (wars, indiv, userIdAndStats) ->
+        .combine(tracksSort) { data, sort -> data to sort }
+        .map { (data, sort) ->
+            val (wars, indiv, userIdAndStats) = data
             val (userId, stats) = userIdAndStats
             // teamId peut être un rosterId : avatar de l'équipe parente, nom/tag du roster.
             val team = databaseRepository.getTeam(teamId)?.let { resolved ->
@@ -149,6 +156,10 @@ class OpponentDetailViewModel @AssistedInject constructor(
             val warsPlayed = chronological.size.takeIf { it > 0 } ?: 1
             val shocksPerWar = shockCount.toFloat() / warsPlayed
 
+            // Circuits triés selon le sélecteur (Occurrences / Winrate / Score moy.), même
+            // logique que l'écran Classements (rule 16). Score = perso en indiv, équipe sinon.
+            val sortedTracks = stats.maps.sortedWith(trackComparator(sort, userId != null))
+
             _state.value.copy(
                 loading = false,
                 isIndiv = indiv,
@@ -161,12 +172,10 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 playerAverageScore = stats.averagePoints,
                 shockCount = shockCount,
                 shocksPerWar = shocksPerWar,
-                topTracks = stats.topMapsByScore,
-                flopTracks = stats.flopMapsByScore,
-                // Classement complet des circuits par score moyen (perso en indiv, équipe sinon).
-                allTracks = stats.maps.sortedByDescending { track ->
-                    (if (userId != null) track.playerScore else track.teamScore) ?: 0
-                },
+                tracksSort = sort,
+                topTracks = sortedTracks.take(3),
+                flopTracks = sortedTracks.takeLast(3).reversed(),
+                allTracks = sortedTracks,
                 mapStats = mapStats,
                 history = chronological.reversed()
             )
@@ -177,5 +186,21 @@ class OpponentDetailViewModel @AssistedInject constructor(
     /** Bascule Indiv/Équipe (rule 11) : met à jour l'état réactif, l'écran se recompose. */
     fun onModeChange(indiv: Boolean) {
         isIndiv.value = indiv
+    }
+
+    /** Change le tri des circuits (index du sélecteur = ordre de `SortType.entries`). */
+    fun onTracksSortSelected(index: Int) {
+        tracksSort.value = SortType.entries.getOrElse(index) { SortType.COUNT }
+    }
+
+    /**
+     * Comparateur de circuits selon le tri courant (décroissant) — aligné sur l'écran
+     * Classements : Occurrences = nb de fois joué, Winrate = winRate, Score = score perso
+     * (indiv) ou d'équipe (équipe).
+     */
+    private fun trackComparator(sort: SortType, isIndiv: Boolean): Comparator<TrackStats> = when (sort) {
+        SortType.WINRATE -> compareByDescending { it.winRate ?: 0 }
+        SortType.AVERAGE -> compareByDescending { (if (isIndiv) it.playerScore else it.teamScore) ?: 0 }
+        SortType.COUNT -> compareByDescending { it.totalPlayed }
     }
 }
