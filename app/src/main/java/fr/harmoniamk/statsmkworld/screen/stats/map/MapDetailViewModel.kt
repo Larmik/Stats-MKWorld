@@ -13,6 +13,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
 import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Maps
+import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -54,10 +55,12 @@ class MapDetailViewModel @AssistedInject constructor(
     /** Un pilote de l'équipe classé sur ce circuit. */
     data class PilotRanking(
         val player: PlayerEntity,
-        // Score perso moyen (points) sur le circuit — critère de TRI.
+        // Score perso moyen (points) sur le circuit — critère de TRI **et** valeur affichée.
         val averageScore: Int,
-        // Position moyenne réelle (1..12) sur le circuit — valeur AFFICHÉE.
+        // Position moyenne réelle (1..12) sur le circuit — info secondaire affichée.
         val averagePosition: Int,
+        // Nombre de manches courues par le pilote sur ce circuit (seuil MIN_RANKING_SAMPLE).
+        val played: Int,
         val winrate: Int
     )
 
@@ -143,9 +146,11 @@ class MapDetailViewModel @AssistedInject constructor(
 
     /**
      * Classement des pilotes de l'équipe sur ce circuit, **du meilleur au pire score perso
-     * moyen** (points 12p). Winrate perso = manches en top 6 (points > 6) / total. Nom
-     * résolu via le cache local des joueurs. **Alliés exclus** (rosterId « -1 ») : seuls les
-     * MEMBRES figurent. Sans seuil d'échantillon : tous les membres ayant couru le circuit.
+     * moyen** (points 12p) — critère de tri ET valeur affichée (transparence). Winrate perso
+     * = manches en top 6 (points > 6) / total. Nom résolu via le cache local des joueurs.
+     * **Alliés exclus** (rosterId « -1 ») : seuls les MEMBRES figurent. **Seuil**
+     * [Stats.MIN_RANKING_SAMPLE] : un pilote avec trop peu de manches sur ce circuit ne fausse
+     * pas le classement (aligné sur les autres rankings).
      */
     private suspend fun computePilots(details: List<MapDetails>): List<PilotRanking> {
         val positionsByPlayer = details
@@ -159,11 +164,19 @@ class MapDetailViewModel @AssistedInject constructor(
                 val player = players.firstOrNull { it.id == playerId } ?: return@mapNotNull null
                 // Exclure les alliés (rosterId sentinelle « -1 ») — membres uniquement.
                 if (player.rosterId == "-1") return@mapNotNull null
+                // Seuil d'échantillon : au moins MIN_RANKING_SAMPLE manches sur ce circuit.
+                if (positions.size < Stats.MIN_RANKING_SAMPLE) return@mapNotNull null
                 val averageScore = positions.sumOf { it.positionToPoints(false) } / positions.size
                 val averagePosition = positions.sum() / positions.size
                 val wonCount = positions.count { it.positionToPoints(false) > 6 }
                 val winrate = (wonCount * 100) / positions.size
-                PilotRanking(player = player, averageScore = averageScore, averagePosition = averagePosition, winrate = winrate)
+                PilotRanking(
+                    player = player,
+                    averageScore = averageScore,
+                    averagePosition = averagePosition,
+                    played = positions.size,
+                    winrate = winrate
+                )
             }
             .sortedByDescending { it.averageScore }
     }
