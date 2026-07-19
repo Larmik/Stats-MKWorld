@@ -34,6 +34,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatTile
 import fr.harmoniamk.statsmkworld.ui.stats.StatTiles
 import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
+import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
@@ -158,6 +159,9 @@ fun MapDetailScreen(
                             }
                         }
                     }
+                    // 6. Sections détaillées mutualisées (mêmes calculs que StatsFullScreen,
+                    //    scopées au circuit) : répartition des positions, Top/Bot 2→6, shocks.
+                    mapStatsDetailSections(mapStats)
                 }
             }
         }

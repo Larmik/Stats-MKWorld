@@ -39,7 +39,10 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatTile
 import fr.harmoniamk.statsmkworld.ui.stats.StatTiles
+import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 
 /**
  * Fiche détail ADVERSAIRE (`opp` du prototype, pôle Classements #27). Sections, dans
@@ -49,11 +52,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
  * 3. 5 dernières face à eux (pastilles V/N/D) ;
  * 4. Séries & scores (série en cours, record, score moyen pour/contre) ;
  * 5. Meilleur circuit contre eux ;
- * 6. Historique des wars → WarDetailsScreen.
+ * 6. Sections détaillées (répartition des positions, Top/Bot 2→6, shocks), scopées à
+ *    l'adversaire et mutualisées avec l'écran Statistiques (rule 16) ;
+ * 7. Historique des wars → WarDetailsScreen.
  *
  * Rendu pixel-perfect maquette (rules 13/15), cartes partagées ([StatCard]…), données
  * réelles uniquement.
  */
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
 fun OpponentDetailScreen(
     viewModel: OpponentDetailViewModel,
@@ -165,7 +171,10 @@ fun OpponentDetailScreen(
                             }
                         }
                     }
-                    // 6. Historique des wars → WarDetailsScreen.
+                    // 6. Sections détaillées mutualisées (mêmes calculs que StatsFullScreen,
+                    //    scopées à cet adversaire) : répartition des positions, Top/Bot 2→6, shocks.
+                    state.mapStats?.let { mapStatsDetailSections(it) }
+                    // 7. Historique des wars → WarDetailsScreen.
                     if (state.history.isNotEmpty()) {
                         item { SectionLabel(stringResource(R.string.opponent_detail_history)) }
                         items(state.history, key = { it.war.id }) { war ->

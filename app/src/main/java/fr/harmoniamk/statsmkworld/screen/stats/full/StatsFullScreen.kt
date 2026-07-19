@@ -49,6 +49,8 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.stats.DistributionChart
+import fr.harmoniamk.statsmkworld.ui.stats.DistributionFooter
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
@@ -651,60 +653,9 @@ private fun DistributionCard(stats: Stats, selectors: SectionSelectors) {
     if (distribution.none { it.second > 0 }) return
     StatCard(title = stringResource(R.string.stats_distribution_title)) {
         WindowSelector(selectors.distributionWindowIndex, selectors.onDistributionWindowChange)
+        // Chart/footer mutualisés (ui/stats/MKDistributionCard.kt) — rule 16.
         DistributionChart(distribution)
         DistributionFooter(distribution)
-    }
-}
-
-@Composable
-private fun ColumnScope.DistributionChart(distribution: List<Pair<Int, Int>>) {
-    val max = distribution.maxOf { it.second }.takeIf { it > 0 } ?: 1
-    Row(
-        Modifier.fillMaxWidth().padding(top = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        distribution.forEach { (position, count) ->
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                // Zone des barres à hauteur FIXE (116dp) : les barres poussent depuis
-                // une ligne de base commune (align Bottom) → les labels sous les barres
-                // s'alignent horizontalement (point 7 du ticket #36).
-                Box(Modifier.fillMaxWidth().height(116.dp), contentAlignment = Alignment.BottomCenter) {
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        MKText(text = count.toString(), font = Fonts.Urbanist, textColor = Colors.white70, fontSize = 8)
-                        Spacer(Modifier.height(2.dp))
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height((6 + 100 * (count.toFloat() / max)).dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(position.positionColor())
-                        )
-                    }
-                }
-                MKText(text = position.toString(), font = Fonts.MKPosition, textColor = Colors.white55, fontSize = 8, modifier = Modifier.padding(top = 4.dp))
-            }
-        }
-    }
-}
-
-/** Pied de la distribution : Top6 / Bot6 (compte + %), sur la fenêtre affichée. */
-@Composable
-private fun ColumnScope.DistributionFooter(distribution: List<Pair<Int, Int>>) {
-    val total = distribution.sumOf { it.second }.takeIf { it > 0 } ?: 1
-    val top6 = distribution.filter { it.first in 1..6 }.sumOf { it.second }
-    val bot6 = distribution.filter { it.first in 7..12 }.sumOf { it.second }
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        FooterStat(top6, "Top 6", (top6 * 100) / total, Colors.green)
-        FooterStat(bot6, "Bot 6", (bot6 * 100) / total, Colors.red)
-    }
-}
-
-@Composable
-private fun FooterStat(count: Int, label: String, percent: Int, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        MKText(text = count.toString(), font = Fonts.Urbanist, textColor = color, fontSize = 13)
-        MKText(text = "$label · $percent %", textColor = Colors.white70, fontSize = 11)
     }
 }
 

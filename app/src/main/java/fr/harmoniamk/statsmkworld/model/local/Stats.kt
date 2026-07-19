@@ -677,4 +677,20 @@ class MapStats(
             ?.sumOf { it.count }
     }.sum()
 
+    /**
+     * Répartition des positions (position → nombre d'occurrences) sur l'ensemble des
+     * manches de cette sélection. En vue **individuelle** (userId non-null) : positions
+     * DU JOUEUR ; sinon : toutes les positions de l'ÉQUIPE hôte (6 par manche). Étendue
+     * P1→P12 (12p) / P1→P24 (24p). Alimente l'histogramme mutualisé
+     * (`ui/stats/MKDistributionCard.kt`) des fiches détail Adversaire/Circuit (#27).
+     */
+    val positionDistribution: List<Pair<Int, Int>> = run {
+        val positions = list
+            .flatMap { it.warTrack.track.positions }
+            .filter { (isIndiv && it.playerId == userId) || !isIndiv }
+            .map { it.position }
+        val range = if (is24p) 1..24 else 1..12
+        range.map { pos -> pos to positions.count { it == pos } }
+    }
+
 }

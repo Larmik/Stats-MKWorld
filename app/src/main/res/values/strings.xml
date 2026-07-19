@@ -313,4 +313,8 @@
     <string name="map_detail_bot6">Bot 6 finishes</string>
     <string name="map_detail_best_pilot">Best pilot here</string>
     <string name="map_detail_pilot_score">personal score %1$d</string>
+    <string name="stats_distribution_title_generic">Position distribution</string>
+    <string name="stats_top_bottom_title">Top / Bot</string>
+    <string name="stats_shocks_title">Shocks</string>
+    <string name="stats_shocks_total">Shocks taken</string>
 </resources>

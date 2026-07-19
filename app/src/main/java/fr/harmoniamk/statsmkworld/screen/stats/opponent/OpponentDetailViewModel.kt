@@ -9,6 +9,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.local.MapDetails
+import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
@@ -56,6 +58,9 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val averageScoreAgainst: Int = 0,
         // Meilleur circuit face à eux (par winrate, seuil MIN_RANKING_SAMPLE).
         val bestTrack: TrackStats? = null,
+        // Stats de manche (équipe) sur toutes les manches face à eux : Top/Bot 2→6,
+        // distribution des positions, shocks — mêmes calculs que MapStats (scopé adversaire).
+        val mapStats: MapStats? = null,
         // Historique des wars face à eux (plus récente en premier).
         val history: List<WarDetails> = listOf()
     )
@@ -101,6 +106,14 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 .map { it.scoreOpponentWithPenalties }
                 .takeIf { it.isNotEmpty() }?.let { it.sum() / it.size } ?: 0
 
+            // Stats de manche (équipe) sur toutes les manches face à eux : mêmes calculs
+            // que MapStats, mais sur l'ensemble des circuits (Top/Bot 2→6, distribution, shocks).
+            val mapDetails = chronological.flatMap { war ->
+                war.warTracks.map { track -> MapDetails(war = war, warTrack = track, position = null) }
+            }
+            val mapStats = mapDetails.takeIf { it.isNotEmpty() }
+                ?.let { MapStats(list = it, userId = null, is24p = false) }
+
             _state.value.copy(
                 loading = false,
                 team = team,
@@ -110,6 +123,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 averageScoreFor = averageFor,
                 averageScoreAgainst = averageAgainst,
                 bestTrack = stats.bestMapByWinrate,
+                mapStats = mapStats,
                 history = chronological.reversed()
             )
         }
