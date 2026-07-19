@@ -157,7 +157,7 @@ fun WinTieLossBar(won: Int, tied: Int, loss: Int) {
 fun BalanceCard(title: String, winrate: Int, won: Int, tied: Int, loss: Int, subtitle: String) {
     StatCard(title = title) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-            MKText(text = "$winrate%", font = Fonts.Urbanist, textColor = Colors.green, fontSize = 30, textAlign = TextAlign.Start)
+            MKText(text = "$winrate%", font = Fonts.Urbanist, textColor = winrateColor(winrate), fontSize = 30, textAlign = TextAlign.Start)
             MKText(text = subtitle, textColor = Colors.white66, fontSize = 12, textAlign = TextAlign.End, maxLines = 2)
         }
         Spacer(Modifier.height(6.dp))
@@ -202,3 +202,13 @@ class StatTile(
     val accent: Color? = null,
     val borderColor: Color? = null
 )
+
+/**
+ * Couleur d'un pourcentage de winrate selon le seuil (mutualisé, fiches Adversaire &
+ * Circuit) : **rouge** si < 50 %, **blanc** si = 50 %, **vert** si > 50 %.
+ */
+fun winrateColor(winrate: Int): Color = when {
+    winrate > 50 -> Colors.green
+    winrate < 50 -> Colors.red
+    else -> Colors.white
+}

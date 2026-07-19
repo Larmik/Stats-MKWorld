@@ -64,11 +64,14 @@ class MapDetailViewModel @AssistedInject constructor(
         val isIndiv: Boolean = false,
         val maps: List<Maps> = listOf(),
         val mapStats: MapStats? = null,
-        // Position moyenne du joueur (indiv) OU de l'équipe (équipe) sur ce circuit.
-        val averagePositionLabel: String = "-",
-        // Score affiché (ton score perso en indiv, score équipe en équipe).
-        val averageScore: Int = 0,
-        // Classement des pilotes sur ce circuit (du meilleur au pire score moyen).
+        // « Scores moyens » — indépendants du mode (point 4) :
+        // score moyen de l'ÉQUIPE et position moyenne du JOUEUR courant sur ce circuit.
+        val teamScore: Int = 0,
+        val playerPositionLabel: String = "-",
+        // Nombre de shocks joués — DYNAMIQUE (suit le mode Indiv/Équipe).
+        val shockCount: Int = 0,
+        // Classement des pilotes sur ce circuit (du meilleur au pire score moyen), MEMBRES
+        // uniquement (alliés exclus).
         val pilots: List<PilotRanking> = listOf()
     )
 
@@ -86,10 +89,11 @@ class MapDetailViewModel @AssistedInject constructor(
         }
         .combine(isIndiv) { warDetails, indiv -> warDetails to indiv }
         .map { (warDetails, indiv) ->
-            val userId = when (indiv) {
-                true -> dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
-                else -> null
-            }
+            // Joueur courant : toujours résolu (nécessaire pour la position moyenne du
+            // JOUEUR affichée en permanence dans « Scores moyens », point 4). En mode
+            // Équipe, il ne scope pas les sections (userId de scope = null).
+            val currentUserId = dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
+            val scopeUserId = if (indiv) currentUserId else null
             // Manches jouées sur ce circuit (toutes les manches, pour le scope équipe et le
             // classement pilotes ; en indiv on ne garde que celles où le joueur a couru).
             val allTrackDetails = mutableListOf<MapDetails>()
@@ -98,33 +102,31 @@ class MapDetailViewModel @AssistedInject constructor(
                     allTrackDetails.add(MapDetails(war = war, warTrack = track, position = null))
                 }
             }
-            val scopedDetails = when (userId) {
+            val scopedDetails = when (scopeUserId) {
                 null -> allTrackDetails
-                else -> allTrackDetails.filter { it.warTrack.track.positions.any { pos -> pos.playerId == userId } }
+                else -> allTrackDetails.filter { it.warTrack.track.positions.any { pos -> pos.playerId == scopeUserId } }
             }
             if (allTrackDetails.isEmpty()) {
                 _state.value.copy(loading = false, isIndiv = indiv)
             } else {
-                val mapStats = MapStats(list = scopedDetails, userId = userId, is24p = false)
+                // Sections détaillées (distribution/Top-Bot) + shocks : scopées au mode.
+                val mapStats = MapStats(list = scopedDetails, userId = scopeUserId, is24p = false)
                 val maps = allTrackDetails.first().warTrack.track.index.map { Maps.entries[it.toInt()] }
-                // Score/position affichés selon le mode.
-                val averagePositionLabel = when (userId) {
-                    null -> mapStats.teamAveragePosition?.toString() ?: "-"
-                    else -> mapStats.averagePlayerPosLabel
-                }
-                val averageScore = when (userId) {
-                    null -> mapStats.teamScore
-                    else -> playerAverageScore(scopedDetails, userId)
-                }
+                // « Scores moyens » figés (point 4) : score d'ÉQUIPE + position du JOUEUR
+                // courant, calculés sur TOUTES les manches (indépendants du mode).
+                val teamMapStats = MapStats(list = allTrackDetails, userId = currentUserId, is24p = false)
                 _state.value.copy(
                     loading = false,
                     isIndiv = indiv,
                     maps = maps,
                     mapStats = mapStats,
-                    averagePositionLabel = averagePositionLabel,
-                    averageScore = averageScore,
-                    // Le classement des pilotes est TOUJOURS calculé sur toutes les manches
-                    // du circuit (indépendant du mode : c'est un classement par pilote).
+                    teamScore = teamMapStats.teamScore,
+                    playerPositionLabel = currentUserId
+                        ?.let { teamMapStats.averagePlayerPosLabel }
+                        ?: (teamMapStats.teamAveragePosition?.toString() ?: "-"),
+                    shockCount = mapStats.shockCount,
+                    // Classement des pilotes : toutes les manches, MEMBRES uniquement (alliés
+                    // exclus), indépendant du mode (classement par pilote).
                     pilots = computePilots(allTrackDetails)
                 )
             }
@@ -137,19 +139,11 @@ class MapDetailViewModel @AssistedInject constructor(
         isIndiv.value = indiv
     }
 
-    /** Score perso moyen (points 12p) du joueur sur les manches fournies. */
-    private fun playerAverageScore(details: List<MapDetails>, userId: String): Int {
-        val points = details
-            .mapNotNull { detail -> detail.warTrack.track.positions.firstOrNull { it.playerId == userId }?.position }
-            .map { it.positionToPoints(false) }
-        return points.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size } ?: 0
-    }
-
     /**
      * Classement des pilotes de l'équipe sur ce circuit, **du meilleur au pire score perso
      * moyen** (points 12p). Winrate perso = manches en top 6 (points > 6) / total. Nom
-     * résolu via le cache local des joueurs. Sans seuil d'échantillon : tous les pilotes
-     * ayant couru le circuit apparaissent (le classement complet est cherchable).
+     * résolu via le cache local des joueurs. **Alliés exclus** (rosterId « -1 ») : seuls les
+     * MEMBRES figurent. Sans seuil d'échantillon : tous les membres ayant couru le circuit.
      */
     private suspend fun computePilots(details: List<MapDetails>): List<PilotRanking> {
         val positionsByPlayer = details
@@ -161,6 +155,8 @@ class MapDetailViewModel @AssistedInject constructor(
         return positionsByPlayer
             .mapNotNull { (playerId, positions) ->
                 val player = players.firstOrNull { it.id == playerId } ?: return@mapNotNull null
+                // Exclure les alliés (rosterId sentinelle « -1 ») — membres uniquement.
+                if (player.rosterId == "-1") return@mapNotNull null
                 val averageScore = positions.sumOf { it.positionToPoints(false) } / positions.size
                 val wonCount = positions.count { it.positionToPoints(false) > 6 }
                 val winrate = (wonCount * 100) / positions.size

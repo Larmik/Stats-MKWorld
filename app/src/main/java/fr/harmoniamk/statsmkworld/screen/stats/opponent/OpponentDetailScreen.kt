@@ -131,6 +131,27 @@ fun OpponentDetailScreen(
                     // 4. Séries & scores.
                     stats?.let { s ->
                         item {
+                            // Shocks joués « N (ratio/war) » — décimale localisée (virgule en FR).
+                            val shocksValue = "${state.shockCount} (${
+                                String.format(java.util.Locale.getDefault(), "%.1f", state.shocksPerWar)
+                            })"
+                            // Score : mode Indiv = score moyen du JOUEUR ; mode Équipe = différence
+                            // moyenne signée.
+                            val scoreTile = when (state.isIndiv) {
+                                true -> StatTile(
+                                    label = stringResource(R.string.opponent_detail_player_score),
+                                    value = state.playerAverageScore.toString()
+                                )
+                                else -> StatTile(
+                                    label = stringResource(R.string.opponent_detail_avg_diff),
+                                    value = with(state.averageScoreDiff) { if (this > 0) "+$this" else toString() },
+                                    accent = when {
+                                        state.averageScoreDiff > 0 -> Colors.green
+                                        state.averageScoreDiff < 0 -> Colors.red
+                                        else -> Colors.white
+                                    }
+                                )
+                            }
                             StatCard(title = stringResource(R.string.opponent_detail_streaks_scores)) {
                                 StatTiles(
                                     tiles = listOf(
@@ -140,25 +161,19 @@ fun OpponentDetailScreen(
                                             accent = streakColor(s.currentStreak)
                                         ),
                                         StatTile(
-                                            // Record = plus longue série de victoires face à eux.
-                                            label = stringResource(R.string.opponent_detail_record),
+                                            label = stringResource(R.string.opponent_detail_record_wins),
                                             value = "${s.bestWinStreak} ${stringResource(R.string.v)}",
                                             accent = Colors.green
                                         ),
                                         StatTile(
-                                            // Score moyen = DIFFÉRENCE (pour − contre), signée.
-                                            label = stringResource(R.string.opponent_detail_avg_diff),
-                                            value = with(state.averageScoreDiff) { if (this > 0) "+$this" else toString() },
-                                            accent = when {
-                                                state.averageScoreDiff > 0 -> Colors.green
-                                                state.averageScoreDiff < 0 -> Colors.red
-                                                else -> Colors.white
-                                            }
+                                            label = stringResource(R.string.opponent_detail_record_losses),
+                                            value = "${s.worstLossStreak} ${stringResource(R.string.d)}",
+                                            accent = Colors.red
                                         ),
+                                        scoreTile,
                                         StatTile(
-                                            // Shocks joués (par le joueur en indiv, par l'équipe sinon).
                                             label = stringResource(R.string.stats_shocks_played),
-                                            value = state.shockCount.toString()
+                                            value = shocksValue
                                         )
                                     )
                                 )

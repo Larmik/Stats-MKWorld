@@ -64,10 +64,14 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val lastMeeting: String? = null,
         // 5 dernières confrontations, plus récente en dernier (V=1 / N=0 / D=-1).
         val recentOutcomes: List<Int> = listOf(),
-        // Différence de score moyenne (pour − contre) par war, pénalités incluses.
+        // Différence de score moyenne (pour − contre) par war, pénalités incluses (mode Équipe).
         val averageScoreDiff: Int = 0,
+        // Score moyen du JOUEUR courant contre cet adversaire (points) — mode Individuel.
+        val playerAverageScore: Int = 0,
         // Nombre de shocks joués (par le joueur en indiv, par l'équipe sinon).
         val shockCount: Int = 0,
+        // Ratio shocks joués / war (affiché entre parenthèses).
+        val shocksPerWar: Float = 0f,
         // Top3 / Flop3 des circuits joués contre eux (par score moyen).
         val topTracks: List<TrackStats> = listOf(),
         val flopTracks: List<TrackStats> = listOf(),
@@ -140,6 +144,11 @@ class OpponentDetailViewModel @AssistedInject constructor(
             val mapStats = mapDetails.takeIf { it.isNotEmpty() }
                 ?.let { MapStats(list = it, userId = userId, is24p = false) }
 
+            // Shocks joués (scopés au mode par MapStats) + ratio par war.
+            val shockCount = mapStats?.shockCount ?: 0
+            val warsPlayed = chronological.size.takeIf { it > 0 } ?: 1
+            val shocksPerWar = shockCount.toFloat() / warsPlayed
+
             _state.value.copy(
                 loading = false,
                 isIndiv = indiv,
@@ -148,7 +157,10 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 lastMeeting = chronological.lastOrNull()?.date,
                 recentOutcomes = recentOutcomes,
                 averageScoreDiff = averageDiff,
-                shockCount = mapStats?.shockCount ?: 0,
+                // En indiv, stats.averagePoints = score moyen du JOUEUR (withFullStats userId).
+                playerAverageScore = stats.averagePoints,
+                shockCount = shockCount,
+                shocksPerWar = shocksPerWar,
                 topTracks = stats.topMapsByScore,
                 flopTracks = stats.flopMapsByScore,
                 // Classement complet des circuits par score moyen (perso en indiv, équipe sinon).

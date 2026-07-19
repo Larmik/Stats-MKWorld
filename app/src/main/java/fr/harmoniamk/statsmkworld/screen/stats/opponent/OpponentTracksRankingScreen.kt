@@ -44,8 +44,9 @@ fun OpponentTracksRankingScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 podiumRows(
+                    // Texte des cellules en NOIR (point 9) sur le fond clair du BaseScreen.
                     items = state.allTracks.map { track -> track.toPodiumEntry(state.isIndiv) to track },
-                    contentColor = Colors.white
+                    contentColor = Colors.black
                 )
             }
         }
