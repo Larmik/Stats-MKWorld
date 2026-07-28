@@ -50,7 +50,16 @@ enum class ProfileRole(val labelRes: Int) {
     LEADER(R.string.leader),
     ADMIN(R.string.admin),
     MEMBER(R.string.membre),
-    ALLY(R.string.profile_ally_role)
+    ALLY(R.string.profile_ally_role);
+
+    companion object {
+        /** Rôle depuis la valeur du nœud Firebase `users` (2 = Leader, 1 = Admin, 0 = Membre). */
+        fun fromFirebaseRole(role: Int): ProfileRole = when (role) {
+            2 -> LEADER
+            1 -> ADMIN
+            else -> MEMBER
+        }
+    }
 }
 
 /**
@@ -80,25 +89,6 @@ fun RolePill(role: ProfileRole, text: String? = null) {
             font = Fonts.Urbanist,
             fontSize = 10,
             textColor = fg,
-            resizable = false
-        )
-    }
-}
-
-/** Pastille « toi » jaune (`.me`) suffixant le nom du joueur courant. */
-@Composable
-fun MeTag() {
-    Box(
-        Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(Colors.yellow)
-            .padding(horizontal = 5.dp, vertical = 1.dp)
-    ) {
-        MKText(
-            text = stringResource(R.string.profile_me).uppercase(),
-            font = Fonts.NunitoBD,
-            fontSize = 9,
-            textColor = Colors.black,
             resizable = false
         )
     }
@@ -223,8 +213,9 @@ fun ProfileInfoCard(infos: List<ProfileInfo>) {
 }
 
 /**
- * Ligne de membre / allié (`.lrow`) : pastille ronde d'initiales colorée, nom + rôle
- * (+ pastille « toi »), sous-texte optionnel (wars / roster externe), chevron.
+ * Ligne de membre / allié (`.lrow`) : pastille ronde (photo MKCentral [avatarUrl] si
+ * disponible, sinon [initials] sur fond [color]), nom + pastille de rôle, sous-texte
+ * optionnel (roster externe pour un allié), chevron.
  */
 @Composable
 fun ProfileMemberRow(
@@ -232,7 +223,7 @@ fun ProfileMemberRow(
     color: Color,
     name: String,
     role: ProfileRole? = null,
-    isMe: Boolean = false,
+    avatarUrl: String? = null,
     subtitle: String? = null,
     onClick: () -> Unit
 ) {
@@ -251,13 +242,15 @@ fun ProfileMemberRow(
             Modifier.size(34.dp).clip(CircleShape).background(color).border(2.dp, Colors.white.copy(alpha = 0.75f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            MKText(text = initials, font = Fonts.Urbanist, fontSize = 13, textColor = Colors.white, resizable = false)
+            when (avatarUrl) {
+                null -> MKText(text = initials, font = Fonts.Urbanist, fontSize = 13, textColor = Colors.white, resizable = false)
+                else -> AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.size(34.dp).clip(CircleShape))
+            }
         }
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 MKText(text = name, font = Fonts.NunitoBD, fontSize = 14, textColor = Colors.white, textAlign = TextAlign.Start, maxLines = 1)
                 role?.let { RolePill(it) }
-                if (isMe) MeTag()
             }
             subtitle?.let {
                 MKText(text = it, font = Fonts.Urbanist, fontSize = 11, textColor = Colors.white55, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp), maxLines = 1)
@@ -273,17 +266,18 @@ fun ProfileMemberRow(
 }
 
 /**
- * Ligne de réglage (`.setrow`) : titre (gras) + sous-titre optionnel, contenu de fin
- * (toggle / chevron). [danger] colore le titre en rouge (Déconnexion). Séparateur
- * inférieur optionnel ([divider]).
+ * Ligne de réglage (`.setrow`) : icône de tête (`.si`, carré 32dp arrondi translucide)
+ * + titre (gras) + sous-titre optionnel, contenu de fin (toggle / chevron). [danger]
+ * colore l'icône et le titre en rouge (Déconnexion). Séparateur inférieur optionnel
+ * ([divider]).
  *
- * Écart maquette documenté : l'icône de tête (`.si`) est omise — les vecteurs
- * correspondants (refresh/bell/rank/book/cog/cancel) ne sont pas présents dans le
- * projet ; on garde la structure titre/sous-titre/contenu de fin.
+ * @param leadingIcon drawable de l'icône `.si` (refresh/bell/rank/book/cog/logout de
+ *   la maquette).
  */
 @Composable
 fun ProfileSettingRow(
     title: String,
+    leadingIcon: Int,
     subtitle: String? = null,
     danger: Boolean = false,
     divider: Boolean = true,
@@ -296,6 +290,17 @@ fun ProfileSettingRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(11.dp)
         ) {
+            Box(
+                Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(Colors.white30),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(leadingIcon),
+                    contentDescription = null,
+                    tint = if (danger) Colors.red else Colors.white,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
             Column(Modifier.weight(1f)) {
                 MKText(
                     text = title,

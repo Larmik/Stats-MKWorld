@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,7 +34,6 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
-import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamPlayer
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
@@ -93,7 +93,7 @@ fun TeamProfileScreen(
         sheetState = bottomSheetState,
         onBack = onBack,
         sheetContent = {
-            BaseScreen(title = "Ajouter un ally") {
+            BaseScreen(title = stringResource(R.string.ajouter_un_ally)) {
                 MKTextField(
                     backgroundColor = Colors.blackAlphaed,
                     placeHolderRes = R.string.rechercher_un_joueur,
@@ -150,12 +150,13 @@ fun ColumnScope.TeamProfileContent(
     when (val team = state.value.team) {
         null -> CircularProgressIndicator()
         else -> {
-            val rosters = remember(team) { team.rosters.filter { it.game == "mkworld" } }
-            val members = remember(rosters) { rosters.flatMap { roster -> roster.players.map { roster.color to it } } }
+            val members = state.value.members
             val allies = state.value.allyList
 
             LazyColumn(
                 Modifier.fillMaxWidth().weight(1f),
+                // Marge basse pour ne pas être masqué par la bottombar du pôle (rule 10).
+                contentPadding = PaddingValues(bottom = 90.dp),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 // Carte identité équipe (pcard) : logo, nom, tag + création, bio, badge.
@@ -168,11 +169,11 @@ fun ColumnScope.TeamProfileContent(
                         badgeRes = R.string.profile_badge_team,
                         bio = team.description
                     ) {
-                        // Tag en pastille « membre » grise + année de création (maquette).
+                        // Tag en pastille « membre » grise + date de création (maquette).
                         RolePill(ProfileRole.MEMBER, text = "TAG ${team.tag}")
                         MKText(text = "·", fontSize = 13, textColor = Colors.white.copy(alpha = 0.72f), resizable = false)
                         MKText(
-                            text = stringResource(R.string.profile_info_created) + " " + Date(team.creationDate * 1000).displayedString("yyyy"),
+                            text = Date(team.creationDate * 1000).displayedString("dd/MM/yyyy"),
                             fontSize = 13,
                             textColor = Colors.white.copy(alpha = 0.72f),
                             resizable = false
@@ -180,20 +181,22 @@ fun ColumnScope.TeamProfileContent(
                     }
                 }
 
-                // Carte Informations : Membres, Alliés (si mon équipe), Créée en.
+                // Carte Informations : Membres, Alliés (si mon équipe), Créée le (date exacte).
                 item {
                     val infos = buildList {
                         add(ProfileInfo(stringResource(R.string.profile_info_members), members.size.toString()))
                         if (isMe) add(ProfileInfo(stringResource(R.string.profile_info_allies), allies.size.toString()))
-                        add(ProfileInfo(stringResource(R.string.profile_info_created), Date(team.creationDate * 1000).displayedString("yyyy")))
+                        add(ProfileInfo(stringResource(R.string.profile_info_created), Date(team.creationDate * 1000).displayedString("dd MMMM yyyy")))
                     }
                     ProfileInfoCard(infos)
                 }
 
-                // CTA « Voir nos confrontations » (fiche équipe publique uniquement).
-                onConfrontations?.let {
+                // CTA « Voir nos confrontations » (fiche équipe publique) : affiché
+                // uniquement s'il existe au moins une war contre cette équipe (#28).
+                onConfrontations?.takeIf { state.value.hasConfrontations }?.let {
                     item {
                         MKButton(
+                            modifier = Modifier.fillMaxWidth(),
                             style = MKButtonStyle.Gradient,
                             text = stringResource(R.string.profile_see_confrontations),
                             onClick = it
@@ -217,9 +220,11 @@ fun ColumnScope.TeamProfileContent(
                         when (subTab) {
                             1 -> {
                                 if (state.value.addAllyVisible) item {
+                                    // Bouton « Ajouter un ally » centré (retour utilisateur #28).
                                     MKButton(
+                                        modifier = Modifier.fillMaxWidth(),
                                         style = MKButtonStyle.Gradient,
-                                        text = stringResource(R.string.ajouter_en_tant_qu_ally),
+                                        text = stringResource(R.string.ajouter_un_ally),
                                         onClick = onAddAllyClick
                                     )
                                 }
@@ -248,23 +253,20 @@ fun ColumnScope.TeamProfileContent(
     }
 }
 
-/** Lignes de membres (`.lrow`) : pastille d'initiales colorée + nom + rôle + chevron. */
+/** Lignes de membres (`.lrow`) : avatar/initiales + nom + rôle réel + chevron. */
 private fun androidx.compose.foundation.lazy.LazyListScope.memberRows(
-    members: List<Pair<Long, MKCTeamPlayer>>,
+    members: List<TeamProfileViewModel.MemberInfo>,
     onPlayerClick: (String) -> Unit
 ) {
-    members.forEach { (rosterColor, player) ->
-        item(key = player.playerId) {
+    members.forEach { member ->
+        item(key = member.playerId) {
             ProfileMemberRow(
-                initials = initialsOf(player.name),
-                color = rosterColor.toInt().toTeamColor(),
-                name = player.name,
-                role = when {
-                    player.leader -> ProfileRole.LEADER
-                    player.manager -> ProfileRole.ADMIN
-                    else -> ProfileRole.MEMBER
-                },
-                onClick = { onPlayerClick(player.playerId) }
+                initials = initialsOf(member.name),
+                color = member.rosterColor.toInt().toTeamColor(),
+                name = member.name,
+                role = ProfileRole.fromFirebaseRole(member.role),
+                avatarUrl = member.avatarUrl,
+                onClick = { onPlayerClick(member.playerId) }
             )
         }
     }

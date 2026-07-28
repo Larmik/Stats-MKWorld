@@ -53,7 +53,8 @@ fun HomeScreen(
     onStats: (StatsType) -> Unit,
     onSearch: () -> Unit,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit
+    onDebug: () -> Unit,
+    onOnboarding: () -> Unit
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -157,7 +158,8 @@ fun HomeScreen(
                         onBack = backToWelcome,
                         onPlayerClick = onPlayerProfile,
                         onDisconnect = onDisconnect,
-                        onDebug = onDebug
+                        onDebug = onDebug,
+                        onOnboarding = onOnboarding
                     )
                 }
             }

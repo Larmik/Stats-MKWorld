@@ -329,18 +329,22 @@
     <string name="profile_info_discord">Discord</string>
     <string name="profile_info_join">Inscription</string>
     <string name="profile_info_role">Rôle</string>
-    <string name="profile_info_created">Créée en</string>
+    <string name="profile_info_created">Créée le</string>
     <string name="profile_info_members">Membres</string>
     <string name="profile_info_allies">Alliés</string>
     <string name="profile_members">Membres</string>
     <string name="profile_allies">Alliés</string>
-    <string name="profile_me">toi</string>
+    <string name="ajouter_un_ally">Ajouter un ally</string>
     <string name="profile_setting_refresh_sub">Joueur · équipe · alliés · adversaires · wars</string>
     <string name="reglages">Réglages</string>
     <string name="notifications">Notifications</string>
     <string name="multi_roster">Multi-roster</string>
     <string name="profile_setting_notif_sub">Alertes push</string>
     <string name="profile_setting_multiroster_sub">Stats sur tous les rosters (redémarrage requis)</string>
+    <string name="profile_setting_onboarding">Revoir l\'onboarding</string>
+    <string name="profile_setting_onboarding_sub">Tutoriel &amp; connexion Discord</string>
+    <string name="profile_setting_debug">Debug / Matrice</string>
+    <string name="profile_setting_debug_sub">Réservé staff</string>
     <string name="profile_ally_role">Ally</string>
     <string name="profile_ally_external">roster externe</string>
 </resources>

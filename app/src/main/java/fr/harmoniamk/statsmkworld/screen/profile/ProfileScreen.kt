@@ -56,7 +56,8 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onPlayerClick: (String) -> Unit,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit
+    onDebug: () -> Unit,
+    onOnboarding: () -> Unit
 ) {
     val playerViewModel: PlayerProfileViewModel = hiltViewModel(
         key = "me-player-profile",
@@ -84,7 +85,7 @@ fun ProfileScreen(
         sheetState = bottomSheetState,
         onBack = onBack,
         sheetContent = {
-            BaseScreen(title = "Ajouter un ally") {
+            BaseScreen(title = stringResource(R.string.ajouter_un_ally)) {
                 MKTextField(
                     backgroundColor = Colors.blackAlphaed,
                     placeHolderRes = R.string.rechercher_un_joueur,
@@ -124,7 +125,8 @@ fun ProfileScreen(
                 else -> PlayerProfileContent(
                     viewModel = playerViewModel,
                     onDisconnect = onDisconnect,
-                    onDebug = onDebug
+                    onDebug = onDebug,
+                    onOnboarding = onOnboarding
                 )
             }
         }

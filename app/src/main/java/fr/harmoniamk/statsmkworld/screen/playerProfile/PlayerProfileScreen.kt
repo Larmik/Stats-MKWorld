@@ -10,6 +10,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,14 +74,16 @@ fun PlayerProfileScreen(
     viewModel: PlayerProfileViewModel,
     onBack: () -> Unit,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit
+    onDebug: () -> Unit,
+    onOnboarding: (() -> Unit)? = null
 ) {
     BackHandler { onBack() }
     BaseScreen(title = stringResource(R.string.profil_joueur)) {
         PlayerProfileContent(
             viewModel = viewModel,
             onDisconnect = onDisconnect,
-            onDebug = onDebug
+            onDebug = onDebug,
+            onOnboarding = onOnboarding
         )
     }
 }
@@ -98,12 +101,16 @@ private fun roleFromRes(res: Int?): ProfileRole? = when (res) {
  * titre : posé dans le [ColumnScope] d'un `BaseScreen` par l'appelant. Mutualisé
  * entre [PlayerProfileScreen] (fiche autonome `pplayer`) et l'onglet Joueur du pôle
  * Profil (`ProfileScreen`, écran `profile`). Rendu fidèle à la maquette 5 pôles.
+ *
+ * @param onOnboarding réglage « Revoir l'onboarding » → écran Signup ; `null` ⇒ ligne
+ *   masquée (fiche d'un autre joueur, sans réglages).
  */
 @Composable
 fun ColumnScope.PlayerProfileContent(
     viewModel: PlayerProfileViewModel,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit
+    onDebug: () -> Unit,
+    onOnboarding: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -200,6 +207,8 @@ fun ColumnScope.PlayerProfileContent(
 
             LazyColumn(
                 Modifier.fillMaxWidth().weight(1f),
+                // Marge basse pour ne pas être masqué par la bottombar du pôle (rule 10).
+                contentPadding = PaddingValues(bottom = 90.dp),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 // Carte identité (pcard) : avatar, nom, pays + rôle, bio, badge MKCentral.
@@ -227,7 +236,7 @@ fun ColumnScope.PlayerProfileContent(
                     val infos = buildList {
                         roster?.let {
                             add(ProfileInfo(stringResource(R.string.profile_info_team), it.teamName, it.teamTag))
-                            add(ProfileInfo(stringResource(R.string.profile_info_member_since), Date(it.joinDate * 1000).displayedString("MMMM yyyy")))
+                            add(ProfileInfo(stringResource(R.string.profile_info_member_since), Date(it.joinDate * 1000).displayedString("dd/MM/yyyy")))
                         }
                         player.friendCodes?.firstOrNull { it.type == "switch" }?.fc?.let {
                             add(ProfileInfo(stringResource(R.string.profile_info_friend_code), it))
@@ -235,7 +244,7 @@ fun ColumnScope.PlayerProfileContent(
                         player.discord?.username?.let {
                             add(ProfileInfo(stringResource(R.string.profile_info_discord), "@$it"))
                         }
-                        add(ProfileInfo(stringResource(R.string.profile_info_join), Date(player.joinDate * 1000).displayedString("yyyy")))
+                        add(ProfileInfo(stringResource(R.string.profile_info_join), Date(player.joinDate * 1000).displayedString("dd/MM/yyyy")))
                         state.value.role?.let {
                             add(ProfileInfo(stringResource(R.string.profile_info_role), stringResource(it)))
                         }
@@ -274,17 +283,19 @@ fun ColumnScope.PlayerProfileContent(
                 // Réglages (profil « me » uniquement) : carte à lignes setrow.
                 if (state.value.showMenu) {
                     item {
+                        val showDebug = state.value.player?.id.toString() == ScoringConstants.DEBUG_PLAYER_ID || state.value.isMatrixMode
                         StatCard(title = stringResource(R.string.reglages)) {
                             ProfileSettingRow(
                                 title = stringResource(R.string.refresh),
+                                leadingIcon = R.drawable.ic_refresh,
                                 subtitle = stringResource(R.string.profile_setting_refresh_sub),
                                 onClick = viewModel::onRefresh
                             )
                             ProfileSettingRow(
                                 title = stringResource(R.string.notifications),
+                                leadingIcon = R.drawable.ic_bell,
                                 subtitle = stringResource(R.string.profile_setting_notif_sub),
-                                onClick = viewModel::onNotification,
-                                divider = state.value.hasMultiRoster
+                                onClick = viewModel::onNotification
                             ) {
                                 ProfileSwitch(
                                     checked = state.value.notificationsEnabled == true,
@@ -294,23 +305,33 @@ fun ColumnScope.PlayerProfileContent(
                             if (state.value.hasMultiRoster)
                                 ProfileSettingRow(
                                     title = stringResource(R.string.multi_roster),
+                                    leadingIcon = R.drawable.ic_podium,
                                     subtitle = stringResource(R.string.profile_setting_multiroster_sub),
-                                    onClick = viewModel::onMultiRoster,
-                                    divider = false
+                                    onClick = viewModel::onMultiRoster
                                 ) {
                                     ProfileSwitch(
                                         checked = state.value.multiRosterEnabled,
                                         onChange = { viewModel.onMultiRoster() }
                                     )
                                 }
-                            if (state.value.player?.id.toString() == ScoringConstants.DEBUG_PLAYER_ID || state.value.isMatrixMode)
+                            onOnboarding?.let { onboarding ->
                                 ProfileSettingRow(
-                                    title = "Debug / Matrice",
-                                    subtitle = "Réservé staff",
+                                    title = stringResource(R.string.profile_setting_onboarding),
+                                    leadingIcon = R.drawable.ic_book,
+                                    subtitle = stringResource(R.string.profile_setting_onboarding_sub),
+                                    onClick = onboarding
+                                )
+                            }
+                            if (showDebug)
+                                ProfileSettingRow(
+                                    title = stringResource(R.string.profile_setting_debug),
+                                    leadingIcon = R.drawable.ic_cog,
+                                    subtitle = stringResource(R.string.profile_setting_debug_sub),
                                     onClick = onDebug
                                 )
                             ProfileSettingRow(
                                 title = stringResource(R.string.logout),
+                                leadingIcon = R.drawable.ic_logout,
                                 danger = true,
                                 divider = false,
                                 onClick = viewModel::onLogoutClick

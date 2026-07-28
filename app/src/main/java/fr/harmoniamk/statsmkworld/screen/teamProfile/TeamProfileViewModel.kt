@@ -17,6 +17,9 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
@@ -44,11 +47,29 @@ class TeamProfileViewModel @AssistedInject constructor(
         fun create(id: String): TeamProfileViewModel
     }
 
+    /**
+     * Membre d'une équipe pour l'affichage (ligne `lrow` de la maquette) : identité,
+     * couleur du roster (pastille), [role] **réel** (valeur du nœud Firebase `users` :
+     * 2 = Leader, 1 = Admin, 0 = Membre — un allié vaut toujours 0), et [avatarUrl]
+     * (photo MKCentral déjà préfixée, ou `null` → fallback initiales).
+     */
+    data class MemberInfo(
+        val playerId: String,
+        val name: String,
+        val rosterColor: Long,
+        val role: Int,
+        val avatarUrl: String?
+    )
+
     data class State(
         val team: MKCTeam? = null,
+        val members: List<MemberInfo> = listOf(),
         val allyList: List<PlayerEntity> = listOf(),
         val playerList: List<MKCPlayer> = listOf(),
-        val addAllyVisible: Boolean = false
+        val addAllyVisible: Boolean = false,
+        // Vrai si au moins une war a été jouée contre cette équipe (fiche publique) —
+        // gate le CTA « Voir nos confrontations » (#28).
+        val hasConfrontations: Boolean = false
     )
 
     private val _state = MutableSharedFlow<State>()
@@ -88,18 +109,68 @@ class TeamProfileViewModel @AssistedInject constructor(
                 else -> mkCentralDataSource.getTeam(id).successResponse
             }
         }
-        .map {
+        .map { team ->
             val allyList = when (id) {
                 "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()
                 else -> listOf()
             }
             val buttonVisible = (firebaseRepository
-                .getUser(it.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
+                .getUser(team.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
                 ?.role ?: 0) > 0
-            State(team = it, addAllyVisible = buttonVisible, allyList = allyList)
+            // Fiche équipe publique : au moins une war jouée contre cet id (mécanisme
+            // existant WarEntity.hasTeam ; id peut être un teamId ou rosterId legacy).
+            val hasConfrontations = id != "me" &&
+                    databaseRepository.getWars().firstOrNull()
+                        ?.any { it.hasTeam(team.id.toString()) } == true
+            State(
+                team = team,
+                members = resolveMembers(team),
+                addAllyVisible = buttonVisible,
+                allyList = allyList,
+                hasConfrontations = hasConfrontations
+            )
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
+
+    /**
+     * Membres de l'équipe (rosters mkworld) pour l'affichage : rôle **réel** + avatar.
+     *
+     * - **Rôle** : pour mon équipe (`id == "me"`), la valeur du nœud Firebase `users`
+     *   (2 = Leader, 1 = Admin, 0 = Membre) — vraie source, comme la règle « changer
+     *   le rôle ». Pour une équipe publique (pas de nœud `users` côté MKCentral), on
+     *   retombe sur les indicateurs MKCentral leader/manager du roster.
+     * - **Avatar** : photo MKCentral du joueur (`getPlayer`), récupérée en parallèle,
+     *   préfixée par l'hôte MKCentral ; `null` si absente (fallback initiales).
+     */
+    private suspend fun resolveMembers(team: MKCTeam): List<MemberInfo> = coroutineScope {
+        val rosters = team.rosters.filter { it.game == "mkworld" }
+        val firebaseRoles = when (id) {
+            "me" -> firebaseRepository.getUsers(team.id.toString()).associate { it.id to it.role }
+            else -> emptyMap()
+        }
+        rosters.flatMap { roster -> roster.players.map { roster.color to it } }
+            .map { (rosterColor, player) ->
+                async {
+                    val role = firebaseRoles[player.playerId]
+                        ?: when {
+                            player.leader -> 2
+                            player.manager -> 1
+                            else -> 0
+                        }
+                    val avatar = mkCentralDataSource.getPlayer(player.playerId).successResponse
+                        ?.userSettings?.avatar?.let { "https://mkcentral.com$it" }
+                    MemberInfo(
+                        playerId = player.playerId,
+                        name = player.name,
+                        rosterColor = rosterColor,
+                        role = role,
+                        avatarUrl = avatar
+                    )
+                }
+            }
+            .awaitAll()
+    }
 
     fun addAlly(player: MKCPlayer) {
         dataStoreRepository.mkcTeam
