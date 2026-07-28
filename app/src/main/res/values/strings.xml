@@ -317,4 +317,9 @@
     <string name="stats_shocks_played">Shocks played</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
     <string name="stats_see_full_ranking">See full ranking →</string>
+    <string name="profile_tab_player">Player</string>
+    <string name="profile_tab_team">Team</string>
+    <string name="profile_see_my_stats">See my statistics</string>
+    <string name="profile_see_team_stats">See team statistics</string>
+    <string name="profile_see_confrontations">See our confrontations</string>
 </resources>

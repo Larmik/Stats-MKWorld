@@ -13,6 +13,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,19 +59,53 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.OnLifecycleEvent
 import java.util.Date
 
+/**
+ * Écran profil joueur autonome (fiche d'un joueur donné, atteinte depuis l'Annuaire /
+ * les résultats : route `Player/Profile/{id}`). Barre de titre propre + contenu.
+ * Le contenu réel est [PlayerProfileContent], mutualisé avec le pôle Profil
+ * (onglet Joueur du `ProfileScreen` fusionné, ticket #28) qui l'affiche sans barre
+ * de titre propre.
+ */
 @Composable
 fun PlayerProfileScreen(
     viewModel: PlayerProfileViewModel,
     onBack: () -> Unit,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit
+    onDebug: () -> Unit,
+    onStats: (() -> Unit)? = null
+) {
+    BackHandler { onBack() }
+    BaseScreen(title = stringResource(R.string.profil_joueur)) {
+        PlayerProfileContent(
+            viewModel = viewModel,
+            onDisconnect = onDisconnect,
+            onDebug = onDebug,
+            onStats = onStats
+        )
+    }
+}
+
+/**
+ * Contenu du profil joueur (avatar, identité, infos, équipe, réglages, CTA stats),
+ * sans barre de titre : posé dans le [ColumnScope] d'un `BaseScreen` par l'appelant.
+ * Mutualisé entre [PlayerProfileScreen] (fiche autonome) et l'onglet Joueur du pôle
+ * Profil (`ProfileScreen`).
+ *
+ * @param onStats CTA « Voir mes statistiques » (uniquement le profil « me » du pôle
+ *   Profil, cf. #28) ; `null` ⇒ CTA masqué (fiche d'un autre joueur via l'Annuaire).
+ */
+@Composable
+fun ColumnScope.PlayerProfileContent(
+    viewModel: PlayerProfileViewModel,
+    onDisconnect: () -> Unit,
+    onDebug: () -> Unit,
+    onStats: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsState()
     val context = LocalContext.current
     val activity = context.getActivity() as? MainActivity
     val showPopup = remember { mutableStateOf(false) }
     val showHelpPopup = remember { mutableStateOf(false) }
-    BackHandler { onBack() }
 
     LaunchedEffect(Unit) {
         viewModel.backToLogin.collect {
@@ -152,20 +187,19 @@ fun PlayerProfileScreen(
         )
     }
 
-    BaseScreen(title = stringResource(R.string.profil_joueur)) {
-        when (val avatar = state.value.player?.userSettings?.avatar) {
-            null -> Image(
-                painter = painterResource(R.drawable.default_logo),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(35.dp)
-                    .clip(CircleShape)
-            )
+    when (val avatar = state.value.player?.userSettings?.avatar) {
+        null -> Image(
+            painter = painterResource(R.drawable.default_logo),
+            contentDescription = null,
+            modifier = Modifier
+                .size(35.dp)
+                .clip(CircleShape)
+        )
 
-            else -> AsyncImage(model = "https://mkcentral.com$avatar", contentDescription = null)
-        }
+        else -> AsyncImage(model = "https://mkcentral.com$avatar", contentDescription = null)
+    }
 
-        when (val player = state.value.player) {
+    when (val player = state.value.player) {
             null -> CircularProgressIndicator()
             else -> {
 
@@ -300,6 +334,18 @@ fun PlayerProfileScreen(
                     }
                 }
 
+                // CTA « Voir mes statistiques » (onglet Joueur du pôle Profil, #28) :
+                // ouvre le pôle Stats en portée Individuelles. Absent des fiches d'un
+                // autre joueur (onStats == null).
+                onStats?.let {
+                    Spacer(Modifier.height(10.dp))
+                    MKButton(
+                        style = MKButtonStyle.Gradient,
+                        text = stringResource(R.string.profile_see_my_stats),
+                        onClick = it
+                    )
+                }
+
                 if (state.value.buttonVisible) {
                     MKButton(
                         style = MKButtonStyle.Gradient,
@@ -394,8 +440,6 @@ fun PlayerProfileScreen(
                 }
             }
         }
-
-    }
 }
 
 @Composable

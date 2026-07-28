@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -55,14 +56,29 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import kotlinx.coroutines.launch
 import java.util.Date
 
+/**
+ * Écran profil équipe autonome (fiche d'une équipe, atteinte depuis l'Annuaire :
+ * route `Team/Profile/{id}`). Barre de titre propre + contenu.
+ *
+ * - `id == "me"` : mon équipe (onglets Membres / Alliés, ajout d'ally).
+ * - sinon : fiche d'une autre équipe (fiche publique `pteam`, #28) — lecture seule,
+ *   membres → `pplayer`, CTA « Voir nos confrontations » → fiche adversaire (#27).
+ *
+ * Le contenu réel est [TeamProfileContent], mutualisé avec le pôle Profil (onglet
+ * Équipe du `ProfileScreen` fusionné, #28) qui l'affiche sans barre de titre propre.
+ *
+ * @param onConfrontations CTA « Voir nos confrontations » (fiche équipe publique) →
+ *   fiche adversaire ; `null` ⇒ masqué (mon équipe).
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TeamProfileScreen(
     viewModel: TeamProfileViewModel,
     onBack: () -> Unit,
-    onPlayerClick: (String) -> Unit
+    onPlayerClick: (String) -> Unit,
+    onStats: (() -> Unit)? = null,
+    onConfrontations: (() -> Unit)? = null
 ) {
-    val pagerState = rememberPagerState(pageCount = { 3 })
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -100,78 +116,126 @@ fun TeamProfileScreen(
         }
     ) {
         BaseScreen(title = stringResource(R.string.team_profile)) {
-            when (val team = state.value.team) {
-                null -> CircularProgressIndicator()
-                else -> {
-                    TeamProfileHeader(
-                        logo = team.logo,
-                        name = team.name,
-                        description = team.description,
-                        creationDate = team.creationDate
-                    )
-                    val rosters = remember(team) { team.rosters.filter { it.game == "mkworld" } }
-                    if (viewModel.id == "me")
-                        MKSelectorViewPager(pagerState, listOf("Membres", "Allies")) {
-                            when (pagerState.currentPage) {
-                                0 -> LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                    rosters.forEach { roster ->
-                                        if (rosters.size > 1)
-                                            item {
-                                                RosterHeader(text = roster.name)
-                                            }
-                                        item {
-                                            RosterPlayersGrid(roster = roster, onPlayerClick = onPlayerClick)
-                                        }
-                                    }
-                                }
-                                1 ->  LazyColumn(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    if (state.value.addAllyVisible)
-                                        item {
-                                            MKButton(style = MKButtonStyle.Gradient, text = "Ajouter un ally", onClick = { scope.launch { bottomSheetState.show() } })
-                                        }
-                                    state.value.allyList.takeIf { it.isNotEmpty() }?.let {
-                                        item {
-                                            VerticalGrid {
-                                                it.forEach {
-                                                    PlayerCell(
-                                                        modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
-                                                        player = it,
-                                                        textColor = Colors.white,
-                                                        backgroundColor = Colors.blackAlphaed,
-                                                        onClick = { onPlayerClick(it.id) }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+            TeamProfileContent(
+                viewModel = viewModel,
+                onPlayerClick = onPlayerClick,
+                onAddAllyClick = { scope.launch { bottomSheetState.show() } },
+                onStats = onStats,
+                onConfrontations = onConfrontations
+            )
+        }
+    }
 
-                            }
-                        }
-                    else
-                        LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+}
+
+/**
+ * Contenu du profil équipe (en-tête, rosters / membres, alliés + ajout, CTA stats),
+ * sans barre de titre : posé dans le [ColumnScope] d'un `BaseScreen` par l'appelant.
+ * Mutualisé entre [TeamProfileScreen] (fiche autonome) et l'onglet Équipe du pôle
+ * Profil (`ProfileScreen`).
+ *
+ * @param onAddAllyClick ouvre le sheet « Ajouter un ally » (hébergé par l'appelant).
+ * @param onStats CTA « Voir les stats de l'équipe » (mon équipe, pôle Profil) → pôle
+ *   Stats portée Équipe ; `null` ⇒ masqué.
+ * @param onConfrontations CTA « Voir nos confrontations » (fiche équipe publique) →
+ *   fiche adversaire (#27) ; `null` ⇒ masqué.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ColumnScope.TeamProfileContent(
+    viewModel: TeamProfileViewModel,
+    onPlayerClick: (String) -> Unit,
+    onAddAllyClick: () -> Unit,
+    onStats: (() -> Unit)? = null,
+    onConfrontations: (() -> Unit)? = null
+) {
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    val state = viewModel.state.collectAsStateWithLifecycle()
+    when (val team = state.value.team) {
+        null -> CircularProgressIndicator()
+        else -> {
+            TeamProfileHeader(
+                logo = team.logo,
+                name = team.name,
+                description = team.description,
+                creationDate = team.creationDate
+            )
+            onStats?.let {
+                MKButton(
+                    style = MKButtonStyle.Gradient,
+                    text = stringResource(R.string.profile_see_team_stats),
+                    onClick = it
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+            onConfrontations?.let {
+                MKButton(
+                    style = MKButtonStyle.Gradient,
+                    text = stringResource(R.string.profile_see_confrontations),
+                    onClick = it
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+            val rosters = remember(team) { team.rosters.filter { it.game == "mkworld" } }
+            if (viewModel.id == "me")
+                MKSelectorViewPager(pagerState, listOf("Membres", "Allies")) {
+                    when (pagerState.currentPage) {
+                        0 -> LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                             rosters.forEach { roster ->
-                                item {
-                                    RosterHeader(
-                                        text = when (rosters.size) {
-                                            1 -> stringResource(R.string.roster)
-                                            else -> roster.name
-                                        }
-                                    )
-                                }
+                                if (rosters.size > 1)
+                                    item {
+                                        RosterHeader(text = roster.name)
+                                    }
                                 item {
                                     RosterPlayersGrid(roster = roster, onPlayerClick = onPlayerClick)
                                 }
                             }
                         }
+                        1 ->  LazyColumn(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (state.value.addAllyVisible)
+                                item {
+                                    MKButton(style = MKButtonStyle.Gradient, text = "Ajouter un ally", onClick = onAddAllyClick)
+                                }
+                            state.value.allyList.takeIf { it.isNotEmpty() }?.let {
+                                item {
+                                    VerticalGrid {
+                                        it.forEach {
+                                            PlayerCell(
+                                                modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
+                                                player = it,
+                                                textColor = Colors.white,
+                                                backgroundColor = Colors.blackAlphaed,
+                                                onClick = { onPlayerClick(it.id) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
                 }
-            }
+            else
+                LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                    rosters.forEach { roster ->
+                        item {
+                            RosterHeader(
+                                text = when (rosters.size) {
+                                    1 -> stringResource(R.string.roster)
+                                    else -> roster.name
+                                }
+                            )
+                        }
+                        item {
+                            RosterPlayersGrid(roster = roster, onPlayerClick = onPlayerClick)
+                        }
+                    }
+                }
         }
     }
-
 }
 
 @Composable

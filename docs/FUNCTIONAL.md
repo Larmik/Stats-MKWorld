@@ -177,8 +177,15 @@ Le routage par type se fait dans `RootScreen` (`onStats` dispatche `OpponentStat
 
 **Écart résiduel documenté** : pas de flèche `←` visible dans l'app bar (`BaseScreen` n'en propose pas) : retour par geste/bouton système (`BackHandler`), comme `StatsFullScreen`/`WarDetailsScreen`.
 
-### Pôle 5 — Profil (`PlayerProfileScreen`)
-Profil du joueur courant (`me`), incluant déconnexion et accès debug. Le profil équipe et les profils d'autres joueurs restent atteignables depuis l'Annuaire, le profil d'équipe et les classements.
+### Pôle 5 — Profil (`ProfileScreen`, onglets fusionnés Joueur / Équipe)
+Profil unique du joueur courant / de mon équipe (`me`), **à onglets fusionnés** (écran `profile` du prototype, ticket #28). Un seul `BaseScreen` (titre **Profil**), un **segmented partagé** `Joueur` / `Équipe` (`MKSegmentedSelector`) qui bascule l'onglet **dynamiquement** (état interne réactif, sans re-navigation — rule 11). Le contenu de chaque onglet **réutilise** le contenu existant des fiches profil :
+
+- **Onglet Joueur** (`PlayerProfileContent`) : avatar, pays, identité, bio MKCentral, équipe / ancienneté / rôle, code ami Switch, Discord ; **CTA « Voir mes statistiques »** → pôle Stats en portée **Individuelles** ; réglages conservés (Rafraîchir, Notifications, Multi-roster si ≥ 2 rosters, Déconnexion) ; entrée **Debug** (joueur debug 18595 ou mode matrice).
+- **Onglet Équipe** (`TeamProfileContent`) : logo, roster (onglets Membres / Alliés + ajout d'ally, sheet hébergé par `ProfileScreen`), infos ; **CTA « Voir les stats de l'équipe »** → pôle Stats en portée **Équipe**.
+
+Les CTA basculent la barre de bas d'écran vers le pôle Stats et **sèment la portée** initiale (Individuelles / Équipe) via le paramètre `initialScopeIndex` de `StatsFullScreen`.
+
+**Fiches profil autonomes** (atteintes depuis l'Annuaire / résultats, graphe racine) : `PlayerProfileScreen(id)` et `TeamProfileScreen(id)` restent des écrans à barre de titre propre, réutilisant le **même** contenu (`PlayerProfileContent` / `TeamProfileContent`, rule 16 — un seul exemplaire, généralisé par paramètres). La **fiche équipe publique** (`id != "me"`, `pteam`) est en lecture seule : membres → fiche joueur, et **CTA « Voir nos confrontations »** → fiche adversaire (`Opponent/{teamId}/null`, #27).
 
 ### Annuaire (`RegistryScreen`, via icône recherche)
 Sélecteur **Joueurs / Équipes** :

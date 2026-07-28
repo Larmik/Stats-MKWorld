@@ -317,4 +317,9 @@
     <string name="stats_shocks_played">Shocks joués</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
     <string name="stats_see_full_ranking">Voir le classement en entier →</string>
+    <string name="profile_tab_player">Joueur</string>
+    <string name="profile_tab_team">Équipe</string>
+    <string name="profile_see_my_stats">Voir mes statistiques</string>
+    <string name="profile_see_team_stats">Voir les stats de l\'équipe</string>
+    <string name="profile_see_confrontations">Voir nos confrontations</string>
 </resources>
