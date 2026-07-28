@@ -14,6 +14,7 @@ object Colors{
     val yellow = Color(0xFFFFF176)
     val green = Color(0xFF81C995)
     val purple = Color(0xFFD7AEFB)
+    val gold = Color(0xFFD4AF37) // --gold de la maquette (pastille de rôle Leader)
     val grey = Color(0xFFF8F9FA)
     val black = Color(0xFF3C4043)
     val blackAlphaed = Color(0x773C4043)

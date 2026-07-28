@@ -1,58 +1,57 @@
 package fr.harmoniamk.statsmkworld.screen.teamProfile
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.displayedString
-import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
+import fr.harmoniamk.statsmkworld.extension.toTeamColor
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamPlayer
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
-import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
-import fr.harmoniamk.statsmkworld.ui.MKSelectorViewPager
+import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
-import fr.harmoniamk.statsmkworld.ui.VerticalGrid
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
+import fr.harmoniamk.statsmkworld.ui.cells.ProfileInfo
+import fr.harmoniamk.statsmkworld.ui.cells.ProfileInfoCard
+import fr.harmoniamk.statsmkworld.ui.cells.ProfileMemberRow
+import fr.harmoniamk.statsmkworld.ui.cells.ProfilePersonCard
+import fr.harmoniamk.statsmkworld.ui.cells.ProfileRole
+import fr.harmoniamk.statsmkworld.ui.cells.RolePill
+import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
+import fr.harmoniamk.statsmkworld.ui.stats.StatCard
+import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -66,6 +65,7 @@ import java.util.Date
  *
  * Le contenu réel est [TeamProfileContent], mutualisé avec le pôle Profil (onglet
  * Équipe du `ProfileScreen` fusionné, #28) qui l'affiche sans barre de titre propre.
+ * Rendu pixel-perfect maquette (écrans `profile` / `pteam`).
  *
  * @param onConfrontations CTA « Voir nos confrontations » (fiche équipe publique) →
  *   fiche adversaire ; `null` ⇒ masqué (mon équipe).
@@ -76,7 +76,6 @@ fun TeamProfileScreen(
     viewModel: TeamProfileViewModel,
     onBack: () -> Unit,
     onPlayerClick: (String) -> Unit,
-    onStats: (() -> Unit)? = null,
     onConfrontations: (() -> Unit)? = null
 ) {
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
@@ -105,7 +104,7 @@ fun TeamProfileScreen(
                     }
                 )
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(state.value.playerList, key = { it.id }) { player ->
+                    gridItems(state.value.playerList, key = { it.id }) { player ->
                         PlayerCell(
                             player = PlayerEntity(player, isAlly = false),
                             onClick = { viewModel.addAlly(player) }
@@ -120,208 +119,152 @@ fun TeamProfileScreen(
                 viewModel = viewModel,
                 onPlayerClick = onPlayerClick,
                 onAddAllyClick = { scope.launch { bottomSheetState.show() } },
-                onStats = onStats,
                 onConfrontations = onConfrontations
             )
         }
     }
-
 }
 
 /**
- * Contenu du profil équipe (en-tête, rosters / membres, alliés + ajout, CTA stats),
+ * Contenu du profil équipe (carte identité, informations, membres / alliés + ajout),
  * sans barre de titre : posé dans le [ColumnScope] d'un `BaseScreen` par l'appelant.
  * Mutualisé entre [TeamProfileScreen] (fiche autonome) et l'onglet Équipe du pôle
- * Profil (`ProfileScreen`).
+ * Profil (`ProfileScreen`). Rendu fidèle à la maquette 5 pôles.
  *
  * @param onAddAllyClick ouvre le sheet « Ajouter un ally » (hébergé par l'appelant).
- * @param onStats CTA « Voir les stats de l'équipe » (mon équipe, pôle Profil) → pôle
- *   Stats portée Équipe ; `null` ⇒ masqué.
  * @param onConfrontations CTA « Voir nos confrontations » (fiche équipe publique) →
- *   fiche adversaire (#27) ; `null` ⇒ masqué.
+ *   fiche adversaire (#27) ; `null` ⇒ masqué (mon équipe).
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ColumnScope.TeamProfileContent(
     viewModel: TeamProfileViewModel,
     onPlayerClick: (String) -> Unit,
     onAddAllyClick: () -> Unit,
-    onStats: (() -> Unit)? = null,
     onConfrontations: (() -> Unit)? = null
 ) {
-    val pagerState = rememberPagerState(pageCount = { 2 })
     val state = viewModel.state.collectAsStateWithLifecycle()
+    // 0 = Membres, 1 = Alliés (sous-onglets `pf2` de la maquette, via segmented partagé).
+    var subTab by rememberSaveable { mutableIntStateOf(0) }
+    val isMe = viewModel.id == "me"
+
     when (val team = state.value.team) {
         null -> CircularProgressIndicator()
         else -> {
-            TeamProfileHeader(
-                logo = team.logo,
-                name = team.name,
-                description = team.description,
-                creationDate = team.creationDate
-            )
-            onStats?.let {
-                MKButton(
-                    style = MKButtonStyle.Gradient,
-                    text = stringResource(R.string.profile_see_team_stats),
-                    onClick = it
-                )
-                Spacer(Modifier.height(10.dp))
-            }
-            onConfrontations?.let {
-                MKButton(
-                    style = MKButtonStyle.Gradient,
-                    text = stringResource(R.string.profile_see_confrontations),
-                    onClick = it
-                )
-                Spacer(Modifier.height(10.dp))
-            }
             val rosters = remember(team) { team.rosters.filter { it.game == "mkworld" } }
-            if (viewModel.id == "me")
-                MKSelectorViewPager(pagerState, listOf("Membres", "Allies")) {
-                    when (pagerState.currentPage) {
-                        0 -> LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                            rosters.forEach { roster ->
-                                if (rosters.size > 1)
-                                    item {
-                                        RosterHeader(text = roster.name)
-                                    }
-                                item {
-                                    RosterPlayersGrid(roster = roster, onPlayerClick = onPlayerClick)
-                                }
-                            }
-                        }
-                        1 ->  LazyColumn(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            if (state.value.addAllyVisible)
-                                item {
-                                    MKButton(style = MKButtonStyle.Gradient, text = "Ajouter un ally", onClick = onAddAllyClick)
-                                }
-                            state.value.allyList.takeIf { it.isNotEmpty() }?.let {
-                                item {
-                                    VerticalGrid {
-                                        it.forEach {
-                                            PlayerCell(
-                                                modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
-                                                player = it,
-                                                textColor = Colors.white,
-                                                backgroundColor = Colors.blackAlphaed,
-                                                onClick = { onPlayerClick(it.id) }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
+            val members = remember(rosters) { rosters.flatMap { roster -> roster.players.map { roster.color to it } } }
+            val allies = state.value.allyList
 
+            LazyColumn(
+                Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(11.dp)
+            ) {
+                // Carte identité équipe (pcard) : logo, nom, tag + création, bio, badge.
+                item {
+                    ProfilePersonCard(
+                        name = team.name,
+                        avatarUrl = team.logo?.let { "https://mkcentral.com$it" },
+                        avatarColor = team.color.toInt().toTeamColor(),
+                        avatarFallback = team.tag,
+                        badgeRes = R.string.profile_badge_team,
+                        bio = team.description
+                    ) {
+                        // Tag en pastille « membre » grise + année de création (maquette).
+                        RolePill(ProfileRole.MEMBER, text = "TAG ${team.tag}")
+                        MKText(text = "·", fontSize = 13, textColor = Colors.white.copy(alpha = 0.72f), resizable = false)
+                        MKText(
+                            text = stringResource(R.string.profile_info_created) + " " + Date(team.creationDate * 1000).displayedString("yyyy"),
+                            fontSize = 13,
+                            textColor = Colors.white.copy(alpha = 0.72f),
+                            resizable = false
+                        )
                     }
                 }
-            else
-                LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    rosters.forEach { roster ->
+
+                // Carte Informations : Membres, Alliés (si mon équipe), Créée en.
+                item {
+                    val infos = buildList {
+                        add(ProfileInfo(stringResource(R.string.profile_info_members), members.size.toString()))
+                        if (isMe) add(ProfileInfo(stringResource(R.string.profile_info_allies), allies.size.toString()))
+                        add(ProfileInfo(stringResource(R.string.profile_info_created), Date(team.creationDate * 1000).displayedString("yyyy")))
+                    }
+                    ProfileInfoCard(infos)
+                }
+
+                // CTA « Voir nos confrontations » (fiche équipe publique uniquement).
+                onConfrontations?.let {
+                    item {
+                        MKButton(
+                            style = MKButtonStyle.Gradient,
+                            text = stringResource(R.string.profile_see_confrontations),
+                            onClick = it
+                        )
+                    }
+                }
+
+                when (isMe) {
+                    // Mon équipe : sous-onglets Membres / Alliés (segmented partagé).
+                    true -> {
                         item {
-                            RosterHeader(
-                                text = when (rosters.size) {
-                                    1 -> stringResource(R.string.roster)
-                                    else -> roster.name
-                                }
+                            MKSegmentedSelector(
+                                items = listOf(
+                                    stringResource(R.string.profile_members),
+                                    stringResource(R.string.profile_allies)
+                                ),
+                                page = subTab,
+                                onClick = { subTab = it }
                             )
                         }
-                        item {
-                            RosterPlayersGrid(roster = roster, onPlayerClick = onPlayerClick)
+                        when (subTab) {
+                            1 -> {
+                                if (state.value.addAllyVisible) item {
+                                    MKButton(
+                                        style = MKButtonStyle.Gradient,
+                                        text = stringResource(R.string.ajouter_en_tant_qu_ally),
+                                        onClick = onAddAllyClick
+                                    )
+                                }
+                                items(allies, key = { it.id }) { ally ->
+                                    ProfileMemberRow(
+                                        initials = initialsOf(ally.name),
+                                        color = Colors.grey50,
+                                        name = ally.name,
+                                        role = ProfileRole.ALLY,
+                                        subtitle = stringResource(R.string.profile_ally_external),
+                                        onClick = { onPlayerClick(ally.id) }
+                                    )
+                                }
+                            }
+                            else -> memberRows(members, onPlayerClick)
                         }
                     }
+                    // Autre équipe (pteam) : liste des membres, section « Membres ».
+                    false -> {
+                        item { Eyebrow(stringResource(R.string.profile_members)) }
+                        memberRows(members, onPlayerClick)
+                    }
                 }
-        }
-    }
-}
-
-@Composable
-private fun TeamProfileHeader(
-    logo: String?,
-    name: String,
-    description: String,
-    creationDate: Long
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        when (logo) {
-            null -> Image(
-                painter = painterResource(R.drawable.default_logo),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-            )
-
-            else -> AsyncImage(
-                model = "https://mkcentral.com$logo",
-                contentDescription = null,
-                modifier = Modifier.size(80.dp)
-            )
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            MKText(text = name, fontSize = 24, font = Fonts.NunitoBD)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                MKText(
-                    text = stringResource(R.string.created_date),
-                    font = Fonts.NunitoIT
-                )
-                MKText(
-                    text = Date(creationDate * 1000).displayedString("dd MMMM yyyy"),
-                    font = Fonts.NunitoBD
-                )
             }
         }
     }
-    MKText(
-        text = description,
-        modifier = Modifier.padding(bottom = 10.dp),
-        font = Fonts.NunitoIT,
-        resizable = false
-    )
-    Spacer(Modifier.height(10.dp))
 }
 
-@Composable
-private fun RosterHeader(text: String) {
-    Box(Modifier
-        .fillMaxWidth()
-        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-        .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
-    ) {
-        MKText(
-            modifier = Modifier.padding(10.dp).align(Alignment.Center),
-            fontSize = 18,
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            text = text
-        )
-    }
-}
-
-@Composable
-private fun LazyItemScope.RosterPlayersGrid(
-    roster: MKCTeamRoster,
+/** Lignes de membres (`.lrow`) : pastille d'initiales colorée + nom + rôle + chevron. */
+private fun androidx.compose.foundation.lazy.LazyListScope.memberRows(
+    members: List<Pair<Long, MKCTeamPlayer>>,
     onPlayerClick: (String) -> Unit
 ) {
-    VerticalGrid {
-        roster.players.forEach {
-            PlayerCell(
-                modifier = Modifier.padding(5.dp).fillParentMaxWidth(0.48f),
-                player = PlayerEntity(
-                    player = it,
-                    rosterId = roster.id.toString()
-                ),
-                textColor = Colors.white,
-                backgroundColor = Colors.blackAlphaed,
-                onClick = { onPlayerClick(it.id) }
+    members.forEach { (rosterColor, player) ->
+        item(key = player.playerId) {
+            ProfileMemberRow(
+                initials = initialsOf(player.name),
+                color = rosterColor.toInt().toTeamColor(),
+                name = player.name,
+                role = when {
+                    player.leader -> ProfileRole.LEADER
+                    player.manager -> ProfileRole.ADMIN
+                    else -> ProfileRole.MEMBER
+                },
+                onClick = { onPlayerClick(player.playerId) }
             )
         }
     }

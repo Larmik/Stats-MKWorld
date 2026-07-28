@@ -44,15 +44,11 @@ import kotlinx.coroutines.launch
  *
  * Le contenu de chaque onglet **réutilise** le contenu existant des fiches profil :
  * - onglet Joueur → [PlayerProfileContent] (identité, infos, équipe, réglages,
- *   règles métier ally/rôle, entrée Debug) + CTA « Voir mes statistiques » ;
- * - onglet Équipe → [TeamProfileContent] (logo, roster, alliés + ajout) + CTA
- *   « Voir les stats de l'équipe ».
+ *   règles métier ally/rôle, entrée Debug) ;
+ * - onglet Équipe → [TeamProfileContent] (logo, roster, alliés + ajout).
  *
  * Les deux profils portent sur « moi » / mon équipe (`id = "me"`). Le sheet « Ajouter
  * un ally » est hébergé ici (au-dessus des deux onglets).
- *
- * @param onStatsIndividual CTA onglet Joueur → pôle Stats portée Individuelles.
- * @param onStatsTeam CTA onglet Équipe → pôle Stats portée Équipe.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -60,9 +56,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onPlayerClick: (String) -> Unit,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit,
-    onStatsIndividual: () -> Unit,
-    onStatsTeam: () -> Unit
+    onDebug: () -> Unit
 ) {
     val playerViewModel: PlayerProfileViewModel = hiltViewModel(
         key = "me-player-profile",
@@ -125,14 +119,12 @@ fun ProfileScreen(
                 1 -> TeamProfileContent(
                     viewModel = teamViewModel,
                     onPlayerClick = onPlayerClick,
-                    onAddAllyClick = { scope.launch { bottomSheetState.show() } },
-                    onStats = onStatsTeam
+                    onAddAllyClick = { scope.launch { bottomSheetState.show() } }
                 )
                 else -> PlayerProfileContent(
                     viewModel = playerViewModel,
                     onDisconnect = onDisconnect,
-                    onDebug = onDebug,
-                    onStats = onStatsIndividual
+                    onDebug = onDebug
                 )
             }
         }

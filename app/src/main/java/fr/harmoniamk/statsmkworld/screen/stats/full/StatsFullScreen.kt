@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -124,19 +123,11 @@ private fun ColumnScope.WindowSelector(index: Int, onChange: (Int) -> Unit) {
 fun StatsFullScreen(
     viewModel: StatsFullViewModel,
     onBack: (() -> Unit)? = null,
-    onResults: (() -> Unit)? = null,
-    // Portée initiale sélectionnée (0 = Individuelles, 1 = Équipe). Sert à SEMER
-    // l'onglet quand on arrive via un CTA du pôle Profil (« Voir mes statistiques » /
-    // « Voir les stats de l'équipe », #28). Chaque nouvelle demande (valeur distincte)
-    // ré-applique la portée à l'écran restauré, via LaunchedEffect.
-    initialScopeIndex: Int = 0
+    onResults: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // 0 = Individuelles, 1 = Équipe. Sur statsfull (pas d'onglets) → toujours 0.
-    var scopeIndex by rememberSaveable { mutableIntStateOf(initialScopeIndex) }
-    LaunchedEffect(initialScopeIndex) {
-        if (viewModel.showTabs) scopeIndex = initialScopeIndex
-    }
+    var scopeIndex by rememberSaveable { mutableIntStateOf(0) }
     // États UI locaux des sélecteurs de section (rule 11), hissés ici car les
     // sections sont des extensions LazyListScope. Survivent à la rotation.
     // Fenêtres (0 = all-time, 1 = 5 dernières, 2 = 10 dernières) : une pour les

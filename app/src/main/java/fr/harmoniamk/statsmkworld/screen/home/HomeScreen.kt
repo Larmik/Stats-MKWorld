@@ -10,9 +10,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -61,19 +58,6 @@ fun HomeScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-
-    // Portée à semer dans le pôle Stats quand on y arrive via un CTA du pôle Profil
-    // (#28) : 0 = Individuelles, 1 = Équipe. Le pôle Stats étant un onglet de bas de
-    // barre (état restauré), on passe la portée voulue en paramètre à StatsFullScreen.
-    var pendingStatsScope by remember { mutableIntStateOf(0) }
-    val goToStats: (Int) -> Unit = { scopeIndex ->
-        pendingStatsScope = scopeIndex
-        navController.navigate(BottomNavItem.STATS.route) {
-            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
 
     // Depuis n'importe quel pôle autre qu'Accueil, ← ramène au pôle Accueil (racine du
     // NavHost imbriqué) ; depuis Accueil, ← quitte l'app (onBack).
@@ -153,8 +137,7 @@ fun HomeScreen(
                                 factory.create(userId = null, showTabs = true)
                             }
                         ),
-                        onResults = { navController.navigate("Home/WarList") },
-                        initialScopeIndex = pendingStatsScope
+                        onResults = { navController.navigate("Home/WarList") }
                     )
                 }
                 composable(route = "Home/Rankings") {
@@ -174,9 +157,7 @@ fun HomeScreen(
                         onBack = backToWelcome,
                         onPlayerClick = onPlayerProfile,
                         onDisconnect = onDisconnect,
-                        onDebug = onDebug,
-                        onStatsIndividual = { goToStats(0) },
-                        onStatsTeam = { goToStats(1) }
+                        onDebug = onDebug
                     )
                 }
             }
