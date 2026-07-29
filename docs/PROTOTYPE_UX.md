@@ -101,29 +101,41 @@ Barre d'app : titre **WARS** + sous-titre « **32 wars** ».
 
 ### Écran `addwar` — « NOUVELLE WAR »
 
-Barre d'app : ← retour + titre **NOUVELLE WAR**.
+Barre d'app : ← retour + titre **NOUVELLE WAR**. **Wizard interactif à 2 étapes** :
+segmenté `12 joueurs` (actif) / `24 joueurs` en tête (ajuste le libellé indicatif —
+en 24 j, 3 équipes adverses), puis stepper cliquable `1 · Adversaire` → `2 · Joueurs`.
+Les étapes basculent **dynamiquement** (mêmes panels que les onglets ; pas de
+re-navigation, cf. rule `11`).
 
-1. **Segmenté** : `12 joueurs` (actif) / `24 joueurs`.
-2. **Stepper** : `1 · Adversaire` (actif) → `2 · Joueurs`.
-3. Champ de recherche « **Rechercher une équipe / un tag** ».
-4. **Sélectionner l'adversaire** (eyebrow) — liste cliquable (visuellement) :
-   - PC · **Plombiers du Coin** · tag PC
-   - TG · **Tortues Géniales** · tag TG
-   - FZ · **Fzero Squad** · tag FZ
-   - KO · **Koopa Onslaught** · tag KO
-5. Hint : « Étape 2 : sélection des joueurs par roster (12 ou 24), puis « Commencer ». »
-6. CTA « **Commencer la war** » → `currentwar`.
+**Étape 1 — Adversaire** (panel `s1`) :
+1. Champ « **Rechercher une équipe / un tag** ».
+2. **Liste d'équipes** (clic → étape 2) : Plombiers du Coin (tag PC, roster unique),
+   Tortues Géniales (tag TG, **2 rosters mkworld**), Fzero Squad (FZ), Koopa Onslaught (KO).
+3. **Choix du roster** (rule `12`) : cliquer une équipe **multi-rosters** (Tortues
+   Géniales) déplie un sélecteur `Main` (tag TG) / `Academy` (tag TGA) — pastille
+   `Idée UX`. Une équipe **mono-roster** passe directement à l'étape 2.
+4. Hint : « Logo = équipe, nom + tag = roster… ».
+
+**Étape 2 — Joueurs** (panel `s2`) :
+1. **Carte de progression** : compteur `4 / 6` + barre, hint « Sélectionne les 6 joueurs… ».
+2. **Ton roster · Harmonia** — 6 lignes **sélectionnables** (toggle pastille verte ✓ ;
+   4 présélectionnées) : Pascal, Larmik, Juju, Max (membres), Théo, Kevin (alliés).
+3. **Roster adverse · Tortues Géniales** — 3 lignes **indicatives** (non saisies côté app).
+4. Pied : « **Précédent** » (→ étape 1) · CTA « **Commencer la war** » → `currentwar`.
 
 ### Écran `currentwar` — « WAR EN COURS »
 
-Barre d'app : ← retour + titre **WAR EN COURS**.
+Barre d'app : ← retour + titre **WAR EN COURS**. **Segmenté démo** `Démo : 12 joueurs`
+(actif) / `Démo : 24 joueurs` en tête : bascule dynamiquement le bas de l'écran entre
+les variantes 12 j et 24 j (panels `cw-12` / `cw-24`).
 
 1. **Carte score** : Harmonia (HM) **512** (couleur victoire) — VS — Tortues Géniales (TG) **486** ; sous-texte « **+26 après 7 courses** ».
 2. **Carte « Joueurs »** : Pascal `98 pts` · Larmik `104 pts` · Juju `86 pts` · Max `92 pts`.
-3. CTA « **Course suivante** » → `addtrack`.
-4. Deux boutons : « **Plus d'actions** » (→ `waractions`) · « **Valider la war** » (toast : « War validée ✓ » puis → `wars`).
-5. Hint : « Règle métier : en 12 j, « Valider » directement · en 24 j, saisir d'abord les scores adverses. « Course suivante » disparaît à 12 courses jouées. »
-6. **Courses jouées · 7** (eyebrow) — grille de circuits (chacun → `trackdetails`) :
+3. CTA « **Course suivante** » → `addtrack` (réinitialise le wizard course à l'étape Circuit).
+4. **Variante 12 j** (`cw-12`) : boutons « **Plus d'actions** » (→ `waractions`) · « **Valider la war** » (toast : « War validée ✓ » → `wars`) ; hint « 12 j : « Valider » clôt directement… ».
+5. **Variante 24 j** (`cw-24`) : carte « **Scores des équipes adverses** » — 3 lignes de saisie (Tortues Géniales `486` / Wizzro / Rainbow Killers) ; CTA « **Saisir & valider** » (toast : « Scores enregistrés · war validée ✓ » → `wars`). Hint « 24 j : saisir le score de chaque équipe adverse avant de valider. ».
+6. Règle métier : « Course suivante » disparaît à 12 courses jouées.
+7. **Courses jouées · 7** (eyebrow) — grille de circuits (chacun → `trackdetails`) :
    - Circuit Mario · **58** (+14)
    - Château de Bowser · **38** (−6) *(négatif)*
    - Plage Cheep Cheep · **54** (+10)
@@ -139,14 +151,25 @@ Barre d'app : ← retour + titre **ACTIONS**. Onglets `[data-tabs="wa"]` :
 
 ### Écran `addtrack` — « AJOUTER UNE COURSE »
 
-Barre d'app : ← retour + titre **AJOUTER UNE COURSE**.
+Barre d'app : ← retour + titre **AJOUTER UNE COURSE**. **Wizard interactif à 4 étapes**
+(stepper cliquable `Circuit` → `Intermission` → `Positions` → `Résumé`, bascule
+dynamique des panels + boutons « Précédent » / « Suivant »).
 
-1. **Stepper** : `Circuit` (actif) → `Intermission` → `Positions` → `Résumé`.
-2. Champ « **Rechercher un circuit** ».
-3. Grille de circuits (choix) : Circuit Mario *(Coupe Champignon)*, Plage Cheep Cheep *(Coupe Champignon)*, Route Arc-en-ciel *(Coupe Spéciale)*, Vallée Wario *(Coupe Étoile)*.
-4. **Étape Positions — Pascal** (eyebrow) : grille 1..12 (positions 2, 5, 8 marquées « taken »).
-5. **Résumé & shocks** (eyebrow) : Pascal · P1 → « Shocks 1 » ; Larmik · P3 → « Shocks 0 ».
-6. CTA « **Confirmer** » (toast : « Course enregistrée ✓ » + retour).
+1. **Étape Circuit** (`s1`) : champ « **Rechercher un circuit** » + grille (Circuit Mario
+   *Coupe Champignon*, Plage Cheep Cheep *Coupe Champignon*, Route Arc-en-ciel *Coupe
+   Spéciale*, Vallée Wario *Coupe Étoile*). Choisir un circuit **réinitialise l'étape
+   Positions** et alimente le résumé, puis passe à l'Intermission.
+2. **Étape Intermission** (`s2`) : hint « Optionnel — un 2ᵉ circuit enchaîné… » + chips
+   `Aucune` (actif) / circuits. Boutons « Précédent » · « Suivant · Positions ».
+3. **Étape Positions** (`s3`) : **saisie joueur par joueur** — barre de progression
+   `Joueur 1 / 6`, hint « Touche la position obtenue par **Pascal** », grille 1..12
+   **cliquable**. Chaque clic verrouille la position (pastille verte), avance au joueur
+   suivant ; à 6/6, passage automatique au Résumé. Bouton « Aller au résumé » pour couper court.
+4. **Étape Résumé** (`s4`) : carte circuit + **score de manche recalculé en direct**
+   (points MKWorld P1..P12, total 82 → `score (±diff)`, pastille `Idée UX`). Liste
+   **Positions & shocks** : une carte par joueur (`Nom · P{n}`) avec **compteur de shocks
+   − / +**. Boutons « Positions » (retour) · CTA « **Confirmer** » (toast : « Course
+   enregistrée ✓ » → `currentwar`).
 
 ### Écran `trackdetails` — « COURSE »
 
@@ -187,8 +210,8 @@ Barre d'app : ← retour + titre **DÉTAILS DE LA WAR**.
 Barre d'app : ← retour + titre **TAB (PDF)**.
 
 1. Hint : « Génère un tableau de résultats partageable (image). Saisir les scores adverses (6 à 9 lignes). »
-2. **Chips** : `− ligne` / `6 lignes` (actif) / `+ ligne`.
-3. Trois lignes de saisie (paires) : « Adversaire 1 » + « Score », « Adversaire 2 » + « Score », « Adversaire 3 » + « Score ».
+2. **Chips interactives** : `− ligne` / `6 lignes` (compteur) / `+ ligne` — ajoutent/retirent des lignes de saisie (min **6**, max **9**).
+3. **Lignes de saisie** (paires « Adversaire N » + « Score ») générées dynamiquement selon le compteur.
 4. CTA « **Tab classique & partager** » (icône share ; toast : « Tab généré — partage ouvert »).
 5. Hint : « Contenu : logos, tags, scores finaux (pénalités incluses), top joueurs avec couronne/argent/bronze. « Tab détaillé » (circuits + courbe) présent mais désactivé dans l'app. »
 

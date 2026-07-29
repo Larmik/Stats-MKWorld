@@ -274,6 +274,31 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 :focus-visible{outline:2px solid var(--yellow);outline-offset:2px;border-radius:5px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* === Flux war (extension interactive : wizard, sélection, positions, scores 24 j) === */
+.stepper button{border:0;font-family:var(--nunito);cursor:pointer}
+.wiznav{display:flex;gap:9px;margin-top:4px}
+.lrow.pk{box-shadow:inset 0 0 0 1px var(--win)}
+.lrow .chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--bord-soft);display:grid;place-items:center;color:transparent;flex:none;font:800 .8rem var(--urb)}
+.lrow.pk .chk{background:var(--win);border-color:var(--win);color:var(--ink)}
+.lrow .chk svg{width:13px;height:13px}
+.roster-pick{padding:11px;background:var(--whiteA);border-radius:6px;border:1px dashed var(--bord-soft)}
+.tag-sug{display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:.55rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);background:var(--blue);padding:2px 6px;border-radius:5px;line-height:1.3;vertical-align:middle}
+.tag-sug svg{width:10px;height:10px}
+.progline{display:flex;align-items:center;gap:9px}
+.progline .lab{font:800 .68rem var(--urb);color:#fff;white-space:nowrap}
+.progline .bar{flex:1;height:6px;border-radius:20px;background:rgba(0,0,0,.24);overflow:hidden}
+.progline .bar i{display:block;height:100%;background:var(--win);transition:width .25s}
+#at-posgrid .posc{cursor:pointer;transition:background .12s,color .12s}
+.posc.pk{background:var(--win)!important;color:var(--ink)!important;border-color:var(--win)!important;opacity:1!important}
+.shk{display:inline-flex;align-items:center;gap:8px}
+.shk button{width:22px;height:22px;border-radius:6px;border:1px solid var(--bord-soft);background:var(--whiteA);color:#fff;font:800 .9rem var(--urb);cursor:pointer;line-height:1;padding:0}
+.shk b{font-family:var(--urb);min-width:12px;text-align:center;color:#fff}
+.scoreset{display:flex;align-items:center;gap:9px}
+.scoreset+.scoreset{margin-top:8px}
+.scoreset .oc{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font:800 .66rem var(--urb);color:#fff;border:2px solid rgba(255,255,255,.75)}
+.scoreset .tn{flex:1;font-family:var(--nunito);font-weight:700;font-size:.82rem}
+.scoreset .tf{width:74px;flex:none;text-align:center;padding:8px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -347,7 +372,7 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
           <div class="scroll">
             <div class="card tap" data-nav="profile"><div class="greet"><span class="crest" style="background:#29b6f6">PA</span><div style="flex:1"><div class="nm">Salut, Pascal</div><div class="sub">Harmonia · voir mon profil →</div></div></div><div class="seg" style="margin-top:12px"><button class="on">Moi</button><button>Équipe</button></div></div>
             <p class="eyebrow" style="margin:2px 2px 0">War en cours</p>
-            <div class="cbanner" data-nav="currentwar"><div class="cinfo"><div class="live">En direct · 12 joueurs</div><div class="ct">vs Tortues Géniales</div><div class="cs">512 – 486 · 7 courses jouées</div></div><svg width="20" height="20" style="color:#fff"><use href="#chev"/></svg></div>
+            <div class="cbanner" data-nav="currentwar" data-sub="cw:cw-12"><div class="cinfo"><div class="live">En direct · 12 joueurs</div><div class="ct">vs Tortues Géniales</div><div class="cs">512 – 486 · 7 courses jouées</div></div><svg width="20" height="20" style="color:#fff"><use href="#chev"/></svg></div>
             <div class="card">
               <p class="eyebrow">Momentum</p>
               <div class="form-strip"><span class="rchip v">V</span><span class="rchip v">V</span><span class="rchip d">D</span><span class="rchip v">V</span><span class="rchip n">N</span><span style="color:rgba(255,255,255,.4);font-size:.7rem">5 dernières</span></div>
@@ -368,11 +393,11 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
           <div class="scroll">
             <div class="seg mini" data-warstate><button class="on" data-w="on">Démo : war en cours</button><button data-w="off">Démo : aucune war</button></div>
             <div id="ws-on">
-              <div class="cbanner" data-nav="currentwar"><div class="cinfo"><div class="live">En direct</div><div class="ct">vs Tortues Géniales · 512–486</div><div class="cs">Reprendre — 7 courses jouées</div></div><svg width="20" height="20" style="color:#fff"><use href="#chev"/></svg></div>
+              <div class="cbanner" data-nav="currentwar" data-sub="cw:cw-12"><div class="cinfo"><div class="live">En direct</div><div class="ct">vs Tortues Géniales · 512–486</div><div class="cs">Reprendre — 7 courses jouées</div></div><svg width="20" height="20" style="color:#fff"><use href="#chev"/></svg></div>
               <p class="hint" style="margin-top:9px">Règle métier : « Nouvelle war » est masqué tant qu'une war est en cours.</p>
             </div>
             <div id="ws-off" style="display:none">
-              <button class="cta" data-nav="addwar"><svg><use href="#plus"/></svg>Nouvelle war</button>
+              <button class="cta" data-nav="addwar" data-sub="aw:s1"><svg><use href="#plus"/></svg>Nouvelle war</button>
             </div>
             <div class="chips" data-filter><span class="chip on" data-f="all">Tous</span><span class="chip" data-f="v">Victoires</span><span class="chip" data-f="n">Nuls</span><span class="chip" data-f="d">Défaites</span></div>
             <div class="res" data-res="v" data-nav="wardetails"><span class="pill v">V</span><span class="oc" style="background:#ef5350">PC</span><div class="rmid"><div class="rn">vs Plombiers du Coin</div><div class="rd">Hier · 12 joueurs</div></div><div class="sc-n">512–472<small>+40</small></div></div>
@@ -388,18 +413,50 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
         <section class="view" data-view="addwar">
           <div class="appbar"><span class="ic-btn" data-back><svg width="17" height="17"><use href="#back"/></svg></span><h2 style="flex:1">NOUVELLE WAR</h2></div>
           <div class="scroll">
-            <div class="seg mini"><button class="on">12 joueurs</button><button>24 joueurs</button></div>
-            <div class="stepper"><span class="stp on">1 · Adversaire</span><span class="stp">2 · Joueurs</span></div>
-            <input class="tf" placeholder="Rechercher une équipe / un tag"/>
-            <p class="eyebrow" style="margin:2px 0 0">Sélectionner l'adversaire</p>
-            <div class="trackgrid">
-              <div class="lrow" style="cursor:pointer"><span class="lc" style="background:#ef5350">PC</span><div class="lm"><div class="ln">Plombiers du Coin</div><div class="ls">tag PC</div></div></div>
-              <div class="lrow" style="cursor:pointer"><span class="lc" style="background:#66bb6a">TG</span><div class="lm"><div class="ln">Tortues Géniales</div><div class="ls">tag TG</div></div></div>
-              <div class="lrow" style="cursor:pointer"><span class="lc" style="background:#7e57c2">FZ</span><div class="lm"><div class="ln">Fzero Squad</div><div class="ls">tag FZ</div></div></div>
-              <div class="lrow" style="cursor:pointer"><span class="lc" style="background:#26a69a">KO</span><div class="lm"><div class="ln">Koopa Onslaught</div><div class="ls">tag KO</div></div></div>
+            <div class="seg mini" data-mode="aw"><button class="on" data-m="12">12 joueurs</button><button data-m="24">24 joueurs</button></div>
+            <div class="stepper" data-tabs="aw"><button class="stp on" data-t="s1">1 · Adversaire</button><button class="stp" data-t="s2">2 · Joueurs</button></div>
+
+            <!-- Étape 1 : adversaire -->
+            <div data-panel="s1" data-group="aw" style="display:flex;flex-direction:column;gap:11px">
+              <input class="tf" placeholder="Rechercher une équipe / un tag"/>
+              <p class="eyebrow" style="margin:0">Sélectionner l'adversaire</p>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="lrow" data-goto="aw:s2"><span class="lc" style="background:#ef5350">PC</span><div class="lm"><div class="ln">Plombiers du Coin</div><div class="ls">tag PC · roster unique</div></div><svg class="chev" width="18" height="18"><use href="#chev"/></svg></div>
+                <div class="lrow" data-reveal="aw-roster"><span class="lc" style="background:#66bb6a">TG</span><div class="lm"><div class="ln">Tortues Géniales</div><div class="ls">tag TG · 2 rosters mkworld</div></div><svg class="chev" width="18" height="18"><use href="#chev"/></svg></div>
+                <div id="aw-roster" class="roster-pick" style="display:none">
+                  <p class="eyebrow" style="margin:0 0 9px">Choisir le roster <span class="tag-sug"><svg><use href="#user"/></svg>Idée UX</span></p>
+                  <div style="display:flex;flex-direction:column;gap:7px">
+                    <div class="lrow" data-goto="aw:s2"><span class="lc" style="background:#66bb6a;width:28px;height:28px;font-size:.66rem">TG</span><div class="lm"><div class="ln">Tortues Géniales — Main</div><div class="ls">tag TG</div></div></div>
+                    <div class="lrow" data-goto="aw:s2"><span class="lc" style="background:#43a047;width:28px;height:28px;font-size:.6rem">TGA</span><div class="lm"><div class="ln">Tortues Géniales — Academy</div><div class="ls">tag TGA</div></div></div>
+                  </div>
+                </div>
+                <div class="lrow" data-goto="aw:s2"><span class="lc" style="background:#7e57c2">FZ</span><div class="lm"><div class="ln">Fzero Squad</div><div class="ls">tag FZ · roster unique</div></div><svg class="chev" width="18" height="18"><use href="#chev"/></svg></div>
+                <div class="lrow" data-goto="aw:s2"><span class="lc" style="background:#26a69a">KO</span><div class="lm"><div class="ln">Koopa Onslaught</div><div class="ls">tag KO · roster unique</div></div><svg class="chev" width="18" height="18"><use href="#chev"/></svg></div>
+              </div>
+              <p class="hint" id="aw-modehint">Logo = équipe, nom + tag = roster : dès qu'une équipe a plusieurs rosters mkworld, on choisit le roster.</p>
             </div>
-            <p class="hint">Étape 2 : sélection des joueurs par roster (12 ou 24), puis « Commencer ».</p>
-            <button class="cta" data-nav="currentwar">Commencer la war</button>
+
+            <!-- Étape 2 : joueurs -->
+            <div data-panel="s2" data-group="aw" style="display:none;flex-direction:column;gap:11px">
+              <div class="card" style="padding:11px"><div class="progline"><span class="lab" id="aw-sel">4 / 6</span><div class="bar"><i id="aw-selbar" style="width:66%"></i></div></div><p class="hint" style="margin-top:8px">Sélectionne les 6 joueurs de ton roster qui participent à la war.</p></div>
+              <p class="eyebrow" style="margin:0">Ton roster · Harmonia</p>
+              <div data-pickgroup="aw" data-need="6" style="display:flex;flex-direction:column;gap:8px">
+                <div class="lrow pk" data-pick><span class="lc" style="background:#29b6f6">PA</span><div class="lm"><div class="ln">Pascal</div><div class="ls">MKC · 8 wars</div></div><span class="chk">✓</span></div>
+                <div class="lrow pk" data-pick><span class="lc" style="background:#7e57c2">La</span><div class="lm"><div class="ln">Larmik</div><div class="ls">MKC · 30 wars</div></div><span class="chk">✓</span></div>
+                <div class="lrow pk" data-pick><span class="lc" style="background:#ec407a">Ju</span><div class="lm"><div class="ln">Juju</div><div class="ls">MKC · 12 wars</div></div><span class="chk">✓</span></div>
+                <div class="lrow pk" data-pick><span class="lc" style="background:#26a69a">Ma</span><div class="lm"><div class="ln">Max</div><div class="ls">MKC · 19 wars</div></div><span class="chk">✓</span></div>
+                <div class="lrow" data-pick><span class="lc" style="background:#ffa726">Th</span><div class="lm"><div class="ln">Théo</div><div class="ls">Allié · 3 wars</div></div><span class="chk">✓</span></div>
+                <div class="lrow" data-pick><span class="lc" style="background:#66bb6a">Ke</span><div class="lm"><div class="ln">Kevin</div><div class="ls">Allié · 5 wars</div></div><span class="chk">✓</span></div>
+              </div>
+              <p class="eyebrow" style="margin:2px 0 0">Roster adverse · Tortues Géniales</p>
+              <div style="display:flex;flex-direction:column;gap:6px;opacity:.8">
+                <div class="lrow static"><span class="lc" style="background:#66bb6a;width:28px;height:28px;font-size:.62rem">Bo</span><div class="lm"><div class="ln">Bowser</div></div></div>
+                <div class="lrow static"><span class="lc" style="background:#66bb6a;width:28px;height:28px;font-size:.62rem">Ko</span><div class="lm"><div class="ln">Koopa</div></div></div>
+                <div class="lrow static"><span class="lc" style="background:#66bb6a;width:28px;height:28px;font-size:.62rem">Yo</span><div class="lm"><div class="ln">Yoshi</div></div></div>
+              </div>
+              <p class="hint">L'adversaire est indicatif : seul ton roster est saisi côté app.</p>
+              <div class="wiznav"><button class="btn2" data-goto="aw:s1"><svg><use href="#back"/></svg>Précédent</button><button class="cta" data-nav="currentwar" data-sub="cw:cw-12">Commencer la war</button></div>
+            </div>
           </div>
         </section>
 
@@ -407,11 +464,28 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
         <section class="view" data-view="currentwar">
           <div class="appbar"><span class="ic-btn" data-back><svg width="17" height="17"><use href="#back"/></svg></span><h2 style="flex:1">WAR EN COURS</h2></div>
           <div class="scroll">
-            <div class="card"><div class="warscore"><div class="side"><div class="lg" style="background:#5c6bc0">HM</div><div class="tn">Harmonia</div><div class="scv" style="color:var(--win)">512</div></div><div class="vs">VS</div><div class="side"><div class="lg" style="background:#66bb6a">TG</div><div class="tn">Tortues Géniales</div><div class="scv">486</div></div></div><div style="text-align:center" class="diff" style="color:var(--win)">+26 après 7 courses</div></div>
+            <div class="seg mini" data-tabs="cw"><button class="on" data-t="cw-12">Démo : 12 joueurs</button><button data-t="cw-24">Démo : 24 joueurs</button></div>
+            <div class="card"><div class="warscore"><div class="side"><div class="lg" style="background:#5c6bc0">HM</div><div class="tn">Harmonia</div><div class="scv" style="color:var(--win)">512</div></div><div class="vs">VS</div><div class="side"><div class="lg" style="background:#66bb6a">TG</div><div class="tn">Tortues Géniales</div><div class="scv">486</div></div></div><div class="diff" style="text-align:center;color:var(--win)">+26 après 7 courses</div></div>
             <div class="card"><p class="eyebrow">Joueurs</p><div class="two"><div class="b"><div class="k">Pascal</div><div class="v">98<small>pts</small></div></div><div class="b"><div class="k">Larmik</div><div class="v">104<small>pts</small></div></div><div class="b"><div class="k">Juju</div><div class="v">86<small>pts</small></div></div><div class="b"><div class="k">Max</div><div class="v">92<small>pts</small></div></div></div></div>
-            <button class="cta" data-nav="addtrack"><svg><use href="#plus"/></svg>Course suivante</button>
-            <div class="two"><button class="btn2" data-nav="waractions"><svg><use href="#cog"/></svg>Plus d'actions</button><button class="btn2" data-toast="War validée ✓" data-nav="wars">Valider la war</button></div>
-            <p class="hint">Règle métier : en 12 j, « Valider » directement · en 24 j, saisir d'abord les scores adverses. « Course suivante » disparaît à 12 courses jouées.</p>
+            <button class="cta" data-nav="addtrack" data-sub="at:s1"><svg><use href="#plus"/></svg>Course suivante</button>
+
+            <!-- Variante 12 j -->
+            <div data-panel="cw-12" data-group="cw" style="display:flex;flex-direction:column;gap:9px">
+              <div class="two"><button class="btn2" data-nav="waractions"><svg><use href="#cog"/></svg>Plus d'actions</button><button class="btn2" data-toast="War validée ✓" data-nav="wars">Valider la war</button></div>
+              <p class="hint">12 joueurs : « Valider » clôt directement la war. « Course suivante » disparaît à 12 courses jouées.</p>
+            </div>
+
+            <!-- Variante 24 j : saisie des scores adverses avant validation -->
+            <div data-panel="cw-24" data-group="cw" style="display:none;flex-direction:column;gap:9px">
+              <div class="card"><p class="eyebrow">Scores des équipes adverses</p>
+                <div class="scoreset"><span class="oc" style="background:#66bb6a">TG</span><span class="tn">Tortues Géniales</span><input class="tf" value="486"/></div>
+                <div class="scoreset"><span class="oc" style="background:#ffa726">WZ</span><span class="tn">Wizzro</span><input class="tf" placeholder="—"/></div>
+                <div class="scoreset"><span class="oc" style="background:#ec407a">RK</span><span class="tn">Rainbow Killers</span><input class="tf" placeholder="—"/></div>
+                <p class="hint" style="margin-top:9px">24 joueurs : saisir le score de chaque équipe adverse avant de valider.</p>
+              </div>
+              <div class="two"><button class="btn2" data-nav="waractions"><svg><use href="#cog"/></svg>Plus d'actions</button><button class="cta" data-toast="Scores enregistrés · war validée ✓" data-nav="wars">Saisir &amp; valider</button></div>
+            </div>
+
             <p class="eyebrow" style="margin:4px 2px 0">Courses jouées · 7</p>
             <div class="trackgrid">
               <div class="mapc" data-nav="trackdetails"><div class="mt">Circuit Mario</div><div class="ms">58<span class="d">+14</span></div></div>
@@ -448,19 +522,42 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
         <section class="view" data-view="addtrack">
           <div class="appbar"><span class="ic-btn" data-back><svg width="17" height="17"><use href="#back"/></svg></span><h2 style="flex:1">AJOUTER UNE COURSE</h2></div>
           <div class="scroll">
-            <div class="stepper"><span class="stp on">Circuit</span><span class="stp">Intermission</span><span class="stp">Positions</span><span class="stp">Résumé</span></div>
-            <input class="tf" placeholder="Rechercher un circuit"/>
-            <div class="trackgrid">
-              <div class="mapc" style="border-left-color:var(--bord-soft)"><div class="mt">Circuit Mario</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Champignon</div></div>
-              <div class="mapc" style="border-left-color:var(--bord-soft)"><div class="mt">Plage Cheep Cheep</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Champignon</div></div>
-              <div class="mapc" style="border-left-color:var(--bord-soft)"><div class="mt">Route Arc-en-ciel</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Spéciale</div></div>
-              <div class="mapc" style="border-left-color:var(--bord-soft)"><div class="mt">Vallée Wario</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Étoile</div></div>
+            <div class="stepper" data-tabs="at"><button class="stp on" data-t="s1">Circuit</button><button class="stp" data-t="s2">Intermission</button><button class="stp" data-t="s3">Positions</button><button class="stp" data-t="s4">Résumé</button></div>
+
+            <!-- Étape 1 : circuit -->
+            <div data-panel="s1" data-group="at" style="display:flex;flex-direction:column;gap:9px">
+              <input class="tf" placeholder="Rechercher un circuit"/>
+              <div class="trackgrid">
+                <div class="mapc" style="border-left-color:var(--bord-soft)" data-goto="at:s2" data-map="Circuit Mario" data-mc="CM" data-mcolor="#d4e157"><div class="mt">Circuit Mario</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Champignon</div></div>
+                <div class="mapc" style="border-left-color:var(--bord-soft)" data-goto="at:s2" data-map="Plage Cheep Cheep" data-mc="PCC" data-mcolor="#29b6f6"><div class="mt">Plage Cheep Cheep</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Champignon</div></div>
+                <div class="mapc" style="border-left-color:var(--bord-soft)" data-goto="at:s2" data-map="Route Arc-en-ciel" data-mc="RAC" data-mcolor="#ab47bc"><div class="mt">Route Arc-en-ciel</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Spéciale</div></div>
+                <div class="mapc" style="border-left-color:var(--bord-soft)" data-goto="at:s2" data-map="Vallée Wario" data-mc="VW" data-mcolor="#8d6e63"><div class="mt">Vallée Wario</div><div class="ms" style="font-size:.7rem;color:rgba(255,255,255,.6)">Coupe Étoile</div></div>
+              </div>
             </div>
-            <p class="eyebrow" style="margin:6px 0 0">Étape Positions — Pascal</p>
-            <div class="posgrid"><span class="posc">1</span><span class="posc taken">2</span><span class="posc">3</span><span class="posc">4</span><span class="posc taken">5</span><span class="posc">6</span><span class="posc">7</span><span class="posc taken">8</span><span class="posc">9</span><span class="posc">10</span><span class="posc">11</span><span class="posc">12</span></div>
-            <p class="eyebrow" style="margin:6px 0 0">Résumé &amp; shocks</p>
-            <div class="two"><div class="b"><div class="k">Pascal · P1</div><div class="v">Shocks 1</div></div><div class="b"><div class="k">Larmik · P3</div><div class="v">Shocks 0</div></div></div>
-            <button class="cta" data-toast="Course enregistrée ✓" data-back>Confirmer</button>
+
+            <!-- Étape 2 : intermission -->
+            <div data-panel="s2" data-group="at" style="display:none;flex-direction:column;gap:9px">
+              <p class="hint">Optionnel — un 2ᵉ circuit enchaîné (intermission) sur la même course.</p>
+              <div class="chips"><span class="chip on">Aucune</span><span class="chip">Circuit Mario</span><span class="chip">Plage Cheep Cheep</span><span class="chip">Vallée Wario</span></div>
+              <div class="wiznav"><button class="btn2" data-goto="at:s1"><svg><use href="#back"/></svg>Précédent</button><button class="cta" data-goto="at:s3">Suivant · Positions</button></div>
+            </div>
+
+            <!-- Étape 3 : positions (joueur par joueur) -->
+            <div data-panel="s3" data-group="at" style="display:none;flex-direction:column;gap:9px">
+              <div class="progline"><span class="lab" id="at-cur">Joueur 1 / 6</span><div class="bar"><i id="at-posbar" style="width:0%"></i></div></div>
+              <p class="hint">Touche la position obtenue par <b id="at-curn" style="color:#fff">Pascal</b>. Les positions déjà prises sont verrouillées.</p>
+              <div class="posgrid" id="at-posgrid"><span class="posc">1</span><span class="posc">2</span><span class="posc">3</span><span class="posc">4</span><span class="posc">5</span><span class="posc">6</span><span class="posc">7</span><span class="posc">8</span><span class="posc">9</span><span class="posc">10</span><span class="posc">11</span><span class="posc">12</span></div>
+              <div class="wiznav"><button class="btn2" data-goto="at:s2"><svg><use href="#back"/></svg>Précédent</button><button class="btn2" id="at-skip">Aller au résumé</button></div>
+            </div>
+
+            <!-- Étape 4 : résumé -->
+            <div data-panel="s4" data-group="at" style="display:none;flex-direction:column;gap:9px">
+              <div class="card"><div class="dhead"><span class="dc" id="at-mapc" style="background:#d4e157;color:#3C4043">CM</span><div style="flex:1"><div class="dn" id="at-mapn">Circuit Mario</div><div class="dd">Score de la manche · <b id="at-score" style="color:var(--win)">—</b></div></div></div></div>
+              <p class="eyebrow" style="margin:2px 0 0">Positions &amp; shocks</p>
+              <div class="two" id="at-sum"></div>
+              <p class="hint"><span class="tag-sug"><svg><use href="#user"/></svg>Idée UX</span> Score de manche recalculé en direct à chaque position saisie.</p>
+              <div class="wiznav"><button class="btn2" data-goto="at:s3"><svg><use href="#back"/></svg>Positions</button><button class="cta" data-toast="Course enregistrée ✓" data-nav="currentwar" data-sub="cw:cw-12">Confirmer</button></div>
+            </div>
           </div>
         </section>
 
@@ -509,10 +606,8 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
           <div class="appbar"><span class="ic-btn" data-back><svg width="17" height="17"><use href="#back"/></svg></span><h2 style="flex:1">TAB (PDF)</h2></div>
           <div class="scroll">
             <p class="hint">Génère un tableau de résultats partageable (image). Saisir les scores adverses (6 à 9 lignes).</p>
-            <div class="chips"><span class="chip">− ligne</span><span class="chip on">6 lignes</span><span class="chip">+ ligne</span></div>
-            <div class="two"><input class="tf" placeholder="Adversaire 1"/><input class="tf" placeholder="Score"/></div>
-            <div class="two"><input class="tf" placeholder="Adversaire 2"/><input class="tf" placeholder="Score"/></div>
-            <div class="two"><input class="tf" placeholder="Adversaire 3"/><input class="tf" placeholder="Score"/></div>
+            <div class="chips"><span class="chip" id="tab-dec">− ligne</span><span class="chip on" id="tab-count">6 lignes</span><span class="chip" id="tab-inc">+ ligne</span></div>
+            <div id="tab-lines" style="display:flex;flex-direction:column;gap:9px"></div>
             <button class="cta" data-toast="Tab généré — partage ouvert"><svg><use href="#share"/></svg>Tab classique &amp; partager</button>
             <p class="hint">Contenu : logos, tags, scores finaux (pénalités incluses), top joueurs avec couronne/argent/bronze. « Tab détaillé » (circuits + courbe) présent mais désactivé dans l'app.</p>
           </div>
@@ -834,6 +929,100 @@ footer{padding:48px 0 0;color:rgba(255,255,255,.5);font-size:.8rem;text-align:ce
   if(cv&&cv.getContext){var ctx=cv.getContext('2d'),W=cv.width,H=cv.height,pad=9;var d=[55,52,58,60,57,63,66,62,70,74],mn=Math.min.apply(null,d),mx=Math.max.apply(null,d);var X=function(i){return pad+i*(W-2*pad)/(d.length-1);},Y=function(v){return H-pad-(v-mn)/(mx-mn||1)*(H-2*pad);};var g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(129,201,149,.45)');g.addColorStop(1,'rgba(129,201,149,0)');ctx.beginPath();ctx.moveTo(X(0),H-pad);d.forEach(function(v,i){ctx.lineTo(X(i),Y(v));});ctx.lineTo(X(d.length-1),H-pad);ctx.closePath();ctx.fillStyle=g;ctx.fill();ctx.beginPath();d.forEach(function(v,i){i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v));});ctx.strokeStyle='#81C995';ctx.lineWidth=2.6;ctx.lineJoin='round';ctx.stroke();ctx.beginPath();ctx.arc(X(d.length-1),Y(d[d.length-1]),4.5,0,7);ctx.fillStyle='#81C995';ctx.fill();}
   // distribution
   (function(){var counts=[78,64,52,44,34,28,22,18,14,12,10,8],max=78;var pal=['#D4AF37','#C0C0C0','#C49C48','#F1B04C','#EE9F27','#EC9006','#EC9006','#E88504','#E27602','#E27602','#DC6601','#D24E01'];var html='';for(var i=0;i<12;i++){var c=counts[i],h=Math.round(c/max*100);html+='<div class="col"><span class="cnt">'+c+'</span><div class="bar" style="height:'+h+'%;background:'+pal[i]+'"></div><span class="pl">'+(i+1)+'</span></div>';}document.querySelectorAll('.dist').forEach(function(d){d.innerHTML=html;});})();
+
+  // === Flux war (extension interactive) ===
+  // wizard : boutons qui changent d'étape en réutilisant setTabs (mêmes panels que data-tabs)
+  document.querySelectorAll('[data-goto]').forEach(function(el){
+    el.addEventListener('click',function(e){e.stopPropagation();var p=el.dataset.goto.split(':');setTabs(p[0],p[1]);var host=el.closest('.view');if(host){var sc=host.querySelector('.scroll');if(sc)sc.scrollTop=0;}});
+  });
+  // révéler/masquer un bloc (choix de roster)
+  document.querySelectorAll('[data-reveal]').forEach(function(el){
+    el.addEventListener('click',function(){var t=document.getElementById(el.dataset.reveal);if(t)t.style.display=(t.style.display==='none')?'block':'none';});
+  });
+  // sélection multiple (joueurs) avec compteur + barre de progression
+  document.querySelectorAll('[data-pickgroup]').forEach(function(g){
+    var need=+g.dataset.need||6,key=g.dataset.pickgroup;
+    g.querySelectorAll('[data-pick]').forEach(function(el){
+      el.addEventListener('click',function(e){e.stopPropagation();el.classList.toggle('pk');
+        var n=g.querySelectorAll('[data-pick].pk').length;
+        var lab=document.getElementById(key+'-sel');if(lab)lab.textContent=n+' / '+need;
+        var bar=document.getElementById(key+'-selbar');if(bar)bar.style.width=Math.min(100,Math.round(n/need*100))+'%';
+      });
+    });
+  });
+  // mode 12/24 (addwar) : ajuste le libellé indicatif
+  document.querySelectorAll('[data-mode]').forEach(function(seg){
+    seg.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){
+        var h=document.getElementById('aw-modehint');if(!h)return;
+        h.textContent=(b.dataset.m==='24')?'24 joueurs : sélectionne 3 équipes adverses (maquette : 1 illustrée). Logo = équipe, nom + tag = roster.':'Logo = équipe, nom + tag = roster : dès qu’une équipe a plusieurs rosters mkworld, on choisit le roster.';
+      });
+    });
+  });
+
+  // ADD TRACK — saisie des positions joueur par joueur + score recalculé
+  var atPlayers=['Pascal','Larmik','Juju','Max','Théo','Kevin'];
+  var atPts=[15,12,10,9,8,7,6,5,4,3,2,1]; // points MKWorld P1..P12 (total manche = 82)
+  var atIdx=0,atAssign=[];
+  var atGrid=document.getElementById('at-posgrid');
+  function atRefresh(){
+    var done=atIdx>=atPlayers.length;
+    var cur=document.getElementById('at-cur'),curn=document.getElementById('at-curn'),bar=document.getElementById('at-posbar');
+    if(bar)bar.style.width=Math.round(atIdx/atPlayers.length*100)+'%';
+    if(cur)cur.textContent=done?('6 / 6 · terminé'):('Joueur '+(atIdx+1)+' / '+atPlayers.length);
+    if(curn)curn.textContent=done?'—':atPlayers[atIdx];
+  }
+  function resetAt(){
+    atIdx=0;atAssign=[];
+    if(atGrid)atGrid.querySelectorAll('.posc').forEach(function(c){c.classList.remove('pk');});
+    atRefresh();
+  }
+  function buildAtSummary(){
+    var sum=document.getElementById('at-sum');if(!sum)return;
+    var score=0,html='';
+    atAssign.forEach(function(a){score+=atPts[a.pos-1]||0;
+      html+='<div class="b"><div class="k">'+a.name+' · P'+a.pos+'</div><div class="v" style="font-size:.82rem;display:flex;align-items:center;gap:8px">Shocks <span class="shk"><button class="sdec">−</button><b>0</b><button class="sinc">+</button></span></div></div>';
+    });
+    sum.innerHTML=html;
+    var diff=2*score-82; // score équipe − score adverse (82 − score)
+    var sc=document.getElementById('at-score');if(sc)sc.textContent=atAssign.length?(score+' ('+(diff>=0?'+':'')+diff+')'):'—';
+    sum.querySelectorAll('.sdec,.sinc').forEach(function(btn){
+      btn.addEventListener('click',function(){var b=btn.parentNode.querySelector('b');var v=+b.textContent||0;v+=btn.classList.contains('sinc')?1:-1;if(v<0)v=0;b.textContent=v;});
+    });
+  }
+  if(atGrid){
+    atGrid.querySelectorAll('.posc').forEach(function(c){
+      c.addEventListener('click',function(){
+        if(atIdx>=atPlayers.length||c.classList.contains('pk'))return;
+        c.classList.add('pk');
+        atAssign.push({name:atPlayers[atIdx],pos:parseInt(c.textContent,10)});
+        atIdx++;atRefresh();
+        if(atIdx>=atPlayers.length){buildAtSummary();setTabs('at','s4');var sc=atGrid.closest('.view').querySelector('.scroll');if(sc)sc.scrollTop=0;}
+      });
+    });
+    var skip=document.getElementById('at-skip');
+    if(skip)skip.addEventListener('click',function(){buildAtSummary();setTabs('at','s4');});
+    atRefresh();
+  }
+  // choix du circuit : renseigne le résumé + réinitialise les positions
+  document.querySelectorAll('[data-map]').forEach(function(el){
+    el.addEventListener('click',function(){var d=el.dataset;
+      var mn=document.getElementById('at-mapn');if(mn)mn.textContent=d.map;
+      var mc=document.getElementById('at-mapc');if(mc){mc.textContent=d.mc;mc.style.background=d.mcolor;mc.style.color=(d.mcolor==='#d4e157')?'#3C4043':'#fff';}
+      resetAt();
+    });
+  });
+
+  // EDIT TAB — nombre de lignes adverses (6 → 9)
+  var tll=document.getElementById('tab-lines');
+  if(tll){
+    var TLmin=6,TLmax=9,tln=6;
+    function renderTL(n){var h='';for(var i=1;i<=n;i++){h+='<div class="two"><input class="tf" placeholder="Adversaire '+i+'"/><input class="tf" placeholder="Score"/></div>';}tll.innerHTML=h;var c=document.getElementById('tab-count');if(c)c.textContent=n+' lignes';}
+    renderTL(tln);
+    var td=document.getElementById('tab-dec'),ti=document.getElementById('tab-inc');
+    if(td)td.addEventListener('click',function(){if(tln>TLmin){tln--;renderTL(tln);}});
+    if(ti)ti.addEventListener('click',function(){if(tln<TLmax){tln++;renderTL(tln);}});
+  }
 })();
 </script>
 
