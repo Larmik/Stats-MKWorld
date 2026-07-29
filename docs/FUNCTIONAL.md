@@ -160,7 +160,7 @@ Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global d
 
 #### Fiches détail Adversaire & Circuit (#27)
 
-Fiches profil « page équipe » (pattern apps sportives), atteintes depuis les Classements (et, à terme, la fiche équipe publique #28 via « Voir nos confrontations »). Rendu **pixel-perfect** de la maquette (écrans `opp` / `map`), cartes translucides mutualisées (`ui/stats/MKStatCard.kt` : `StatCard`, `StatHeaderCard`, `BalanceCard`, `WinTieLossBar`, `StatTiles` — extraites de `StatsFullScreen`, rule 16). **12p uniquement**, données réelles. Chaque fiche présente **toutes les données détaillées** de l'écran Statistiques scopées à son entité.
+Fiches profil « page équipe » (pattern apps sportives), atteintes depuis les Classements. Rendu **pixel-perfect** de la maquette (écrans `opp` / `map`), cartes translucides mutualisées (`ui/stats/MKStatCard.kt` : `StatCard`, `StatHeaderCard`, `BalanceCard`, `WinTieLossBar`, `StatTiles` — extraites de `StatsFullScreen`, rule 16). **12p uniquement**, données réelles. Chaque fiche présente **toutes les données détaillées** de l'écran Statistiques scopées à son entité.
 
 **Sélecteur Indiv / Équipe** (les deux fiches) — `MKSegmentedSelector` partagé (rule 15), libellés courts **« Joueur » / « Équipe »**, état **réactif** du ViewModel (rule 11 : `MutableStateFlow` basculé par `onModeChange`, l'écran reste monté, pas de re-navigation). **Mode initial semé par le contexte d'ouverture** : `OpponentStats`/`MapStats` portent un `userId` (nullable) passé dans la route (`…/{userId}`, arg **nullable** — le littéral « null » est parsé en `null` par `StringType` ⇒ mode Équipe). Les sections réagissent au mode, **sauf** celles explicitement figées ci-dessous.
 
@@ -177,8 +177,17 @@ Le routage par type se fait dans `RootScreen` (`onStats` dispatche `OpponentStat
 
 **Écart résiduel documenté** : pas de flèche `←` visible dans l'app bar (`BaseScreen` n'en propose pas) : retour par geste/bouton système (`BackHandler`), comme `StatsFullScreen`/`WarDetailsScreen`.
 
-### Pôle 5 — Profil (`PlayerProfileScreen`)
-Profil du joueur courant (`me`), incluant déconnexion et accès debug. Le profil équipe et les profils d'autres joueurs restent atteignables depuis l'Annuaire, le profil d'équipe et les classements.
+### Pôle 5 — Profil (`ProfileScreen`, onglets fusionnés Joueur / Équipe)
+Profil unique du joueur courant / de mon équipe (`me`), **à onglets fusionnés** (écran `profile` du prototype, ticket #28), **rendu pixel-perfect** vis-à-vis de la maquette (rules 13/15). Un seul `BaseScreen` (titre **Profil**), un **segmented partagé** `Joueur` / `Équipe` (`MKSegmentedSelector`) qui bascule l'onglet **dynamiquement** (état interne réactif, sans re-navigation — rule 11). Le contenu de chaque onglet **réutilise** le contenu existant des fiches profil, restylé au niveau maquette via des **composants profil mutualisés** (`ui/cells/ProfileCells.kt` : `ProfilePersonCard`, `ProfileInfoCard`, `ProfileMemberRow`, `ProfileSettingRow`, `RolePill`, `MkcBadge`) :
+
+- **Onglet Joueur** (`PlayerProfileContent`) : **carte identité** centrée (avatar rond 76dp / pastille d'initiales, nom Bungee, pays + **pastille de rôle** Membre/Admin/Leader, bio italique, **badge « Profil MKCentral »**) ; **carte Informations** (grille 2 colonnes : Équipe + tag, Membre depuis **[date exacte jj/mm/aaaa]**, Code ami, Discord, Inscription **[date exacte]**, Rôle) ; boutons de règles métier (fiche d'un autre joueur — « Ajouter en ally », « Changer le rôle ») **en largeur intrinsèque, centrés** ; **carte Réglages** (lignes `setrow` avec **icône de tête** : Rafraîchir, Notifications + toggle, Multi-roster + toggle si ≥ 2 rosters, entrée **Debug** si joueur 18595 / mode matrice, **Déconnexion** en rouge) ; **ligne version** « Stats MKWorld · vX » + dernière synchro.
+- **Onglet Équipe** (`TeamProfileContent`) : **carte identité** équipe (logo / pastille de tag, nom, `TAG XX · créée le jj/mm/aaaa`, bio, **badge « Équipe MKCentral »**) ; **carte Informations** (Membres, Alliés, Créée le **[date exacte]**) ; **sous-onglets `MKSegmentedSelector`** Membres / Alliés (remplaçant l'ancien `MKSelectorViewPager`, conformément au style pill de la maquette) ; **lignes membres** (`ProfileMemberRow` : **photo de profil MKCentral** du membre — fallback initiales colorées par roster — nom, **pastille de rôle réel** [nœud Firebase `users` : Leader=2 / Admin=1 / Membre=0], chevron → fiche joueur), **regroupées par roster** (un en-tête par roster) **si l'équipe a ≥ 2 rosters** mkworld, sinon liste plate ; onglet Alliés = bouton « **Ajouter un ally** » **en largeur intrinsèque, centré** (sheet hébergé par l'écran) + lignes alliés (« roster externe »).
+
+Pastilles de rôle (couleurs de la maquette) : **Leader** = or (`gold`), **Admin** = bleu, **Membre / Ally** = blanc translucide. Le **rôle réel** provient du nœud Firebase `users` (un allié vaut toujours 0) ; pour une équipe publique (sans nœud `users`), repli sur les indicateurs MKCentral leader/manager.
+
+Le contenu scrollable réserve une **marge basse** (≈ 90 dp) pour ne pas être masqué par la bottombar (cf. rule `.claude/rules/17-ui-bottombar-inset.md`).
+
+**Fiches profil autonomes** (atteintes depuis l'Annuaire / résultats, graphe racine) : `PlayerProfileScreen(id)` et `TeamProfileScreen(id)` restent des écrans à barre de titre propre, réutilisant le **même** contenu (`PlayerProfileContent` / `TeamProfileContent`, rule 16 — un seul exemplaire, généralisé par paramètres). La **fiche équipe publique** (`id != "me"`, `pteam`) est en lecture seule : membres → fiche joueur (regroupés par roster si ≥ 2 rosters), sans CTA supplémentaire.
 
 ### Annuaire (`RegistryScreen`, via icône recherche)
 Sélecteur **Joueurs / Équipes** :

@@ -97,6 +97,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             HomeScreen(
                 onBack = onBack,
                 onTeamProfile = { navController.navigate("Team/Profile/$it") },
+                onPlayerProfile = { navController.navigate("Player/Profile/$it") },
                 onAddWar = { navController.navigate("Home/AddWar/$it") },
                 onCurrentWar = { navController.navigate("Home/CurrentWar") },
                 onWarDetailsClick = {
@@ -296,7 +297,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                         factory.create(id.toString())
                     }),
                 onBack = { navController.popBackStack() },
-                onPlayerClick = { navController.navigate("Player/Profile/$it") },
+                onPlayerClick = { navController.navigate("Player/Profile/$it") }
             )
         }
 

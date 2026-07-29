@@ -22,8 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
-import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileScreen
-import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
+import fr.harmoniamk.statsmkworld.screen.profile.ProfileScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
@@ -45,6 +44,7 @@ enum class BottomNavItem(var icon: Int, var route: String, val label: String) {
 fun HomeScreen(
     onBack: () -> Unit,
     onTeamProfile: (String) -> Unit,
+    onPlayerProfile: (String) -> Unit,
     onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     // onAddWar est désormais consommé par le pôle Wars (WarListScreen), plus par
@@ -150,14 +150,12 @@ fun HomeScreen(
                     )
                 }
                 composable(route = "Home/Profile") {
-                    PlayerProfileScreen(
-                        viewModel = hiltViewModel(
-                            key = "me",
-                            creationCallback = { factory: PlayerProfileViewModel.Factory ->
-                                factory.create("me")
-                            }
-                        ),
+                    // Pôle Profil (#28) : profil unique à onglets fusionnés Joueur /
+                    // Équipe. Les CTA « Voir mes statistiques » / « Voir les stats de
+                    // l'équipe » basculent vers le pôle Stats avec la bonne portée.
+                    ProfileScreen(
                         onBack = backToWelcome,
+                        onPlayerClick = onPlayerProfile,
                         onDisconnect = onDisconnect,
                         onDebug = onDebug
                     )
