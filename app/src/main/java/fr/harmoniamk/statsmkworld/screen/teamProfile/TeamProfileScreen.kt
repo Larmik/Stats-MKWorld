@@ -62,22 +62,18 @@ import java.util.Date
  *
  * - `id == "me"` : mon équipe (onglets Membres / Alliés, ajout d'ally).
  * - sinon : fiche d'une autre équipe (fiche publique `pteam`, #28) — lecture seule,
- *   membres → `pplayer`, CTA « Voir nos confrontations » → fiche adversaire (#27).
+ *   membres → `pplayer`.
  *
  * Le contenu réel est [TeamProfileContent], mutualisé avec le pôle Profil (onglet
  * Équipe du `ProfileScreen` fusionné, #28) qui l'affiche sans barre de titre propre.
  * Rendu pixel-perfect maquette (écrans `profile` / `pteam`).
- *
- * @param onConfrontations CTA « Voir nos confrontations » (fiche équipe publique) →
- *   fiche adversaire ; `null` ⇒ masqué (mon équipe).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TeamProfileScreen(
     viewModel: TeamProfileViewModel,
     onBack: () -> Unit,
-    onPlayerClick: (String) -> Unit,
-    onConfrontations: (() -> Unit)? = null
+    onPlayerClick: (String) -> Unit
 ) {
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
@@ -119,8 +115,7 @@ fun TeamProfileScreen(
             TeamProfileContent(
                 viewModel = viewModel,
                 onPlayerClick = onPlayerClick,
-                onAddAllyClick = { scope.launch { bottomSheetState.show() } },
-                onConfrontations = onConfrontations
+                onAddAllyClick = { scope.launch { bottomSheetState.show() } }
             )
         }
     }
@@ -133,20 +128,19 @@ fun TeamProfileScreen(
  * Profil (`ProfileScreen`). Rendu fidèle à la maquette 5 pôles.
  *
  * @param onAddAllyClick ouvre le sheet « Ajouter un ally » (hébergé par l'appelant).
- * @param onConfrontations CTA « Voir nos confrontations » (fiche équipe publique) →
- *   fiche adversaire (#27) ; `null` ⇒ masqué (mon équipe).
  */
 @Composable
 fun ColumnScope.TeamProfileContent(
     viewModel: TeamProfileViewModel,
     onPlayerClick: (String) -> Unit,
-    onAddAllyClick: () -> Unit,
-    onConfrontations: (() -> Unit)? = null
+    onAddAllyClick: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // 0 = Membres, 1 = Alliés (sous-onglets `pf2` de la maquette, via segmented partagé).
     var subTab by rememberSaveable { mutableIntStateOf(0) }
     val isMe = viewModel.id == "me"
+    // Résolu hors du LazyListScope (stringResource n'y est pas appelable).
+    val membersHeader = stringResource(R.string.profile_members)
 
     when (val team = state.value.team) {
         null -> CircularProgressIndicator()
@@ -192,22 +186,6 @@ fun ColumnScope.TeamProfileContent(
                     ProfileInfoCard(infos)
                 }
 
-                // CTA « Voir nos confrontations » (fiche équipe publique) : affiché
-                // uniquement s'il existe au moins une war contre cette équipe (#28).
-                // Bouton en largeur intrinsèque, centré (solution d'attente avant le
-                // ticket UI dédié aux boutons).
-                onConfrontations?.takeIf { state.value.hasConfrontations }?.let {
-                    item {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            MKButton(
-                                style = MKButtonStyle.Gradient,
-                                text = stringResource(R.string.profile_see_confrontations),
-                                onClick = it
-                            )
-                        }
-                    }
-                }
-
                 when (isMe) {
                     // Mon équipe : sous-onglets Membres / Alliés (segmented partagé).
                     true -> {
@@ -245,22 +223,52 @@ fun ColumnScope.TeamProfileContent(
                                     )
                                 }
                             }
-                            else -> memberRows(members, onPlayerClick)
+                            // Onglet Membres : pas d'en-tête « Membres » (déjà nommé par le
+                            // segmented), mais un en-tête par roster si l'équipe en a ≥ 2.
+                            else -> memberRows(members, singleRosterHeader = null, onPlayerClick)
                         }
                     }
-                    // Autre équipe (pteam) : liste des membres, section « Membres ».
-                    false -> {
-                        item { Eyebrow(stringResource(R.string.profile_members)) }
-                        memberRows(members, onPlayerClick)
-                    }
+                    // Autre équipe (pteam) : liste des membres. En-tête « Membres » si
+                    // roster unique, sinon un en-tête par roster.
+                    false -> memberRows(members, singleRosterHeader = membersHeader, onPlayerClick)
                 }
             }
         }
     }
 }
 
-/** Lignes de membres (`.lrow`) : avatar/initiales + nom + rôle réel + chevron. */
+/**
+ * Lignes de membres (`.lrow`) : avatar/initiales + nom + rôle réel + chevron.
+ *
+ * **Regroupement par roster** : si les membres appartiennent à **≥ 2 rosters**, une
+ * section par roster est émise, titrée par le **nom du roster** (`Eyebrow`). Sinon
+ * (roster unique) la liste est plate, précédée de [singleRosterHeader] si fourni
+ * (ex. « Membres » sur une fiche équipe publique ; `null` dans l'onglet Membres de
+ * mon équipe, déjà nommé par le segmented). Rattachement membre→roster fourni par
+ * `MemberInfo.rosterId`/`rosterName`.
+ */
 private fun androidx.compose.foundation.lazy.LazyListScope.memberRows(
+    members: List<TeamProfileViewModel.MemberInfo>,
+    singleRosterHeader: String?,
+    onPlayerClick: (String) -> Unit
+) {
+    val byRoster = members.groupBy { it.rosterId }
+    when {
+        byRoster.size > 1 -> byRoster.forEach { (_, rosterMembers) ->
+            item(key = "roster-${rosterMembers.first().rosterId}") {
+                Eyebrow(rosterMembers.first().rosterName)
+            }
+            memberItems(rosterMembers, onPlayerClick)
+        }
+        else -> {
+            singleRosterHeader?.let { header -> item { Eyebrow(header) } }
+            memberItems(members, onPlayerClick)
+        }
+    }
+}
+
+/** Émet une `ProfileMemberRow` par membre (sans en-tête). */
+private fun androidx.compose.foundation.lazy.LazyListScope.memberItems(
     members: List<TeamProfileViewModel.MemberInfo>,
     onPlayerClick: (String) -> Unit
 ) {

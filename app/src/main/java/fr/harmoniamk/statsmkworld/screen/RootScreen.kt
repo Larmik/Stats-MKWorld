@@ -290,11 +290,6 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             arguments = listOf(navArgument("id") { type = NavType.StringType })
         ) {
             val id = it.arguments?.getString("id")
-            // Fiche équipe publique (`pteam`, #28) quand id != "me" : CTA « Voir nos
-            // confrontations » → fiche adversaire (#27). userId « null » = portée Équipe.
-            val onConfrontations: (() -> Unit)? = id
-                ?.takeIf { teamId -> teamId != "me" }
-                ?.let { teamId -> { navController.navigate("Opponent/$teamId/null") } }
             TeamProfileScreen(
                 viewModel = hiltViewModel(
                     key = id.toString(),
@@ -302,8 +297,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                         factory.create(id.toString())
                     }),
                 onBack = { navController.popBackStack() },
-                onPlayerClick = { navController.navigate("Player/Profile/$it") },
-                onConfrontations = onConfrontations
+                onPlayerClick = { navController.navigate("Player/Profile/$it") }
             )
         }
 

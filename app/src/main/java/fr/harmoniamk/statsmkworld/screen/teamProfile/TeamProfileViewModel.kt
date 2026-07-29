@@ -49,13 +49,17 @@ class TeamProfileViewModel @AssistedInject constructor(
 
     /**
      * Membre d'une équipe pour l'affichage (ligne `lrow` de la maquette) : identité,
-     * couleur du roster (pastille), [role] **réel** (valeur du nœud Firebase `users` :
-     * 2 = Leader, 1 = Admin, 0 = Membre — un allié vaut toujours 0), et [avatarUrl]
-     * (photo MKCentral déjà préfixée, ou `null` → fallback initiales).
+     * **rattachement au roster** ([rosterId]/[rosterName], pour regrouper par roster
+     * quand l'équipe en a plusieurs), couleur du roster (pastille), [role] **réel**
+     * (valeur du nœud Firebase `users` : 2 = Leader, 1 = Admin, 0 = Membre — un allié
+     * vaut toujours 0), et [avatarUrl] (photo MKCentral déjà préfixée, ou `null` →
+     * fallback initiales).
      */
     data class MemberInfo(
         val playerId: String,
         val name: String,
+        val rosterId: String,
+        val rosterName: String,
         val rosterColor: Long,
         val role: Int,
         val avatarUrl: String?
@@ -66,10 +70,7 @@ class TeamProfileViewModel @AssistedInject constructor(
         val members: List<MemberInfo> = listOf(),
         val allyList: List<PlayerEntity> = listOf(),
         val playerList: List<MKCPlayer> = listOf(),
-        val addAllyVisible: Boolean = false,
-        // Vrai si au moins une war a été jouée contre cette équipe (fiche publique) —
-        // gate le CTA « Voir nos confrontations » (#28).
-        val hasConfrontations: Boolean = false
+        val addAllyVisible: Boolean = false
     )
 
     private val _state = MutableSharedFlow<State>()
@@ -117,17 +118,11 @@ class TeamProfileViewModel @AssistedInject constructor(
             val buttonVisible = (firebaseRepository
                 .getUser(team.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
                 ?.role ?: 0) > 0
-            // Fiche équipe publique : au moins une war jouée contre cet id (mécanisme
-            // existant WarEntity.hasTeam ; id peut être un teamId ou rosterId legacy).
-            val hasConfrontations = id != "me" &&
-                    databaseRepository.getWars().firstOrNull()
-                        ?.any { it.hasTeam(team.id.toString()) } == true
             State(
                 team = team,
                 members = resolveMembers(team),
                 addAllyVisible = buttonVisible,
-                allyList = allyList,
-                hasConfrontations = hasConfrontations
+                allyList = allyList
             )
         }
         .mergeWith(_state)
@@ -149,8 +144,8 @@ class TeamProfileViewModel @AssistedInject constructor(
             "me" -> firebaseRepository.getUsers(team.id.toString()).associate { it.id to it.role }
             else -> emptyMap()
         }
-        rosters.flatMap { roster -> roster.players.map { roster.color to it } }
-            .map { (rosterColor, player) ->
+        rosters.flatMap { roster -> roster.players.map { roster to it } }
+            .map { (roster, player) ->
                 async {
                     val role = firebaseRoles[player.playerId]
                         ?: when {
@@ -163,7 +158,9 @@ class TeamProfileViewModel @AssistedInject constructor(
                     MemberInfo(
                         playerId = player.playerId,
                         name = player.name,
-                        rosterColor = rosterColor,
+                        rosterId = roster.id.toString(),
+                        rosterName = roster.name,
+                        rosterColor = roster.color,
                         role = role,
                         avatarUrl = avatar
                     )

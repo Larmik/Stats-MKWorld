@@ -247,13 +247,17 @@ fun ColumnScope.PlayerProfileContent(
                 }
 
                 // Boutons de règles métier (fiche d'un autre joueur) : ajout ally,
-                // changement de rôle Leader-only, message « déjà ally ».
+                // changement de rôle Leader-only, message « déjà ally ». Boutons en
+                // largeur intrinsèque, centrés (retour utilisateur #28 ; même traitement
+                // que le profil équipe — solution d'attente avant le ticket UI boutons).
                 if (state.value.buttonVisible) item {
-                    MKButton(
-                        style = MKButtonStyle.Gradient,
-                        text = stringResource(R.string.ajouter_en_tant_qu_ally),
-                        onClick = viewModel::onAddAlly
-                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        MKButton(
+                            style = MKButtonStyle.Gradient,
+                            text = stringResource(R.string.ajouter_en_tant_qu_ally),
+                            onClick = viewModel::onAddAlly
+                        )
+                    }
                 }
                 if (state.value.isAlly) item {
                     MKText(
@@ -266,11 +270,13 @@ fun ColumnScope.PlayerProfileContent(
                 }
                 state.value.adminButtonLabel?.takeIf { state.value.role != null }?.let { label ->
                     item {
-                        MKButton(
-                            style = MKButtonStyle.Gradient,
-                            text = stringResource(label),
-                            onClick = viewModel::onSwitchRole
-                        )
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            MKButton(
+                                style = MKButtonStyle.Gradient,
+                                text = stringResource(label),
+                                onClick = viewModel::onSwitchRole
+                            )
+                        }
                     }
                 }
 
