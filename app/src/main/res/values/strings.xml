@@ -341,8 +341,6 @@
     <string name="profile_setting_refresh_sub">Player · team · allies · opponents · wars</string>
     <string name="profile_setting_notif_sub">Push alerts</string>
     <string name="profile_setting_multiroster_sub">Stats across all rosters (restart required)</string>
-    <string name="profile_setting_onboarding">Review onboarding</string>
-    <string name="profile_setting_onboarding_sub">Tutorial &amp; Discord connection</string>
     <string name="profile_setting_debug">Debug / Matrix</string>
     <string name="profile_setting_debug_sub">Staff only</string>
     <string name="profile_ally_role">Ally</string>

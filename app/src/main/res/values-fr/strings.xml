@@ -341,8 +341,6 @@
     <string name="multi_roster">Multi-roster</string>
     <string name="profile_setting_notif_sub">Alertes push</string>
     <string name="profile_setting_multiroster_sub">Stats sur tous les rosters (redémarrage requis)</string>
-    <string name="profile_setting_onboarding">Revoir l\'onboarding</string>
-    <string name="profile_setting_onboarding_sub">Tutoriel &amp; connexion Discord</string>
     <string name="profile_setting_debug">Debug / Matrice</string>
     <string name="profile_setting_debug_sub">Réservé staff</string>
     <string name="profile_ally_role">Ally</string>

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -193,14 +194,17 @@ fun ColumnScope.TeamProfileContent(
 
                 // CTA « Voir nos confrontations » (fiche équipe publique) : affiché
                 // uniquement s'il existe au moins une war contre cette équipe (#28).
+                // Bouton en largeur intrinsèque, centré (solution d'attente avant le
+                // ticket UI dédié aux boutons).
                 onConfrontations?.takeIf { state.value.hasConfrontations }?.let {
                     item {
-                        MKButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            style = MKButtonStyle.Gradient,
-                            text = stringResource(R.string.profile_see_confrontations),
-                            onClick = it
-                        )
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            MKButton(
+                                style = MKButtonStyle.Gradient,
+                                text = stringResource(R.string.profile_see_confrontations),
+                                onClick = it
+                            )
+                        }
                     }
                 }
 
@@ -220,13 +224,15 @@ fun ColumnScope.TeamProfileContent(
                         when (subTab) {
                             1 -> {
                                 if (state.value.addAllyVisible) item {
-                                    // Bouton « Ajouter un ally » centré (retour utilisateur #28).
-                                    MKButton(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        style = MKButtonStyle.Gradient,
-                                        text = stringResource(R.string.ajouter_un_ally),
-                                        onClick = onAddAllyClick
-                                    )
+                                    // Bouton « Ajouter un ally » en largeur intrinsèque, centré
+                                    // (retour utilisateur #28 ; solution d'attente avant le ticket UI).
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                        MKButton(
+                                            style = MKButtonStyle.Gradient,
+                                            text = stringResource(R.string.ajouter_un_ally),
+                                            onClick = onAddAllyClick
+                                        )
+                                    }
                                 }
                                 items(allies, key = { it.id }) { ally ->
                                     ProfileMemberRow(

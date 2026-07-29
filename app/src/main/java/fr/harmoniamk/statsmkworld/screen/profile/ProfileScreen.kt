@@ -56,8 +56,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onPlayerClick: (String) -> Unit,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit,
-    onOnboarding: () -> Unit
+    onDebug: () -> Unit
 ) {
     val playerViewModel: PlayerProfileViewModel = hiltViewModel(
         key = "me-player-profile",
@@ -125,8 +124,7 @@ fun ProfileScreen(
                 else -> PlayerProfileContent(
                     viewModel = playerViewModel,
                     onDisconnect = onDisconnect,
-                    onDebug = onDebug,
-                    onOnboarding = onOnboarding
+                    onDebug = onDebug
                 )
             }
         }

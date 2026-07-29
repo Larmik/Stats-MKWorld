@@ -119,8 +119,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 },
                 onSearch = { navController.navigate("Home/Registry") },
                 onDisconnect = { navController.navigate("Signup") },
-                onDebug = { navController.navigate("Player/Profile/Debug") },
-                onOnboarding = { navController.navigate("Signup") }
+                onDebug = { navController.navigate("Player/Profile/Debug") }
             )
         }
 

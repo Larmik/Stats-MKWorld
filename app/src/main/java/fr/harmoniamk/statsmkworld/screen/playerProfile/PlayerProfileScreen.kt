@@ -74,16 +74,14 @@ fun PlayerProfileScreen(
     viewModel: PlayerProfileViewModel,
     onBack: () -> Unit,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit,
-    onOnboarding: (() -> Unit)? = null
+    onDebug: () -> Unit
 ) {
     BackHandler { onBack() }
     BaseScreen(title = stringResource(R.string.profil_joueur)) {
         PlayerProfileContent(
             viewModel = viewModel,
             onDisconnect = onDisconnect,
-            onDebug = onDebug,
-            onOnboarding = onOnboarding
+            onDebug = onDebug
         )
     }
 }
@@ -101,16 +99,12 @@ private fun roleFromRes(res: Int?): ProfileRole? = when (res) {
  * titre : posé dans le [ColumnScope] d'un `BaseScreen` par l'appelant. Mutualisé
  * entre [PlayerProfileScreen] (fiche autonome `pplayer`) et l'onglet Joueur du pôle
  * Profil (`ProfileScreen`, écran `profile`). Rendu fidèle à la maquette 5 pôles.
- *
- * @param onOnboarding réglage « Revoir l'onboarding » → écran Signup ; `null` ⇒ ligne
- *   masquée (fiche d'un autre joueur, sans réglages).
  */
 @Composable
 fun ColumnScope.PlayerProfileContent(
     viewModel: PlayerProfileViewModel,
     onDisconnect: () -> Unit,
-    onDebug: () -> Unit,
-    onOnboarding: (() -> Unit)? = null
+    onDebug: () -> Unit
 ) {
     val state = viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -314,14 +308,6 @@ fun ColumnScope.PlayerProfileContent(
                                         onChange = { viewModel.onMultiRoster() }
                                     )
                                 }
-                            onOnboarding?.let { onboarding ->
-                                ProfileSettingRow(
-                                    title = stringResource(R.string.profile_setting_onboarding),
-                                    leadingIcon = R.drawable.ic_book,
-                                    subtitle = stringResource(R.string.profile_setting_onboarding_sub),
-                                    onClick = onboarding
-                                )
-                            }
                             if (showDebug)
                                 ProfileSettingRow(
                                     title = stringResource(R.string.profile_setting_debug),
