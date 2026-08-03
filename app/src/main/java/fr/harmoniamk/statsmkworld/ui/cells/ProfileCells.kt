@@ -215,7 +215,8 @@ fun ProfileInfoCard(infos: List<ProfileInfo>) {
 /**
  * Ligne de membre / allié (`.lrow`) : pastille ronde (photo MKCentral [avatarUrl] si
  * disponible, sinon [initials] sur fond [color]), nom + pastille de rôle, sous-texte
- * optionnel (roster externe pour un allié), chevron.
+ * optionnel (roster externe pour un allié), chevron. Délègue au composant partagé
+ * [MKListRow] (rule 16 : un seul exemplaire de la `.lrow`).
  */
 @Composable
 fun ProfileMemberRow(
@@ -227,42 +228,17 @@ fun ProfileMemberRow(
     subtitle: String? = null,
     onClick: () -> Unit
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(StatCardRadius)
-            .background(Colors.blackAlphaed, StatCardRadius)
-            .border(1.dp, Colors.whiteBorder, StatCardRadius)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp)
-    ) {
-        Box(
-            Modifier.size(34.dp).clip(CircleShape).background(color).border(2.dp, Colors.white.copy(alpha = 0.75f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            when (avatarUrl) {
-                null -> MKText(text = initials, font = Fonts.Urbanist, fontSize = 13, textColor = Colors.white, resizable = false)
-                else -> AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.size(34.dp).clip(CircleShape))
-            }
-        }
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                MKText(text = name, font = Fonts.NunitoBD, fontSize = 14, textColor = Colors.white, textAlign = TextAlign.Start, maxLines = 1)
-                role?.let { RolePill(it) }
-            }
-            subtitle?.let {
-                MKText(text = it, font = Fonts.Urbanist, fontSize = 11, textColor = Colors.white55, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp), maxLines = 1)
-            }
-        }
-        Icon(
-            painter = painterResource(R.drawable.ic_chevron_right),
-            contentDescription = null,
-            tint = Colors.white.copy(alpha = 0.45f),
-            modifier = Modifier.size(18.dp)
-        )
-    }
+    MKListRow(
+        modifier = Modifier.fillMaxWidth(),
+        initials = initials,
+        avatarColor = color,
+        name = name,
+        avatarUrl = avatarUrl,
+        subtitle = subtitle,
+        onClick = onClick,
+        titleTrailing = { role?.let { RolePill(it) } },
+        trailing = { MKListRowChevron() }
+    )
 }
 
 /**

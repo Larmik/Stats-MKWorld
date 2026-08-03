@@ -1,323 +1,362 @@
 package fr.harmoniamk.statsmkworld.screen.addWar
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.toTeamColor
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
-import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
-import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
+import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
-import fr.harmoniamk.statsmkworld.ui.VerticalGrid
-import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
-import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
-import kotlinx.coroutines.launch
+import fr.harmoniamk.statsmkworld.ui.cells.MKListRow
+import fr.harmoniamk.statsmkworld.ui.cells.MKListRowCheck
+import fr.harmoniamk.statsmkworld.ui.cells.MKListRowChevron
+import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
+import fr.harmoniamk.statsmkworld.ui.stats.StatCard
+import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Écran de création de war (pôle Wars) — wizard **2 étapes sur un seul écran** :
+ * `1 · Adversaire` → `2 · Joueurs`, bascule **dynamique** (aucune re-navigation, rule
+ * 11/14). Le segmenté 12/24 et le stepper pilotent l'état réactif du ViewModel.
+ *
+ * Rendu pixel-perfect vs la maquette prototype UX (écran `addwar`, rule 13/15) :
+ * segmenté partagé [MKSegmentedSelector], stepper partagé [MKStepper], lignes de liste
+ * partagées [MKListRow] (rule 16).
+ */
 @Composable
 fun AddWarScreen(
     viewModel: AddWarViewModel,
     onBack: () -> Unit,
     onCurrentWar: () -> Unit
 ) {
-    val state = viewModel.state.collectAsStateWithLifecycle()
-    val is24p = state.value.is24p
-    val searchTeam = remember { mutableStateOf("") }
-    val pagerState = rememberPagerState(pageCount = { 2 })
-    val rosterSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
-    val scope = rememberCoroutineScope()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    // Champ de recherche : pur état UI éphémère (rule 11) survivant à la rotation.
+    var searchTeam by rememberSaveable { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
-        viewModel.goToCurrent.collect {
-            onCurrentWar()
-        }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.openRosterSheet.collect {
-            rosterSheetState.show()
-        }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.dismissRosterSheet.collect {
-            rosterSheetState.hide()
-        }
+        viewModel.goToCurrent.collect { onCurrentWar() }
     }
 
     BackHandler {
-        when  {
-            rosterSheetState.isVisible -> scope.launch { rosterSheetState.hide() }
-            pagerState.currentPage == 1 -> scope.launch { pagerState.animateScrollToPage(0) }
-            state.value.teamSelected?.isNotEmpty() == true -> { viewModel.onRemoveTeam() }
+        when {
+            // Sélecteur de roster déplié → le replier.
+            state.expandedRosterTeamId != null -> viewModel.collapseRosterPicker()
+            // Étape 2 → revenir à l'étape 1.
+            state.step == 1 -> viewModel.onStepChange(0)
+            // Étape 1 avec un adversaire déjà retenu → le retirer.
+            state.teamSelected?.isNotEmpty() == true -> viewModel.onRemoveTeam()
             else -> onBack()
         }
     }
-    MKBottomSheet(
-        sheetState = rosterSheetState,
-        sheetContent = {
-            RosterSelectionSheet(
-                selection = state.value.rosterSelection,
-                onRosterSelected = viewModel::onRosterSelected,
-                onValidate = viewModel::onRosterValidated
-            )
-        }
-    ) {
-    HorizontalPager(
-        modifier = Modifier.fillMaxWidth(),
-        state = pagerState,
-        userScrollEnabled = false
-    ) {
-        when (it) {
-            0 -> BaseScreen(title = stringResource(R.string.pick_opponent)) {
-                // Segmenté 12/24 : c'est ICI que vit le sélecteur de mode (déménagé
-                // de l'Accueil vers le pôle Wars). Le changer met à jour l'état
-                // réactif du VM SANS re-navigation — l'écran reste monté et l'UI se
-                // recompose (nombre d'adversaires, sélection réinitialisée).
-                MKSegmentedSelector(
-                    items = listOf(
-                        stringResource(R.string.mode_12_players),
-                        stringResource(R.string.mode_24_players)
-                    ),
-                    page = if (is24p) 1 else 0,
-                    onClick = { selected -> viewModel.onModeChange(selected == 1) }
-                )
-                Spacer(Modifier.height(15.dp))
-                if (is24p)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OpponentSlot(team = state.value.opponentSlot(0))
-                        OpponentSlot(team = state.value.opponentSlot(1))
-                        OpponentSlot(team = state.value.opponentSlot(2))
-                    }
-                else
-                    OpponentSlot(team = state.value.opponentSlot(0))
 
-
-
-                // Tant que la sélection des adversaires n'est pas terminée, on garde le
-                // champ de recherche visible (même si la recherche ne renvoie aucune
-                // équipe), pour ne pas perdre le clavier/focus. Une fois tous les
-                // adversaires sélectionnés (nextButtonEnabled), la section disparaît.
-                if (!state.value.nextButtonEnabled) {
-                    MKTextField(
-                        baseModifier = Modifier.semantics { contentDescription = "Recherche equipe" },
-                        value = searchTeam.value,
-                        onValueChange = {
-                            searchTeam.value = it
-                            viewModel.onSearchTeam(it)
-                        },
-                        placeHolderRes = R.string.search_team,
-                        backgroundColor = Colors.blackAlphaed
-                    )
-                    LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                        items(state.value.teamList, key = { it.id }) {
-                            TeamCell(modifier = Modifier.padding(5.dp), team = it, onClick = {
-                                viewModel.onTeamSelected(it)
-                            })
-                        }
-                    }
-                }
-                MKButton(style = MKButtonStyle.Gradient, text = stringResource(R.string.next), enabled = state.value.nextButtonEnabled) {
-                    scope.launch { pagerState.animateScrollToPage(1) }
-                }
-            }
-
-            else -> BaseScreen(title = stringResource(R.string.pick_lu)) {
-                state.value.warName?.let {
-                    MKText(text = it, fontSize = 18)
-                }
-                LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    state.value.playerList.forEach { (rosterName, list) ->
-                        stickyHeader {
-                            AddWarRosterHeader(
-                                text = when (rosterName.isEmpty()) {
-                                    true -> stringResource(R.string.allies)
-                                    else -> rosterName
-                                }
-                            )
-                        }
-                        item {
-                            AddWarPlayerGrid(
-                                players = list,
-                                onPlayerSelected = viewModel::onPlayerSelected
-                            )
-                        }
-                    }
-
-
-            }
-
-            MKButton(
-                style = MKButtonStyle.Gradient,
-                text = stringResource(R.string.commencer),
-                enabled = state.value.buttonEnabled,
-                onClick = viewModel::createWar
-            )
-        }
-    }
-    }
-
-}
-
-}
-
-@Composable
-private fun OpponentSlot(team: TeamEntity?) {
-    team?.let {
-        TeamCell(modifier = Modifier.size(120.dp), team = it, tagVisible = false) {}
-    } ?: Spacer(
-        Modifier
-            .size(120.dp)
-            .background(Colors.transparent)
-            .border(2.dp, Colors.blackAlphaed, RoundedCornerShape(5.dp))
-    )
-}
-
-@Composable
-private fun RosterSelectionSheet(
-    selection: AddWarViewModel.RosterSelection?,
-    onRosterSelected: (MKCTeamRoster) -> Unit,
-    onValidate: () -> Unit
-) {
-    selection ?: return
-    BaseScreen(title = stringResource(R.string.pick_roster)) {
-        LazyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.weight(1f)
-        ) {
-            items(selection.rosters, key = { it.id }) { roster ->
-                RosterCell(
-                    roster = roster,
-                    isSelected = roster.id == selection.selectedRoster?.id,
-                    onClick = { onRosterSelected(roster) }
-                )
-            }
-        }
-        MKButton(
-            style = MKButtonStyle.Gradient,
-            text = stringResource(R.string.next),
-            enabled = selection.selectedRoster != null,
-            onClick = onValidate
+    BaseScreen(title = stringResource(R.string.addwar_title), modifier = Modifier.fillMaxSize()) {
+        // Segmenté 12/24 : c'est ICI que vit le sélecteur de mode (pôle Wars). Le
+        // changer met à jour l'état réactif du VM SANS re-navigation.
+        MKSegmentedSelector(
+            items = listOf(
+                stringResource(R.string.mode_12_players),
+                stringResource(R.string.mode_24_players)
+            ),
+            page = if (state.is24p) 1 else 0,
+            onClick = { selected -> viewModel.onModeChange(selected == 1) }
         )
+        Spacer(Modifier.height(11.dp))
+        // Stepper cliquable : l'étape 2 n'est accessible que si l'adversaire est complet.
+        MKStepper(
+            steps = listOf(
+                stringResource(R.string.addwar_step_opponent),
+                stringResource(R.string.addwar_step_players)
+            ),
+            step = state.step,
+            enabled = { index -> index == 0 || state.nextButtonEnabled },
+            onStepClick = viewModel::onStepChange
+        )
+        Spacer(Modifier.height(13.dp))
+
+        when (state.step) {
+            0 -> OpponentStep(
+                state = state,
+                search = searchTeam,
+                onSearch = {
+                    searchTeam = it
+                    viewModel.onSearchTeam(it)
+                },
+                onTeamSelected = viewModel::onTeamSelected,
+                onRosterSelected = viewModel::onRosterSelected
+            )
+            else -> PlayersStep(
+                state = state,
+                onPlayerSelected = viewModel::onPlayerSelected,
+                onPrevious = { viewModel.onStepChange(0) },
+                onStart = viewModel::createWar
+            )
+        }
     }
 }
 
+/** Couleur stable de la pastille d'un joueur, dérivée de son id (palette équipe). */
+private fun playerAvatarColor(id: String): Color = ((id.hashCode() and 0x7fffffff) % 32 + 1).toTeamColor()
+
+/** Initiales (2 lettres) pour une pastille d'avatar. */
+private fun initialsOf(name: String): String = name.trim()
+    .split(" ", "_", "-")
+    .filter { it.isNotBlank() }
+    .take(2)
+    .joinToString("") { it.first().uppercase() }
+    .ifEmpty { "?" }
+
+/** Étape 1 — recherche + liste d'équipes (avec sélecteur de roster inline). */
 @Composable
-private fun RosterCell(
-    roster: MKCTeamRoster,
-    isSelected: Boolean,
-    onClick: () -> Unit
+private fun ColumnScope.OpponentStep(
+    state: AddWarViewModel.State,
+    search: String,
+    onSearch: (String) -> Unit,
+    onTeamSelected: (TeamEntity) -> Unit,
+    onRosterSelected: (TeamEntity, MKCTeamRoster) -> Unit
 ) {
-    val backgroundColor = when (isSelected) {
-        true -> Colors.whiteAlphaed
-        else -> Colors.blackAlphaed
+    LazyColumn(
+        Modifier.fillMaxWidth().weight(1f),
+        verticalArrangement = Arrangement.spacedBy(11.dp)
+    ) {
+        item {
+            MKTextField(
+                baseModifier = Modifier.semantics { contentDescription = "Recherche equipe" },
+                value = search,
+                onValueChange = onSearch,
+                placeHolderRes = R.string.addwar_search_team,
+                backgroundColor = Colors.blackAlphaed
+            )
+        }
+        item {
+            Eyebrow(stringResource(R.string.addwar_select_opponent))
+        }
+        items(state.teamList, key = { it.id }) { team ->
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val rosterCount = team.rosters.size
+                MKListRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    initials = team.tag.take(3),
+                    avatarColor = team.color.toTeamColor(),
+                    avatarUrl = team.logo?.let { "https://mkcentral.com$it" },
+                    name = team.name,
+                    subtitle = when {
+                        rosterCount > 1 -> stringResource(R.string.addwar_rosters_count, rosterCount)
+                        else -> "${stringResource(R.string.roster).lowercase()} · ${team.tag}"
+                    },
+                    onClick = { onTeamSelected(team) },
+                    trailing = { MKListRowChevron() }
+                )
+                // Sélecteur de roster inline (équipe multi-rosters, cf. maquette `roster-pick`).
+                if (state.expandedRosterTeamId == team.id) {
+                    RosterPicker(
+                        rosters = state.expandedRosters,
+                        onRosterSelected = { onRosterSelected(team, it) }
+                    )
+                }
+            }
+        }
+        item {
+            MKText(
+                text = stringResource(R.string.addwar_roster_hint),
+                textColor = Colors.white55,
+                fontSize = 12,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+            )
+        }
     }
-    val textColor = when (isSelected) {
-        true -> Colors.black
-        else -> Colors.white
-    }
-    Box(
+}
+
+/** Sélecteur de roster déplié (`.roster-pick`) : cadre pointillé translucide + lignes rosters. */
+@Composable
+private fun RosterPicker(rosters: List<MKCTeamRoster>, onRosterSelected: (MKCTeamRoster) -> Unit) {
+    Column(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp)
-            .background(backgroundColor, RoundedCornerShape(5.dp))
-            .border(1.dp, Colors.white, RoundedCornerShape(5.dp))
-            .clickable { onClick() }
+            .clip(StatCardRadius)
+            .background(Colors.white30, StatCardRadius)
+            .padding(11.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        MKText(
-            modifier = Modifier
-                .padding(10.dp)
-                .align(Alignment.Center),
-            fontSize = 16,
-            font = Fonts.NunitoBD,
-            textColor = textColor,
-            text = "${roster.name} (${roster.tag})"
-        )
-    }
-}
-
-@Composable
-private fun AddWarRosterHeader(text: String) {
-    Box(Modifier
-        .fillMaxWidth()
-        .background(Colors.blackAlphaed, RoundedCornerShape(5.dp))
-        .border(1.dp, Colors.white, RoundedCornerShape(5.dp))) {
-        MKText(
-            modifier = Modifier
-                .padding(10.dp)
-                .align(Alignment.Center),
-            fontSize = 18,
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            text = text
-        )
-    }
-}
-
-@Composable
-private fun LazyItemScope.AddWarPlayerGrid(
-    players: List<PlayerSelector>,
-    onPlayerSelected: (PlayerEntity) -> Unit
-) {
-    VerticalGrid {
-        players.forEach {
-            val textColor = when (it.isSelected) {
-                true -> Colors.black
-                else -> Colors.white
-            }
-            val backgroundColor = when (it.isSelected) {
-                true -> Colors.whiteAlphaed
-                else -> Colors.blackAlphaed
-            }
-            PlayerCell(
-                modifier = Modifier
-                    .padding(5.dp)
-                    .fillParentMaxWidth(0.48f),
-                player = it.player,
-                textColor = textColor,
-                backgroundColor = backgroundColor,
-                onClick = onPlayerSelected
+        Eyebrow(stringResource(R.string.addwar_pick_roster))
+        rosters.forEach { roster ->
+            MKListRow(
+                modifier = Modifier.fillMaxWidth(),
+                initials = roster.tag.take(3),
+                avatarColor = roster.color.toInt().toTeamColor(),
+                name = "${roster.name} — ${roster.tag}",
+                subtitle = "${stringResource(R.string.roster).lowercase()} · ${roster.tag}",
+                avatarSize = 28.dp,
+                onClick = { onRosterSelected(roster) },
+                trailing = { MKListRowChevron() }
             )
         }
+    }
+}
+
+/** Étape 2 — progression + sélection des joueurs + roster adverse indicatif + CTA. */
+@Composable
+private fun ColumnScope.PlayersStep(
+    state: AddWarViewModel.State,
+    onPlayerSelected: (PlayerEntity) -> Unit,
+    onPrevious: () -> Unit,
+    onStart: () -> Unit
+) {
+    Column(Modifier.fillMaxWidth().weight(1f)) {
+        LazyColumn(
+            Modifier.fillMaxWidth().weight(1f),
+            verticalArrangement = Arrangement.spacedBy(11.dp)
+        ) {
+            // 1. Carte de progression (compteur + barre).
+            item { ProgressCard(selected = state.selectedPlayerCount, total = 6) }
+
+            // 2. Ton roster : lignes sélectionnables (toggle pastille verte ✓).
+            state.playerList.forEach { (rosterName, list) ->
+                item {
+                    Eyebrow(
+                        when (rosterName.isEmpty()) {
+                            true -> stringResource(R.string.allies)
+                            else -> "${stringResource(R.string.addwar_your_roster)} · $rosterName"
+                        }
+                    )
+                }
+                items(list, key = { it.player.id }) { selector ->
+                    MKListRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        initials = initialsOf(selector.player.name),
+                        avatarColor = playerAvatarColor(selector.player.id),
+                        name = selector.player.name,
+                        onClick = { onPlayerSelected(selector.player) },
+                        trailing = { MKListRowCheck(selected = selector.isSelected) }
+                    )
+                }
+            }
+
+            // 3. Roster adverse : lignes indicatives (non saisies côté app).
+            state.opponentPreviews.forEach { preview ->
+                if (preview.players.isNotEmpty()) {
+                    item {
+                        Eyebrow("${stringResource(R.string.addwar_opponent_roster)} · ${preview.name}")
+                    }
+                    items(preview.players, key = { "${preview.tag}-${it.playerId}" }) { player ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(11.dp)
+                        ) {
+                            Box(
+                                Modifier.size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(preview.color.toTeamColor())
+                                    .border(2.dp, Colors.white.copy(alpha = 0.75f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                MKText(text = initialsOf(player.name), font = Fonts.Urbanist, fontSize = 11, textColor = Colors.white, resizable = false)
+                            }
+                            MKText(text = player.name, font = Fonts.NunitoBD, fontSize = 13, textColor = Colors.white.copy(alpha = 0.8f), textAlign = TextAlign.Start)
+                        }
+                    }
+                }
+            }
+
+            item {
+                MKText(
+                    text = stringResource(R.string.addwar_opponent_indicative),
+                    textColor = Colors.white55,
+                    fontSize = 12,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        // 4. Pied : Précédent + CTA « Commencer la war ».
+        Spacer(Modifier.height(9.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            MKButton(
+                modifier = Modifier.weight(1f),
+                style = MKButtonStyle.Minor(Colors.white),
+                text = stringResource(R.string.addwar_previous),
+                onClick = onPrevious
+            )
+            MKButton(
+                modifier = Modifier.weight(1f),
+                style = MKButtonStyle.Gradient,
+                text = stringResource(R.string.addwar_start_war),
+                enabled = state.buttonEnabled,
+                onClick = onStart
+            )
+        }
+    }
+}
+
+/** Carte de progression de la sélection : compteur `n / total` + barre. */
+@Composable
+private fun ProgressCard(selected: Int, total: Int) {
+    StatCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            MKText(
+                text = stringResource(R.string.addwar_progress, selected, total),
+                font = Fonts.Urbanist,
+                fontSize = 14,
+                textColor = Colors.white,
+                resizable = false
+            )
+            Box(
+                Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(20.dp)).background(Color(0x3D000000))
+            ) {
+                val fraction = (selected.toFloat() / total).coerceIn(0f, 1f)
+                Box(Modifier.fillMaxWidth(fraction).height(6.dp).background(Colors.green))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        MKText(
+            text = stringResource(R.string.addwar_progress_hint),
+            textColor = Colors.white55,
+            fontSize = 12,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

@@ -213,22 +213,23 @@ flowchart LR
     G --> I["Historique"]
 ```
 
-### Étape 1 — Choix de l'adversaire (`AddWarScreen`, page 1)
-- **Segmenté 12/24 joueurs** en tête de page (composant partagé `MKSegmentedSelector`) : c'est le point d'entrée du choix de mode (déménagé de l'Accueil). Le changer bascule le mode **dynamiquement sur le même écran** (pas de re-navigation ni de transition slide) : l'argument de nav ne fait que semer la valeur initiale, puis `AddWarViewModel.onModeChange` met à jour un état interne réactif et **réinitialise la sélection d'adversaires** (1 équipe en 12p, 3 en 24p) ; l'affichage (nombre d'emplacements, libellés, CTA) se recompose.
-- **12 joueurs** : sélectionner **1** équipe. **24 joueurs** : sélectionner **3** équipes.
-- Recherche par nom/tag (insensible à la casse) ; le texte est comparé au nom et au tag de l'équipe **ainsi qu'au nom et au tag de chacun de ses rosters** — chercher le nom d'un roster fait donc remonter l'équipe parente (affichée une seule fois, avec son avatar). Aucune requête réseau (rosters déjà en local). Emplacements visuels pour les équipes choisies. Le champ de recherche **reste affiché même quand la recherche ne renvoie aucun résultat** (seule la grille est alors vide) : l'utilisateur peut corriger sa saisie sans perdre le clavier. La section recherche + grille ne disparaît qu'une fois **tous les adversaires sélectionnés** (1 en 12p, 3 en 24p).
-- **Sélection du roster adverse** : à chaque équipe choisie, l'app récupère ses rosters MK World.
-  - **Un seul roster** → il est retenu automatiquement, sans étape supplémentaire.
-  - **Plusieurs rosters** → un **bottomSheet** s'ouvre : liste des rosters (nom + tag), preview du roster sélectionné, bouton « Suivant » actif une fois un roster choisi. En 24p, l'étape se répète pour chaque équipe adverse ayant plusieurs rosters.
-- L'emplacement de l'adversaire sélectionné affiche le **nom du roster** (avatar de l'équipe).
-- Bouton « Suivant » actif quand le bon nombre d'équipes est sélectionné (`nextButtonEnabled`). Le bouton retour ferme d'abord le bottomSheet s'il est ouvert, sinon retire la dernière équipe sélectionnée.
-- Nom de war affiché avec les **tags des rosters** : `TAG_rosterHôte - TAG_rosterAdv1 - TAG_rosterAdv2 …`.
+**Wizard 2 étapes sur un seul écran** (`AddWarScreen`, rendu **pixel-perfect** vs la maquette du prototype UX — écran `addwar`, rules 13/15). En tête : le **segmenté 12/24** (`MKSegmentedSelector`) puis le **stepper cliquable** `1 · Adversaire` → `2 · Joueurs` (composant partagé `MKStepper`). Les étapes basculent **dynamiquement** (état `step` du ViewModel, **aucune re-navigation** ni transition slide, rules 11/14) ; l'étape « Joueurs » n'est accessible qu'une fois l'adversaire complet. Le bouton retour replie d'abord le sélecteur de roster inline, sinon revient de l'étape 2 à l'étape 1, sinon retire la dernière équipe, sinon quitte.
 
-### Étape 2 — Composition (`AddWarScreen`, page 2)
-- Joueurs **groupés par roster** (en-têtes collants ; en-tête vide = alliés).
-- Sélection de joueurs, mise en évidence des sélectionnés.
-- Bouton **« Commencer »** actif quand **exactement 6** joueurs sont sélectionnés.
-- À la création : `War(id = now, teamHost = rosterId, teamOpponent = [rosterId…], scores = [WarScore(0)…])` — `teamOpponent` contient désormais le(s) **rosterId** choisi(s) à l'étape 1 (et non le teamId) ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
+### Étape 1 — Choix de l'adversaire
+- **Segmenté 12/24 joueurs** : point d'entrée du choix de mode (déménagé de l'Accueil). Le changer bascule le mode **dynamiquement sur le même écran** : l'argument de nav ne fait que semer la valeur initiale, puis `AddWarViewModel.onModeChange` met à jour l'état réactif, **revient à l'étape 1** et **réinitialise la sélection d'adversaires** (1 équipe en 12p, 3 en 24p).
+- **12 joueurs** : sélectionner **1** équipe. **24 joueurs** : sélectionner **3** équipes.
+- Champ « **Rechercher une équipe / un tag** » (insensible à la casse) ; le texte est comparé au nom et au tag de l'équipe **ainsi qu'au nom et au tag de chacun de ses rosters** — chercher le nom d'un roster fait donc remonter l'équipe parente (affichée une seule fois, avec son avatar). Aucune requête réseau (rosters déjà en local). Sous le champ, une **liste d'équipes** (`MKListRow` : logo de l'équipe, nom + sous-texte `roster · TAG` ou `N rosters mkworld`, chevron), suivie d'un **hint** rappelant « Logo = équipe, nom + tag = roster… ». Un pied de liste réserve de la marge pour ne pas coller au CTA.
+- **Sélection du roster adverse** (rule 12) : au clic sur une équipe, l'app récupère ses rosters MK World.
+  - **Un seul roster** → il est retenu automatiquement et l'écran passe directement à l'étape 2.
+  - **Plusieurs rosters** → un **sélecteur inline** se déplie **sous la ligne** de l'équipe (cadre translucide `roster-pick` de la maquette) : une ligne par roster (nom — tag, avatar hérité de l'équipe). Choisir un roster le retient et passe à l'étape 2. En 24p, l'opération se répète pour chaque équipe adverse.
+- Nom de war construit avec les **tags des rosters** : `TAG_rosterHôte - TAG_rosterAdv1 - TAG_rosterAdv2 …`.
+
+### Étape 2 — Composition
+- **Carte de progression** : compteur `n / 6` + barre verte + hint « Sélectionne les 6 joueurs… ».
+- **Ton roster** : joueurs **groupés par roster** (un eyebrow par roster ; eyebrow « Allies » pour les alliés). Chaque ligne (`MKListRow`) porte une **pastille de sélection ✓** verte qui bascule au clic.
+- **Roster adverse** (indicatif, non saisi) : lignes des joueurs du roster adverse retenu (`OpponentPreview.players`, issus du détail MKCentral), atténuées, précédées d'un hint « L'adversaire est indicatif… ».
+- Pied : bouton **« Précédent »** (→ étape 1) + CTA **« Commencer la war »** actif quand **exactement 6** joueurs sont sélectionnés.
+- À la création : `War(id = now, teamHost = rosterId, teamOpponent = [rosterId…], scores = [WarScore(0)…])` — `teamOpponent` contient le(s) **rosterId** choisi(s) à l'étape 1 (et non le teamId) ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
 
 ### Étape 3 — War en cours (`CurrentWarScreen`)
 > Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war. Si un adversaire ne peut plus être résolu localement (équipe/roster disparu du cache, war ancienne jamais synchronisée), il n'est **plus effacé** de l'affichage : il apparaît **en dégradé** (« Équipe inconnue » / tag `???`, sans logo) au lieu de disparaître.
