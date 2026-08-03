@@ -183,6 +183,32 @@ class AddWarViewModel @AssistedInject constructor(
     fun onModeChange(is24p: Boolean) {
         if (is24p == this.is24p) return
         this.is24p = is24p
+        resetOpponentSelection()
+    }
+
+    /**
+     * Navigation entre étapes du wizard (0 = Adversaire, 1 = Joueurs, 2 = Récap) sans
+     * re-navigation. **Un retour en arrière annule la sélection de l'étape rejointe** :
+     * revenir à l'Adversaire vide la sélection d'adversaire(s) (liste complète à
+     * nouveau), revenir aux Joueurs remet la line-up à zéro. Aller **en avant** (ou
+     * rester) ne réinitialise rien.
+     */
+    fun onStepChange(step: Int) {
+        val current = state.value.step
+        when {
+            step >= current -> _state.value = state.value.copy(step = step)
+            step == 0 -> resetOpponentSelection()
+            else -> resetPlayerSelection()
+        }
+    }
+
+    /**
+     * Réinitialise la sélection d'adversaire(s) et revient à l'étape 1. Mutualisé entre
+     * [onModeChange] (changement 12/24) et [onStepChange] (retour arrière vers l'étape
+     * Adversaire) — d'où l'extraction (≥ 2 appelants, rules 30/61). Le `is24p` reflète
+     * le mode courant.
+     */
+    private fun resetOpponentSelection() {
         selectedRosterIds = listOf()
         _state.value = state.value.copy(
             step = 0,
@@ -198,9 +224,15 @@ class AddWarViewModel @AssistedInject constructor(
         )
     }
 
-    /** Va à l'étape [step] du wizard (0 = Adversaire, 1 = Joueurs, 2 = Récap) sans re-navigation. */
-    fun onStepChange(step: Int) {
-        _state.value = state.value.copy(step = step)
+    /** Remet la line-up à zéro (retour arrière vers l'étape Joueurs). */
+    private fun resetPlayerSelection() {
+        _state.value = state.value.copy(
+            step = 1,
+            playerList = state.value.playerList.mapValues { (_, list) ->
+                list.map { it.copy(isSelected = false) }
+            },
+            buttonEnabled = false
+        )
     }
 
     /** Replie le sélecteur de roster inline éventuellement déplié (étape 1). */
