@@ -228,15 +228,18 @@ flowchart LR
 
 ### Étape 2 — Composition
 - **Carte de progression** : compteur `n / 6` + barre verte + hint « Sélectionne les 6 joueurs… ».
-- **Ton roster** : joueurs **groupés par roster** (un eyebrow par roster ; eyebrow « Allies » pour les alliés). Chaque ligne (`MKListRow`) porte une **pastille de sélection ✓** verte qui bascule au clic.
-- **Roster adverse** (indicatif, non saisi) : lignes des joueurs du roster adverse retenu (`OpponentPreview.players`, issus du détail MKCentral), atténuées, précédées d'un hint « L'adversaire est indicatif… ».
+- **Ton roster** : joueurs **groupés par roster** (un eyebrow par roster ; eyebrow « Allies » pour les alliés). Chaque ligne (`MKListRow`) porte la **photo de profil MKCentral** du joueur (résolue en parallèle ; **initiales colorées en repli** tant que la photo n'est pas là, rule 12) et une **pastille de sélection ✓** verte qui bascule au clic.
+- **Roster adverse** (indicatif, non saisi) : lignes des joueurs du roster adverse retenu (`OpponentPreview.players`, issus du détail MKCentral), atténuées, en **initiales** (photo non résolue — voir écart ci-dessous), précédées d'un hint « L'adversaire est indicatif… ».
 - **Aucun CTA** sur cette étape : dès que **exactement 6** joueurs sont sélectionnés, l'écran **bascule automatiquement** sur l'étape 3 « Récap » (retirer un joueur y ramène). C'est `AddWarViewModel.onPlayerSelected` qui pose `step = 2` quand la composition est complète, `step = 1` sinon.
 
 ### Étape 3 — Récap
+- **Accessible seulement** quand **adversaire complet ET line-up complète** (les 6 joueurs) : le stepper conditionne l'accès à `nextButtonEnabled && buttonEnabled`.
 - Rappel de l'**adversaire (des adversaires en 24p)** : `MKListRow` avec **nom + tag du roster** et **avatar de l'équipe** (rule 12).
-- Rappel de la **line-up** : les 6 joueurs sélectionnés (`MKListRow` + pastille ✓).
+- Rappel de la **line-up** : les 6 joueurs sélectionnés (`MKListRow` avec **photo de profil MKCentral** / initiales en repli + pastille ✓).
 - Pied : bouton **« Précédent »** (→ étape 2) + **le seul CTA de lancement**, **« Démarrer la war »** (actif tant que la composition reste à 6 joueurs) → appelle `createWar()`.
 - À la création : `War(id = now, teamHost = rosterId, teamOpponent = [rosterId…], scores = [WarScore(0)…])` — `teamOpponent` contient le(s) **rosterId** choisi(s) à l'étape 1 (et non le teamId) ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
+
+> **Écart mineur assumé** : les **photos de profil** ne sont résolues que pour **ton roster** (étape 2 + line-up du Récap), pas pour les joueurs adverses **indicatifs** (qui restent en initiales). Les résoudre imposerait jusqu'à 18 appels `getPlayer` supplémentaires en 24p pour une information seulement indicative — non justifié.
 
 ### Étape 4 — War en cours (`CurrentWarScreen`)
 > Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war. Si un adversaire ne peut plus être résolu localement (équipe/roster disparu du cache, war ancienne jamais synchronisée), il n'est **plus effacé** de l'affichage : il apparaît **en dégradé** (« Équipe inconnue » / tag `???`, sans logo) au lieu de disparaître.

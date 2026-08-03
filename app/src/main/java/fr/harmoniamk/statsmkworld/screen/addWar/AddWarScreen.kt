@@ -104,7 +104,7 @@ fun AddWarScreen(
         )
         Spacer(Modifier.height(11.dp))
         // Stepper cliquable : l'étape Joueurs n'est accessible que si l'adversaire est
-        // complet ; le Récap qu'une fois les 6 joueurs sélectionnés.
+        // complet ; le Récap qu'une fois l'adversaire complet ET les 6 joueurs sélectionnés.
         MKStepper(
             steps = listOf(
                 stringResource(R.string.addwar_step_opponent),
@@ -114,9 +114,11 @@ fun AddWarScreen(
             step = state.step,
             enabled = { index ->
                 when (index) {
+                    // Adversaire : toujours ; Joueurs : adversaire complet ; Récap :
+                    // adversaire complet ET line-up complète (exactement 6 joueurs).
                     0 -> true
                     1 -> state.nextButtonEnabled
-                    else -> state.buttonEnabled
+                    else -> state.nextButtonEnabled && state.buttonEnabled
                 }
             },
             onStepClick = viewModel::onStepChange
@@ -278,6 +280,7 @@ private fun ColumnScope.PlayersStep(
                     modifier = Modifier.fillMaxWidth(),
                     initials = initialsOf(selector.player.name),
                     avatarColor = playerAvatarColor(selector.player.id),
+                    avatarUrl = state.playerAvatars[selector.player.id],
                     name = selector.player.name,
                     onClick = { onPlayerSelected(selector.player) },
                     trailing = { MKListRowCheck(selected = selector.isSelected) }
@@ -344,6 +347,7 @@ private fun ColumnScope.RecapStep(
                 modifier = Modifier.fillMaxWidth(),
                 initials = initialsOf(player.name),
                 avatarColor = playerAvatarColor(player.id),
+                avatarUrl = state.playerAvatars[player.id],
                 name = player.name,
                 trailing = { MKListRowCheck(selected = true) }
             )

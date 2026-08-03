@@ -21,6 +21,9 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -85,7 +88,11 @@ class AddWarViewModel @AssistedInject constructor(
         // id de l'équipe dont le sélecteur de roster (multi-rosters) est déplié
         // inline sous sa ligne (null = aucun). Cf. maquette `roster-pick`.
         val expandedRosterTeamId: String? = null,
-        val expandedRosters: List<MKCTeamRoster> = listOf()
+        val expandedRosters: List<MKCTeamRoster> = listOf(),
+        // Photos de profil MKCentral des joueurs de ton roster (playerId → url déjà
+        // préfixée). Résolues une seule fois en parallèle ; les cellules s'affichent
+        // en initiales tant que l'avatar n'est pas là, puis se mettent à jour (rule 12).
+        val playerAvatars: Map<String, String> = emptyMap()
     ) {
         /** Nombre d'adversaires attendus selon le mode (1 en 12p, 3 en 24p). */
         val opponentCount: Int get() = if (is24p) 3 else 1
@@ -107,6 +114,15 @@ class AddWarViewModel @AssistedInject constructor(
     // rosterId adverse retenu pour chaque équipe sélectionnée (index aligné sur teamSelected).
     private var selectedRosterIds = listOf<String>()
 
+    // Photos de profil MKCentral résolues (playerId → url préfixée). Portée par le
+    // State construit dans le `zip` pour survivre à ses ré-émissions ; peuplée une
+    // seule fois par [resolvePlayerAvatars]. `@Volatile` par prudence (écrite depuis
+    // une coroutine, lue dans le mapping du flow).
+    @Volatile
+    private var playerAvatars: Map<String, String> = emptyMap()
+    // Garde-fou : la résolution des avatars n'est lancée qu'une fois.
+    private var avatarsRequested = false
+
     private val _goToCurrent = MutableSharedFlow<Unit>()
     val goToCurrent = _goToCurrent.asSharedFlow()
 
@@ -116,17 +132,47 @@ class AddWarViewModel @AssistedInject constructor(
             this.teams = teams
             this.players = players
             this.currentTeam = team
+            // Résout (une fois) les photos de profil des joueurs, en parallèle.
+            resolvePlayerAvatars(players)
             State(
                 is24p = is24p,
                 teamList = teams,
                 playerList = players.map { PlayerSelector(it, false) }.groupBy { selector ->
                     val roster = team?.rosters?.firstOrNull { it.id.toString() == selector.player.rosterId }
                     roster?.name.orEmpty()
-                }
+                },
+                playerAvatars = playerAvatars
             )
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+    /**
+     * Résout **une seule fois**, en **parallèle** (`async`/`awaitAll`), les photos de
+     * profil MKCentral des joueurs de ton roster (`MKCPlayer.userSettings.avatar`),
+     * puis pousse la `Map<playerId, url>` dans `_state` (rendu réactif : les cellules
+     * passent des initiales à la photo). Ne bloque pas l'émission courante du flow.
+     */
+    private fun resolvePlayerAvatars(players: List<PlayerEntity>) {
+        if (avatarsRequested || players.isEmpty()) return
+        avatarsRequested = true
+        viewModelScope.launch {
+            val resolved = coroutineScope {
+                players.map { player ->
+                    async {
+                        val avatar = mkCentralDataSource.getPlayer(player.id).successResponse
+                            ?.userSettings?.avatar?.takeIf { it.isNotEmpty() }
+                            ?.let { "https://mkcentral.com$it" }
+                        player.id to avatar
+                    }
+                }.awaitAll()
+            }.mapNotNull { (id, url) -> url?.let { id to it } }.toMap()
+            if (resolved.isNotEmpty()) {
+                playerAvatars = resolved
+                _state.value = state.value.copy(playerAvatars = resolved)
+            }
+        }
+    }
 
     /**
      * Bascule 12↔24 sur le MÊME écran (pas de re-navigation) : met à jour le mode
