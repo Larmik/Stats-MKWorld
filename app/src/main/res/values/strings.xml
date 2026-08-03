@@ -259,6 +259,9 @@
     <string name="addwar_title">NEW WAR</string>
     <string name="addwar_step_opponent">1 · Opponent</string>
     <string name="addwar_step_players">2 · Players</string>
+    <string name="addwar_step_recap">3 · Summary</string>
+    <string name="addwar_recap_opponent">Opponent</string>
+    <string name="addwar_recap_players">Your line-up</string>
     <string name="addwar_search_team">Search for a team / tag</string>
     <string name="addwar_select_opponent">Select the opponent</string>
     <string name="addwar_roster_hint">Logo = team, name + tag = roster: as soon as a team has several mkworld rosters, you pick the roster.</string>

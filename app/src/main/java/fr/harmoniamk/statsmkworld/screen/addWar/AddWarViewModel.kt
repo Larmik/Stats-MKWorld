@@ -64,8 +64,8 @@ class AddWarViewModel @AssistedInject constructor(
     )
 
     data class State(
-        // Étape courante du wizard (0 = Adversaire, 1 = Joueurs). Pilotée dans le VM
-        // pour que le changement de mode 12/24 la réinitialise proprement.
+        // Étape courante du wizard (0 = Adversaire, 1 = Joueurs, 2 = Récap). Pilotée
+        // dans le VM pour que le changement de mode 12/24 la réinitialise proprement.
         val step: Int = 0,
         // Mode courant : pilote le nombre d'adversaires (1 en 12p, 3 en 24p) et
         // l'affichage des emplacements adverses côté écran.
@@ -92,6 +92,10 @@ class AddWarViewModel @AssistedInject constructor(
 
         /** Nombre de joueurs actuellement sélectionnés (sur les 6 attendus). */
         val selectedPlayerCount: Int get() = playerList.values.flatten().count { it.isSelected }
+
+        /** Joueurs actuellement sélectionnés (pour le récap de l'étape 3). */
+        val selectedPlayers: List<PlayerEntity>
+            get() = playerList.values.flatten().filter { it.isSelected }.map { it.player }
     }
 
     private val _state = MutableStateFlow(State(is24p = initialIs24p))
@@ -148,7 +152,7 @@ class AddWarViewModel @AssistedInject constructor(
         )
     }
 
-    /** Va à l'étape [step] du wizard (0 = Adversaire, 1 = Joueurs) sans re-navigation. */
+    /** Va à l'étape [step] du wizard (0 = Adversaire, 1 = Joueurs, 2 = Récap) sans re-navigation. */
     fun onStepChange(step: Int) {
         _state.value = state.value.copy(step = step)
     }
@@ -267,9 +271,14 @@ class AddWarViewModel @AssistedInject constructor(
             }
             newValues[pair.key] = newList
         }
+        // Composition complète (exactement 6 joueurs) → bascule AUTOMATIQUEMENT sur
+        // l'étape 3 « Récap » (sans re-navigation). Retirer un joueur ramène à
+        // l'étape 2 pour compléter la sélection.
+        val complete = newValues.flatMap { it.value }.count { it.isSelected } == 6
         _state.value = state.value.copy(
+            step = if (complete) 2 else 1,
             playerList = newValues,
-            buttonEnabled = newValues.flatMap { it.value }.filter { it.isSelected }.size == 6
+            buttonEnabled = complete
         )
     }
 

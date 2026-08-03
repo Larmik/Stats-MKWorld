@@ -213,7 +213,9 @@ flowchart LR
     G --> I["Historique"]
 ```
 
-**Wizard 2 étapes sur un seul écran** (`AddWarScreen`, rendu **pixel-perfect** vs la maquette du prototype UX — écran `addwar`, rules 13/15). En tête : le **segmenté 12/24** (`MKSegmentedSelector`) puis le **stepper cliquable** `1 · Adversaire` → `2 · Joueurs` (composant partagé `MKStepper`). Les étapes basculent **dynamiquement** (état `step` du ViewModel, **aucune re-navigation** ni transition slide, rules 11/14) ; l'étape « Joueurs » n'est accessible qu'une fois l'adversaire complet. Le bouton retour replie d'abord le sélecteur de roster inline, sinon revient de l'étape 2 à l'étape 1, sinon retire la dernière équipe, sinon quitte.
+**Wizard 3 étapes sur un seul écran** (`AddWarScreen`, rendu **pixel-perfect** vs la maquette du prototype UX — écran `addwar`, rules 13/15). En tête : le **segmenté 12/24** (`MKSegmentedSelector`) puis le **stepper cliquable** `1 · Adversaire` → `2 · Joueurs` → `3 · Récap` (composant partagé `MKStepper`). Les étapes basculent **dynamiquement** (état `step` du ViewModel, **aucune re-navigation** ni transition slide, rules 11/14) ; l'étape « Joueurs » n'est accessible qu'une fois l'adversaire complet, et « Récap » qu'une fois les 6 joueurs sélectionnés. Le bouton retour replie d'abord le sélecteur de roster inline, sinon recule d'une étape (3→2→1), sinon retire la dernière équipe, sinon quitte.
+
+> **Divergence assumée vs la maquette** (demande utilisateur explicite, PR #54 / audit B23) : la maquette d'origine ne décrit **que 2 étapes** (Adversaire, Joueurs, avec le CTA « Commencer la war » en pied d'étape Joueurs). À la demande de l'utilisateur, une **3ᵉ étape « Récap »** a été ajoutée : le CTA de lancement est **retiré de l'étape Joueurs** et **déplacé sur l'étape Récap** ; le passage d'étape se fait par la **logique de complétion** (adversaire complet → Joueurs ; 6 joueurs → Récap) et/ou le stepper. Le style reste conforme à la maquette.
 
 ### Étape 1 — Choix de l'adversaire
 - **Segmenté 12/24 joueurs** : point d'entrée du choix de mode (déménagé de l'Accueil). Le changer bascule le mode **dynamiquement sur le même écran** : l'argument de nav ne fait que semer la valeur initiale, puis `AddWarViewModel.onModeChange` met à jour l'état réactif, **revient à l'étape 1** et **réinitialise la sélection d'adversaires** (1 équipe en 12p, 3 en 24p).
@@ -228,10 +230,15 @@ flowchart LR
 - **Carte de progression** : compteur `n / 6` + barre verte + hint « Sélectionne les 6 joueurs… ».
 - **Ton roster** : joueurs **groupés par roster** (un eyebrow par roster ; eyebrow « Allies » pour les alliés). Chaque ligne (`MKListRow`) porte une **pastille de sélection ✓** verte qui bascule au clic.
 - **Roster adverse** (indicatif, non saisi) : lignes des joueurs du roster adverse retenu (`OpponentPreview.players`, issus du détail MKCentral), atténuées, précédées d'un hint « L'adversaire est indicatif… ».
-- Pied : bouton **« Précédent »** (→ étape 1) + CTA **« Commencer la war »** actif quand **exactement 6** joueurs sont sélectionnés.
+- **Aucun CTA** sur cette étape : dès que **exactement 6** joueurs sont sélectionnés, l'écran **bascule automatiquement** sur l'étape 3 « Récap » (retirer un joueur y ramène). C'est `AddWarViewModel.onPlayerSelected` qui pose `step = 2` quand la composition est complète, `step = 1` sinon.
+
+### Étape 3 — Récap
+- Rappel de l'**adversaire (des adversaires en 24p)** : `MKListRow` avec **nom + tag du roster** et **avatar de l'équipe** (rule 12).
+- Rappel de la **line-up** : les 6 joueurs sélectionnés (`MKListRow` + pastille ✓).
+- Pied : bouton **« Précédent »** (→ étape 2) + **le seul CTA de lancement**, **« Démarrer la war »** (actif tant que la composition reste à 6 joueurs) → appelle `createWar()`.
 - À la création : `War(id = now, teamHost = rosterId, teamOpponent = [rosterId…], scores = [WarScore(0)…])` — `teamOpponent` contient le(s) **rosterId** choisi(s) à l'étape 1 (et non le teamId) ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
 
-### Étape 3 — War en cours (`CurrentWarScreen`)
+### Étape 4 — War en cours (`CurrentWarScreen`)
 > Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war. Si un adversaire ne peut plus être résolu localement (équipe/roster disparu du cache, war ancienne jamais synchronisée), il n'est **plus effacé** de l'affichage : il apparaît **en dégradé** (« Équipe inconnue » / tag `???`, sans logo) au lieu de disparaître.
 
 Pager :

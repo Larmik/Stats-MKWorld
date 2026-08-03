@@ -83,8 +83,8 @@ fun AddWarScreen(
         when {
             // Sélecteur de roster déplié → le replier.
             state.expandedRosterTeamId != null -> viewModel.collapseRosterPicker()
-            // Étape 2 → revenir à l'étape 1.
-            state.step == 1 -> viewModel.onStepChange(0)
+            // Étape 3 (Récap) → revenir à l'étape 2 ; étape 2 → étape 1.
+            state.step > 0 -> viewModel.onStepChange(state.step - 1)
             // Étape 1 avec un adversaire déjà retenu → le retirer.
             state.teamSelected?.isNotEmpty() == true -> viewModel.onRemoveTeam()
             else -> onBack()
@@ -103,14 +103,22 @@ fun AddWarScreen(
             onClick = { selected -> viewModel.onModeChange(selected == 1) }
         )
         Spacer(Modifier.height(11.dp))
-        // Stepper cliquable : l'étape 2 n'est accessible que si l'adversaire est complet.
+        // Stepper cliquable : l'étape Joueurs n'est accessible que si l'adversaire est
+        // complet ; le Récap qu'une fois les 6 joueurs sélectionnés.
         MKStepper(
             steps = listOf(
                 stringResource(R.string.addwar_step_opponent),
-                stringResource(R.string.addwar_step_players)
+                stringResource(R.string.addwar_step_players),
+                stringResource(R.string.addwar_step_recap)
             ),
             step = state.step,
-            enabled = { index -> index == 0 || state.nextButtonEnabled },
+            enabled = { index ->
+                when (index) {
+                    0 -> true
+                    1 -> state.nextButtonEnabled
+                    else -> state.buttonEnabled
+                }
+            },
             onStepClick = viewModel::onStepChange
         )
         Spacer(Modifier.height(13.dp))
@@ -126,10 +134,13 @@ fun AddWarScreen(
                 onTeamSelected = viewModel::onTeamSelected,
                 onRosterSelected = viewModel::onRosterSelected
             )
-            else -> PlayersStep(
+            1 -> PlayersStep(
                 state = state,
-                onPlayerSelected = viewModel::onPlayerSelected,
-                onPrevious = { viewModel.onStepChange(0) },
+                onPlayerSelected = viewModel::onPlayerSelected
+            )
+            else -> RecapStep(
+                state = state,
+                onPrevious = { viewModel.onStepChange(1) },
                 onStart = viewModel::createWar
             )
         }
@@ -236,98 +247,145 @@ private fun RosterPicker(rosters: List<MKCTeamRoster>, onRosterSelected: (MKCTea
     }
 }
 
-/** Étape 2 — progression + sélection des joueurs + roster adverse indicatif + CTA. */
+/**
+ * Étape 2 — progression + sélection des joueurs + roster adverse indicatif. Aucun CTA :
+ * la composition complète (6 joueurs) bascule AUTOMATIQUEMENT sur l'étape 3 (Récap).
+ */
 @Composable
 private fun ColumnScope.PlayersStep(
     state: AddWarViewModel.State,
-    onPlayerSelected: (PlayerEntity) -> Unit,
-    onPrevious: () -> Unit,
-    onStart: () -> Unit
+    onPlayerSelected: (PlayerEntity) -> Unit
 ) {
-    Column(Modifier.fillMaxWidth().weight(1f)) {
-        LazyColumn(
-            Modifier.fillMaxWidth().weight(1f),
-            verticalArrangement = Arrangement.spacedBy(11.dp)
-        ) {
-            // 1. Carte de progression (compteur + barre).
-            item { ProgressCard(selected = state.selectedPlayerCount, total = 6) }
+    LazyColumn(
+        Modifier.fillMaxWidth().weight(1f),
+        verticalArrangement = Arrangement.spacedBy(11.dp)
+    ) {
+        // 1. Carte de progression (compteur + barre).
+        item { ProgressCard(selected = state.selectedPlayerCount, total = 6) }
 
-            // 2. Ton roster : lignes sélectionnables (toggle pastille verte ✓).
-            state.playerList.forEach { (rosterName, list) ->
-                item {
-                    Eyebrow(
-                        when (rosterName.isEmpty()) {
-                            true -> stringResource(R.string.allies)
-                            else -> "${stringResource(R.string.addwar_your_roster)} · $rosterName"
-                        }
-                    )
-                }
-                items(list, key = { it.player.id }) { selector ->
-                    MKListRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        initials = initialsOf(selector.player.name),
-                        avatarColor = playerAvatarColor(selector.player.id),
-                        name = selector.player.name,
-                        onClick = { onPlayerSelected(selector.player) },
-                        trailing = { MKListRowCheck(selected = selector.isSelected) }
-                    )
-                }
-            }
-
-            // 3. Roster adverse : lignes indicatives (non saisies côté app).
-            state.opponentPreviews.forEach { preview ->
-                if (preview.players.isNotEmpty()) {
-                    item {
-                        Eyebrow("${stringResource(R.string.addwar_opponent_roster)} · ${preview.name}")
-                    }
-                    items(preview.players, key = { "${preview.tag}-${it.playerId}" }) { player ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(11.dp)
-                        ) {
-                            Box(
-                                Modifier.size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(preview.color.toTeamColor())
-                                    .border(2.dp, Colors.white.copy(alpha = 0.75f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                MKText(text = initialsOf(player.name), font = Fonts.Urbanist, fontSize = 11, textColor = Colors.white, resizable = false)
-                            }
-                            MKText(text = player.name, font = Fonts.NunitoBD, fontSize = 13, textColor = Colors.white.copy(alpha = 0.8f), textAlign = TextAlign.Start)
-                        }
-                    }
-                }
-            }
-
+        // 2. Ton roster : lignes sélectionnables (toggle pastille verte ✓).
+        state.playerList.forEach { (rosterName, list) ->
             item {
-                MKText(
-                    text = stringResource(R.string.addwar_opponent_indicative),
-                    textColor = Colors.white55,
-                    fontSize = 12,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
+                Eyebrow(
+                    when (rosterName.isEmpty()) {
+                        true -> stringResource(R.string.allies)
+                        else -> "${stringResource(R.string.addwar_your_roster)} · $rosterName"
+                    }
+                )
+            }
+            items(list, key = { it.player.id }) { selector ->
+                MKListRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    initials = initialsOf(selector.player.name),
+                    avatarColor = playerAvatarColor(selector.player.id),
+                    name = selector.player.name,
+                    onClick = { onPlayerSelected(selector.player) },
+                    trailing = { MKListRowCheck(selected = selector.isSelected) }
                 )
             }
         }
-        // 4. Pied : Précédent + CTA « Commencer la war ».
-        Spacer(Modifier.height(9.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            MKButton(
-                modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Minor(Colors.white),
-                text = stringResource(R.string.addwar_previous),
-                onClick = onPrevious
-            )
-            MKButton(
-                modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Gradient,
-                text = stringResource(R.string.addwar_start_war),
-                enabled = state.buttonEnabled,
-                onClick = onStart
+
+        // 3. Roster adverse : lignes indicatives (non saisies côté app).
+        state.opponentPreviews.forEach { preview ->
+            if (preview.players.isNotEmpty()) {
+                item {
+                    Eyebrow("${stringResource(R.string.addwar_opponent_roster)} · ${preview.name}")
+                }
+                items(preview.players, key = { "${preview.tag}-${it.playerId}" }) { player ->
+                    OpponentPlayerRow(name = player.name, color = preview.color.toTeamColor())
+                }
+            }
+        }
+
+        item {
+            MKText(
+                text = stringResource(R.string.addwar_opponent_indicative),
+                textColor = Colors.white55,
+                fontSize = 12,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+}
+
+/**
+ * Étape 3 — Récap : rappel des adversaire(s) retenu(s) (nom+tag roster, avatar équipe,
+ * rule 12) et des 6 joueurs sélectionnés, puis bouton « Démarrer la war » (le seul CTA
+ * lançant réellement [onStart]). « Précédent » revient à l'étape Joueurs.
+ */
+@Composable
+private fun ColumnScope.RecapStep(
+    state: AddWarViewModel.State,
+    onPrevious: () -> Unit,
+    onStart: () -> Unit
+) {
+    LazyColumn(
+        Modifier.fillMaxWidth().weight(1f),
+        verticalArrangement = Arrangement.spacedBy(11.dp)
+    ) {
+        // Adversaire(s) : nom/tag du roster, avatar de l'équipe (rule 12).
+        item { Eyebrow(stringResource(R.string.addwar_recap_opponent)) }
+        items(state.opponentPreviews, key = { "${it.tag}-${it.name}" }) { preview ->
+            MKListRow(
+                modifier = Modifier.fillMaxWidth(),
+                initials = preview.tag.take(3),
+                avatarColor = preview.color.toTeamColor(),
+                avatarUrl = preview.logo?.let { "https://mkcentral.com$it" },
+                name = preview.name,
+                subtitle = preview.tag
+            )
+        }
+
+        // Line-up : les 6 joueurs retenus.
+        item { Eyebrow(stringResource(R.string.addwar_recap_players)) }
+        items(state.selectedPlayers, key = { it.id }) { player ->
+            MKListRow(
+                modifier = Modifier.fillMaxWidth(),
+                initials = initialsOf(player.name),
+                avatarColor = playerAvatarColor(player.id),
+                name = player.name,
+                trailing = { MKListRowCheck(selected = true) }
+            )
+        }
+    }
+    // Pied : Précédent + CTA « Démarrer la war » (unique bouton de lancement du wizard).
+    Spacer(Modifier.height(9.dp))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        MKButton(
+            modifier = Modifier.weight(1f),
+            style = MKButtonStyle.Minor(Colors.white),
+            text = stringResource(R.string.addwar_previous),
+            onClick = onPrevious
+        )
+        MKButton(
+            modifier = Modifier.weight(1f),
+            style = MKButtonStyle.Gradient,
+            text = stringResource(R.string.addwar_start_war),
+            enabled = state.buttonEnabled,
+            onClick = onStart
+        )
+    }
+}
+
+/** Ligne indicative d'un joueur adverse (`.lrow.static` de la maquette) : pastille + nom, atténué. */
+@Composable
+private fun OpponentPlayerRow(name: String, color: Color) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp)
+    ) {
+        Box(
+            Modifier.size(28.dp)
+                .clip(CircleShape)
+                .background(color)
+                .border(2.dp, Colors.white.copy(alpha = 0.75f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            MKText(text = initialsOf(name), font = Fonts.Urbanist, fontSize = 11, textColor = Colors.white, resizable = false)
+        }
+        MKText(text = name, font = Fonts.NunitoBD, fontSize = 13, textColor = Colors.white.copy(alpha = 0.8f), textAlign = TextAlign.Start)
     }
 }
 

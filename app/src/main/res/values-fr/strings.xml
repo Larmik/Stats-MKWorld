@@ -259,6 +259,9 @@
     <string name="addwar_title">NOUVELLE WAR</string>
     <string name="addwar_step_opponent">1 · Adversaire</string>
     <string name="addwar_step_players">2 · Joueurs</string>
+    <string name="addwar_step_recap">3 · Récap</string>
+    <string name="addwar_recap_opponent">Adversaire</string>
+    <string name="addwar_recap_players">Ta line-up</string>
     <string name="addwar_search_team">Rechercher une équipe / un tag</string>
     <string name="addwar_select_opponent">Sélectionner l\'adversaire</string>
     <string name="addwar_roster_hint">Logo = équipe, nom + tag = roster : dès qu\'une équipe a plusieurs rosters mkworld, on choisit le roster.</string>
@@ -271,7 +274,7 @@
     <string name="addwar_opponent_roster">Roster adverse</string>
     <string name="addwar_opponent_indicative">L\'adversaire est indicatif : seul ton roster est saisi côté app.</string>
     <string name="addwar_previous">Précédent</string>
-    <string name="addwar_start_war">Commencer la war</string>
+    <string name="addwar_start_war">Démarrer la war</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>
