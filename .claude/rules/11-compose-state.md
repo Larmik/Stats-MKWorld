@@ -101,14 +101,18 @@ l'étape que l'on rejoint** — on revient pour **refaire** ce choix :
 - centraliser avant/arrière dans **une seule** fonction `onStepChange(step)` : aller
   **en avant** (ou rester : `step >= current`) ne réinitialise rien ; aller **en arrière**
   (`step < current`) déclenche le reset de l'étape cible ;
+- **revenir à la PREMIÈRE étape = remise à zéro COMPLÈTE** : on ne réinitialise pas
+  seulement la première étape, mais **toute la sélection du wizard** (on repart d'un choix
+  vierge) ; revenir à une étape intermédiaire ne réinitialise que cette étape-là ;
 - toutes les entrées (Précédent, `BackHandler`, clic stepper) passent par cette fonction
   → le reset est automatique et cohérent ;
 - **mutualiser** le corps de reset s'il est partagé avec un autre déclencheur (ex. un
   changement de mode 12/24 qui réinitialise déjà la même étape → ≥ 2 appelants, extraction
   justifiée, rules 30/61). Cas rencontré : `AddWarViewModel.onStepChange` →
-  `resetOpponentSelection()` (retour Adversaire : vide `teamSelected`/rosters, restaure
-  `teamList = teams`, replie le sélecteur inline ; **partagé avec `onModeChange`**) /
-  `resetPlayerSelection()` (retour Joueurs : tous les `isSelected = false`).
+  `resetOpponentSelection()` (retour à la 1ʳᵉ étape Adversaire : vide `teamSelected`/rosters,
+  restaure `teamList = teams`, replie le sélecteur inline, **ET** remet la line-up à zéro —
+  remise à zéro complète ; **partagé avec `onModeChange`**, qui repasse aussi par `step = 0`) /
+  `resetPlayerSelection()` (retour à l'étape Joueurs : tous les `isSelected = false`).
 
 Le **gating du stepper** (une étape avancée n'est cliquable que si les précédentes sont
 complètes) reste indépendant : après reset, l'étape avale redevient inaccessible tant

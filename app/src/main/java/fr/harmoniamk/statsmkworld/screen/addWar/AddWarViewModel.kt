@@ -203,10 +203,11 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     /**
-     * Réinitialise la sélection d'adversaire(s) et revient à l'étape 1. Mutualisé entre
-     * [onModeChange] (changement 12/24) et [onStepChange] (retour arrière vers l'étape
-     * Adversaire) — d'où l'extraction (≥ 2 appelants, rules 30/61). Le `is24p` reflète
-     * le mode courant.
+     * Retour à la **première étape** (Adversaire) = **remise à zéro complète** : vide la
+     * sélection d'adversaire(s) **ET** la line-up (on repart d'un choix vierge). Mutualisé
+     * entre [onModeChange] (changement 12/24) et [onStepChange] (retour arrière vers l'étape
+     * Adversaire) — d'où l'extraction (≥ 2 appelants, rules 30/61). Le `is24p` reflète le
+     * mode courant.
      */
     private fun resetOpponentSelection() {
         selectedRosterIds = listOf()
@@ -220,7 +221,12 @@ class AddWarViewModel @AssistedInject constructor(
             nextButtonEnabled = false,
             warName = null,
             expandedRosterTeamId = null,
-            expandedRosters = listOf()
+            expandedRosters = listOf(),
+            // Repart d'une line-up vierge (retour à la première étape = restart complet).
+            playerList = state.value.playerList.mapValues { (_, list) ->
+                list.map { it.copy(isSelected = false) }
+            },
+            buttonEnabled = false
         )
     }
 
