@@ -255,6 +255,26 @@
     <string name="wars_filter_losses">Losses</string>
     <string name="mode_12_players">12 players</string>
     <string name="mode_24_players">24 players</string>
+    <!-- AddWar wizard — New war screen (ticket #42) -->
+    <string name="addwar_title">NEW WAR</string>
+    <string name="addwar_step_opponent">1 · Opponent</string>
+    <string name="addwar_step_players">2 · Players</string>
+    <string name="addwar_step_recap">3 · Summary</string>
+    <string name="addwar_recap_opponent">Opponent</string>
+    <string name="addwar_recap_players">Your line-up</string>
+    <string name="addwar_search_team">Search for a team / tag</string>
+    <string name="addwar_select_opponent">Select the opponent</string>
+    <string name="addwar_roster_hint">Logo = team, name + tag = roster: as soon as a team has several mkworld rosters, you pick the roster.</string>
+    <string name="addwar_pick_roster">Choose the roster</string>
+    <string name="addwar_roster_unique">roster unique</string>
+    <string name="addwar_rosters_count">%1$d mkworld rosters</string>
+    <string name="addwar_progress">%1$d / %2$d</string>
+    <string name="addwar_progress_hint">Select the 6 players of your roster taking part in the war.</string>
+    <string name="addwar_your_roster">Your roster</string>
+    <string name="addwar_opponent_roster">Opponent roster</string>
+    <string name="addwar_opponent_indicative">The opponent is indicative: only your roster is recorded in the app.</string>
+    <string name="addwar_previous">Previous</string>
+    <string name="addwar_start_war">Start the war</string>
     <!-- Stats pole — Statistics screen (ticket #25) -->
     <string name="stats_scope_individual">Individual</string>
     <string name="stats_scope_team">Team</string>

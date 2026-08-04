@@ -87,3 +87,33 @@ composable, recrée le ViewModel et déclenche des **transitions/slides parasite
   réinitialisée en interne, sans re-nav.
 - La re-navigation reste réservée à un **vrai changement d'écran** (destination
   différente), pas à une variante d'affichage du même écran.
+
+## Wizard/stepper à étapes : le retour en arrière ANNULE la sélection de l'étape rejointe
+
+**Portée** : tout **wizard multi-étapes sur un seul écran** piloté par un `step` d'état
+(ex. `AddWarViewModel.State.step` + `MKStepper` ; futur wizard de course/addtrack).
+
+Dans un wizard, l'étape courante est un **état du VM** (pas de re-navigation, cf.
+ci-dessus). La navigation **arrière** (bouton « Précédent », back système/`BackHandler`,
+clic sur une étape antérieure du stepper) doit **réinitialiser la sélection faite à
+l'étape que l'on rejoint** — on revient pour **refaire** ce choix :
+
+- centraliser avant/arrière dans **une seule** fonction `onStepChange(step)` : aller
+  **en avant** (ou rester : `step >= current`) ne réinitialise rien ; aller **en arrière**
+  (`step < current`) déclenche le reset de l'étape cible ;
+- **revenir à la PREMIÈRE étape = remise à zéro COMPLÈTE** : on ne réinitialise pas
+  seulement la première étape, mais **toute la sélection du wizard** (on repart d'un choix
+  vierge) ; revenir à une étape intermédiaire ne réinitialise que cette étape-là ;
+- toutes les entrées (Précédent, `BackHandler`, clic stepper) passent par cette fonction
+  → le reset est automatique et cohérent ;
+- **mutualiser** le corps de reset s'il est partagé avec un autre déclencheur (ex. un
+  changement de mode 12/24 qui réinitialise déjà la même étape → ≥ 2 appelants, extraction
+  justifiée, rules 30/61). Cas rencontré : `AddWarViewModel.onStepChange` →
+  `resetOpponentSelection()` (retour à la 1ʳᵉ étape Adversaire : vide `teamSelected`/rosters,
+  restaure `teamList = teams`, replie le sélecteur inline, **ET** remet la line-up à zéro —
+  remise à zéro complète ; **partagé avec `onModeChange`**, qui repasse aussi par `step = 0`) /
+  `resetPlayerSelection()` (retour à l'étape Joueurs : tous les `isSelected = false`).
+
+Le **gating du stepper** (une étape avancée n'est cliquable que si les précédentes sont
+complètes) reste indépendant : après reset, l'étape avale redevient inaccessible tant
+qu'on n'a pas re-complété — cohérent.
