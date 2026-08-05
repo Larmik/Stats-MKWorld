@@ -364,4 +364,13 @@
     <string name="profile_setting_debug_sub">Staff only</string>
     <string name="profile_ally_role">Ally</string>
     <string name="profile_ally_external">external roster</string>
+    <!-- Current war screen (ticket #43) -->
+    <string name="currentwar_title">WAR IN PROGRESS</string>
+    <string name="currentwar_tracks_remaining">%1$d races left</string>
+    <string name="currentwar_total_shocks">%1$d shocks</string>
+    <string name="currentwar_points_short">pts</string>
+    <string name="currentwar_tracks_count">Races played · %1$d</string>
+    <string name="currentwar_opponent_scores">Opponent teams scores</string>
+    <string name="currentwar_opponent_scores_hint">Enter each opponent team score before validating. Total to split: %1$d points (penalties excluded).</string>
+    <string name="currentwar_save_scores">Enter &amp; validate</string>
 </resources>
