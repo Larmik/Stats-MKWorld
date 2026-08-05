@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -523,51 +525,44 @@ private fun TracksSection(
 }
 
 /**
- * Cellule compacte d'une course : **illustration du circuit** (rectangle à coins
- * arrondis) à gauche, **nom du circuit** au centre (`Maps.label`), à droite le **score
- * total « hôteScore-adverseScore »** (`WarTrackDetails.displayedResult`, calculé côté
- * modèle) et en dessous la **différence de score colorisée** (vert > 0, rouge < 0,
- * blanc = 0). Clic → détail course.
+ * Cellule d'une course jouée. Ordre horizontal :
+ * 1. **bande colorée verticale** à gauche (vert diff > 0, rouge < 0, blanc = 0) ;
+ * 2. **score « hôte-adverse » + diff colorisée** (`WarTrackDetails.displayedResult` /
+ *    `displayedDiff`, calculés côté modèle), centrés verticalement ;
+ * 3. **colonne centrale** : image du circuit (rectangle arrondi) + **nom** (`Maps.label`) ;
+ * 4. **zone shocks réservée** à droite : icônes éclair de la manche
+ *    (`WarTrack.shocks`), largeur **toujours réservée** (même sans shock) pour aligner
+ *    toutes les cellules.
+ * Clic → détail course.
  */
 @Composable
 private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     // Circuit : dernier segment (arrivée) d'une éventuelle intermission.
     val map = track.index.lastOrNull()?.toInt()?.let { Maps.entries.getOrNull(it) }
-    // Couleur de la diff : vert manche gagnée, rouge perdue (blanc = nul / 24 j).
-    val diffColor = when {
+    // Couleur du liseré/diff : vert manche gagnée, rouge perdue (blanc = nul / 24 j).
+    val accent = when {
         is24p -> Colors.white
         track.displayedDiff.startsWith("+") -> Colors.green
         track.displayedDiff.startsWith("-") -> Colors.red
         else -> Colors.white
     }
+    // Total de shocks de la manche (même logique que MapCell / ShocksSection).
+    val shockCount = track.track.shocks.orEmpty().sumOf { it.count }
     Row(
         modifier
+            .height(IntrinsicSize.Min)
             .clip(CardRadius)
             .background(Colors.white30, CardRadius)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        map?.let {
-            Image(
-                painter = painterResource(it.picture),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(width = 44.dp, height = 30.dp)
-                    .clip(RoundedCornerShape(4.dp))
-            )
-        }
-        // Nom du circuit, au centre (prend l'espace disponible).
-        MKText(
-            text = map?.label?.let { stringResource(it) } ?: "-",
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            fontSize = 12,
-            maxLines = 2,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.weight(1f).padding(horizontal = 6.dp)
-        )
-        Column(horizontalAlignment = Alignment.End) {
+        // 1. Bande colorée verticale (bord gauche, pleine hauteur).
+        Box(Modifier.width(3.dp).fillMaxHeight().background(accent))
+        // 2. Score + diff, centrés verticalement.
+        Column(
+            Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             MKText(
                 // 12 j : « hôte-adverse » ; 24 j : score de manche seul (pas d'adverse par manche).
                 text = if (is24p) track.teamScore.toString() else track.displayedResult.replace(" - ", "-"),
@@ -579,10 +574,48 @@ private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier
             if (!is24p) MKText(
                 text = track.displayedDiff,
                 font = Fonts.Urbanist,
-                textColor = diffColor,
+                textColor = accent,
                 fontSize = 12,
                 modifier = Modifier.padding(top = 2.dp)
             )
+        }
+        // 3. Colonne centrale : image du circuit + nom, centrée.
+        Column(
+            Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            map?.let {
+                Image(
+                    painter = painterResource(it.picture),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(width = 56.dp, height = 36.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                )
+            }
+            MKText(
+                text = map?.label?.let { stringResource(it) } ?: "-",
+                font = Fonts.NunitoBD,
+                textColor = Colors.white,
+                fontSize = 12,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+        // 4. Zone shocks : largeur TOUJOURS réservée (placeholder invisible si aucun shock).
+        Column(
+            Modifier.width(22.dp).padding(end = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            repeat(shockCount) {
+                Image(
+                    painter = painterResource(R.drawable.shock),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
