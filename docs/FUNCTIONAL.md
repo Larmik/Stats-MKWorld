@@ -246,16 +246,20 @@ flowchart LR
 ### Étape 4 — War en cours (`CurrentWarScreen`)
 > Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war. Si un adversaire ne peut plus être résolu localement (équipe/roster disparu du cache, war ancienne jamais synchronisée), il n'est **plus effacé** de l'affichage : il apparaît **en dégradé** (« Équipe inconnue » / tag `???`, sans logo) au lieu de disparaître.
 
-Pager :
-- **Page principale** : `WarScoreView` (scores + pénalités), `WarPlayersCell` (composition), et selon l'état :
-  - **« Course suivante »** si la war n'est pas finie ;
-  - **« Scores adversaires »** si 24p et 12 courses faites ;
-  - **« Valider la war »** si 12p et 12 courses faites ;
-  - **« Plus d'actions »**.
-  - Grille des courses jouées (bordure verte si `+`, rouge si `−` en 12p ; transparente en 24p). Clic → détail de la course.
-- **Page scores adversaires (24p)** : un champ par équipe adverse ; le **total doit valoir 1728** (12 × 144), pénalités exclues ; toast d'erreur indiquant les points manquants/en trop. À la validation, les pénalités sont déduites avant écriture.
+**Écran unique scrollable** (`CurrentWarScreen`, ticket #43), **pixel-perfect** vs la maquette du prototype UX (écran `currentwar`, rules 13/15). Plus de pager : un seul `LazyColumn` (marge basse `90.dp` pour la bottombar, rule 17) au style « cartes dashboard » (fond `blackAlphaed`, bordure blanche, radius 6 — même style que l'Accueil). Le **segmenté « Démo : 12/24 joueurs »** de la maquette est un **contrôle de démo** (non reproduit, rule 15) : le mode réel est **déterminé par la war** (`teamOpponent.size > 1`), pas un choix utilisateur.
+
+De haut en bas :
+- **Carte score** (`.warscore`) : côté hôte VS côté adversaire, chacun avec pastille (avatar de l'équipe ou initiales du tag sur couleur), **nom du roster** et score coloré (hôte en vert/rouge selon l'écart) ; sous-titre « **±diff après N courses** ». En 24p, les côtés adverses sont empilés (pas de score chiffré au niveau de la carte tant que non saisi).
+- **Carte « Joueurs »** (`.two`) : tuiles nom (+ nb de courses jouées si le joueur n'a pas tout joué) + « N pts », deux colonnes, avec pastille de shock si applicable.
+- **« Course suivante »** (CTA dégradé, pleine largeur) → `AddTrack` — **masqué à 12 courses jouées** (`isOver`).
+- **Validation selon la variante** :
+  - **12 j** : boutons « **Plus d'actions** » (→ `Actions`) + « **Valider la war** » (validation directe), puis un hint ;
+  - **24 j** : carte « **Scores des équipes adverses** » (une ligne de saisie par équipe adverse : pastille + nom + champ numérique), hint, puis « **Plus d'actions** » + CTA « **Saisir & valider** ». Le **total doit valoir 144 × N courses** (soit 1728 sur 12 courses), pénalités exclues ; toast d'erreur indiquant les points manquants/en trop ; les pénalités sont déduites avant écriture.
+- **Grille des courses jouées** (`.trackgrid`, eyebrow « Courses jouées · N ») : cellules compactes (nom du circuit + score + diff), **bordure gauche colorée** (vert manche gagnée `+`, rouge perdue `−` en 12 j ; neutre en 24 j) ; clic → détail de la course. Grille 2 colonnes en lignes chunkées (pas de `LazyVerticalGrid` imbriqué dans le `LazyColumn`).
 
 `isOver` = `tracks.size == 12`. `buttonsVisible` = une war en cours existe en DataStore.
+
+> **Écart résiduel assumé** (rule 13) : la carte score des variantes **24 j** n'affiche pas encore le podium des 3 scores en direct comme un rendu final (les scores sont saisis manuellement en fin de war, pas calculés par manche) ; le focus pixel-perfect porte sur la variante 12 j (cas principal), la 24 j réutilise le même style de cartes.
 
 **Récupération des droits d'édition (DataStore vidé).** Le DataStore local peut être vide alors que la war existe encore côté Firebase (logout, réinstallation, autre appareil) : les boutons d'édition disparaîtraient. Pour éviter cela, la war courante enregistre son **créateur** via un `playerHostId` (id MKCentral) sur Firebase. À la lecture de la war courante (accueil comme écran de war en cours), si le DataStore est vide **et** que le joueur courant est le créateur (`playerHostId == mkcPlayer.id`), le DataStore est **réhydraté automatiquement** et l'édition redevient possible. Un utilisateur qui n'est pas le créateur (ou dont le profil MKCentral est lui aussi vidé) ne déclenche pas cette réhydratation. Les wars antérieures à ce mécanisme (sans `playerHostId`) restent lisibles (valeur par défaut, pas de réhydratation).
 
