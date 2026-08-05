@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -107,37 +106,28 @@ fun CurrentWarScreen(
                         )
                     }
 
-                    // 3. CTA « Course suivante » (masqué à 12 courses jouées).
-                    if (state.value.buttonsVisible && !state.value.isOver) {
-                        item {
-                            MKButton(
-                                modifier = Modifier.fillMaxWidth(),
-                                style = MKButtonStyle.Gradient,
-                                text = stringResource(R.string.course_suivante),
-                                onClick = { onAddTrack(is24p) }
-                            )
-                        }
-                    }
-
-                    // 4. Actions selon la variante. La VALIDATION (12 j) / la saisie des
-                    //    scores adverses (24 j) n'apparaît qu'à 12 courses jouées (isOver) ;
-                    //    « Plus d'actions » reste accessible tout au long de la war.
+                    // 3. Actions. « Course suivante » (masqué à 12 courses) + « Plus
+                    //    d'actions » sur une MÊME ligne ; puis la validation selon la
+                    //    variante (12 j : « Valider la war » ; 24 j : saisie des scores
+                    //    adverses), uniquement à 12 courses jouées (isOver).
                     if (state.value.buttonsVisible) {
                         item {
-                            when {
-                                is24p && state.value.isOver -> OpponentScoresBlock(
+                            ActionsBlock(
+                                isOver = state.value.isOver,
+                                is24p = is24p,
+                                onAddTrack = { onAddTrack(is24p) },
+                                onActions = onActions,
+                                onValidateWar = viewModel::onValidateWar
+                            )
+                        }
+                        if (is24p && state.value.isOver) {
+                            item {
+                                OpponentScoresBlock(
                                     teamOpponent = state.value.teamOpponent,
                                     opponentsScores = state.value.opponentsScores,
                                     trackCount = details.warTracks.size,
                                     onValueChange = viewModel::onValueChange,
-                                    onActions = onActions,
                                     onValidateScore = viewModel::onValidateScore
-                                )
-                                else -> ValidationBlock12p(
-                                    isOver = state.value.isOver,
-                                    is24p = is24p,
-                                    onActions = onActions,
-                                    onValidateWar = viewModel::onValidateWar
                                 )
                             }
                         }
@@ -190,10 +180,12 @@ private fun DashboardCard(modifier: Modifier = Modifier, content: @Composable Co
 }
 
 /**
- * Carte score de la maquette (`.warscore`) : côté hôte VS côté adversaire, chacun avec
- * pastille (avatar équipe ou initiales sur couleur), nom du roster et score coloré ;
- * sous-titre « ±diff après N courses ». En 24 j (plusieurs adversaires), les côtés
- * adverses sont empilés, sans score chiffré au niveau de la manche (saisi plus bas).
+ * Carte « Score du match » (`.warscore`) : côté hôte VS côté adversaire, chacun avec
+ * pastille (avatar équipe ou initiales sur couleur), nom du roster et score (en blanc).
+ * La **différence de score seule** est affichée **au centre** entre les deux scores,
+ * **colorisée** (vert > 0, rouge < 0, blanc = 0). Sous-titre : **N courses restantes**
+ * (12 − courses jouées), en **blanc** (non colorisé). En 24 j (plusieurs adversaires),
+ * les côtés adverses sont empilés, sans score chiffré au niveau de la carte.
  */
 @Composable
 private fun ScoreCard(
@@ -203,7 +195,7 @@ private fun ScoreCard(
     is24p: Boolean
 ) {
     val trackCount = details.warTracks.size
-    // Écart signé du point de vue de l'hôte (avec pénalités) : détermine la couleur.
+    // Écart signé du point de vue de l'hôte (avec pénalités) : colore la diff centrale.
     val margin = details.scoreMargin(is24p)
     val diffColor = when {
         margin > 0 -> Colors.green
@@ -215,14 +207,14 @@ private fun ScoreCard(
             TeamSide(
                 team = teamHost,
                 score = details.scoreHostWithPenalties.takeUnless { is24p },
-                scoreColor = diffColor,
                 modifier = Modifier.weight(1f)
             )
+            // Différence de score seule, centrée entre les deux équipes, colorisée.
             MKText(
-                text = "VS",
+                text = if (margin > 0) "+$margin" else margin.toString(),
                 font = Fonts.Urbanist,
-                textColor = Colors.white55,
-                fontSize = 15,
+                textColor = diffColor,
+                fontSize = 20,
                 modifier = Modifier.padding(horizontal = 6.dp)
             )
             when (is24p) {
@@ -232,26 +224,22 @@ private fun ScoreCard(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     teamOpponent.orEmpty().forEach { opponent ->
-                        TeamSide(team = opponent, score = null, scoreColor = diffColor, modifier = Modifier.fillMaxWidth())
+                        TeamSide(team = opponent, score = null, modifier = Modifier.fillMaxWidth())
                     }
                 }
                 else -> TeamSide(
                     team = teamOpponent?.firstOrNull(),
                     score = details.scoreOpponentWithPenalties,
-                    scoreColor = Colors.white,
                     modifier = Modifier.weight(1f)
                 )
             }
         }
         Spacer(Modifier.height(6.dp))
+        // Sous-titre : courses restantes (12 − jouées), en blanc (non colorisé).
         MKText(
-            text = stringResource(
-                R.string.currentwar_diff_after,
-                if (margin > 0) "+$margin" else margin.toString(),
-                trackCount
-            ),
+            text = stringResource(R.string.currentwar_tracks_remaining, 12 - trackCount),
             font = Fonts.Urbanist,
-            textColor = diffColor,
+            textColor = Colors.white,
             fontSize = 14,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
@@ -259,12 +247,11 @@ private fun ScoreCard(
     }
 }
 
-/** Un côté de la carte score : pastille (avatar/initiales), nom du roster, score coloré. */
+/** Un côté de la carte score : pastille (avatar/initiales), nom du roster, score (blanc). */
 @Composable
 private fun TeamSide(
     team: TeamEntity?,
     score: Int?,
-    scoreColor: Color,
     modifier: Modifier = Modifier
 ) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -281,7 +268,7 @@ private fun TeamSide(
             MKText(
                 text = it.toString(),
                 font = Fonts.Urbanist,
-                textColor = scoreColor,
+                textColor = Colors.white,
                 fontSize = 30,
                 modifier = Modifier.padding(top = 4.dp)
             )
@@ -318,54 +305,48 @@ private fun TeamCrest(team: TeamEntity?) {
 }
 
 /**
- * Carte « Joueurs » (`.two`) : tuiles nom + points, en deux colonnes. Une pastille de
- * shock (icône + « xN ») s'affiche si le joueur a provoqué des éclairs.
+ * Carte « Scores des joueurs » : une **ligne compacte par joueur** (nom à gauche, score
+ * à droite via `SpaceBetween`), pour gagner de la place verticale. Une pastille de shock
+ * (icône + « xN ») s'affiche à côté du nom si le joueur a provoqué des éclairs.
  */
 @Composable
 private fun PlayersCard(players: List<PlayerScore>, trackCount: Int) {
     DashboardCard {
         Eyebrow(stringResource(R.string.joueurs))
         Spacer(Modifier.height(11.dp))
-        players.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth().padding(bottom = 9.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                pair.forEach { PlayerTile(score = it, trackCount = trackCount, modifier = Modifier.weight(1f)) }
-                // Comble la 2ᵉ colonne si nombre impair de joueurs.
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
-            }
+        players.forEachIndexed { index, score ->
+            if (index > 0) Spacer(Modifier.height(6.dp))
+            PlayerRow(score = score, trackCount = trackCount)
         }
     }
 }
 
-/** Tuile joueur : libellé (nom + éventuel nb de courses jouées) + valeur « N pts ». */
+/** Ligne joueur compacte : nom (+ nb de courses jouées + shocks) à gauche, « N pts » à droite. */
 @Composable
-private fun PlayerTile(score: PlayerScore, trackCount: Int, modifier: Modifier = Modifier) {
+private fun PlayerRow(score: PlayerScore, trackCount: Int) {
     val name = when (score.trackPlayed in 1 until trackCount) {
         true -> "${score.player?.name.orEmpty()} (${score.trackPlayed})"
         else -> score.player?.name.orEmpty()
     }
-    Column(
-        modifier
+    Row(
+        Modifier
+            .fillMaxWidth()
             .background(Colors.white30, CardRadius)
-            .padding(11.dp)
+            .padding(horizontal = 11.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        MKText(
-            text = name.uppercase(),
-            textColor = Colors.white66,
-            fontSize = 11,
-            maxLines = 1,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 5.dp)) {
-            MKText(text = score.score.toString(), font = Fonts.Urbanist, textColor = Colors.white, fontSize = 16)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
             MKText(
-                text = stringResource(R.string.currentwar_points_short),
-                textColor = Colors.white55,
-                fontSize = 11,
-                modifier = Modifier.padding(start = 4.dp)
+                text = name,
+                font = Fonts.NunitoBD,
+                textColor = Colors.white,
+                fontSize = 13,
+                maxLines = 1,
+                textAlign = TextAlign.Start
             )
             score.shockCount.takeIf { it > 0 }?.let {
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(6.dp))
                 Image(
                     painter = painterResource(R.drawable.shock),
                     contentDescription = null,
@@ -374,48 +355,61 @@ private fun PlayerTile(score: PlayerScore, trackCount: Int, modifier: Modifier =
                 if (it > 1) MKText(text = "x$it", fontSize = 11, textColor = Colors.white66)
             }
         }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            MKText(text = score.score.toString(), font = Fonts.Urbanist, textColor = Colors.white, fontSize = 16)
+            MKText(
+                text = stringResource(R.string.currentwar_points_short),
+                textColor = Colors.white55,
+                fontSize = 11,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
     }
 }
 
 /**
- * Bloc d'actions « Plus d'actions » (+ « Valider la war » directe dès 12 courses en
- * 12 j) + hint. « Plus d'actions » reste accessible pendant toute la war ; « Valider »
- * n'apparaît qu'une fois la war terminée (12 courses).
+ * Bloc d'actions : « Course suivante » (→ AddTrack, masqué à 12 courses) et « Plus
+ * d'actions » (→ Actions) **côte à côte sur une même ligne** ; puis, une fois la war
+ * terminée (12 courses), en 12 j, le CTA « Valider la war » directe. En 24 j, la
+ * validation passe par la saisie des scores adverses (bloc séparé, cf. OpponentScoresBlock).
  */
 @Composable
-private fun ValidationBlock12p(isOver: Boolean, is24p: Boolean, onActions: () -> Unit, onValidateWar: () -> Unit) {
+private fun ActionsBlock(
+    isOver: Boolean,
+    is24p: Boolean,
+    onAddTrack: () -> Unit,
+    onActions: () -> Unit,
+    onValidateWar: () -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            if (!isOver) MKButton(
+                modifier = Modifier.weight(1f),
+                style = MKButtonStyle.Gradient,
+                text = stringResource(R.string.course_suivante),
+                onClick = onAddTrack
+            )
             MKButton(
                 modifier = Modifier.weight(1f),
                 style = MKButtonStyle.Minor(Colors.black),
                 text = stringResource(R.string.more_actions),
                 onClick = onActions
             )
-            // « Valider la war » directe : uniquement en 12 j terminée (en 24 j, la
-            // validation passe par la saisie des scores adverses, cf. OpponentScoresBlock).
-            if (isOver && !is24p) MKButton(
-                modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Gradient,
-                text = stringResource(R.string.valider_la_war),
-                onClick = onValidateWar
-            )
         }
-        // Hint 12 j : n'a de sens que dans la variante 12 j.
-        if (!is24p) MKText(
-            text = stringResource(R.string.currentwar_hint_12),
-            textColor = Colors.white55,
-            fontSize = 12,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth()
+        // « Valider la war » directe : uniquement en 12 j terminée.
+        if (isOver && !is24p) MKButton(
+            modifier = Modifier.fillMaxWidth(),
+            style = MKButtonStyle.Gradient,
+            text = stringResource(R.string.valider_la_war),
+            onClick = onValidateWar
         )
     }
 }
 
 /**
  * Variante 24 j : carte « Scores des équipes adverses » (une ligne de saisie par
- * équipe adverse), « Plus d'actions » + CTA « Saisir & valider ». La validation
- * (contrôle du total + écriture) reste côté ViewModel (justesse des scores prioritaire).
+ * équipe adverse) + CTA « Saisir & valider ». La validation (contrôle du total +
+ * écriture) reste côté ViewModel (justesse des scores prioritaire).
  */
 @Composable
 private fun OpponentScoresBlock(
@@ -423,7 +417,6 @@ private fun OpponentScoresBlock(
     opponentsScores: Map<String, Int>,
     trackCount: Int,
     onValueChange: (String, String) -> Unit,
-    onActions: () -> Unit,
     onValidateScore: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -446,20 +439,12 @@ private fun OpponentScoresBlock(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            MKButton(
-                modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Minor(Colors.black),
-                text = stringResource(R.string.more_actions),
-                onClick = onActions
-            )
-            MKButton(
-                modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Gradient,
-                text = stringResource(R.string.currentwar_save_scores),
-                onClick = onValidateScore
-            )
-        }
+        MKButton(
+            modifier = Modifier.fillMaxWidth(),
+            style = MKButtonStyle.Gradient,
+            text = stringResource(R.string.currentwar_save_scores),
+            onClick = onValidateScore
+        )
     }
 }
 
@@ -509,9 +494,9 @@ private fun TeamCrestSmall(team: TeamEntity) {
 }
 
 /**
- * Grille des courses jouées (`.trackgrid`) : cellules compactes (nom du circuit +
- * score + diff), bordure gauche colorée (vert manche gagnée / rouge perdue en 12 j) ;
- * chaque cellule mène au détail de la course.
+ * Grille des courses jouées (`.trackgrid`) : cellules compactes (illustration du
+ * circuit à gauche, score hôte-adverse + diff colorée à droite) ; chaque cellule mène
+ * au détail de la course.
  */
 @Composable
 private fun TracksGrid(
@@ -535,18 +520,23 @@ private fun TracksGrid(
     }
 }
 
-/** Cellule compacte d'une course : bordure gauche colorée, nom du circuit, score + diff. */
+/**
+ * Cellule compacte d'une course : **illustration du circuit** (rectangle à coins
+ * arrondis) à gauche, à droite le **score total « hôteScore-adverseScore »**
+ * (`WarTrackDetails.displayedResult`, calculé côté modèle) et en dessous la
+ * **différence de score colorisée** (vert > 0, rouge < 0, blanc = 0). Clic → détail course.
+ */
 @Composable
 private fun TrackCard(track: WarTrackDetails, is24p: Boolean, onClick: () -> Unit) {
-    // Couleur de la bordure gauche : vert manche gagnée, rouge perdue (12 j uniquement).
-    val accent = when {
-        is24p -> Colors.white30
+    // Illustration : dernier segment (arrivée) d'une éventuelle intermission.
+    val map = track.index.lastOrNull()?.toInt()?.let { Maps.entries.getOrNull(it) }
+    // Couleur de la diff : vert manche gagnée, rouge perdue (blanc = nul / 24 j).
+    val diffColor = when {
+        is24p -> Colors.white
         track.displayedDiff.startsWith("+") -> Colors.green
         track.displayedDiff.startsWith("-") -> Colors.red
-        else -> Colors.white30
+        else -> Colors.white
     }
-    // Libellé du circuit : dernier segment (arrivée) d'une éventuelle intermission.
-    val label = track.index.lastOrNull()?.toInt()?.let { Maps.entries.getOrNull(it)?.label }
     Row(
         Modifier
             .fillMaxWidth()
@@ -554,33 +544,37 @@ private fun TrackCard(track: WarTrackDetails, is24p: Boolean, onClick: () -> Uni
             .clip(CardRadius)
             .background(Colors.white30, CardRadius)
             .clickable(onClick = onClick)
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Bordure gauche colorée (maquette : border-left 3px).
-        Box(Modifier.width(3.dp).fillMaxHeight().background(accent))
-        Column(Modifier.padding(vertical = 9.dp, horizontal = 10.dp)) {
-            MKText(
-                text = label?.let { stringResource(it) } ?: "-",
-                font = Fonts.NunitoBD,
-                textColor = Colors.white,
-                fontSize = 13,
-                maxLines = 1,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth()
+        map?.let {
+            Image(
+                painter = painterResource(it.picture),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(width = 52.dp, height = 34.dp)
+                    .clip(RoundedCornerShape(4.dp))
             )
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                MKText(
-                    text = track.teamScore.toString(),
-                    font = Fonts.Urbanist,
-                    textColor = Colors.white,
-                    fontSize = 15
-                )
-                if (!is24p) MKText(
-                    text = track.displayedDiff,
-                    textColor = Colors.white55,
-                    fontSize = 11,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            }
+        }
+        Column(
+            Modifier.weight(1f).padding(start = 8.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            MKText(
+                // 12 j : « hôte-adverse » ; 24 j : score de manche seul (pas d'adverse par manche).
+                text = if (is24p) track.teamScore.toString() else track.displayedResult.replace(" - ", "-"),
+                font = Fonts.Urbanist,
+                textColor = Colors.white,
+                fontSize = 15,
+                maxLines = 1
+            )
+            if (!is24p) MKText(
+                text = track.displayedDiff,
+                font = Fonts.Urbanist,
+                textColor = diffColor,
+                fontSize = 12,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }

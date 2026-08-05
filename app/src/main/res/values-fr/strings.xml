@@ -366,11 +366,10 @@
     <string name="profile_ally_external">roster externe</string>
     <!-- Écran War en cours (ticket #43) -->
     <string name="currentwar_title">WAR EN COURS</string>
-    <string name="currentwar_diff_after">%1$s après %2$d courses</string>
+    <string name="currentwar_tracks_remaining">%1$d courses restantes</string>
     <string name="currentwar_points_short">pts</string>
     <string name="currentwar_tracks_count">Courses jouées · %1$d</string>
     <string name="currentwar_opponent_scores">Scores des équipes adverses</string>
     <string name="currentwar_opponent_scores_hint">Saisir le score de chaque équipe adverse avant de valider. Total à répartir : %1$d points (pénalités exclues).</string>
     <string name="currentwar_save_scores">Saisir &amp; valider</string>
-    <string name="currentwar_hint_12">12 joueurs : « Valider » clôt directement la war. « Course suivante » disparaît à 12 courses jouées.</string>
 </resources>

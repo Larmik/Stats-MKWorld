@@ -366,11 +366,10 @@
     <string name="profile_ally_external">external roster</string>
     <!-- Current war screen (ticket #43) -->
     <string name="currentwar_title">WAR IN PROGRESS</string>
-    <string name="currentwar_diff_after">%1$s after %2$d races</string>
+    <string name="currentwar_tracks_remaining">%1$d races left</string>
     <string name="currentwar_points_short">pts</string>
     <string name="currentwar_tracks_count">Races played · %1$d</string>
     <string name="currentwar_opponent_scores">Opponent teams scores</string>
     <string name="currentwar_opponent_scores_hint">Enter each opponent team score before validating. Total to split: %1$d points (penalties excluded).</string>
     <string name="currentwar_save_scores">Enter &amp; validate</string>
-    <string name="currentwar_hint_12">12 players: « Save » closes the war directly. « Next race » disappears at 12 races played.</string>
 </resources>
