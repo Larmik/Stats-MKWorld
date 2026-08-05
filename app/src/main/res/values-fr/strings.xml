@@ -367,6 +367,7 @@
     <!-- Écran War en cours (ticket #43) -->
     <string name="currentwar_title">WAR EN COURS</string>
     <string name="currentwar_tracks_remaining">%1$d courses restantes</string>
+    <string name="currentwar_total_shocks">%1$d shocks</string>
     <string name="currentwar_points_short">pts</string>
     <string name="currentwar_tracks_count">Courses jouées · %1$d</string>
     <string name="currentwar_opponent_scores">Scores des équipes adverses</string>

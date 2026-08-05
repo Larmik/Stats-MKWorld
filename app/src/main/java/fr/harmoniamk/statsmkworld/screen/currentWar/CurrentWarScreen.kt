@@ -200,11 +200,20 @@ private fun ScoreCard(
         margin < 0 -> Colors.red
         else -> Colors.white
     }
+    // Total de pénalités par équipe (clé = teamId/rosterId), même rattachement que
+    // WarScoreView/PenaltiesSection. La clé hôte est war.teamHost (rosterId), PAS
+    // teamHost.id (id d'équipe).
+    val penaltyByTeam = details.war.penalties
+        .groupBy { it.teamId }
+        .mapValues { entry -> entry.value.sumOf { it.amount } }
+    // Total de shocks de la war (somme sur toutes les manches).
+    val totalShocks = details.war.tracks.sumOf { it.shocks.orEmpty().sumOf { shock -> shock.count } }
     DashboardCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TeamSide(
                 team = teamHost,
                 score = details.scoreHostWithPenalties.takeUnless { is24p },
+                penalty = penaltyByTeam[details.war.teamHost] ?: 0,
                 modifier = Modifier.weight(1f)
             )
             // Différence de score seule, centrée entre les deux équipes, colorisée.
@@ -222,12 +231,18 @@ private fun ScoreCard(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     teamOpponent.orEmpty().forEach { opponent ->
-                        TeamSide(team = opponent, score = null, modifier = Modifier.fillMaxWidth())
+                        TeamSide(
+                            team = opponent,
+                            score = null,
+                            penalty = penaltyByTeam[opponent.id] ?: 0,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
                 else -> TeamSide(
                     team = teamOpponent?.firstOrNull(),
                     score = details.scoreOpponentWithPenalties,
+                    penalty = teamOpponent?.firstOrNull()?.id?.let { penaltyByTeam[it] } ?: 0,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -242,14 +257,40 @@ private fun ScoreCard(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
+        // Total de shocks de la war, sous la diff (icône éclair + compteur).
+        totalShocks.takeIf { it > 0 }?.let {
+            Spacer(Modifier.height(4.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.shock),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                MKText(
+                    text = stringResource(R.string.currentwar_total_shocks, it),
+                    font = Fonts.NunitoBD,
+                    textColor = Colors.white,
+                    fontSize = 13,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
+        }
     }
 }
 
-/** Un côté de la carte score : pastille (avatar/initiales), nom du roster, score (blanc). */
+/**
+ * Un côté de la carte score : pastille (avatar/initiales), nom du roster, score (blanc),
+ * et **pénalité de l'équipe** (« -N » en rouge) sous le score le cas échéant.
+ */
 @Composable
 private fun TeamSide(
     team: TeamEntity?,
     score: Int?,
+    penalty: Int,
     modifier: Modifier = Modifier
 ) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -269,6 +310,16 @@ private fun TeamSide(
                 textColor = Colors.white,
                 fontSize = 30,
                 modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+        // Pénalité de l'équipe, sous son score (rouge).
+        penalty.takeIf { it > 0 }?.let {
+            MKText(
+                text = "-$it",
+                font = Fonts.NunitoBD,
+                textColor = Colors.red,
+                fontSize = 12,
+                modifier = Modifier.padding(top = 2.dp)
             )
         }
     }
@@ -527,13 +578,16 @@ private fun TracksSection(
 /**
  * Cellule d'une course jouée. Ordre horizontal :
  * 1. **bande colorée verticale** à gauche (vert diff > 0, rouge < 0, blanc = 0) ;
- * 2. **score « hôte-adverse » + diff colorisée** (`WarTrackDetails.displayedResult` /
- *    `displayedDiff`, calculés côté modèle), centrés verticalement ;
- * 3. **colonne centrale** : image du circuit (rectangle arrondi) + **nom** (`Maps.label`) ;
- * 4. **zone shocks réservée** à droite : icônes éclair de la manche
- *    (`WarTrack.shocks`), largeur **toujours réservée** (même sans shock) pour aligner
- *    toutes les cellules.
- * Clic → détail course.
+ * 2. **colonne centrale** : image du circuit (rectangle arrondi) + **nom** (`Maps.label`) ;
+ * 3. **zone shocks réservée** : icônes éclair de la manche (`WarTrack.shocks`), largeur
+ *    **toujours réservée** (même sans shock) pour aligner les cellules ;
+ * 4. **score « hôte-adverse » + diff colorisée** à **droite**
+ *    (`WarTrackDetails.displayedResult` / `displayedDiff`, calculés côté modèle),
+ *    centrés verticalement.
+ *
+ * **Hauteur uniforme** : hauteur de cellule fixe (84 dp, calée sur le cas « nom sur
+ * 2 lignes ») — les noms courts (1 ligne) occupent la même hauteur → toutes les cellules
+ * sont alignées. Clic → détail course.
  */
 @Composable
 private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
@@ -550,7 +604,7 @@ private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier
     val shockCount = track.track.shocks.orEmpty().sumOf { it.count }
     Row(
         modifier
-            .height(IntrinsicSize.Min)
+            .height(84.dp) // hauteur fixe calée sur le cas « nom sur 2 lignes » → cellules alignées
             .clip(CardRadius)
             .background(Colors.white30, CardRadius)
             .clickable(onClick = onClick),
@@ -558,9 +612,52 @@ private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier
     ) {
         // 1. Bande colorée verticale (bord gauche, pleine hauteur).
         Box(Modifier.width(3.dp).fillMaxHeight().background(accent))
-        // 2. Score + diff, centrés verticalement.
+        // 2. Colonne centrale : image du circuit + nom, centrée. Le nom réserve 2 lignes
+        //    (hauteur fixe) pour égaliser la hauteur des cellules.
         Column(
-            Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
+            Modifier.weight(1f).padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            map?.let {
+                Image(
+                    painter = painterResource(it.picture),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(width = 56.dp, height = 36.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                )
+            }
+            Box(
+                Modifier.height(32.dp).padding(top = 4.dp),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                MKText(
+                    text = map?.label?.let { stringResource(it) } ?: "-",
+                    font = Fonts.NunitoBD,
+                    textColor = Colors.white,
+                    fontSize = 12,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        // 3. Zone shocks : largeur TOUJOURS réservée (placeholder invisible si aucun shock).
+        Column(
+            Modifier.width(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            repeat(shockCount) {
+                Image(
+                    painter = painterResource(R.drawable.shock),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+        // 4. Score + diff, à DROITE, centrés verticalement.
+        Column(
+            Modifier.padding(start = 6.dp, end = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             MKText(
@@ -578,44 +675,6 @@ private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier
                 fontSize = 12,
                 modifier = Modifier.padding(top = 2.dp)
             )
-        }
-        // 3. Colonne centrale : image du circuit + nom, centrée.
-        Column(
-            Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            map?.let {
-                Image(
-                    painter = painterResource(it.picture),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(width = 56.dp, height = 36.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                )
-            }
-            MKText(
-                text = map?.label?.let { stringResource(it) } ?: "-",
-                font = Fonts.NunitoBD,
-                textColor = Colors.white,
-                fontSize = 12,
-                maxLines = 2,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-        // 4. Zone shocks : largeur TOUJOURS réservée (placeholder invisible si aucun shock).
-        Column(
-            Modifier.width(22.dp).padding(end = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            repeat(shockCount) {
-                Image(
-                    painter = painterResource(R.drawable.shock),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
         }
     }
 }
