@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -133,14 +132,11 @@ fun CurrentWarScreen(
                         }
                     }
 
-                    // 5. Grille des courses jouées (chacune → détail course).
+                    // 5. Section « Courses jouées » (carte englobante + grille, chacune → détail).
                     val tracks = details.warTracks
                     if (tracks.isNotEmpty()) {
                         item {
-                            Eyebrow(stringResource(R.string.currentwar_tracks_count, tracks.size))
-                        }
-                        item {
-                            TracksGrid(
+                            TracksSection(
                                 tracks = tracks,
                                 is24p = is24p,
                                 onTrackDetails = onTrackDetails
@@ -305,32 +301,37 @@ private fun TeamCrest(team: TeamEntity?) {
 }
 
 /**
- * Carte « Scores des joueurs » : une **ligne compacte par joueur** (nom à gauche, score
- * à droite via `SpaceBetween`), pour gagner de la place verticale. Une pastille de shock
- * (icône + « xN ») s'affiche à côté du nom si le joueur a provoqué des éclairs.
+ * Carte « Scores des joueurs » : cellules en **ligne compacte** (nom à gauche, score à
+ * droite via `SpaceBetween`) disposées sur **deux colonnes** (6 joueurs → 2 × 3 lignes).
+ * Une pastille de shock (icône + « xN ») s'affiche à côté du nom si applicable.
  */
 @Composable
 private fun PlayersCard(players: List<PlayerScore>, trackCount: Int) {
     DashboardCard {
         Eyebrow(stringResource(R.string.joueurs))
         Spacer(Modifier.height(11.dp))
-        players.forEachIndexed { index, score ->
-            if (index > 0) Spacer(Modifier.height(6.dp))
-            PlayerRow(score = score, trackCount = trackCount)
+        players.chunked(2).forEachIndexed { rowIndex, pair ->
+            if (rowIndex > 0) Spacer(Modifier.height(6.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                pair.forEach { score ->
+                    PlayerRow(score = score, trackCount = trackCount, modifier = Modifier.weight(1f))
+                }
+                // Comble la 2ᵉ colonne si nombre impair de joueurs.
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
         }
     }
 }
 
 /** Ligne joueur compacte : nom (+ nb de courses jouées + shocks) à gauche, « N pts » à droite. */
 @Composable
-private fun PlayerRow(score: PlayerScore, trackCount: Int) {
+private fun PlayerRow(score: PlayerScore, trackCount: Int, modifier: Modifier = Modifier) {
     val name = when (score.trackPlayed in 1 until trackCount) {
         true -> "${score.player?.name.orEmpty()} (${score.trackPlayed})"
         else -> score.player?.name.orEmpty()
     }
     Row(
-        Modifier
-            .fillMaxWidth()
+        modifier
             .background(Colors.white30, CardRadius)
             .padding(horizontal = 11.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -494,25 +495,26 @@ private fun TeamCrestSmall(team: TeamEntity) {
 }
 
 /**
- * Grille des courses jouées (`.trackgrid`) : cellules compactes (illustration du
- * circuit à gauche, score hôte-adverse + diff colorée à droite) ; chaque cellule mène
- * au détail de la course.
+ * Section « Courses jouées » : **carte englobante** (même cadre `DashboardCard` que les
+ * autres sections) avec eyebrow « Courses jouées · N » puis grille 2 colonnes des
+ * courses. Chaque cellule mène au détail de la course.
  */
 @Composable
-private fun TracksGrid(
+private fun TracksSection(
     tracks: List<WarTrackDetails>,
     is24p: Boolean,
     onTrackDetails: (WarTrackDetails) -> Unit
 ) {
-    // Grille 2 colonnes en lignes chunkées : évite d'imbriquer un LazyVerticalGrid
-    // (même axe de scroll) dans le LazyColumn de l'écran.
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        tracks.chunked(2).forEach { pair ->
+    DashboardCard {
+        Eyebrow(stringResource(R.string.currentwar_tracks_count, tracks.size))
+        Spacer(Modifier.height(11.dp))
+        // Grille 2 colonnes en lignes chunkées : évite d'imbriquer un LazyVerticalGrid
+        // (même axe de scroll) dans le LazyColumn de l'écran.
+        tracks.chunked(2).forEachIndexed { rowIndex, pair ->
+            if (rowIndex > 0) Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 pair.forEach { track ->
-                    Box(Modifier.weight(1f)) {
-                        TrackCard(track = track, is24p = is24p, onClick = { onTrackDetails(track) })
-                    }
+                    TrackCard(track = track, is24p = is24p, modifier = Modifier.weight(1f), onClick = { onTrackDetails(track) })
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
@@ -522,13 +524,14 @@ private fun TracksGrid(
 
 /**
  * Cellule compacte d'une course : **illustration du circuit** (rectangle à coins
- * arrondis) à gauche, à droite le **score total « hôteScore-adverseScore »**
- * (`WarTrackDetails.displayedResult`, calculé côté modèle) et en dessous la
- * **différence de score colorisée** (vert > 0, rouge < 0, blanc = 0). Clic → détail course.
+ * arrondis) à gauche, **nom du circuit** au centre (`Maps.label`), à droite le **score
+ * total « hôteScore-adverseScore »** (`WarTrackDetails.displayedResult`, calculé côté
+ * modèle) et en dessous la **différence de score colorisée** (vert > 0, rouge < 0,
+ * blanc = 0). Clic → détail course.
  */
 @Composable
-private fun TrackCard(track: WarTrackDetails, is24p: Boolean, onClick: () -> Unit) {
-    // Illustration : dernier segment (arrivée) d'une éventuelle intermission.
+private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    // Circuit : dernier segment (arrivée) d'une éventuelle intermission.
     val map = track.index.lastOrNull()?.toInt()?.let { Maps.entries.getOrNull(it) }
     // Couleur de la diff : vert manche gagnée, rouge perdue (blanc = nul / 24 j).
     val diffColor = when {
@@ -538,9 +541,7 @@ private fun TrackCard(track: WarTrackDetails, is24p: Boolean, onClick: () -> Uni
         else -> Colors.white
     }
     Row(
-        Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
+        modifier
             .clip(CardRadius)
             .background(Colors.white30, CardRadius)
             .clickable(onClick = onClick)
@@ -552,14 +553,21 @@ private fun TrackCard(track: WarTrackDetails, is24p: Boolean, onClick: () -> Uni
                 painter = painterResource(it.picture),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(width = 52.dp, height = 34.dp)
+                    .size(width = 44.dp, height = 30.dp)
                     .clip(RoundedCornerShape(4.dp))
             )
         }
-        Column(
-            Modifier.weight(1f).padding(start = 8.dp),
-            horizontalAlignment = Alignment.End
-        ) {
+        // Nom du circuit, au centre (prend l'espace disponible).
+        MKText(
+            text = map?.label?.let { stringResource(it) } ?: "-",
+            font = Fonts.NunitoBD,
+            textColor = Colors.white,
+            fontSize = 12,
+            maxLines = 2,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.weight(1f).padding(horizontal = 6.dp)
+        )
+        Column(horizontalAlignment = Alignment.End) {
             MKText(
                 // 12 j : « hôte-adverse » ; 24 j : score de manche seul (pas d'adverse par manche).
                 text = if (is24p) track.teamScore.toString() else track.displayedResult.replace(" - ", "-"),
