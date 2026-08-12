@@ -51,10 +51,14 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     data class State(
-        // Étape courante du wizard (0 = Circuit, 1 = Intermission, 2 = Positions, 3 = Résumé).
-        // Pilotée dans le VM (aucune re-navigation, rule 11) : le stepper et la progression
-        // joueur-par-joueur la font évoluer, le retour arrière la réinitialise.
+        // Étape courante du wizard, pilotée dans le VM (aucune re-navigation, rule 11).
+        // Le nombre d'étapes dépend du mode : en 12p, wizard à 3 étapes
+        // (Circuit → Positions → Résumé) ; en 24p, à 4 étapes (l'Intermission s'intercale
+        // après le Circuit). Utiliser les index sémantiques [stepCircuit]/[stepIntermission]
+        // /[stepPositions]/[stepSummary] plutôt que des littéraux.
         val step: Int = 0,
+        // Mode courant (déterminé par le nombre d'adversaires). Pilote l'indexation des étapes.
+        val is24p: Boolean = false,
         val mapList: List<Maps> = Maps.entries,
         val mapSelected: Maps? = null,
         val intermissionList: List<Maps>? = null,
@@ -82,6 +86,14 @@ class AddTrackViewModel @AssistedInject constructor(
 
         /** Line-up complète (tous les joueurs ont une position) → le Résumé est accessible. */
         val positionsComplete: Boolean get() = players.isNotEmpty() && selectedPositions.size == players.size
+
+        // Index sémantiques des étapes selon le mode. L'Intermission n'existe qu'en 24p ;
+        // en 12p, Positions vient directement après Circuit (index -1 pour l'Intermission,
+        // jamais atteint).
+        val stepCircuit: Int get() = 0
+        val stepIntermission: Int get() = if (is24p) 1 else -1
+        val stepPositions: Int get() = if (is24p) 2 else 1
+        val stepSummary: Int get() = if (is24p) 3 else 2
     }
 
     private val _state = MutableStateFlow(State())
@@ -104,6 +116,8 @@ class AddTrackViewModel @AssistedInject constructor(
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == details.war.id.toString() }?.sortedBy { it.name }.orEmpty()
             _state.value.copy(
+                // Mode dérivé du nombre d'adversaires (source de vérité, aligné sur totalPositions).
+                is24p = teamOpponents.size > 1,
                 // Avatar de l'équipe, nom/tag du roster hôte.
                 teamHost = TeamEntity(teamHost).copy(name = rosterName, tag = hostRoster?.tag ?: teamHost.tag),
                 teamOpponent = teamOpponents,
@@ -134,14 +148,15 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Choix du circuit (étape 1). **Réinitialise la sélection de positions** (le circuit
-     * change → on repart d'une line-up vierge, cf. maquette) et **avance à l'Intermission**
-     * (étape 2). En 12p comme en 24p on passe par l'étape Intermission (2ᵉ circuit optionnel).
+     * Choix du circuit (étape Circuit). **Réinitialise la sélection de positions** (le circuit
+     * change → on repart d'une line-up vierge, cf. maquette) et **avance à l'étape suivante** :
+     * l'Intermission en 24p, directement les Positions en 12p (pas d'Intermission en 12p).
      */
     fun onMapSelected(map: Maps) {
         positions.clear()
         _state.value = state.value.copy(
-            step = 1,
+            // 24p → Intermission ; 12p → Positions (l'Intermission n'existe pas en 12p).
+            step = if (state.value.is24p) state.value.stepIntermission else state.value.stepPositions,
             mapSelected = map,
             intermissionList = Maps.intermissionsTo(map),
             intermissionSelected = null,
@@ -154,38 +169,38 @@ class AddTrackViewModel @AssistedInject constructor(
         )
     }
 
-    /** Choix (optionnel) de l'intermission — un 2ᵉ circuit enchaîné. `null` = aucune. */
+    /** Choix (optionnel) de l'intermission — un 2ᵉ circuit enchaîné (24p uniquement). `null` = aucune. */
     fun onIntermissionSelected(map: Maps?) {
         val mapSelected = state.value.mapSelected
         _state.value = state.value.copy(intermissionSelected = map?.takeIf { it != mapSelected })
     }
 
     /**
-     * Navigation entre étapes du wizard (0 = Circuit, 1 = Intermission, 2 = Positions,
-     * 3 = Résumé) sans re-navigation. **Un retour en arrière annule la sélection de l'étape
-     * rejointe** (rule 11) : revenir au Circuit = **remise à zéro complète** (circuit,
-     * intermission, positions, score) ; revenir aux Positions vide la line-up en cours.
-     * Aller **en avant** (ou rester) ne réinitialise rien.
+     * Navigation entre étapes du wizard (index sémantiques dépendant du mode, cf. State) sans
+     * re-navigation. **Un retour en arrière annule la sélection de l'étape rejointe** (rule 11) :
+     * revenir au **Circuit** = remise à zéro complète (circuit, intermission, positions, score) ;
+     * revenir à l'**Intermission** (24p) réinitialise le 2ᵉ circuit + les positions ; revenir aux
+     * **Positions** vide la line-up. Aller **en avant** (ou rester) ne réinitialise rien.
      */
     fun onStepChange(step: Int) {
         val current = state.value.step
         when {
             step >= current -> _state.value = state.value.copy(step = step)
-            step == 0 -> resetTrack()
-            step == 1 -> resetIntermission()
+            step == state.value.stepCircuit -> resetTrack()
+            step == state.value.stepIntermission -> resetIntermission()
             else -> resetPositions()
         }
     }
 
     /**
-     * Retour arrière vers l'étape Intermission : réinitialise le choix d'intermission
-     * (on revient pour le refaire) **ET** la saisie de positions faite ensuite (elle
-     * dépend du circuit enchaîné). Le circuit principal (étape 0) est conservé.
+     * Retour arrière vers l'étape Intermission (24p) : réinitialise le choix d'intermission
+     * (on revient pour le refaire) **ET** la saisie de positions faite ensuite (elle dépend
+     * du circuit enchaîné). Le circuit principal (étape Circuit) est conservé.
      */
     private fun resetIntermission() {
         positions.clear()
         _state.value = state.value.copy(
-            step = 1,
+            step = state.value.stepIntermission,
             intermissionSelected = null,
             selectedPositions = listOf(),
             currentPlayer = state.value.players.firstOrNull(),
@@ -201,7 +216,7 @@ class AddTrackViewModel @AssistedInject constructor(
     private fun resetTrack() {
         positions.clear()
         _state.value = state.value.copy(
-            step = 0,
+            step = state.value.stepCircuit,
             mapList = Maps.entries,
             mapSelected = null,
             intermissionList = null,
@@ -220,7 +235,7 @@ class AddTrackViewModel @AssistedInject constructor(
     private fun resetPositions() {
         positions.clear()
         _state.value = state.value.copy(
-            step = 2,
+            step = state.value.stepPositions,
             selectedPositions = listOf(),
             currentPlayer = state.value.players.firstOrNull(),
             shocks = mapOf(),
@@ -256,7 +271,7 @@ class AddTrackViewModel @AssistedInject constructor(
                 }
                 val scoreOpponent = maxPointsPerTrack - scoreHost
                 _state.value = _state.value.copy(
-                    step = 3,
+                    step = _state.value.stepSummary,
                     trackScore = "$scoreHost - $scoreOpponent",
                     teamHostTrackScore = scoreHost,
                     teamOpponentScore = scoreOpponent,

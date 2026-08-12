@@ -50,7 +50,9 @@ import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.VerticalGrid
+import fr.harmoniamk.statsmkworld.extension.diffColor
 import fr.harmoniamk.statsmkworld.ui.cells.MapCell
+import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
@@ -87,21 +89,31 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
     }
 
     BaseScreen(title = stringResource(R.string.addtrack_title), modifier = Modifier.fillMaxSize()) {
-        MKStepper(
-            steps = listOf(
+        // Libellés d'étapes selon le mode : l'Intermission ne figure qu'en 24p (wizard à 3
+        // étapes en 12p, 4 en 24p). L'ordre suit les index sémantiques du State.
+        val steps = when (state.is24p) {
+            true -> listOf(
                 stringResource(R.string.addtrack_step_circuit),
                 stringResource(R.string.addtrack_step_intermission),
                 stringResource(R.string.addtrack_step_positions),
                 stringResource(R.string.addtrack_step_summary)
-            ),
+            )
+            else -> listOf(
+                stringResource(R.string.addtrack_step_circuit),
+                stringResource(R.string.addtrack_step_positions),
+                stringResource(R.string.addtrack_step_summary)
+            )
+        }
+        MKStepper(
+            steps = steps,
             step = state.step,
             enabled = { index ->
                 when (index) {
                     // Circuit : toujours ; Intermission/Positions : circuit choisi ;
                     // Résumé : line-up de positions complète.
-                    0 -> true
-                    1, 2 -> state.mapPicked
-                    else -> state.positionsComplete
+                    state.stepCircuit -> true
+                    state.stepSummary -> state.positionsComplete
+                    else -> state.mapPicked
                 }
             },
             onStepClick = viewModel::onStepChange
@@ -109,7 +121,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
         Spacer(Modifier.height(13.dp))
 
         when (state.step) {
-            0 -> CircuitStep(
+            state.stepCircuit -> CircuitStep(
                 state = state,
                 search = search,
                 onSearch = {
@@ -121,20 +133,21 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
                     viewModel.onMapSelected(it)
                 }
             )
-            1 -> IntermissionStep(
+            // Intermission : 24p uniquement (en 12p, stepIntermission == -1, jamais atteint).
+            state.stepIntermission -> IntermissionStep(
                 state = state,
                 onIntermissionSelected = viewModel::onIntermissionSelected,
-                onPrevious = { viewModel.onStepChange(0) },
-                onNext = { viewModel.onStepChange(2) }
+                onPrevious = { viewModel.onStepChange(state.stepCircuit) },
+                onNext = { viewModel.onStepChange(state.stepPositions) }
             )
-            2 -> PositionsStep(
+            state.stepPositions -> PositionsStep(
                 state = state,
                 onPositionClick = viewModel::onPositionClick,
-                onPrevious = { viewModel.onStepChange(1) }
+                onPrevious = { viewModel.onStepChange(state.step - 1) }
             )
             else -> SummaryStep(
                 state = state,
-                onPrevious = { viewModel.onStepChange(2) },
+                onPrevious = { viewModel.onStepChange(state.stepPositions) },
                 onAddShock = viewModel::onAddShock,
                 onRemoveShock = viewModel::onRemoveShock,
                 onValidate = viewModel::onValidate
@@ -143,7 +156,10 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
     }
 }
 
-/** Étape 1 — recherche + grille de circuits. Choisir un circuit avance à l'Intermission. */
+/**
+ * Étape Circuit — recherche + grille de circuits (`MKTrackCell` en mode sélection). Choisir un
+ * circuit avance à l'Intermission (24p) ou directement aux Positions (12p).
+ */
 @Composable
 private fun ColumnScope.CircuitStep(
     state: AddTrackViewModel.State,
@@ -158,11 +174,15 @@ private fun ColumnScope.CircuitStep(
         backgroundColor = Colors.blackAlphaed
     )
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(150.dp),
+        columns = GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().weight(1f)
     ) {
+        // Cellule circuit MUTUALISÉE avec CurrentWar (rule 16 : MKTrackCell), en mode
+        // sélection (image + nom, sans score).
         items(state.mapList, key = { it.name }) { map ->
-            MapCell(Modifier.padding(5.dp), map = listOf(map), onClick = { onMapSelected(map) })
+            MKTrackCell(map = map, onClick = { onMapSelected(map) })
         }
     }
 }
@@ -186,22 +206,24 @@ private fun ColumnScope.IntermissionStep(
         modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp)
     )
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(150.dp),
+        columns = GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().weight(1f)
     ) {
         // « Aucune » : chip de tête pour n'enchaîner aucun 2ᵉ circuit (état actif par défaut).
         item {
             IntermissionNoneChip(
                 selected = state.intermissionSelected == null,
-                onClick = { onIntermissionSelected(null) },
-                modifier = Modifier.padding(5.dp)
+                onClick = { onIntermissionSelected(null) }
             )
         }
+        // Cellules circuit MUTUALISÉES (MKTrackCell), en mode sélection : la cellule active
+        // (intermission retenue) est liserée en vert.
         items(state.intermissionList.orEmpty(), key = { it.name }) { intermission ->
-            MapCell(
-                Modifier.padding(5.dp),
-                map = listOf(intermission) + listOfNotNull(state.mapSelected),
-                borderColor = if (state.intermissionSelected == intermission) Colors.green else Colors.white,
+            MKTrackCell(
+                map = intermission,
+                selected = state.intermissionSelected == intermission,
                 onClick = { onIntermissionSelected(intermission) }
             )
         }
@@ -220,10 +242,10 @@ private fun IntermissionNoneChip(selected: Boolean, onClick: () -> Unit, modifie
     Box(
         modifier
             .fillMaxWidth()
-            .height(50.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .background(if (selected) Colors.green else Colors.blackAlphaed)
-            .border(2.dp, if (selected) Colors.green else Colors.white, RoundedCornerShape(5.dp))
+            .height(84.dp) // aligné sur la hauteur des MKTrackCell voisines
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (selected) Colors.green else Colors.white30)
+            .border(2.dp, if (selected) Colors.green else Colors.white55, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -239,7 +261,8 @@ private fun IntermissionNoneChip(selected: Boolean, onClick: () -> Unit, modifie
  * Étape 3 — saisie **joueur par joueur** : progression `Joueur n / total`, rappel du joueur
  * courant, grille de positions cliquables (les positions prises sont verrouillées). La
  * dernière position bascule AUTOMATIQUEMENT sur le Résumé (dans le VM). « Précédent »
- * revient à l'Intermission (et réinitialise la saisie via [AddTrackViewModel.onStepChange]).
+ * revient à l'étape précédente (Intermission en 24p, Circuit en 12p) et réinitialise la
+ * saisie via [AddTrackViewModel.onStepChange].
  */
 @Composable
 private fun ColumnScope.PositionsStep(
@@ -355,11 +378,18 @@ private fun ColumnScope.SummaryStep(
     )
 }
 
-/** Carte en-tête du Résumé : illustration du circuit + nom + score de manche calculé. */
+/**
+ * Carte en-tête du Résumé : illustration du circuit + nom + score de manche calculé.
+ * **Score en blanc**, **diff colorisée** (vert/rouge/blanc selon le signe, via `Int.diffColor`
+ * mutualisé avec CurrentWar).
+ */
 @Composable
 private fun SummaryHeaderCard(state: AddTrackViewModel.State) {
     val maps = listOfNotNull(state.intermissionSelected, state.mapSelected)
     val lastMap = maps.lastOrNull()
+    // Diff signé (hôte − adverse) = points de manche hôte − complément adverse. En 24p,
+    // pas de diff par manche (l'adversaire est saisi ailleurs).
+    val diff = (state.teamHostTrackScore ?: 0) - (state.teamOpponentScore ?: 0)
     StatCard {
         Row(horizontalArrangement = Arrangement.spacedBy(11.dp), verticalAlignment = Alignment.CenterVertically) {
             lastMap?.let {
@@ -375,7 +405,17 @@ private fun SummaryHeaderCard(state: AddTrackViewModel.State) {
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     MKText(text = "${stringResource(R.string.addtrack_summary_score)} · ", textColor = Colors.white66, fontSize = 12)
-                    MKText(text = summaryScoreLabel(state), font = Fonts.NunitoBD, textColor = Colors.green, fontSize = 12)
+                    // Score en blanc.
+                    MKText(text = summaryScoreLabel(state), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
+                    // Diff colorisée (12p uniquement : en 24p, pas d'adverse par manche).
+                    if (!state.is24p) {
+                        MKText(
+                            text = "  (${state.trackDiff.orEmpty()})",
+                            font = Fonts.NunitoBD,
+                            textColor = diff.diffColor(),
+                            fontSize = 12
+                        )
+                    }
                 }
             }
         }
@@ -384,15 +424,15 @@ private fun SummaryHeaderCard(state: AddTrackViewModel.State) {
 
 /**
  * Libellé du score de manche affiché dans le résumé, selon le mode :
- * - 12p : `score hôte - score adverse (±diff)` ;
- * - 24p : `score war courant -> score war + manche` (l'adversaire est saisi ailleurs).
+ * - 12p : `score hôte - score adverse` (la diff est affichée à part, colorisée) ;
+ * - 24p : `score war courant → score war + manche` (l'adversaire est saisi ailleurs).
  */
 private fun summaryScoreLabel(state: AddTrackViewModel.State): String = when (state.totalPositions) {
     24 -> {
         val base = state.scores.orEmpty().firstOrNull { it.teamId == state.rosterId }?.score ?: 0
         "$base → ${base + (state.teamHostTrackScore ?: 0)}"
     }
-    else -> "${state.trackScore.orEmpty()} (${state.trackDiff.orEmpty()})"
+    else -> state.trackScore.orEmpty()
 }
 
 /** Pied de wizard : bouton « Précédent » (secondaire) + CTA principal ([nextLabel]). */

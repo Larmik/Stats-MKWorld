@@ -614,6 +614,8 @@ Classement des joueurs **d'une seule war** (utilisé pour l'affichage course par
 
 Le résultat est affiché par `ui/cells/WarPlayersCell.kt` (grille des joueurs, répartie en deux colonnes) sur l'écran **Détail de war** (`WarDetailsScreen`). Sur **War en cours** (`CurrentWarScreen`, refonte #43), la liste des `PlayerScore` est rendue par le composable local `PlayersCard` (tuiles nom + points en deux colonnes, style carte dashboard de la maquette).
 
+**Cellule de course/circuit partagée `ui/cells/MKTrackCell.kt`** (extraite du `TrackCard` privé de `CurrentWarScreen`, mutualisée avec `AddTrackScreen` — ticket #44, rule 16) : bande colorée d'accent + image circuit + nom (`Maps.label`) + zone shocks réservée + score/diff. Deux modes selon les données : **course jouée** (`track: WarTrackDetails` → score `hôte-adverse` ou score de manche 24p + diff colorisée) ou **sélection de circuit** (`map: Maps` seul → image + nom, accent vert si `selected`). `CurrentWarScreen.TrackCard` délègue désormais à ce composant. La colorisation de diff est centralisée dans l'extension **`Int.diffColor()`** (`extension/IntegerExtension.kt` : vert > 0, rouge < 0, blanc = 0 ; couleurs `--win`/`--loss`/`--tie`), mutualisée entre la carte score de `CurrentWar` et le résumé d'`AddTrack`.
+
 #### Sections enrichies (records/séries, classements winrate/score)
 
 `StatsScreen` affiche, sous les stats de base, des **sections accordéon**

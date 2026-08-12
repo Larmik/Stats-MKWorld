@@ -43,6 +43,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
+import fr.harmoniamk.statsmkworld.extension.diffColor
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -52,6 +53,7 @@ import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
+import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 
 // Rayon uniforme des cartes (maquette : radius 6px), aligné sur WelcomeScreen.
 private val CardRadius = RoundedCornerShape(6.dp)
@@ -195,11 +197,7 @@ private fun ScoreCard(
     val trackCount = details.warTracks.size
     // Écart signé du point de vue de l'hôte (avec pénalités) : colore la diff centrale.
     val margin = details.scoreMargin(is24p)
-    val diffColor = when {
-        margin > 0 -> Colors.green
-        margin < 0 -> Colors.red
-        else -> Colors.white
-    }
+    val diffColor = margin.diffColor()
     // Total de pénalités par équipe (clé = teamId/rosterId), même rattachement que
     // WarScoreView/PenaltiesSection. La clé hôte est war.teamHost (rosterId), PAS
     // teamHost.id (id d'équipe).
@@ -576,105 +574,10 @@ private fun TracksSection(
 }
 
 /**
- * Cellule d'une course jouée. Ordre horizontal :
- * 1. **bande colorée verticale** à gauche (vert diff > 0, rouge < 0, blanc = 0) ;
- * 2. **colonne centrale** : image du circuit (rectangle arrondi) + **nom** (`Maps.label`) ;
- * 3. **zone shocks réservée** : icônes éclair de la manche (`WarTrack.shocks`), largeur
- *    **toujours réservée** (même sans shock) pour aligner les cellules ;
- * 4. **score « hôte-adverse » + diff colorisée** à **droite**
- *    (`WarTrackDetails.displayedResult` / `displayedDiff`, calculés côté modèle),
- *    centrés verticalement.
- *
- * **Hauteur uniforme** : hauteur de cellule fixe (84 dp, calée sur le cas « nom sur
- * 2 lignes ») — les noms courts (1 ligne) occupent la même hauteur → toutes les cellules
- * sont alignées. Clic → détail course.
+ * Cellule d'une course jouée — délègue à la cellule partagée [MKTrackCell] (extraite ici
+ * puis mutualisée avec `AddTrackScreen`, rule 16). Clic → détail course.
  */
 @Composable
 private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    // Circuit : dernier segment (arrivée) d'une éventuelle intermission.
-    val map = track.index.lastOrNull()?.toInt()?.let { Maps.entries.getOrNull(it) }
-    // Couleur du liseré/diff : vert manche gagnée, rouge perdue (blanc = nul / 24 j).
-    val accent = when {
-        is24p -> Colors.white
-        track.displayedDiff.startsWith("+") -> Colors.green
-        track.displayedDiff.startsWith("-") -> Colors.red
-        else -> Colors.white
-    }
-    // Total de shocks de la manche (même logique que MapCell / ShocksSection).
-    val shockCount = track.track.shocks.orEmpty().sumOf { it.count }
-    Row(
-        modifier
-            .height(84.dp) // hauteur fixe calée sur le cas « nom sur 2 lignes » → cellules alignées
-            .clip(CardRadius)
-            .background(Colors.white30, CardRadius)
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 1. Bande colorée verticale (bord gauche, pleine hauteur).
-        Box(Modifier.width(3.dp).fillMaxHeight().background(accent))
-        // 2. Colonne centrale : image du circuit + nom, centrée. Le nom réserve 2 lignes
-        //    (hauteur fixe) pour égaliser la hauteur des cellules.
-        Column(
-            Modifier.weight(1f).padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            map?.let {
-                Image(
-                    painter = painterResource(it.picture),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(width = 56.dp, height = 36.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                )
-            }
-            Box(
-                Modifier.height(32.dp).padding(top = 4.dp),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                MKText(
-                    text = map?.label?.let { stringResource(it) } ?: "-",
-                    font = Fonts.NunitoBD,
-                    textColor = Colors.white,
-                    fontSize = 12,
-                    maxLines = 2,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-        // 3. Zone shocks : largeur TOUJOURS réservée (placeholder invisible si aucun shock).
-        Column(
-            Modifier.width(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            repeat(shockCount) {
-                Image(
-                    painter = painterResource(R.drawable.shock),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
-        // 4. Score + diff, à DROITE, centrés verticalement.
-        Column(
-            Modifier.padding(start = 6.dp, end = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            MKText(
-                // 12 j : « hôte-adverse » ; 24 j : score de manche seul (pas d'adverse par manche).
-                text = if (is24p) track.teamScore.toString() else track.displayedResult.replace(" - ", "-"),
-                font = Fonts.Urbanist,
-                textColor = Colors.white,
-                fontSize = 15,
-                maxLines = 1
-            )
-            if (!is24p) MKText(
-                text = track.displayedDiff,
-                font = Fonts.Urbanist,
-                textColor = accent,
-                fontSize = 12,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-        }
-    }
+    MKTrackCell(modifier = modifier, track = track, is24p = is24p, onClick = onClick)
 }
