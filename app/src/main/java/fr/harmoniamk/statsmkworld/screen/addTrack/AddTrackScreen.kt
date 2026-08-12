@@ -378,8 +378,8 @@ private fun ColumnScope.SummaryStep(
  * Cellule joueur du Résumé, carte translucide (`white30`, radius 6, padding 11) en **colonne
  * verticale centrée** (rules 13/15) :
  * - **en haut** : le **nom** du joueur (Nunito bold) ;
- * - **au milieu** : la **position** dans un **carré blanc** (contraste), numéro en police
- *   `MKPosition` + couleur `positionColor` (comme l'ancienne `PlayerCell`) ;
+ * - **au milieu** : la **position** dans un **carré blanc semi-transparent** (`white85`,
+ *   contraste), numéro en police `MKPosition` + couleur `positionColor` (comme l'ancienne `PlayerCell`) ;
  * - **en bas** : le **compteur de shocks** (illustration `R.drawable.shock` + contrôle `− N +`).
  *
  * Le compteur [shockCount] reflète le nombre courant. Shocks **hors calcul du score**.
@@ -410,12 +410,13 @@ private fun SummaryPlayerCell(
             fontSize = 13,
             maxLines = 1
         )
-        // Milieu : position dans un carré blanc (numéro MKPosition + couleur positionColor).
+        // Milieu : position dans un carré blanc SEMI-TRANSPARENT (white85 : léger alpha, la
+        // lisibilité du numéro coloré positionColor restant assurée).
         Box(
             Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Colors.white, RoundedCornerShape(8.dp)),
+                .background(Colors.white85, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center
         ) {
             MKText(
