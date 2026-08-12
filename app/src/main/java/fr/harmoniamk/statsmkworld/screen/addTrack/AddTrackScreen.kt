@@ -50,9 +50,9 @@ import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.extension.diffColor
+import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
-import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 
 /**
@@ -203,13 +203,6 @@ private fun ColumnScope.IntermissionStep(
     onPrevious: () -> Unit,
     onNext: () -> Unit
 ) {
-    MKText(
-        text = stringResource(R.string.addtrack_intermission_hint),
-        textColor = Colors.white55,
-        fontSize = 12,
-        textAlign = TextAlign.Start,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 9.dp)
-    )
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -276,27 +269,18 @@ private fun ColumnScope.PositionsStep(
     onPrevious: () -> Unit
 ) {
     // Aperçu du circuit en tête = MÊME cellule que la sélection Circuit (MKTrackCell unifié,
-    // rule 16), en demi-largeur. En intermission (24p), on montre le circuit d'arrivée
-    // (`intermissionSelected`), sinon le circuit principal.
+    // rule 16), en demi-largeur **centrée horizontalement**. En intermission (24p), on montre
+    // le circuit d'arrivée (`intermissionSelected`), sinon le circuit principal.
     val headerMap = state.intermissionSelected ?: state.mapSelected
     headerMap?.let {
-        Row(Modifier.fillMaxWidth()) {
-            MKTrackCell(map = it, onClick = {}, modifier = Modifier.weight(1f))
-            Spacer(Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            MKTrackCell(map = it, onClick = {}, modifier = Modifier.fillMaxWidth(0.5f))
         }
         Spacer(Modifier.height(11.dp))
     }
-    // Carte de progression : compteur + barre (style AddWar/maquette).
+    // Carte de progression : compteur + barre (style AddWar/maquette) + joueur courant.
     state.currentPlayer?.let {
         ProgressCard(current = state.selectedPositions.size + 1, total = state.players.size)
-        Spacer(Modifier.height(9.dp))
-        MKText(
-            text = stringResource(R.string.addtrack_positions_hint, it.name),
-            textColor = Colors.white55,
-            fontSize = 12,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth()
-        )
         Spacer(Modifier.height(11.dp))
         MKText(text = it.name, fontSize = 22, font = Fonts.NunitoBD, textColor = Colors.black)
         Spacer(Modifier.height(6.dp))
@@ -355,31 +339,34 @@ private fun ColumnScope.SummaryStep(
         // Carte en-tête : circuit(s) + score de la manche calculé en direct.
         SummaryHeaderCard(state = state)
 
-        Eyebrow(stringResource(R.string.addtrack_summary_positions))
-        // Grille « Positions & shocks » : cartes joueur en 2 colonnes (`.two` de la maquette),
-        // reproduisant la cellule `.b` (nom · P{n} + contrôle shocks − N +).
-        state.selectedPositions.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                pair.forEach { playerPosition ->
-                    SummaryPlayerCell(
-                        name = playerPosition.player?.name.orEmpty(),
-                        position = playerPosition.position.position,
-                        shockCount = state.shocks[playerPosition.player?.id] ?: 0,
-                        onAddShock = { playerPosition.player?.id?.let(onAddShock) },
-                        onRemoveShock = { playerPosition.player?.id?.let(onRemoveShock) },
-                        modifier = Modifier.weight(1f)
-                    )
+        // Grille des cellules joueurs, englobée dans le même conteneur sombre (blackAlphaed,
+        // coins arrondis) que la grille de circuits, pour le contraste.
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .background(Colors.blackAlphaed, RoundedCornerShape(6.dp))
+                .padding(11.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            // Cartes joueur en 2 colonnes (`.two` de la maquette).
+            state.selectedPositions.chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    pair.forEach { playerPosition ->
+                        SummaryPlayerCell(
+                            name = playerPosition.player?.name.orEmpty(),
+                            position = playerPosition.position.position,
+                            is24p = state.is24p,
+                            shockCount = state.shocks[playerPosition.player?.id] ?: 0,
+                            onAddShock = { playerPosition.player?.id?.let(onAddShock) },
+                            onRemoveShock = { playerPosition.player?.id?.let(onRemoveShock) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (pair.size == 1) Spacer(Modifier.weight(1f))
                 }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
         }
-        MKText(
-            text = stringResource(R.string.addtrack_summary_hint),
-            textColor = Colors.white55,
-            fontSize = 12,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
     Spacer(Modifier.height(9.dp))
     WizNav(
@@ -391,14 +378,17 @@ private fun ColumnScope.SummaryStep(
 
 /**
  * Cellule joueur du Résumé, **fidèle à la maquette** (`addtrack` → `#at-sum` → `.b`, rules 13/15) :
- * carte translucide (`white30`, radius 6, padding 11) avec, en haut, `Nom · P{n}` (Nunito bold),
- * et en dessous une ligne « Shocks » + contrôle **`−  N  +`** (`.shk`) pour ajouter/retirer des
- * shocks. Le compteur [shockCount] reflète le nombre courant. Shocks **hors calcul du score**.
+ * carte translucide (`white30`, radius 6, padding 11) avec, en haut, le **nom** (Nunito bold) et
+ * le **numéro de position stylé** (police `MKPosition` + couleur `positionColor`, comme l'ancienne
+ * `PlayerCell`), puis une ligne **illustration shock + contrôle `−  N  +`** (`.shk`) pour
+ * ajouter/retirer des shocks. Le compteur [shockCount] reflète le nombre courant. Shocks **hors
+ * calcul du score**.
  */
 @Composable
 private fun SummaryPlayerCell(
     name: String,
     position: Int,
+    is24p: Boolean,
     shockCount: Int,
     onAddShock: () -> Unit,
     onRemoveShock: () -> Unit,
@@ -411,18 +401,32 @@ private fun SummaryPlayerCell(
             .padding(11.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // .k — Nom · P{n}
-        MKText(
-            text = "$name · P$position",
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            fontSize = 13,
-            maxLines = 1,
-            textAlign = TextAlign.Start
-        )
-        // .v — « Shocks » + contrôle − N +
+        // Nom + numéro de position stylé (MKPosition + positionColor, comme l'ancienne PlayerCell).
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MKText(text = stringResource(R.string.shocks), textColor = Colors.white, fontSize = 12, resizable = false)
+            MKText(
+                text = name,
+                font = Fonts.NunitoBD,
+                textColor = Colors.white,
+                fontSize = 13,
+                maxLines = 1,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            MKText(
+                text = position.toString(),
+                font = Fonts.MKPosition,
+                textColor = position.positionColor(is24p),
+                fontSize = 30,
+                resizable = false
+            )
+        }
+        // Illustration du shock + contrôle − N +
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Image(
+                painter = painterResource(R.drawable.shock),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
             ShockStepperButton(symbol = "−", onClick = onRemoveShock)
             MKText(
                 text = shockCount.toString(),

@@ -281,15 +281,10 @@
     <string name="addtrack_step_intermission">Intermission</string>
     <string name="addtrack_step_positions">Positions</string>
     <string name="addtrack_step_summary">Summary</string>
-    <string name="addtrack_intermission_hint">Optional — a 2nd track chained (intermission) on the same race.</string>
     <string name="addtrack_intermission_none">None</string>
     <string name="addtrack_next_positions">Next · Positions</string>
     <string name="addtrack_progress">Player %1$d / %2$d</string>
-    <string name="addtrack_positions_hint">Tap the position obtained by %1$s. Positions already taken are locked.</string>
-    <string name="addtrack_skip_summary">Go to summary</string>
     <string name="addtrack_summary_score">Race score</string>
-    <string name="addtrack_summary_positions">Positions &amp; shocks</string>
-    <string name="addtrack_summary_hint">Race score recomputed live on every position entered.</string>
     <!-- Stats pole — Statistics screen (ticket #25) -->
     <string name="stats_scope_individual">Individual</string>
     <string name="stats_scope_team">Team</string>

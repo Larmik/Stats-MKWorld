@@ -281,15 +281,10 @@
     <string name="addtrack_step_intermission">Intermission</string>
     <string name="addtrack_step_positions">Positions</string>
     <string name="addtrack_step_summary">Résumé</string>
-    <string name="addtrack_intermission_hint">Optionnel — un 2ᵉ circuit enchaîné (intermission) sur la même course.</string>
     <string name="addtrack_intermission_none">Aucune</string>
     <string name="addtrack_next_positions">Suivant · Positions</string>
     <string name="addtrack_progress">Joueur %1$d / %2$d</string>
-    <string name="addtrack_positions_hint">Touche la position obtenue par %1$s. Les positions déjà prises sont verrouillées.</string>
-    <string name="addtrack_skip_summary">Aller au résumé</string>
     <string name="addtrack_summary_score">Score de la manche</string>
-    <string name="addtrack_summary_positions">Positions &amp; shocks</string>
-    <string name="addtrack_summary_hint">Score de manche recalculé en direct à chaque position saisie.</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>
