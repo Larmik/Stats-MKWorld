@@ -269,13 +269,11 @@ private fun ColumnScope.PositionsStep(
     onPrevious: () -> Unit
 ) {
     // Aperçu du circuit en tête = MÊME cellule que la sélection Circuit (MKTrackCell unifié,
-    // rule 16), en demi-largeur **centrée horizontalement**. En intermission (24p), on montre
-    // le circuit d'arrivée (`intermissionSelected`), sinon le circuit principal.
+    // rule 16), en **pleine largeur** (moins les marges de l'écran). En intermission (24p), on
+    // montre le circuit d'arrivée (`intermissionSelected`), sinon le circuit principal.
     val headerMap = state.intermissionSelected ?: state.mapSelected
     headerMap?.let {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            MKTrackCell(map = it, onClick = {}, modifier = Modifier.fillMaxWidth(0.5f))
-        }
+        MKTrackCell(map = it, onClick = {}, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(11.dp))
     }
     // Carte de progression : compteur + barre (style AddWar/maquette) + joueur courant.
@@ -377,12 +375,14 @@ private fun ColumnScope.SummaryStep(
 }
 
 /**
- * Cellule joueur du Résumé, **fidèle à la maquette** (`addtrack` → `#at-sum` → `.b`, rules 13/15) :
- * carte translucide (`white30`, radius 6, padding 11) avec, en haut, le **nom** (Nunito bold) et
- * le **numéro de position stylé** (police `MKPosition` + couleur `positionColor`, comme l'ancienne
- * `PlayerCell`), puis une ligne **illustration shock + contrôle `−  N  +`** (`.shk`) pour
- * ajouter/retirer des shocks. Le compteur [shockCount] reflète le nombre courant. Shocks **hors
- * calcul du score**.
+ * Cellule joueur du Résumé, carte translucide (`white30`, radius 6, padding 11) en **colonne
+ * verticale centrée** (rules 13/15) :
+ * - **en haut** : le **nom** du joueur (Nunito bold) ;
+ * - **au milieu** : la **position** dans un **carré blanc** (contraste), numéro en police
+ *   `MKPosition` + couleur `positionColor` (comme l'ancienne `PlayerCell`) ;
+ * - **en bas** : le **compteur de shocks** (illustration `R.drawable.shock` + contrôle `− N +`).
+ *
+ * Le compteur [shockCount] reflète le nombre courant. Shocks **hors calcul du score**.
  */
 @Composable
 private fun SummaryPlayerCell(
@@ -399,28 +399,34 @@ private fun SummaryPlayerCell(
             .clip(RoundedCornerShape(6.dp))
             .background(Colors.white30, RoundedCornerShape(6.dp))
             .padding(11.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
-        // Nom + numéro de position stylé (MKPosition + positionColor, comme l'ancienne PlayerCell).
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MKText(
-                text = name,
-                font = Fonts.NunitoBD,
-                textColor = Colors.white,
-                fontSize = 13,
-                maxLines = 1,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.weight(1f, fill = false)
-            )
+        // Haut : nom du joueur.
+        MKText(
+            text = name,
+            font = Fonts.NunitoBD,
+            textColor = Colors.white,
+            fontSize = 13,
+            maxLines = 1
+        )
+        // Milieu : position dans un carré blanc (numéro MKPosition + couleur positionColor).
+        Box(
+            Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Colors.white, RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+        ) {
             MKText(
                 text = position.toString(),
                 font = Fonts.MKPosition,
                 textColor = position.positionColor(is24p),
-                fontSize = 30,
+                fontSize = 34,
                 resizable = false
             )
         }
-        // Illustration du shock + contrôle − N +
+        // Bas : illustration du shock + contrôle − N +.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(
                 painter = painterResource(R.drawable.shock),
