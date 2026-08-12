@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -28,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,11 +49,8 @@ import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
-import fr.harmoniamk.statsmkworld.ui.VerticalGrid
 import fr.harmoniamk.statsmkworld.extension.diffColor
-import fr.harmoniamk.statsmkworld.ui.cells.MapCell
 import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
-import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
@@ -66,9 +63,10 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
  * l'étape rejointe (rule 11 wizard).
  *
  * Rendu pixel-perfect vs la maquette prototype UX (écran `addtrack`, rule 13/15) : stepper
- * partagé [fr.harmoniamk.statsmkworld.ui.MKStepper], cellules partagées [MapCell] /
- * [PositionCell] / [PlayerCell] (rule 16). Écran du graphe racine poussé par-dessus
- * CurrentWar → **pas de bottombar**, aucune marge basse requise (rule 17).
+ * partagé [fr.harmoniamk.statsmkworld.ui.MKStepper], cellule circuit partagée [MKTrackCell]
+ * (sélection Circuit, Intermission, aperçu Positions) et [PositionCell] (rule 16) ; cellule
+ * joueur du Résumé fidèle à la maquette ([SummaryPlayerCell]). Écran du graphe racine poussé
+ * par-dessus CurrentWar → **pas de bottombar**, aucune marge basse requise (rule 17).
  */
 @Composable
 fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () -> Unit) {
@@ -173,11 +171,18 @@ private fun ColumnScope.CircuitStep(
         placeHolderRes = R.string.rechercher_un_circuit,
         backgroundColor = Colors.blackAlphaed
     )
+    Spacer(Modifier.height(9.dp))
+    // Grille englobée dans un conteneur sombre (blackAlphaed, coins arrondis) pour le contraste.
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth().weight(1f)
+        contentPadding = PaddingValues(11.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)
+            .clip(RoundedCornerShape(6.dp))
+            .background(Colors.blackAlphaed, RoundedCornerShape(6.dp))
     ) {
         // Cellule circuit MUTUALISÉE avec CurrentWar (rule 16 : MKTrackCell), en mode
         // sélection (image + nom, sans score).
@@ -270,12 +275,14 @@ private fun ColumnScope.PositionsStep(
     onPositionClick: (Int) -> Unit,
     onPrevious: () -> Unit
 ) {
-    val maps = remember(state.intermissionSelected, state.mapSelected) {
-        listOfNotNull(state.intermissionSelected, state.mapSelected)
-    }
-    if (maps.isNotEmpty()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            MapCell(map = maps, onClick = {})
+    // Aperçu du circuit en tête = MÊME cellule que la sélection Circuit (MKTrackCell unifié,
+    // rule 16), en demi-largeur. En intermission (24p), on montre le circuit d'arrivée
+    // (`intermissionSelected`), sinon le circuit principal.
+    val headerMap = state.intermissionSelected ?: state.mapSelected
+    headerMap?.let {
+        Row(Modifier.fillMaxWidth()) {
+            MKTrackCell(map = it, onClick = {}, modifier = Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
         }
         Spacer(Modifier.height(11.dp))
     }
@@ -311,6 +318,8 @@ private fun ColumnScope.PositionsStep(
                     is24p = total == 24,
                     modifier = Modifier.size(size).padding(5.dp),
                     isVisible = !takenPositions.contains(it + 1),
+                    // Police réduite (rendu plus harmonieux dans la grille AddTrack).
+                    fontSize = if (total == 24) 34 else 48,
                     onClick = onPositionClick
                 )
             }
@@ -347,19 +356,21 @@ private fun ColumnScope.SummaryStep(
         SummaryHeaderCard(state = state)
 
         Eyebrow(stringResource(R.string.addtrack_summary_positions))
-        VerticalGrid {
-            state.selectedPositions.forEach {
-                PlayerCell(
-                    player = it.player,
-                    position = it.position.position,
-                    modifier = Modifier.padding(5.dp),
-                    shocksEnabled = true,
-                    shockCount = state.shocks[it.player?.id],
-                    is24p = state.teamOpponent.orEmpty().size > 1,
-                    onAddShock = onAddShock,
-                    onRemoveShock = onRemoveShock,
-                    onClick = {}
-                )
+        // Grille « Positions & shocks » : cartes joueur en 2 colonnes (`.two` de la maquette),
+        // reproduisant la cellule `.b` (nom · P{n} + contrôle shocks − N +).
+        state.selectedPositions.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                pair.forEach { playerPosition ->
+                    SummaryPlayerCell(
+                        name = playerPosition.player?.name.orEmpty(),
+                        position = playerPosition.position.position,
+                        shockCount = state.shocks[playerPosition.player?.id] ?: 0,
+                        onAddShock = { playerPosition.player?.id?.let(onAddShock) },
+                        onRemoveShock = { playerPosition.player?.id?.let(onRemoveShock) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
         }
         MKText(
@@ -376,6 +387,70 @@ private fun ColumnScope.SummaryStep(
         nextLabel = stringResource(R.string.confirmer),
         onNext = onValidate
     )
+}
+
+/**
+ * Cellule joueur du Résumé, **fidèle à la maquette** (`addtrack` → `#at-sum` → `.b`, rules 13/15) :
+ * carte translucide (`white30`, radius 6, padding 11) avec, en haut, `Nom · P{n}` (Nunito bold),
+ * et en dessous une ligne « Shocks » + contrôle **`−  N  +`** (`.shk`) pour ajouter/retirer des
+ * shocks. Le compteur [shockCount] reflète le nombre courant. Shocks **hors calcul du score**.
+ */
+@Composable
+private fun SummaryPlayerCell(
+    name: String,
+    position: Int,
+    shockCount: Int,
+    onAddShock: () -> Unit,
+    onRemoveShock: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Colors.white30, RoundedCornerShape(6.dp))
+            .padding(11.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // .k — Nom · P{n}
+        MKText(
+            text = "$name · P$position",
+            font = Fonts.NunitoBD,
+            textColor = Colors.white,
+            fontSize = 13,
+            maxLines = 1,
+            textAlign = TextAlign.Start
+        )
+        // .v — « Shocks » + contrôle − N +
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MKText(text = stringResource(R.string.shocks), textColor = Colors.white, fontSize = 12, resizable = false)
+            ShockStepperButton(symbol = "−", onClick = onRemoveShock)
+            MKText(
+                text = shockCount.toString(),
+                font = Fonts.Urbanist,
+                textColor = Colors.white,
+                fontSize = 13,
+                resizable = false,
+                modifier = Modifier.width(14.dp)
+            )
+            ShockStepperButton(symbol = "+", onClick = onAddShock)
+        }
+    }
+}
+
+/** Bouton carré `−`/`+` du contrôle de shocks (`.shk button` de la maquette : 22 dp, radius 6). */
+@Composable
+private fun ShockStepperButton(symbol: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(22.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(Colors.white30, RoundedCornerShape(6.dp))
+            .border(1.dp, Colors.whiteBorderSoft, RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        MKText(text = symbol, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 15, resizable = false)
+    }
 }
 
 /**
