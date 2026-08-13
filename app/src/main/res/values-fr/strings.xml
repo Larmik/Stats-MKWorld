@@ -275,6 +275,16 @@
     <string name="addwar_opponent_indicative">L\'adversaire est indicatif : seul ton roster est saisi côté app.</string>
     <string name="addwar_previous">Précédent</string>
     <string name="addwar_start_war">Démarrer la war</string>
+    <!-- AddTrack wizard — écran Ajouter une course (ticket #44) -->
+    <string name="addtrack_title">AJOUTER UNE COURSE</string>
+    <string name="addtrack_step_circuit">Circuit</string>
+    <string name="addtrack_step_intermission">Intermission</string>
+    <string name="addtrack_step_positions">Positions</string>
+    <string name="addtrack_step_summary">Résumé</string>
+    <string name="addtrack_intermission_none">Aucune</string>
+    <string name="addtrack_next_positions">Suivant · Positions</string>
+    <string name="addtrack_progress">Joueur %1$d / %2$d</string>
+    <string name="addtrack_summary_score">Score de la manche</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>

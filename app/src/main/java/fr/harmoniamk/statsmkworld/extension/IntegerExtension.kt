@@ -82,6 +82,20 @@ fun Int?.positionColor(is24p: Boolean = false) = Color(
         .toColorInt()
 )
 
+/**
+ * Couleur d'un différentiel de score (du point de vue de l'hôte) : **vert** si positif,
+ * **rouge** si négatif, **blanc** si nul. Mutualisé (rules 16/61) : diff de la carte score
+ * `CurrentWar`, diff de la manche dans le résumé d'`AddTrack`. Reprend les couleurs de la
+ * maquette (`--win`/`--loss`/`--tie`).
+ */
+fun Int.diffColor(): Color = Color(
+    when {
+        this > 0 -> "#81C995" // --win (vert)
+        this < 0 -> "#F28B82" // --loss (rouge)
+        else -> "#FFFFFF"     // --tie (blanc)
+    }.toColorInt()
+)
+
 fun Int?.positionToPoints(is24p: Boolean) = when (is24p) {
     true ->  when (this) {
         1 -> 15
