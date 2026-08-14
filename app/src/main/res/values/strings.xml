@@ -112,9 +112,11 @@
     <string name="welcome_title">Welcome, MKWorld player!\n\n</string>
     <string name="commencer">Start</string>
     <string name="cancel">Cancel</string>
-    <string name="penalties">Penalty</string>
+    <string name="penalties">Penalties</string>
+    <string name="penalties_hint">Apply a point penalty to a team.</string>
     <string name="remplacement">Sub</string>
     <string name="cancel_war">Cancel war</string>
+    <string name="cancel_war_hint">This permanently deletes the current war and all its races. Are you sure?</string>
     <string name="delete_war">Delete war</string>
     <string name="force_update_title">Update required</string>
     <string name="force_update_message">App needs an update to keep working properly.</string>

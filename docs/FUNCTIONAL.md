@@ -282,9 +282,12 @@ Les étapes basculent **dynamiquement** (état `step` du `AddTrackViewModel`, **
 - **Justesse du score** (rule 13) : le score de manche est calculé une seule fois à la dernière position (barème `positionToPoints`) ; le score de war final (`score courant + score de manche`) est recomposé **à la validation**, insensible aux retours arrière / reprises de saisie (plus de cumul incrémental).
 
 ### Étape 5 — Plus d'actions (`CurrentWarActionsScreen`, 3 onglets)
-- **Pénalités** : grille `−10 / −15 / −20` par équipe ; **une seule pénalité par équipe** à la fois ; « Valider » applique et déduit du score de l'équipe visée.
-- **Remplacement** : sélectionner 1 joueur sortant (composition actuelle) + 1 entrant (banc) ; « Remplacer » met à jour `currentWar` des deux joueurs (DB + Firebase).
-- **Annuler la war** : abandon complet (réinitialise `currentWar` de tous les joueurs, supprime `currentWars/{rosterId}`, vide le DataStore) ; confirmation requise.
+Écran conforme à la maquette (`waractions`) : segmenté partagé (`MKSegmentedSelector`)
+**Pénalités / Remplacement / Annuler** basculé **dynamiquement** (état local, sans
+re-navigation ni pager animé), contenu scrollable.
+- **Pénalités** : hint + grille 2 colonnes de tuiles `−N pour <équipe>` (montants −10/−15/−20 par équipe hôte + adverses) ; **sélection unique** (tuile active en rouge) ; « Valider » applique et déduit du score de l'équipe visée. Le nom affiché est celui du **roster** (hôte) ou de l'équipe adverse.
+- **Remplacement** : lignes joueur (`MKListRow`, pastille + initiales, coche ✓ verte) ; sélectionner 1 joueur sortant (composition actuelle) + 1 entrant (banc) ; « Remplacer » met à jour `currentWar` des deux joueurs (DB + Firebase).
+- **Annuler la war** : carte de confirmation (eyebrow « Annuler la war » + hint) + **bouton danger** « Supprimer la war » (bordure/texte rouge) → abandon complet (réinitialise `currentWar` de tous les joueurs, supprime `currentWars/{rosterId}`, vide le DataStore).
 
 ### Étape 6 — Validation finale
 `onValidateWar()` : écrit la war dans l'historique Firebase (`wars/{rosterId}/{id}`), réinitialise les `currentWar`, supprime la war en cours, revient à l'accueil. En 24p, la validation des scores (`onValidateScore`) précède.

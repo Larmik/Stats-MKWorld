@@ -23,10 +23,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.toTeamColor
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
+
+/**
+ * Couleur stable de la pastille d'avatar d'un joueur, dérivée de son id (palette
+ * équipe). Partagée (rule 16) entre le wizard de création de war (`AddWarScreen`) et
+ * l'écran d'actions de war (`CurrentWarActionsScreen`) qui affichent tous deux des
+ * lignes joueur [MKListRow].
+ */
+fun playerAvatarColor(id: String): Color = ((id.hashCode() and 0x7fffffff) % 32 + 1).toTeamColor()
 
 /**
  * Ligne de liste générique (`.lrow` de la maquette prototype UX) : carte sombre
