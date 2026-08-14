@@ -285,9 +285,9 @@ Les étapes basculent **dynamiquement** (état `step` du `AddTrackViewModel`, **
 Écran conforme à la maquette (`waractions`) : segmenté partagé (`MKSegmentedSelector`)
 **Pénalités / Remplacement / Annuler** basculé **dynamiquement** (état local, sans
 re-navigation ni pager animé), contenu scrollable.
-- **Pénalités** : hint + grille 2 colonnes de tuiles `−N pour <équipe>` (montants −10/−15/−20 par équipe hôte + adverses) ; **sélection unique** (tuile active en rouge) ; « Valider » applique et déduit du score de l'équipe visée. Le nom affiché est celui du **roster** (hôte) ou de l'équipe adverse.
+- **Pénalités** : hint + **une colonne par équipe** (en-tête = nom du **roster** hôte / de l'équipe adverse, rule 12), chaque colonne empilant les montants −10/−15/−20 de son équipe (12p → 2 colonnes hôte/adverse ; 24p → une colonne par équipe adverse en plus). **Sélection unique** toutes équipes confondues ; la tuile active passe en fond **`blackAlphaed`** (texte toujours blanc) ; « Valider » applique et déduit du score de l'équipe visée.
 - **Remplacement** : lignes joueur (`MKListRow`, pastille + initiales, coche ✓ verte) ; sélectionner 1 joueur sortant (composition actuelle) + 1 entrant (banc) ; « Remplacer » met à jour `currentWar` des deux joueurs (DB + Firebase).
-- **Annuler la war** : carte de confirmation (eyebrow « Annuler la war » + hint) + **bouton danger** « Supprimer la war » (bordure/texte rouge) → abandon complet (réinitialise `currentWar` de tous les joueurs, supprime `currentWars/{rosterId}`, vide le DataStore).
+- **Annuler la war** : carte de confirmation (eyebrow « Annuler la war » + hint) + **bouton danger plein** « Supprimer la war » (fond rouge, texte sombre — franchement actif/cliquable) → abandon complet (réinitialise `currentWar` de tous les joueurs, supprime `currentWars/{rosterId}`, vide le DataStore).
 
 ### Étape 6 — Validation finale
 `onValidateWar()` : écrit la war dans l'historique Firebase (`wars/{rosterId}/{id}`), réinitialise les `currentWar`, supprime la war en cours, revient à l'accueil. En 24p, la validation des scores (`onValidateScore`) précède.

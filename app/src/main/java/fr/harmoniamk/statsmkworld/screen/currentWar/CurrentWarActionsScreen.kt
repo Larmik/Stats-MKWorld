@@ -117,21 +117,34 @@ private fun ColumnScope.PenaltiesPanel(
         textAlign = TextAlign.Start,
         modifier = Modifier.fillMaxWidth()
     )
-    // Grille 2 colonnes de « penb » (montant + équipe). Sélection unique.
-    state.penalties.orEmpty().chunked(2).forEach { rowPenalties ->
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            rowPenalties.forEach { selector ->
-                // Nom du roster hôte / de l'équipe adverse (rule 12), résolu depuis le
-                // teamId porté par la pénalité ; retombe sur l'hôte si non résolu.
-                val teamName = teams.singleOrNull { it.id == selector.penalty.teamId }?.name ?: hostName
-                PenaltyTile(
-                    modifier = Modifier.weight(1f),
-                    label = "-${selector.penalty.amount} " + stringResource(R.string.penalty_placeholder, teamName),
-                    selected = selector.isSelected,
-                    onClick = { viewModel.onPenaltySelected(selector) }
+    // Une colonne par équipe (hôte + adverse(s)) : chaque colonne empile les montants
+    // −10/−15/−20 de son équipe. En 12p → 2 colonnes (hôte / adverse) ; en 24p, une
+    // colonne par équipe adverse s'ajoute (comportement des données inchangé : sélection
+    // unique toutes équipes confondues). L'ordre des pénalités du VM préserve le
+    // regroupement par équipe (`groupBy` conserve l'ordre de première apparition).
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        state.penalties.orEmpty().groupBy { it.penalty.teamId }.forEach { (teamId, teamPenalties) ->
+            // Nom du roster hôte / de l'équipe adverse (rule 12), résolu depuis le teamId ;
+            // retombe sur l'hôte si non résolu.
+            val teamName = teams.singleOrNull { it.id == teamId }?.name ?: hostName
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                MKText(
+                    text = teamName,
+                    font = Fonts.NunitoBD,
+                    textColor = Colors.white,
+                    fontSize = 12,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth()
                 )
+                teamPenalties.forEach { selector ->
+                    PenaltyTile(
+                        modifier = Modifier.fillMaxWidth(),
+                        label = "-${selector.penalty.amount}",
+                        selected = selector.isSelected,
+                        onClick = { viewModel.onPenaltySelected(selector) }
+                    )
+                }
             }
-            repeat(2 - rowPenalties.size) { Spacer(Modifier.weight(1f)) }
         }
     }
     Spacer(Modifier.height(5.dp))
@@ -149,7 +162,10 @@ private fun ColumnScope.PenaltiesPanel(
     )
 }
 
-/** Tuile de pénalité (`.penb`) : fond translucide, rouge plein quand sélectionnée. */
+/**
+ * Tuile de pénalité (`.penb`) : fond translucide clair par défaut, **`blackAlphaed`**
+ * quand sélectionnée (choix produit — texte gardé en **blanc** dans les deux états).
+ */
 @Composable
 private fun PenaltyTile(
     modifier: Modifier,
@@ -157,9 +173,8 @@ private fun PenaltyTile(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val background = if (selected) Colors.red else Colors.white30
-    val border = if (selected) Colors.red else Colors.whiteBorderSoft
-    val textColor = if (selected) Colors.black else Colors.white
+    val background = if (selected) Colors.blackAlphaed else Colors.white30
+    val border = if (selected) Colors.white else Colors.whiteBorderSoft
     Box(
         modifier
             .heightIn(min = 48.dp)
@@ -170,7 +185,7 @@ private fun PenaltyTile(
             .padding(vertical = 12.dp, horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        MKText(text = label, font = Fonts.Urbanist, textColor = textColor, fontSize = 14, maxLines = 1)
+        MKText(text = label, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 14, maxLines = 1)
     }
 }
 
@@ -229,21 +244,23 @@ private fun ColumnScope.CancelPanel(
             modifier = Modifier.fillMaxWidth()
         )
     }
-    // Bouton danger `.btn2.danger` : bordure + texte rouge sur fond translucide.
+    // Bouton danger **plein** (`.btn2.danger` adapté) : fond rouge, texte sombre, bordure
+    // rouge — rendu franchement actif/cliquable (le fond translucide de la maquette
+    // donnait une impression de bouton désactivé côté Android, cf. retour utilisateur).
     Box(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(Colors.white30, RoundedCornerShape(10.dp))
-            .border(1.dp, Colors.red.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+            .background(Colors.red, RoundedCornerShape(10.dp))
+            .border(1.dp, Colors.red, RoundedCornerShape(10.dp))
             .clickable(onClick = viewModel::cancelWar)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 13.dp),
         contentAlignment = Alignment.Center
     ) {
         MKText(
             text = stringResource(R.string.delete_war).uppercase(),
             font = Fonts.Urbanist,
-            textColor = Colors.red,
+            textColor = Colors.black,
             fontSize = 14,
             maxLines = 1
         )
