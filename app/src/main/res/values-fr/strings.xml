@@ -113,10 +113,12 @@
     <string name="commencer">Commencer</string>
     <string name="cancel">Annuler</string>
     <string name="valider">Valider</string>
-    <string name="penalties">Pénalité</string>
+    <string name="penalties">Pénalités</string>
+    <string name="penalties_hint">Appliquer une pénalité de points à une équipe.</string>
     <string name="remplacement">Remplacement</string>
     <string name="cancel_war">Annuler la war</string>
-    <string name="delete_war">Effacer la war</string>
+    <string name="cancel_war_hint">Cette action supprime définitivement la war en cours et toutes ses courses. Êtes-vous sûr ?</string>
+    <string name="delete_war">Supprimer la war</string>
     <string name="force_update_title">Mise à jour nécessaire</string>
     <string name="force_update_message">L\'application a besoin d\'une mise à jour pour continuer à fonctionner correctement.</string>
     <string name="force_update_button">Mettre à jour</string>

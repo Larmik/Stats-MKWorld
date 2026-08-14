@@ -52,6 +52,7 @@ import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRow
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowCheck
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowChevron
+import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
@@ -148,9 +149,6 @@ fun AddWarScreen(
         }
     }
 }
-
-/** Couleur stable de la pastille d'un joueur, dérivée de son id (palette équipe). */
-private fun playerAvatarColor(id: String): Color = ((id.hashCode() and 0x7fffffff) % 32 + 1).toTeamColor()
 
 /** Initiales (2 lettres) pour une pastille d'avatar. */
 private fun initialsOf(name: String): String = name.trim()
