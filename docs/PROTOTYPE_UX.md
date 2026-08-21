@@ -189,6 +189,13 @@ Barre d'app : ← retour + titre **ÉDITER LA COURSE**. Onglets `[data-tabs="et"
 
 Pied de page : boutons « **Annuler** » (retour) · « **Confirmer** » (toast : « Course modifiée ✓ » + retour).
 
+> **Divergence assumée (implémentation #46, retour utilisateur)** : la maquette prévoit **3 onglets**
+> (Circuit / Positions / Shocks) avec une ré-attribution de position par grille cliquable. L'app
+> livre **2 onglets** — **Circuit** + **Positions** (positions **&** shocks fusionnés) : une ligne
+> par joueur avec **deux contrôles ±** (position, bornée 1..12 / 1..24 ; shocks). « Confirmer »
+> n'est actif que si **toutes les positions sont distinctes**. Choix produit explicite prévalant
+> sur la maquette pour cet écran.
+
 ### Écran `wardetails` — « DÉTAILS DE LA WAR »
 
 Barre d'app : ← retour + titre **DÉTAILS DE LA WAR**.

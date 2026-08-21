@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -38,32 +37,29 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
-import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
-import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerShockCell
-import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
 
 /**
- * Écran d'édition d'une course déjà saisie (pôle Wars) — **3 onglets sur un seul écran** :
- * `Circuit` / `Positions` / `Shocks`, bascule **dynamique** d'état (aucune re-navigation,
- * rule 11). L'onglet courant est un pur état UI (`rememberSaveable`), le segmented partagé
- * [MKSegmentedSelector] pilote la sélection (rule 15).
+ * Écran d'édition d'une course déjà saisie (pôle Wars) — **2 onglets sur un seul écran** :
+ * `Circuit` + `Positions` (positions **&** shocks fusionnés, refonte #46, retour utilisateur),
+ * bascule **dynamique** d'état (aucune re-navigation, rule 11). L'onglet courant est un pur état
+ * UI (`rememberSaveable`), le segmented partagé [MKSegmentedSelector] pilote la sélection (rule 15).
  *
  * Rendu pixel-perfect vs la maquette prototype UX (écran `edittrack`, rules 13/15) :
  * - **Circuit** : recherche + grille de circuits ([MKTrackCell] en mode sélection, mutualisée
  *   avec AddTrack/CurrentWar, rule 16) ; le circuit retenu est liseré.
- * - **Positions** : saisie joueur par joueur (rappel du joueur courant) + grille de positions
- *   ([PositionCell], positions prises masquées), tant que la line-up n'est pas complète ; une
- *   fois complète, aperçu des cellules joueurs.
- * - **Shocks** : compteur ± par joueur ([PlayerShockCell] mutualisée avec AddTrack, rule 16).
+ * - **Positions** : **une ligne par joueur** ([PlayerShockCell] mutualisée avec AddTrack, rule 16)
+ *   portant DEUX contrôles ± — un pour la **position** (bornée 1..12 / 1..24), un pour les
+ *   **shocks**. La position se met à jour en direct ; le score se recalcule à la validation.
  *
  * Pied de page : « Annuler » (retour) · « Confirmer » (écrit la war, recalcule le score —
- * cf. [EditTrackViewModel.updateWar]). Écran du graphe racine poussé par-dessus CurrentWar →
+ * cf. [EditTrackViewModel.updateWar]). « Confirmer » n'est actif que si **toutes les positions
+ * sont distinctes** (aucun doublon). Écran du graphe racine poussé par-dessus CurrentWar →
  * **pas de bottombar**, aucune marge basse requise (rule 17).
  */
 @Composable
@@ -88,8 +84,7 @@ fun EditTrackScreen(
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.circuit),
-                stringResource(R.string.positions),
-                stringResource(R.string.shocks)
+                stringResource(R.string.positions)
             ),
             page = tab,
             onClick = { tab = it }
@@ -109,9 +104,10 @@ fun EditTrackScreen(
                     viewModel.onMapSelected(listOf(it))
                 }
             )
-            1 -> PositionsTab(state = state, onPositionClick = viewModel::onPositionClick)
-            else -> ShocksTab(
+            else -> PositionsTab(
                 state = state,
+                onDecreasePosition = { viewModel.onPositionChange(it, -1) },
+                onIncreasePosition = { viewModel.onPositionChange(it, 1) },
                 onAddShock = viewModel::onAddShock,
                 onRemoveShock = viewModel::onRemoveShock
             )
@@ -184,96 +180,20 @@ private fun ColumnScope.CircuitTab(
 }
 
 /**
- * Onglet Positions — réassignation joueur/position. Saisie joueur par joueur : rappel du joueur
- * courant (eyebrow) + grille de positions cliquables (positions déjà prises masquées, rule 10 :
- * `items(count)` sans clé). Une fois la line-up complète, aperçu des cellules joueurs.
+ * Onglet Positions (positions & shocks fusionnés) — **une ligne par joueur** ([PlayerShockCell]),
+ * chacune portant deux contrôles ± : **position** (bornée 1..12 / 1..24, − / + désactivés aux
+ * extrémités) et **shocks**. La position se met à jour en direct ; le recalcul du score se fait
+ * à la validation. Cartes en 2 colonnes dans un conteneur sombre (contraste).
  */
 @Composable
 private fun ColumnScope.PositionsTab(
     state: EditTrackViewModel.State,
-    onPositionClick: (Int) -> Unit
-) {
-    when {
-        state.players.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        // Line-up complète : aperçu des cartes joueur (position figée, sans contrôle de shock).
-        state.players.isNotEmpty() && state.selectedPositions.size == state.players.size -> {
-            Column(
-                Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
-            ) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Colors.blackAlphaed, RoundedCornerShape(6.dp))
-                        .padding(11.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    state.selectedPositions.chunked(2).forEach { pair ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                            pair.forEach { playerPosition ->
-                                PlayerShockCell(
-                                    name = playerPosition.player?.name.orEmpty(),
-                                    position = playerPosition.position.position,
-                                    is24p = state.is24p,
-                                    shockCount = state.shocks[playerPosition.player?.id] ?: 0,
-                                    onAddShock = {},
-                                    onRemoveShock = {},
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-        else -> {
-            state.currentPlayer?.let {
-                MKText(
-                    text = it.name,
-                    fontSize = 22,
-                    font = Fonts.NunitoBD,
-                    textColor = Colors.black,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
-            }
-            val total = if (state.is24p) 24 else 12
-            val size = if (state.is24p) 70.dp else 90.dp
-            val takenPositions = state.selectedPositions.map { it.position.position }.toSet()
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(size),
-                modifier = Modifier.fillMaxWidth().weight(1f)
-            ) {
-                items(total) {
-                    PositionCell(
-                        position = it + 1,
-                        is24p = state.is24p,
-                        modifier = Modifier.size(size).padding(5.dp),
-                        isVisible = !takenPositions.contains(it + 1),
-                        fontSize = if (state.is24p) 34 else 48,
-                        onClick = onPositionClick
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Onglet Shocks — compteur ± par joueur ([PlayerShockCell], mutualisée avec AddTrack, rule 16).
- * S'appuie sur les positions **initiales** de la course (celles enregistrées), les shocks étant
- * hors calcul de score. Grille en 2 colonnes dans un conteneur sombre (contraste).
- */
-@Composable
-private fun ColumnScope.ShocksTab(
-    state: EditTrackViewModel.State,
+    onDecreasePosition: (String) -> Unit,
+    onIncreasePosition: (String) -> Unit,
     onAddShock: (String) -> Unit,
     onRemoveShock: (String) -> Unit
 ) {
-    when (state.initialPositions.isEmpty()) {
+    when (state.selectedPositions.isEmpty()) {
         true -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -289,16 +209,20 @@ private fun ColumnScope.ShocksTab(
                     .padding(11.dp),
                 verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
-                state.initialPositions.chunked(2).forEach { pair ->
+                state.selectedPositions.chunked(2).forEach { pair ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                         pair.forEach { playerPosition ->
+                            val playerId = playerPosition.player?.id
                             PlayerShockCell(
                                 name = playerPosition.player?.name.orEmpty(),
                                 position = playerPosition.position.position,
                                 is24p = state.is24p,
-                                shockCount = state.shocks[playerPosition.player?.id] ?: 0,
-                                onAddShock = { playerPosition.player?.id?.let(onAddShock) },
-                                onRemoveShock = { playerPosition.player?.id?.let(onRemoveShock) },
+                                maxPosition = state.maxPosition,
+                                shockCount = state.shocks[playerId] ?: 0,
+                                onDecreasePosition = { playerId?.let(onDecreasePosition) },
+                                onIncreasePosition = { playerId?.let(onIncreasePosition) },
+                                onAddShock = { playerId?.let(onAddShock) },
+                                onRemoveShock = { playerId?.let(onRemoveShock) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
