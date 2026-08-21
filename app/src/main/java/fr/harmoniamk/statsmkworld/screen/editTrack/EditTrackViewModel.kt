@@ -83,14 +83,15 @@ class EditTrackViewModel @AssistedInject constructor(
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == war.id.toString() }?.sortedBy { it.name }.orEmpty()
 
-            // Line-up initiale, dans l'ordre STABLE des joueurs (tri par nom) — surtout PAS par
-            // position : l'ordre d'affichage des cellules ne doit pas bouger quand on édite une
-            // position (le tri par position se fait éventuellement au moment de l'écriture/calcul).
+            // Line-up initiale triée par POSITION de départ — tri appliqué UNE SEULE FOIS à
+            // l'initialisation. Ensuite l'ordre est figé : `onPositionChange` ne re-trie jamais
+            // (les cellules ne bougent pas pendant l'édition). Le recalcul du score reste correct
+            // (somme indépendante de l'ordre, les WarPosition portent le playerId).
             val positions = players.mapNotNull { player ->
                 details?.track?.positions.orEmpty().singleOrNull { it.playerId == player.id }?.let {
                     PlayerPosition(player = player, position = it)
                 }
-            }
+            }.sortedBy { it.position.position }
             State(
                 players = players,
                 selectedPositions = positions,
