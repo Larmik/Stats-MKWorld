@@ -84,7 +84,7 @@ fun EditTrackScreen(
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.circuit),
-                stringResource(R.string.positions)
+                stringResource(R.string.edittrack_tab_positions_shocks)
             ),
             page = tab,
             onClick = { tab = it }

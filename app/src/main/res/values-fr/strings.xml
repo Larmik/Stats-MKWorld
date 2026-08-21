@@ -56,6 +56,7 @@
     <string name="edition_circuit">Éditer la course</string>
     <string name="circuit">Circuit</string>
     <string name="positions">Positions</string>
+    <string name="edittrack_tab_positions_shocks">Positions/Shocks</string>
     <string name="shocks">Shocks</string>
     <string name="logout">Se déconnecter</string>
     <string name="logout_btn">Déconnection</string>

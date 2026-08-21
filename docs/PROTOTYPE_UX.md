@@ -191,8 +191,9 @@ Pied de page : boutons « **Annuler** » (retour) · « **Confirmer** » (toast 
 
 > **Divergence assumée (implémentation #46, retour utilisateur)** : la maquette prévoit **3 onglets**
 > (Circuit / Positions / Shocks) avec une ré-attribution de position par grille cliquable. L'app
-> livre **2 onglets** — **Circuit** + **Positions** (positions **&** shocks fusionnés) : une ligne
-> par joueur avec **deux contrôles ±** (position, bornée 1..12 / 1..24 ; shocks). « Confirmer »
+> livre **2 onglets** — **Circuit** + **Positions/Shocks** (positions **&** shocks fusionnés) :
+> une ligne par joueur (ordre stable), avec **deux contrôles ±** alignés en grille (position,
+> bornée 1..12 / 1..24, sans encadré blanc ; shocks, icône à gauche du compteur). « Confirmer »
 > n'est actif que si **toutes les positions sont distinctes**. Choix produit explicite prévalant
 > sur la maquette pour cet écran.
 

@@ -83,12 +83,14 @@ class EditTrackViewModel @AssistedInject constructor(
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == war.id.toString() }?.sortedBy { it.name }.orEmpty()
 
-            // Line-up initiale : position actuelle de chaque joueur dans la course éditée.
+            // Line-up initiale, dans l'ordre STABLE des joueurs (tri par nom) — surtout PAS par
+            // position : l'ordre d'affichage des cellules ne doit pas bouger quand on édite une
+            // position (le tri par position se fait éventuellement au moment de l'écriture/calcul).
             val positions = players.mapNotNull { player ->
                 details?.track?.positions.orEmpty().singleOrNull { it.playerId == player.id }?.let {
                     PlayerPosition(player = player, position = it)
                 }
-            }.sortedBy { it.position.position }
+            }
             State(
                 players = players,
                 selectedPositions = positions,
@@ -132,7 +134,8 @@ class EditTrackViewModel @AssistedInject constructor(
                 }
                 else -> playerPosition
             }
-        }.sortedBy { it.position.position }
+        }
+        // Aucun re-tri : l'ordre d'affichage des cellules reste stable pendant l'édition.
         edited = true
         _state.value = state.value.copy(
             selectedPositions = updated,
