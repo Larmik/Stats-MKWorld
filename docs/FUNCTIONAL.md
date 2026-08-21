@@ -308,9 +308,11 @@ re-navigation ni pager animé), contenu scrollable.
 - Bouton **« Tab »** (12p uniquement) → génération du tableau partageable.
 - Grille des courses (bordure colorée 12p / transparente 24p) ; clic → détail de la course.
 
-### Détail d'une course (`TrackDetailsScreen`)
-- Circuit, score (`points - adverse` en 12p, `trackScore` en 24p), `+/−diff` (12p), positions de chaque joueur + shocks.
-- Bouton **« Éditer »** si la course appartient à la war en cours (`editing` et war en cours existante).
+### Détail d'une course (`TrackDetailsScreen`, refonte maquette #47)
+Écran **refondu conforme à la maquette prototype UX** (`trackdetails`), relecture **en lecture seule** d'une course jouée (pôle Wars) :
+- **Carte en-tête** (`StatCard`) : illustration du circuit + **nom** (`Maps.label`) + sous-titre **« Course N · Score X (±diff) »** (score de manche hôte, diff colorisée vert/rouge/blanc via `Int.diffColor`).
+- **Carte « Positions & shocks »** : grille de tuiles (`InfoTilesGrid`, style maquette `.two`) **triées par position**, une par joueur — position + nombre de shocks (pluriel shock/shocks), **lecture seule**.
+- Bouton **« Éditer la course »** (Gradient) → `EditTrackScreen`, affiché **uniquement** si la course appartient à la war en cours (`editing`), qu'une war en cours existe, **et que ce n'est pas la course finale** (dernière course de la war). Masqué sinon.
 
 ### Édition d'une course (`EditTrackScreen`, 2 onglets — refonte maquette #46)
 Écran **refondu conforme à la maquette prototype UX** (`edittrack`) : titre **« Éditer la course »**, **segmented partagé** (`MKSegmentedSelector`) **Circuit / Positions/Shocks** en tête. La bascule d'onglet est **dynamique** (état UI local `rememberSaveable`, aucune re-navigation, rule 11). Pied de page commun : boutons **« Annuler »** (retour) et **« Confirmer »** (Gradient). Sur retour utilisateur, la ré-attribution joueur par joueur a été supprimée et **positions + shocks fusionnés en une seule section**.
