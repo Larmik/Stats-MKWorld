@@ -33,7 +33,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
 fun WarDetailsScreen(
     viewModel: WarDetailsViewModel,
     onBack: () -> Unit,
-    onTrackClick: (WarTrackDetails) -> Unit,
+    onTrackClick: (WarTrackDetails, Int, Boolean) -> Unit,
     onTab: (WarDetails) -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -64,20 +64,24 @@ fun WarDetailsScreen(
                     font = Fonts.NunitoBD,
                     modifier = Modifier.padding(top = 10.dp)
                 )
+                val tracks = it
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(it, key = { it.track.id }) {
+                    items(tracks, key = { it.track.id }) { track ->
                         val borderColor = when {
                             state.value.teamOpponent.orEmpty().size > 1 -> Colors.transparent
-                            it.displayedDiff.contains("+") -> Colors.green
-                            it.displayedDiff.contains("-") -> Colors.red
+                            track.displayedDiff.contains("+") -> Colors.green
+                            track.displayedDiff.contains("-") -> Colors.red
                             else -> Colors.transparent
                         }
+                        // Numéro de course (1-based) + course finale = dernière de la war (ticket #47).
+                        val courseNumber = tracks.indexOf(track) + 1
+                        val isFinal = courseNumber == tracks.size
                         MapCell(
                             modifier = Modifier.padding(5.dp),
-                            track = it,
+                            track = track,
                             onClick = {},
                             is24p = state.value.teamOpponent.orEmpty().size > 1,
-                            onTrackDetails = onTrackClick,
+                            onTrackDetails = { onTrackClick(it, courseNumber, isFinal) },
                             backgroundColor = Colors.whiteAlphaed,
                             textColor = Colors.black,
                             borderColor = borderColor

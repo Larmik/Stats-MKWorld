@@ -179,6 +179,16 @@ Barre d'app : ← retour + titre **COURSE**.
 2. **Positions & shocks** (eyebrow) : Pascal `P1 · 1 shock` · Larmik `P3 · 0 shock` · Juju `P5 · 2 shocks` · Max `P6 · 0 shock`.
 3. Bouton « **Éditer la course** » → `edittrack`.
 
+> **Implémentation (#47)** : écran refondu au niveau maquette (rules 13/15). Carte en-tête via
+> `StatCard` (illustration du circuit + nom Bungee + sous-titre « Course N · Score X (±diff) »,
+> diff colorisée) — l'illustration du circuit remplace la pastille à initiales de la maquette,
+> par cohérence avec la carte en-tête du Résumé d'AddTrack (même epic). Grille « Positions &
+> shocks » via `InfoTilesGrid` (tuiles `.two > .b` mutualisées avec le pôle Profil, rule 16),
+> triées par position, lecture seule. Numéro de course et « course finale » calculés au site de
+> navigation (liste ordonnée des courses de la war). Le bouton « Éditer la course » n'apparaît
+> que si une war est **en cours**, l'édition autorisée par l'appelant, **et** que la course
+> n'est **pas la course finale** (dernière course de la war).
+
 ### Écran `edittrack` — « ÉDITER LA COURSE »
 
 Barre d'app : ← retour + titre **ÉDITER LA COURSE**. Onglets `[data-tabs="et"]` :

@@ -333,8 +333,10 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onBack = backToHome,
                 onAddTrack = { navController.navigate(route = "Home/CurrentWar/AddTrack/$it") },
                 onActions = { navController.navigate("Home/CurrentWar/Actions") },
-                onTrackDetails = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
+                onTrackDetails = { track, courseNumber, isFinal ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("track", track)
+                    navController.currentBackStackEntry?.savedStateHandle?.set("courseNumber", courseNumber)
+                    navController.currentBackStackEntry?.savedStateHandle?.set("isFinalCourse", isFinal)
                     navController.navigate("Home/TrackDetails/true")
                 },
                 onWarValidated = backToHome,
@@ -372,8 +374,10 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     }
                 ),
                 onBack = { navController.popBackStack() },
-                onTrackClick = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("track", it)
+                onTrackClick = { track, courseNumber, isFinal ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("track", track)
+                    navController.currentBackStackEntry?.savedStateHandle?.set("courseNumber", courseNumber)
+                    navController.currentBackStackEntry?.savedStateHandle?.set("isFinalCourse", isFinal)
                     navController.navigate("Home/TrackDetails/false")
                 },
                 onTab = {
@@ -400,14 +404,16 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             arguments = listOf(navArgument("editing") { type = NavType.BoolType })
 
         ) {
-            val track =
-                navController.previousBackStackEntry?.savedStateHandle?.get<WarTrackDetails>("track")
+            val savedState = navController.previousBackStackEntry?.savedStateHandle
+            val track = savedState?.get<WarTrackDetails>("track")
+            val courseNumber = savedState?.get<Int>("courseNumber") ?: 0
+            val isFinalCourse = savedState?.get<Boolean>("isFinalCourse") == true
             val editing = it.arguments?.getBoolean("editing") == true
             TrackDetailsScreen(
                 viewModel = hiltViewModel(
                     key = track?.track?.id.toString(),
                     creationCallback = { factory: TrackDetailsViewModel.Factory ->
-                        factory.create(track, editing)
+                        factory.create(track, editing, courseNumber, isFinalCourse)
                     }
                 ),
                 onBack = { navController.popBackStack() },

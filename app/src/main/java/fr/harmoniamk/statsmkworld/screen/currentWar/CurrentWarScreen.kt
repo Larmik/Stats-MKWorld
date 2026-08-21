@@ -64,7 +64,7 @@ fun CurrentWarScreen(
     onBack: () -> Unit,
     onAddTrack: (Boolean) -> Unit,
     onActions: () -> Unit,
-    onTrackDetails: (WarTrackDetails) -> Unit,
+    onTrackDetails: (WarTrackDetails, Int, Boolean) -> Unit,
     onWarValidated: () -> Unit,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -554,7 +554,7 @@ private fun TeamCrestSmall(team: TeamEntity) {
 private fun TracksSection(
     tracks: List<WarTrackDetails>,
     is24p: Boolean,
-    onTrackDetails: (WarTrackDetails) -> Unit
+    onTrackDetails: (WarTrackDetails, Int, Boolean) -> Unit
 ) {
     DashboardCard {
         Eyebrow(stringResource(R.string.currentwar_tracks_count, tracks.size))
@@ -565,7 +565,10 @@ private fun TracksSection(
             if (rowIndex > 0) Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 pair.forEach { track ->
-                    TrackCard(track = track, is24p = is24p, modifier = Modifier.weight(1f), onClick = { onTrackDetails(track) })
+                    // Numéro de course (1-based) + course finale = dernière de la war (ticket #47).
+                    val courseNumber = tracks.indexOf(track) + 1
+                    val isFinal = courseNumber == tracks.size
+                    TrackCard(track = track, is24p = is24p, modifier = Modifier.weight(1f), onClick = { onTrackDetails(track, courseNumber, isFinal) })
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
