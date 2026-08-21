@@ -6,6 +6,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.application.MainApplication
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
@@ -82,11 +83,24 @@ class EditTrackViewModel @AssistedInject constructor(
                 players = players,
                 currentPlayer = players.firstOrNull(),
                 initialPositions = positions.filterNotNull().sortedBy { it.position.position },
+                // Pré-remplir le circuit courant (liseré dans l'onglet Circuit) et les shocks
+                // existants (affichés dans l'onglet Shocks), pour que l'édition parte de l'état réel.
+                mapSelected = details?.track?.index.orEmpty().mapNotNull { it.toIntOrNull()?.let(Maps.entries::getOrNull) },
+                shocks = details?.track?.shocks.orEmpty().associate { it.playerId to it.count },
                 is24p = is24p
             )
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+    /** Filtre la grille de circuits par nom/label (onglet Circuit), comme AddTrack. */
+    fun onSearch(searched: String) {
+        _state.value = state.value.copy(mapList = Maps.entries.filter {
+            it.name.lowercase().contains(searched.lowercase()) ||
+                    MainApplication.instance?.applicationContext?.getString(it.label)
+                        ?.lowercase()?.contains(searched.lowercase()) != false
+        })
+    }
 
     fun onMapSelected(map: List<Maps>) {
         _state.value = state.value.copy(
@@ -186,12 +200,32 @@ class EditTrackViewModel @AssistedInject constructor(
         )
     }
 
+    /**
+     * Réécrit la war en cours avec les [tracks] édités et **recalcule le score hôte**
+     * (justesse prioritaire, rule 13). Le score de war hôte est la somme des points
+     * (barème `positionToPoints`) de **toutes** les positions de **toutes** les manches :
+     * il reflète donc immédiatement l'édition d'un circuit (barème 12p/24p), d'une position
+     * ou d'un shock (les shocks restent hors score).
+     *
+     * - **12p** : seul le score hôte est stocké ; le score adverse est dérivé (complément
+     *   au barème) à l'affichage. On ne conserve donc qu'un [WarScore] hôte.
+     * - **24p** : les scores adverses sont saisis ailleurs et stockés explicitement dans
+     *   `war.scores` — on les **préserve** (on ne remplace que l'entrée hôte).
+     *
+     * Les **pénalités** (`war.penalties`) sont conservées telles quelles (champ distinct,
+     * inchangé par `war.copy`).
+     */
     private fun updateWar(war: War, tracks: List<WarTrack>) {
         val is24p = war.teamOpponent.size > 1
-        val scores = listOf(WarScore(
+        val hostScore = WarScore(
             teamId = war.teamHost,
             score = tracks.flatMap { it.positions }.sumOf { it.position.positionToPoints(is24p) }
-        ))
+        )
+        // 12p : score hôte seul (adverse dérivé). 24p : préserver les scores adverses saisis.
+        val scores = when (is24p) {
+            true -> listOf(hostScore) + war.scores.filter { it.teamId != war.teamHost }
+            else -> listOf(hostScore)
+        }
         val warToUpdate = war.copy(tracks = tracks, scores = scores)
         _state.value = State()
         viewModelScope.launch {
