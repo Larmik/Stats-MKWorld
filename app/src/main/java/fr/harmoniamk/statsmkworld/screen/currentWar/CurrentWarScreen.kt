@@ -9,11 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,8 +40,6 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
-import fr.harmoniamk.statsmkworld.extension.diffColor
-import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -53,7 +48,10 @@ import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
-import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
+import fr.harmoniamk.statsmkworld.ui.cells.WarDashboardCard
+import fr.harmoniamk.statsmkworld.ui.cells.WarEyebrow
+import fr.harmoniamk.statsmkworld.ui.cells.WarScoreCard
+import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
 
 // Rayon uniforme des cartes (maquette : radius 6px), aligné sur WelcomeScreen.
 private val CardRadius = RoundedCornerShape(6.dp)
@@ -91,13 +89,17 @@ fun CurrentWarScreen(
                     Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(11.dp)
                 ) {
-                    // 1. Carte score : hôte VS adversaire(s), diff + nb de courses.
+                    // 1. Carte score : hôte VS adversaire(s), diff + courses restantes.
                     item {
-                        ScoreCard(
+                        WarScoreCard(
                             teamHost = state.value.teamHost,
                             teamOpponent = state.value.teamOpponent,
                             details = details,
-                            is24p = is24p
+                            is24p = is24p,
+                            subtitle = stringResource(
+                                R.string.currentwar_tracks_remaining,
+                                12 - details.warTracks.size
+                            )
                         )
                     }
 
@@ -141,7 +143,7 @@ fun CurrentWarScreen(
                     val tracks = details.warTracks
                     if (tracks.isNotEmpty()) {
                         item {
-                            TracksSection(
+                            WarTracksSection(
                                 tracks = tracks,
                                 is24p = is24p,
                                 onTrackDetails = onTrackDetails
@@ -154,204 +156,6 @@ fun CurrentWarScreen(
     }
 }
 
-/** En-tête de section (eyebrow) : petit titre majuscule, blanc, espacé (cf. WelcomeScreen). */
-@Composable
-private fun Eyebrow(text: String) {
-    MKText(
-        text = text.uppercase(),
-        fontSize = 12,
-        font = Fonts.NunitoBD,
-        textColor = Colors.white,
-        textAlign = TextAlign.Start,
-        modifier = Modifier.fillMaxWidth()
-    )
-}
-
-/** Carte dashboard : fond sombre translucide, bordure blanche, radius 6, padding 13. */
-@Composable
-private fun DashboardCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier
-            .fillMaxWidth()
-            .background(Colors.blackAlphaed, CardRadius)
-            .border(1.dp, Colors.whiteBorder, CardRadius)
-            .padding(13.dp),
-        content = content
-    )
-}
-
-/**
- * Carte « Score du match » (`.warscore`) : côté hôte VS côté adversaire, chacun avec
- * pastille (avatar équipe ou initiales sur couleur), nom du roster et score (en blanc).
- * La **différence de score seule** est affichée **au centre** entre les deux scores,
- * **colorisée** (vert > 0, rouge < 0, blanc = 0). Sous-titre : **N courses restantes**
- * (12 − courses jouées), en **blanc** (non colorisé). En 24 j (plusieurs adversaires),
- * les côtés adverses sont empilés, sans score chiffré au niveau de la carte.
- */
-@Composable
-private fun ScoreCard(
-    teamHost: TeamEntity?,
-    teamOpponent: List<TeamEntity>?,
-    details: WarDetails,
-    is24p: Boolean
-) {
-    val trackCount = details.warTracks.size
-    // Écart signé du point de vue de l'hôte (avec pénalités) : colore la diff centrale.
-    val margin = details.scoreMargin(is24p)
-    val diffColor = margin.diffColor()
-    // Total de pénalités par équipe (clé = teamId/rosterId), même rattachement que
-    // WarScoreView/PenaltiesSection. La clé hôte est war.teamHost (rosterId), PAS
-    // teamHost.id (id d'équipe).
-    val penaltyByTeam = details.war.penalties
-        .groupBy { it.teamId }
-        .mapValues { entry -> entry.value.sumOf { it.amount } }
-    // Total de shocks de la war (somme sur toutes les manches).
-    val totalShocks = details.war.tracks.sumOf { it.shocks.orEmpty().sumOf { shock -> shock.count } }
-    DashboardCard {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TeamSide(
-                team = teamHost,
-                score = details.scoreHostWithPenalties.takeUnless { is24p },
-                penalty = penaltyByTeam[details.war.teamHost] ?: 0,
-                modifier = Modifier.weight(1f)
-            )
-            // Différence de score seule, centrée entre les deux équipes, colorisée.
-            MKText(
-                text = if (margin > 0) "+$margin" else margin.toString(),
-                font = Fonts.Urbanist,
-                textColor = diffColor,
-                fontSize = 20,
-                modifier = Modifier.padding(horizontal = 6.dp)
-            )
-            when (is24p) {
-                true -> Column(
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    teamOpponent.orEmpty().forEach { opponent ->
-                        TeamSide(
-                            team = opponent,
-                            score = null,
-                            penalty = penaltyByTeam[opponent.id] ?: 0,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-                else -> TeamSide(
-                    team = teamOpponent?.firstOrNull(),
-                    score = details.scoreOpponentWithPenalties,
-                    penalty = teamOpponent?.firstOrNull()?.id?.let { penaltyByTeam[it] } ?: 0,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        // Sous-titre : courses restantes (12 − jouées), en blanc (non colorisé).
-        MKText(
-            text = stringResource(R.string.currentwar_tracks_remaining, 12 - trackCount),
-            font = Fonts.Urbanist,
-            textColor = Colors.white,
-            fontSize = 14,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-        // Total de shocks de la war, sous la diff (icône éclair + compteur).
-        totalShocks.takeIf { it > 0 }?.let {
-            Spacer(Modifier.height(4.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.shock),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                MKText(
-                    text = stringResource(R.string.currentwar_total_shocks, it),
-                    font = Fonts.NunitoBD,
-                    textColor = Colors.white,
-                    fontSize = 13,
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-            }
-        }
-    }
-}
-
-/**
- * Un côté de la carte score : pastille (avatar/initiales), nom du roster, score (blanc),
- * et **pénalité de l'équipe** (« -N » en rouge) sous le score le cas échéant.
- */
-@Composable
-private fun TeamSide(
-    team: TeamEntity?,
-    score: Int?,
-    penalty: Int,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        TeamCrest(team = team)
-        MKText(
-            text = team?.name.orEmpty(),
-            font = Fonts.NunitoBD,
-            textColor = Colors.white,
-            fontSize = 13,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 6.dp)
-        )
-        score?.let {
-            MKText(
-                text = it.toString(),
-                font = Fonts.Urbanist,
-                textColor = Colors.white,
-                fontSize = 30,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-        // Pénalité de l'équipe, sous son score (rouge).
-        penalty.takeIf { it > 0 }?.let {
-            MKText(
-                text = "-$it",
-                font = Fonts.NunitoBD,
-                textColor = Colors.red,
-                fontSize = 12,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-        }
-    }
-}
-
-/** Pastille d'équipe : avatar MKCentral si présent, sinon initiales du tag sur couleur. */
-@Composable
-private fun TeamCrest(team: TeamEntity?) {
-    val color = team?.color?.let { Color(it) } ?: Colors.blue
-    when (val logo = team?.logo) {
-        null -> Box(
-            modifier = Modifier
-                .size(42.dp)
-                .clip(CircleShape)
-                .background(color)
-                .border(2.dp, Colors.white85, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            MKText(
-                text = team?.tag?.take(2)?.uppercase().orEmpty(),
-                font = Fonts.Urbanist,
-                textColor = Colors.white,
-                fontSize = 14
-            )
-        }
-        else -> AsyncImage(
-            model = "https://mkcentral.com$logo",
-            contentDescription = null,
-            modifier = Modifier.size(42.dp).clip(CircleShape).border(2.dp, Colors.white85, CircleShape)
-        )
-    }
-}
-
 /**
  * Carte « Scores des joueurs » : cellules en **ligne compacte** (nom à gauche, score à
  * droite via `SpaceBetween`) disposées sur **deux colonnes** (6 joueurs → 2 × 3 lignes).
@@ -359,8 +163,8 @@ private fun TeamCrest(team: TeamEntity?) {
  */
 @Composable
 private fun PlayersCard(players: List<PlayerScore>, trackCount: Int) {
-    DashboardCard {
-        Eyebrow(stringResource(R.string.joueurs))
+    WarDashboardCard {
+        WarEyebrow(stringResource(R.string.joueurs))
         Spacer(Modifier.height(11.dp))
         players.chunked(2).forEachIndexed { rowIndex, pair ->
             if (rowIndex > 0) Spacer(Modifier.height(6.dp))
@@ -479,8 +283,8 @@ private fun OpponentScoresBlock(
     onValidateScore: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        DashboardCard {
-            Eyebrow(stringResource(R.string.currentwar_opponent_scores))
+        WarDashboardCard {
+            WarEyebrow(stringResource(R.string.currentwar_opponent_scores))
             teamOpponent.orEmpty().forEachIndexed { index, team ->
                 if (index > 0) Spacer(Modifier.height(8.dp))
                 ScoreSetRow(
@@ -552,41 +356,3 @@ private fun TeamCrestSmall(team: TeamEntity) {
     }
 }
 
-/**
- * Section « Courses jouées » : **carte englobante** (même cadre `DashboardCard` que les
- * autres sections) avec eyebrow « Courses jouées · N » puis grille 2 colonnes des
- * courses. Chaque cellule mène au détail de la course.
- */
-@Composable
-private fun TracksSection(
-    tracks: List<WarTrackDetails>,
-    is24p: Boolean,
-    onTrackDetails: (WarTrackDetails, Int) -> Unit
-) {
-    DashboardCard {
-        Eyebrow(stringResource(R.string.currentwar_tracks_count, tracks.size))
-        Spacer(Modifier.height(11.dp))
-        // Grille 2 colonnes en lignes chunkées : évite d'imbriquer un LazyVerticalGrid
-        // (même axe de scroll) dans le LazyColumn de l'écran.
-        tracks.chunked(2).forEachIndexed { rowIndex, pair ->
-            if (rowIndex > 0) Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                pair.forEach { track ->
-                    // Numéro de course (1-based) pour l'en-tête « Course N » de l'écran détail.
-                    val courseNumber = tracks.indexOf(track) + 1
-                    TrackCard(track = track, is24p = is24p, modifier = Modifier.weight(1f), onClick = { onTrackDetails(track, courseNumber) })
-                }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-/**
- * Cellule d'une course jouée — délègue à la cellule partagée [MKTrackCell] (extraite ici
- * puis mutualisée avec `AddTrackScreen`, rule 16). Clic → détail course.
- */
-@Composable
-private fun TrackCard(track: WarTrackDetails, is24p: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    MKTrackCell(modifier = modifier, track = track, is24p = is24p, onClick = onClick)
-}

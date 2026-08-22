@@ -303,10 +303,13 @@ re-navigation ni pager animé), contenu scrollable.
 - Filtre de résultat V/N/D purement UI (chips), appliqué par mois : un mois sans war correspondant au filtre est masqué.
 - Clic → détail.
 
-### Détail d'une war (`WarDetailsScreen`)
-- `WarScoreView` (scores finaux), `WarPlayersCell` (composition, scores par joueur), `roster`.
-- Bouton **« Tab »** (12p uniquement) → génération du tableau partageable.
-- Grille des courses (bordure colorée 12p / transparente 24p) ; clic → détail de la course.
+### Détail d'une war (`WarDetailsScreen`, refonte maquette #48)
+Écran **refondu conforme à la maquette prototype UX** (`wardetails`), relecture d'une **war terminée** (pôle Wars), **écran-frère de `CurrentWarScreen`** dont il réutilise les composants de résumé partagés :
+- **Carte score** : côté hôte VS côté(s) adversaire(s), chacun avec pastille (avatar équipe ou initiales sur couleur) + **nom du roster** (rule 12) + score. La **différence de score seule** est affichée au centre, colorisée (vert > 0, rouge < 0, blanc = 0) ; les **pénalités** de chaque équipe (« -N » rouge) et le **total de shocks** de la war (icône éclair + compteur, si > 0) sont rappelés. En 24 j, les côtés adverses sont empilés sans score chiffré.
+- **Classement joueurs** : grille 2 colonnes de tuiles (nom + points + suffixe « pts »), **classées par points décroissants** ; un compteur de shocks (icône + « xN ») s'affiche à côté du nom le cas échéant.
+- Deux **boutons d'action** : **« Générer le Tab (PDF) »** → génération du tableau partageable, affiché **uniquement en 12 joueurs / 1v1** (masqué en 24 j) ; **« Voir l'adversaire »** → fiche adversaire (portée Équipe). Un **hint** rappelle la règle métier « « Tab » (PDF) n'apparaît qu'en 1v1 / 12 joueurs » (12 j uniquement).
+- **Courses jouées · N** : grille 2 colonnes des courses (mêmes cellules `MKTrackCell` que la war en cours) ; clic sur une course → **détail de la course** (`TrackDetailsScreen`, lecture seule).
+- Retour par geste/bouton système (`BackHandler`, pas de flèche `←` dans l'app bar `BaseScreen`).
 
 ### Détail d'une course (`TrackDetailsScreen`, refonte maquette #47)
 Écran **refondu conforme à la maquette prototype UX** (`trackdetails`), relecture **en lecture seule** d'une course jouée (pôle Wars) :

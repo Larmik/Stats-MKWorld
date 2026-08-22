@@ -115,6 +115,7 @@ Les numéros de ligne sont indicatifs (état au moment de l'audit) — à reconf
 - [ ] 🟡 **D31 — Mapping rôle→libellé dupliqué** (`when { 1→admin ; 2→leader ; else→membre }`) dans PlayerProfile/Debug. → `Int.toRoleStringRes()` + un enum `Role`.
 - [ ] 🟢 **D32 — Couleur de bordure de `MapCell` selon le diff dupliquée** (CurrentWarScreen ≈ WarDetailsScreen). → helper `mapCellBorderColor(is24p, diff)`.
 - [ ] 🟢 **D33 — Plomberie de callbacks de navigation** : chaque écran réinvente des signatures de callbacks + `savedStateHandle` get/set. → événements de navigation typés / `NavController` partagé.
+- [ ] 🟡 **D34 — Dead code `ui/WarScoreView.kt` (refonte #48).** La refonte du détail de war (#48) remplace `WarScoreView` par `WarScoreCard` (`ui/cells/WarSummaryCells.kt`, mutualisé WarDetails ↔ CurrentWar) : le composant `WarScoreView` (et ses sous-composables `WarScore12pView`/`WarScore24pView`/`PenaltiesSection`/`ShocksSection`, cf. D20) **n'a plus aucun appelant**. Le fichier subsiste → à supprimer par un ticket de nettoyage. *(Les descriptions de `WarScoreView` dans TECHNICAL.md/AUDIT.md — dont D20 et la passe fluidité — décrivent l'état antérieur.)*
 
 ---
 
