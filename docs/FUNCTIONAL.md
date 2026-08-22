@@ -310,8 +310,8 @@ re-navigation ni pager animé), contenu scrollable.
 
 ### Détail d'une course (`TrackDetailsScreen`, refonte maquette #47)
 Écran **refondu conforme à la maquette prototype UX** (`trackdetails`), relecture **en lecture seule** d'une course jouée (pôle Wars) :
-- **Carte en-tête** (`StatCard`) : illustration du circuit + **nom** (`Maps.label`) + sous-titre **« Course N · Score X (±diff) »** (score de manche hôte, diff colorisée vert/rouge/blanc via `Int.diffColor`).
-- **Carte « Positions & shocks »** : grille de tuiles (`InfoTilesGrid`, style maquette `.two`) **triées par position**, une par joueur — position + nombre de shocks (pluriel shock/shocks), **lecture seule**.
+- **Carte en-tête** (`StatCard`) : illustration du circuit + **nom** (`Maps.label`) + sous-titre **« Course N · hôte - adverse (±diff) »** (score des deux équipes séparés par un tiret, `WarTrackDetails.displayedResult` ; diff colorisée vert/rouge/blanc via `Int.diffColor`). En 24 j, score/diff par manche masqués.
+- **Carte « Positions & shocks »** : tuiles **triées par position**, une par joueur — **position** rendue avec la font canonique des positions (`Fonts.MKPosition`) et sa **couleur** (`Int.positionColor`), **chiffre seul** (ex. « 3 »), suivie de l'**icône shock + « x{n} » uniquement s'il y a au moins un shock** (rien sinon). **Lecture seule**.
 - Bouton **« Éditer la course »** (Gradient) → `EditTrackScreen`, affiché **uniquement** si la course appartient à la war en cours (`editing`), qu'une war en cours existe, **et que ce n'est pas la course finale** (dernière course de la war). Masqué sinon.
 
 ### Édition d'une course (`EditTrackScreen`, 2 onglets — refonte maquette #46)

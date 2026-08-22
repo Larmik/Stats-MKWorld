@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -195,47 +194,6 @@ fun ColumnScope.StatTiles(tiles: List<StatTile>, columns: Int = 2) {
         }
     }
 }
-
-/**
- * Grille 2 colonnes de tuiles translucides **libellé (haut) + valeur (bas)** (`.two > .b > .k + .v`
- * de la maquette) : libellé en petit majuscule blanc atténué, valeur en Urbanist, avec un
- * suffixe secondaire optionnel ([InfoTile.valueSmall]). Une cellule impaire en fin de rangée
- * laisse un `Spacer` pour garder l'alignement 2 colonnes.
- *
- * Mutualisé (rule 16 : ≥ 2 écrans consommateurs) entre la carte « Informations » du pôle Profil
- * ([ProfileInfoCard]) et la carte « Positions & shocks » de l'écran détails de course
- * (`TrackDetailsScreen`, ticket #47). À appeler dans une [StatCard] (fournit le titre eyebrow).
- */
-@Composable
-fun ColumnScope.InfoTilesGrid(tiles: List<InfoTile>) {
-    tiles.chunked(2).forEach { rowTiles ->
-        Row(
-            Modifier.fillMaxWidth().padding(bottom = 9.dp),
-            horizontalArrangement = Arrangement.spacedBy(9.dp)
-        ) {
-            rowTiles.forEach { tile ->
-                Column(
-                    Modifier.weight(1f)
-                        .background(Colors.white30, StatCardRadius)
-                        .padding(11.dp)
-                ) {
-                    MKText(text = tile.key.uppercase(), font = Fonts.NunitoBD, fontSize = 10, textColor = Colors.white66, textAlign = TextAlign.Start)
-                    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 5.dp)) {
-                        MKText(text = tile.value, font = Fonts.Urbanist, fontSize = 15, textColor = Colors.white, textAlign = TextAlign.Start, maxLines = 1)
-                        tile.valueSmall?.let {
-                            Spacer(Modifier.width(5.dp))
-                            MKText(text = it, font = Fonts.NunitoBD, fontSize = 11, textColor = Colors.white.copy(alpha = 0.6f), textAlign = TextAlign.Start, maxLines = 1)
-                        }
-                    }
-                }
-            }
-            repeat(2 - rowTiles.size) { Spacer(Modifier.weight(1f)) }
-        }
-    }
-}
-
-/** Tuile libellé/valeur pour [InfoTilesGrid] : [valueSmall] = suffixe secondaire optionnel. */
-class InfoTile(val key: String, val value: String, val valueSmall: String? = null)
 
 /** Tuile valeur + libellé pour [StatTiles] : [accent]/[borderColor] optionnels (Top6/Bot6). */
 class StatTile(

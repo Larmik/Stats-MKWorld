@@ -32,9 +32,8 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
-import fr.harmoniamk.statsmkworld.ui.stats.InfoTile
-import fr.harmoniamk.statsmkworld.ui.stats.InfoTilesGrid
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
+import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
 /**
  * Composants de présentation du **pôle Profil** (ticket #28), reproduisant au plus
@@ -186,9 +185,30 @@ class ProfileInfo(val key: String, val value: String, val valueSmall: String? = 
 @Composable
 fun ProfileInfoCard(infos: List<ProfileInfo>) {
     StatCard(title = stringResource(R.string.profile_information)) {
-        // Grille `.two` mutualisée (rule 16) avec la carte « Positions & shocks » de
-        // l'écran détails de course.
-        InfoTilesGrid(infos.map { InfoTile(key = it.key, value = it.value, valueSmall = it.valueSmall) })
+        infos.chunked(2).forEach { rowInfos ->
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 9.dp),
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                rowInfos.forEach { info ->
+                    Column(
+                        Modifier.weight(1f)
+                            .background(Colors.white30, StatCardRadius)
+                            .padding(11.dp)
+                    ) {
+                        MKText(text = info.key.uppercase(), font = Fonts.NunitoBD, fontSize = 10, textColor = Colors.white66, textAlign = TextAlign.Start)
+                        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 5.dp)) {
+                            MKText(text = info.value, font = Fonts.Urbanist, fontSize = 15, textColor = Colors.white, textAlign = TextAlign.Start, maxLines = 1)
+                            info.valueSmall?.let {
+                                Spacer(Modifier.width(5.dp))
+                                MKText(text = it, font = Fonts.NunitoBD, fontSize = 11, textColor = Colors.white.copy(alpha = 0.6f), textAlign = TextAlign.Start, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+                repeat(2 - rowInfos.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
     }
 }
 

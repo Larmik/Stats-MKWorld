@@ -180,14 +180,16 @@ Barre d'app : ← retour + titre **COURSE**.
 3. Bouton « **Éditer la course** » → `edittrack`.
 
 > **Implémentation (#47)** : écran refondu au niveau maquette (rules 13/15). Carte en-tête via
-> `StatCard` (illustration du circuit + nom Bungee + sous-titre « Course N · Score X (±diff) »,
-> diff colorisée) — l'illustration du circuit remplace la pastille à initiales de la maquette,
-> par cohérence avec la carte en-tête du Résumé d'AddTrack (même epic). Grille « Positions &
-> shocks » via `InfoTilesGrid` (tuiles `.two > .b` mutualisées avec le pôle Profil, rule 16),
-> triées par position, lecture seule. Numéro de course et « course finale » calculés au site de
-> navigation (liste ordonnée des courses de la war). Le bouton « Éditer la course » n'apparaît
-> que si une war est **en cours**, l'édition autorisée par l'appelant, **et** que la course
-> n'est **pas la course finale** (dernière course de la war).
+> `StatCard` (illustration du circuit + nom Bungee + sous-titre « Course N · {score hôte - adverse}
+> (±diff) », le score des deux équipes (`WarTrackDetails.displayedResult`) suivi de la diff
+> colorisée) — l'illustration du circuit remplace la pastille à initiales de la maquette, par
+> cohérence avec la carte en-tête du Résumé d'AddTrack (même epic). Grille « Positions & shocks »
+> (tuiles `.two > .b`, lecture seule) : **position** rendue avec la font `MKPosition` colorée par
+> `Int.positionColor` (chiffre seul, comme partout dans l'app) + **icône shock `x{n}`** affichée
+> **uniquement** si le joueur a au moins un shock. Triées par position. Numéro de course et
+> « course finale » calculés au site de navigation (liste ordonnée des courses de la war). Le
+> bouton « Éditer la course » n'apparaît que si une war est **en cours**, l'édition autorisée par
+> l'appelant, **et** que la course n'est **pas la course finale** (dernière course de la war).
 
 ### Écran `edittrack` — « ÉDITER LA COURSE »
 

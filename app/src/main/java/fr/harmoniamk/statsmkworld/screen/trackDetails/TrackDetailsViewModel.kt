@@ -6,8 +6,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import fr.harmoniamk.statsmkworld.model.ScoringConstants
-import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -59,11 +57,8 @@ class TrackDetailsViewModel @AssistedInject constructor(
         val track: WarTrackDetails? = null,
         val courseNumber: Int = 0,
         val positions: List<PlayerPosition> = listOf(),
+        // Nombre de shocks par joueur (playerId → count), pour la grille « Positions & shocks ».
         val shocks: Map<String, Int> = mapOf(),
-        // Score de manche de l'équipe hôte (points de positions), affiché dans l'en-tête.
-        val hostScore: Int = 0,
-        val diff: String? = null,
-        val trackScore: Int? = null,
         val buttonVisible: Boolean = false
     )
 
@@ -73,13 +68,6 @@ class TrackDetailsViewModel @AssistedInject constructor(
             // La course ne peut être éditée que pour une war en cours, si l'appelant l'autorise,
             // et jamais sur la course finale de la war (ticket #47).
             val hasCurrentWar = dataStoreRepository.war.firstOrNull() != null
-            val is24p = track.is24p
-            val scoreHost = track.track.positions.sumOf { it.position.positionToPoints(is24p) }
-            val maxPointsPerTrack = when (is24p) {
-                true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
-                else -> ScoringConstants.MAX_POINTS_PER_TRACK_12P
-            }
-            val scoreOpponent = maxPointsPerTrack - scoreHost
             val players = mutableListOf<PlayerPosition>()
             track.track.positions.forEach { position ->
                 databaseRepository.getPlayer(position.playerId).firstOrNull()?.let {
@@ -89,15 +77,9 @@ class TrackDetailsViewModel @AssistedInject constructor(
             State(
                 track = track,
                 courseNumber = courseNumber,
-                hostScore = scoreHost,
-                diff = when {
-                    (scoreHost - scoreOpponent) > 0 -> "+${scoreHost - scoreOpponent}"
-                    else -> "${scoreHost - scoreOpponent}"
-                },
                 positions = players,
                 shocks = track.track.shocks.orEmpty().associate { it.playerId to it.count },
-                buttonVisible = hasCurrentWar && editing && !isFinalCourse,
-                trackScore = scoreHost.takeIf { is24p }
+                buttonVisible = hasCurrentWar && editing && !isFinalCourse
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
