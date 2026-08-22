@@ -227,6 +227,27 @@ Barre d'app : ← retour + titre **DÉTAILS DE LA WAR**.
    - Plage Cheep Cheep · **54** (+10)
    - Désert Sec-Sec · **49** (+2)
 
+> **Implémentation (#48)** : écran refondu au niveau maquette (rules 13/15). C'est l'**écran-frère**
+> de `currentwar` (war terminée) : il **mutualise** ses composants de résumé (rule 16). Les blocs
+> carte score / cellules de course / pastilles d'équipe sont extraits dans `ui/cells/WarSummaryCells.kt`
+> (`WarScoreCard`, `WarTracksSection`, `WarDashboardCard`, `WarEyebrow`, `WarTeamSide`, `WarTeamCrest`,
+> `WarPlayerRankingCard`) et partagés entre `CurrentWarScreen` et `WarDetailsScreen`.
+> - **Carte score** : `WarScoreCard` (hôte VS adversaire, diff centrale colorisée, pénalités/shocks),
+>   **sans** le sous-titre « courses restantes » (réservé à la war en cours). Nom/tag = roster (rule 12).
+> - **Classement joueurs** : `WarPlayerRankingCard` — grille 2 colonnes de tuiles (`.two > .b`),
+>   joueurs **triés par points décroissants**, nom + « N pts » (+ shocks). Données réelles
+>   (`WarDetails.withPlayersList`), jamais les valeurs de démo (rule 13).
+> - **Boutons** (`.btn2` : fond blanc translucide, bordure douce, icône 16 dp + libellé Urbanist) :
+>   « Générer le Tab (PDF) » (→ EditTab) affiché **uniquement en 12 j / 1v1** (masqué en 24 j) et
+>   « Voir l'adversaire » → fiche adversaire (`Opponent/{opponentId}/null`, portée Équipe). Icônes
+>   `ic_share` / `ic_cup` créées comme vecteurs (repris des symboles SVG `#share` / `#cup` de la maquette).
+> - **Hint** métier affiché en 12 j uniquement (comme la maquette).
+> - Écran du **graphe racine** (poussé par-dessus WarList/CurrentWar/fiche adversaire) → pas de
+>   bottombar, aucune marge basse requise (rule 17).
+>
+> Conséquence de la mutualisation : l'ancien composant `ui/WarScoreView.kt` (avec ses vues 12 j/24 j)
+> n'a **plus aucun consommateur** — dead code candidat à suppression dans un nettoyage ultérieur.
+
 ### Écran `edittab` — « TAB (PDF) »
 
 Barre d'app : ← retour + titre **TAB (PDF)**.

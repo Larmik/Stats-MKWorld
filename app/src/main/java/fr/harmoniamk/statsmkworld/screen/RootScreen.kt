@@ -381,6 +381,12 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onTab = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("details", it)
                     navController.navigate("Home/WarDetails/Tab")
+                },
+                // « Voir l'adversaire » → fiche adversaire (12 j : opposant unique). Le teamId
+                // est l'id d'opposant de la war (rosterId, ou teamId legacy) ; userId « null »
+                // = portée Équipe (rule 15, cf. autres appels d'Opponent).
+                onOpponent = { opponentId ->
+                    navController.navigate("Opponent/$opponentId/null")
                 }
             )
         }

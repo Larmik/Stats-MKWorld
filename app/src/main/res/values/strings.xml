@@ -293,6 +293,14 @@
     <string name="trackdetails_course_prefix">Race %1$d</string>
     <string name="trackdetails_positions_shocks">Positions &amp; shocks</string>
     <string name="trackdetails_edit">Edit race</string>
+    <!-- War details screen (ticket #48) -->
+    <string name="wardetails_title">WAR DETAILS</string>
+    <string name="wardetails_player_ranking">Player ranking</string>
+    <string name="wardetails_generate_tab">Generate Tab (PDF)</string>
+    <string name="wardetails_see_opponent">See opponent</string>
+    <string name="wardetails_tab_hint">Business rule: "Tab" (PDF) only appears in 1v1 / 12 players.</string>
+    <string name="wardetails_tracks_count">Races played · %1$d</string>
+    <string name="wardetails_points_suffix">pts</string>
     <!-- Stats pole — Statistics screen (ticket #25) -->
     <string name="stats_scope_individual">Individual</string>
     <string name="stats_scope_team">Team</string>

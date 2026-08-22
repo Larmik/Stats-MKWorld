@@ -293,6 +293,14 @@
     <string name="trackdetails_course_prefix">Course %1$d</string>
     <string name="trackdetails_positions_shocks">Positions &amp; shocks</string>
     <string name="trackdetails_edit">Éditer la course</string>
+    <!-- Écran détails de la war (ticket #48) -->
+    <string name="wardetails_title">DÉTAILS DE LA WAR</string>
+    <string name="wardetails_player_ranking">Classement joueurs</string>
+    <string name="wardetails_generate_tab">Générer le Tab (PDF)</string>
+    <string name="wardetails_see_opponent">Voir l\'adversaire</string>
+    <string name="wardetails_tab_hint">Règle métier : « Tab » (PDF) n\'apparaît qu\'en 1v1 / 12 joueurs.</string>
+    <string name="wardetails_tracks_count">Courses jouées · %1$d</string>
+    <string name="wardetails_points_suffix">pts</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>
