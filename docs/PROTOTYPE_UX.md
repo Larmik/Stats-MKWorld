@@ -241,7 +241,9 @@ Barre d'app : ← retour + titre **DÉTAILS DE LA WAR**.
 >   « Générer le Tab (PDF) » (→ EditTab) affiché **uniquement en 12 j / 1v1** (masqué en 24 j) et
 >   « Voir l'adversaire » → fiche adversaire (`Opponent/{opponentId}/null`, portée Équipe). Icônes
 >   `ic_share` / `ic_cup` créées comme vecteurs (repris des symboles SVG `#share` / `#cup` de la maquette).
-> - **Hint** métier affiché en 12 j uniquement (comme la maquette).
+> - **Hint** métier (« Règle métier : « Tab » (PDF) n'apparaît qu'en 1v1 / 12 joueurs. ») de la
+>   maquette **non repris** dans l'app livrée (retour utilisateur #48) : la règle reste appliquée
+>   (bouton Tab masqué en 24 j) sans afficher le texte explicatif.
 > - Écran du **graphe racine** (poussé par-dessus WarList/CurrentWar/fiche adversaire) → pas de
 >   bottombar, aucune marge basse requise (rule 17).
 >

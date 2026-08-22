@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
@@ -45,8 +44,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
  *    points décroissants.
  * 3. Deux **boutons** ([WarActionButton]) : « Générer le Tab (PDF) » (→ EditTab, **12 j / 1v1
  *    uniquement** — masqué en 24 j) et « Voir l'adversaire » (→ fiche adversaire).
- * 4. **Hint** « Règle métier : « Tab » (PDF) n'apparaît qu'en 1v1 / 12 joueurs. » (12 j only).
- * 5. **Courses jouées · N** ([WarTracksSection]) : grille des courses, chacune → TrackDetails.
+ * 4. **Courses jouées · N** ([WarTracksSection]) : grille des courses, chacune → TrackDetails.
  *
  * Écran du **graphe racine** (poussé par-dessus WarList / CurrentWar / fiche adversaire) →
  * **pas de bottombar**, aucune marge basse requise (rule 17).
@@ -112,20 +110,7 @@ fun WarDetailsScreen(
                     }
                 }
 
-                // 4. Hint métier (12 j / 1v1 uniquement, comme la maquette).
-                if (!is24p) {
-                    item {
-                        MKText(
-                            text = stringResource(R.string.wardetails_tab_hint),
-                            textColor = Colors.white55,
-                            fontSize = 12,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                // 5. Courses jouées · N (grille, chacune → détail de la course).
+                // 4. Courses jouées · N (grille, chacune → détail de la course).
                 if (details.warTracks.isNotEmpty()) {
                     item {
                         WarTracksSection(
