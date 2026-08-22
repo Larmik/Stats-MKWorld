@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
@@ -72,19 +71,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            // 1. Hint d'introduction (maquette `.hint`).
-            item {
-                MKText(
-                    text = "Génère un tableau de résultats partageable (image). Saisir les scores adverses (6 à 9 lignes).",
-                    font = Fonts.NunitoBD,
-                    textColor = Colors.white55,
-                    fontSize = 12,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // 2. Chips compteur de lignes : − ligne / N lignes / + ligne (min 6, max 9).
+            // 1. Chips compteur de lignes : − ligne / N lignes / + ligne (min 6, max 9).
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     MKChip(
@@ -106,7 +93,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // 3. Lignes de saisie (Adversaire N + Score) générées dynamiquement.
+            // 2. Lignes de saisie (Adversaire N + Score) générées dynamiquement.
             items(rows.value, key = { it }) { index ->
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     Box(Modifier.weight(2f)) {
@@ -135,7 +122,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // 4. CTA gradient « Tab classique & partager » (icône share).
+            // 3. CTA gradient « Tab classique & partager » (icône share).
             item {
                 Spacer(Modifier.height(3.dp))
                 TabShareCta(
@@ -145,18 +132,6 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                             scores = valuesListScore.take(rows.value).filterNot { it.isEmpty() }
                         )
                     }
-                )
-            }
-
-            // 5. Hint de contenu du Tab (maquette `.hint`).
-            item {
-                MKText(
-                    text = "Contenu : logos, tags, scores finaux (pénalités incluses), top joueurs avec couronne/argent/bronze. « Tab détaillé » (circuits + courbe) présent mais désactivé dans l'app.",
-                    font = Fonts.NunitoBD,
-                    textColor = Colors.white55,
-                    fontSize = 12,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
