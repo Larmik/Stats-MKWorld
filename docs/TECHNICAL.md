@@ -170,7 +170,7 @@ when {
 | `Home/CurrentWar/Actions` | Pénalités / remplacements / annulation | — |
 | `Home/WarDetails` | Détail d'une war | `war` (savedState) |
 | `Home/WarDetails/Tab` | Génération du tableau (PDF) | `details` (savedState) |
-| `Home/TrackDetails/{editing}` | Relecture d'une course (lecture seule) | `track` + `courseNumber` (Int) + `isFinalCourse` (Bool), savedState ; `editing` (Bool) en route |
+| `Home/TrackDetails/{editing}` | Relecture d'une course (lecture seule) | `track` + `courseNumber` (Int), savedState ; `editing` (Bool) en route |
 | `Home/EditTrack/{is24p}` | Édition d'une course | `track` + `Bool` |
 | `Stats` | Stats d'une catégorie (détail adversaire/circuit, via classements) | `type: StatsType` |
 | `Statsfull/{userId}` | Stats détaillées d'un joueur donné (vue Individuelles paramétrée) | `String` |

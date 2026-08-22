@@ -50,8 +50,9 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
  * 2. **Carte « Positions & shocks »** : grille 2 colonnes de tuiles (nom + **position** rendue avec
  *    la font `MKPosition` colorée par [Int.positionColor], **chiffre seul**, + icône shock `x{n}`
  *    quand le joueur a ≥ 1 shock). Lecture seule.
- * 3. Bouton **« Éditer la course »** → EditTrack, visible seulement si la war est en cours,
- *    l'édition autorisée, et la course **non finale** (cf. [TrackDetailsViewModel]).
+ * 3. Bouton **« Éditer la course »** → EditTrack, visible tant que la war **n'est pas validée**
+ *    (encore en cours) et que l'édition est autorisée (cf. [TrackDetailsViewModel]). Toutes les
+ *    courses restent éditables tant que la war n'est pas validée (y compris la dernière).
  *
  * Écran du graphe racine (poussé par-dessus CurrentWar / WarDetails) → **pas de bottombar**,
  * aucune marge basse requise (rule 17).

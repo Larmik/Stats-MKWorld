@@ -26,19 +26,20 @@ import kotlinx.coroutines.flow.stateIn
  *   « Positions & shocks », lecture seule) ;
  * - la visibilité du bouton « Éditer la course ».
  *
- * **Numéro de course** ([courseNumber]) et **course finale** ([isFinalCourse]) sont calculés au
- * site de navigation (CurrentWar / WarDetails, où la liste ordonnée des courses est connue).
+ * **Numéro de course** ([courseNumber]) est calculé au site de navigation (CurrentWar /
+ * WarDetails, où la liste ordonnée des courses est connue).
  *
- * Bouton « Éditer la course » : visible seulement si une war est **en cours** en local
- * (`dataStoreRepository.war != null`), que l'appelant autorise l'édition ([editing]) **et** que
- * la course n'est **pas la course finale** de la war ([isFinalCourse] == false) — cf. ticket #47.
+ * Bouton « Éditer la course » : visible tant que la war **n'est pas validée** (encore en cours en
+ * local, `dataStoreRepository.war != null`) et que l'appelant autorise l'édition ([editing]).
+ * **Toutes** les courses restent éditables tant que la war n'est pas validée (y compris la
+ * dernière). Depuis WarDetails (war validée/historique), [editing] vaut `false` → bouton masqué
+ * naturellement — cf. ticket #47.
  */
 @HiltViewModel(assistedFactory = TrackDetailsViewModel.Factory::class)
 class TrackDetailsViewModel @AssistedInject constructor(
     @Assisted val details: WarTrackDetails?,
-    @Assisted("editing") val editing: Boolean,
+    @Assisted val editing: Boolean,
     @Assisted val courseNumber: Int,
-    @Assisted("isFinalCourse") val isFinalCourse: Boolean,
     dataStoreRepository: DataStoreRepositoryInterface,
     val databaseRepository: DatabaseRepositoryInterface
 ) : ViewModel() {
@@ -47,9 +48,8 @@ class TrackDetailsViewModel @AssistedInject constructor(
     interface Factory {
         fun create(
             details: WarTrackDetails?,
-            @Assisted("editing") editing: Boolean,
-            courseNumber: Int,
-            @Assisted("isFinalCourse") isFinalCourse: Boolean
+            editing: Boolean,
+            courseNumber: Int
         ): TrackDetailsViewModel
     }
 
@@ -65,8 +65,8 @@ class TrackDetailsViewModel @AssistedInject constructor(
     val state = flowOf(details)
         .filterNotNull()
         .map { track ->
-            // La course ne peut être éditée que pour une war en cours, si l'appelant l'autorise,
-            // et jamais sur la course finale de la war (ticket #47).
+            // Une course reste éditable tant que la war n'est pas validée (encore en cours en
+            // local) et que l'appelant autorise l'édition (ticket #47).
             val hasCurrentWar = dataStoreRepository.war.firstOrNull() != null
             val players = mutableListOf<PlayerPosition>()
             track.track.positions.forEach { position ->
@@ -79,7 +79,7 @@ class TrackDetailsViewModel @AssistedInject constructor(
                 courseNumber = courseNumber,
                 positions = players,
                 shocks = track.track.shocks.orEmpty().associate { it.playerId to it.count },
-                buttonVisible = hasCurrentWar && editing && !isFinalCourse
+                buttonVisible = hasCurrentWar && editing
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
