@@ -3,35 +3,37 @@ package fr.harmoniamk.statsmkworld.screen.editTab
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
-import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
+import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKChip
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import kotlinx.coroutines.launch
@@ -40,16 +42,10 @@ import kotlinx.coroutines.launch
 fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val rows = viewModel.rows.collectAsStateWithLifecycle()
-    val valuesListName = remember {
-        mutableStateListOf(
-            "", "", "", "", "", "", "", "", ""
-        )
-    }
-    val valuesListScore = remember {
-        mutableStateListOf(
-            "", "", "", "", "", "", "", "", ""
-        )
-    }
+    // 9 emplacements (max de la maquette) ; seules les `rows` premières lignes sont
+    // affichées et prises en compte. Réduire le compteur ne détruit pas la saisie.
+    val valuesListName = remember { mutableStateListOf("", "", "", "", "", "", "", "", "") }
+    val valuesListScore = remember { mutableStateListOf("", "", "", "", "", "", "", "", "") }
 
     BackHandler { onBack() }
     LaunchedEffect(viewModel) {
@@ -70,48 +66,42 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
         }
     }
 
-    BaseScreen(title = "Tab") {
-        MKText(modifier = Modifier.padding(bottom = 10.dp), text = "Génère un tableau de résultats à l'aide des scores des adversaires. Les scores des joueurs et les pénalités sont automatiquement pris en compte. \n \n Il est possible de rajouter jusqu'à trois joueurs supplémentaires. Ne pas oublier d'indiquer le nombre de courses entre parenthèses en cas de war incomplète. \n \n - Tab classique : Score des joueurs et résultat final. \n - Tab détaillé : Tab classique + Circuits, shocks et courbe de progression.")
-        LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
+    BaseScreen(title = "Tab (PDF)") {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            // 1. Chips compteur de lignes : − ligne / N lignes / + ligne (min 6, max 9).
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Image(
-                        modifier = Modifier.size(40.dp)
-                            .clickable(enabled = rows.value > 6, onClick = { viewModel.onManageRows(false) }),
-                        painter = painterResource(R.drawable.moins),
-                        contentDescription = "Retirer une ligne",
-                        colorFilter = ColorFilter.tint(
-                            when (rows.value > 6) {
-                                true -> Colors.black
-                                else -> Colors.blackAlphaed
-                            }
-                        )
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    MKChip(
+                        label = "− ligne",
+                        active = false,
+                        enabled = rows.value > 6,
+                        onClick = { viewModel.onManageRows(false) }
                     )
-                    Image(
-                        modifier = Modifier.size(40.dp).padding(3.dp)
-                            .clickable(enabled = rows.value < 9, onClick = { viewModel.onManageRows(true) }),
-                        painter = painterResource(R.drawable.plus),
-                        contentDescription = "Ajouter une ligne",
-                        colorFilter = ColorFilter.tint(
-                            when (rows.value < 9) {
-                                true -> Colors.black
-                                else -> Colors.blackAlphaed
-                            }
-                        )
+                    MKChip(
+                        label = "${rows.value} lignes",
+                        active = true
+                    )
+                    MKChip(
+                        label = "+ ligne",
+                        active = false,
+                        enabled = rows.value < 9,
+                        onClick = { viewModel.onManageRows(true) }
                     )
                 }
             }
 
+            // 2. Lignes de saisie (Adversaire N + Score) générées dynamiquement.
             items(rows.value, key = { it }) { index ->
-                Row {
+                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     Box(Modifier.weight(2f)) {
                         MKTextField(
                             value = valuesListName[index],
                             backgroundColor = Colors.blackAlphaed,
-                            onValueChange = {
-                                valuesListName[index] = it
-                            },
-                            placeHolder = "Nom adversaire ${index + 1}",
+                            onValueChange = { valuesListName[index] = it },
+                            placeHolder = "Adversaire ${index + 1}",
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
                         )
@@ -120,9 +110,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                         MKTextField(
                             value = valuesListScore[index],
                             backgroundColor = Colors.blackAlphaed,
-                            onValueChange = {
-                                valuesListScore[index] = it
-                            },
+                            onValueChange = { valuesListScore[index] = it },
                             placeHolder = "Score",
                             keyboardType = KeyboardType.Number,
                             imeAction = when (index == rows.value - 1) {
@@ -134,30 +122,56 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
+            // 3. CTA gradient « Tab classique & partager » (icône share).
             item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    MKButton(
-                        style = MKButtonStyle.Gradient,
-                        text = "Tab classique",
-                        onClick = {
-                            viewModel.generateClassicPdf(
-                                players = valuesListName.toList().filterNot { it.isEmpty() },
-                                scores = valuesListScore.toList().filterNot { it.isEmpty() })
-                        })
-                    /*
-                    Spacer(Modifier.width(10.dp))
-                    MKButton(
-                        style = MKButtonStyle.Gradient,
-                        text = "Tab détaillé",
-                        onClick = {
-                            viewModel.generateDetailedPdf(
-                                players = valuesListName.toList().filterNot { it.isEmpty() },
-                                scores = valuesListScore.toList().filterNot { it.isEmpty() })
-                        })
-
-                     */
-                }
+                Spacer(Modifier.height(3.dp))
+                TabShareCta(
+                    onClick = {
+                        viewModel.generateClassicPdf(
+                            players = valuesListName.take(rows.value).filterNot { it.isEmpty() },
+                            scores = valuesListScore.take(rows.value).filterNot { it.isEmpty() }
+                        )
+                    }
+                )
             }
         }
+    }
+}
+
+/**
+ * CTA de la maquette (`.cta`) : pleine largeur, dégradé purple→blue→green, coins
+ * 10 dp, libellé Urbanist majuscule + icône share. `MKButton` n'héberge pas d'icône,
+ * d'où ce CTA dédié qui reprend le style Gradient de `MKButton`.
+ */
+@Composable
+private fun TabShareCta(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Colors.purple, Colors.blue, Colors.blue, Colors.green)
+                ),
+                RoundedCornerShape(10.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 13.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_share),
+            contentDescription = null,
+            tint = Colors.black,
+            modifier = Modifier.size(17.dp)
+        )
+        Spacer(Modifier.size(8.dp))
+        MKText(
+            text = "Tab classique & partager".uppercase(),
+            font = Fonts.Urbanist,
+            fontSize = 14,
+            textColor = Colors.black,
+            maxLines = 1
+        )
     }
 }

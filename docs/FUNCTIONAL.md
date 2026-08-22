@@ -666,11 +666,12 @@ Pour une autre équipe : vue simple (rosters + joueurs), sans gestion d'alliés.
 
 ## 10. Tableau partageable (PDF)
 
-Écran `EditTabScreen` (depuis le détail d'une war 12p, bouton « Tab ») : génère une **image de tableau récapitulatif**.
+Écran `EditTabScreen` — titre **« Tab (PDF) »** (depuis le détail d'une war 12p, bouton « Générer le Tab (PDF) », 1v1 uniquement) : génère une **image de tableau récapitulatif partageable**. Écran refondu conforme à la maquette `edittab` du prototype UX (#41/#49), **sans texte d'aide** (les hints décoratifs ont été retirés à la demande de l'utilisateur).
 
-- Texte d'explication ; **+/−** pour ajuster le nombre de lignes adverses (**6 à 9**, défaut 6) ; pour chaque ligne, un champ nom + un champ score.
-- **« Tab classique »** : valide que la somme des scores adverses saisis = `scoreOpponent` calculé (sinon toast d'écart), puis génère le PDF (détails de war, scores équipe/joueur/adversaire, pénalités incluses) et émet l'`Uri` pour partage.
-- **« Tab détaillé »** (ajoute courses, shocks, courbe de progression) — **commenté dans le code** (`EditTabScreen`), donc **absent de l'UI** actuelle.
+- **Chips compteur** (pilules maquette `.chip`, composant partagé `MKChip`) : `− ligne` / `N lignes` (chip active) / `+ ligne` — ajustent le nombre de lignes adverses (**min 6, max 9**, défaut 6) ; les chips `−`/`+` sont **grisées et inactives** en butée. La saisie n'est pas détruite en réduisant le compteur (9 emplacements internes, seules les `N` premières lignes sont affichées et prises en compte).
+- **Lignes de saisie** générées dynamiquement selon le compteur : par ligne, un champ « Adversaire N » (large) + un champ « Score » (étroit), disposés en grille 2/1.
+- **CTA « Tab classique & partager »** (dégradé maquette `.cta` + icône share, pleine largeur) : valide que la somme des scores adverses saisis = `scoreOpponent` calculé (sinon toast d'écart), puis génère le PDF (détails de war, logos/tags, scores équipe/joueur/adversaire **pénalités incluses**, top joueurs couronne/argent/bronze) et ouvre le partage (`Intent.ACTION_SEND`).
+- Le **« Tab détaillé »** (circuits + courbe) reste **présent mais désactivé** dans l'app (`generateDetailedPdf` commenté dans le code).
 
 Le rendu et l'enregistrement (galerie / partage) sont décrits dans [TECHNICAL.md §15](TECHNICAL.md#15-génération-pdf).
 

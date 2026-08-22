@@ -3,7 +3,6 @@ package fr.harmoniamk.statsmkworld.screen.warList
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +31,7 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
+import fr.harmoniamk.statsmkworld.ui.MKChip
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
@@ -100,7 +100,7 @@ fun WarListScreen(
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     WarFilter.entries.forEach { entry ->
-                        FilterChip(
+                        MKChip(
                             label = stringResource(entry.labelRes),
                             active = entry == filter,
                             onClick = { filter = entry }
@@ -144,34 +144,5 @@ fun WarListScreen(
                 }
             }
         }
-    }
-}
-
-/**
- * Chip de filtre (maquette `.chip`) : pilule arrondie ; actif = fond blanc/texte
- * sombre, inactif = fond blanc translucide/texte blanc.
- */
-@Composable
-private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .background(
-                if (active) Colors.white else Colors.white30,
-                RoundedCornerShape(20.dp)
-            )
-            .border(
-                1.dp,
-                if (active) Colors.white else Colors.whiteBorderSoft,
-                RoundedCornerShape(20.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
-        MKText(
-            text = label,
-            font = Fonts.NunitoBD,
-            textColor = if (active) Colors.black else Colors.white,
-            fontSize = 12
-        )
     }
 }
