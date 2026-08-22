@@ -73,7 +73,9 @@ fun WarDetailsScreen(
                             track.displayedDiff.contains("-") -> Colors.red
                             else -> Colors.transparent
                         }
-                        // Numéro de course (1-based) + course finale = dernière de la war (ticket #47).
+                        // Numéro de course (1-based). Ici la war est TERMINÉE (historique) : sa
+                        // dernière course est bien sa course finale. L'édition est de toute façon
+                        // désactivée depuis WarDetails (`editing = false`) — ticket #47.
                         val courseNumber = tracks.indexOf(track) + 1
                         val isFinal = courseNumber == tracks.size
                         MapCell(

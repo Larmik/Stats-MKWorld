@@ -565,9 +565,13 @@ private fun TracksSection(
             if (rowIndex > 0) Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 pair.forEach { track ->
-                    // Numéro de course (1-based) + course finale = dernière de la war (ticket #47).
+                    // Numéro de course (1-based). Course finale = 12ᵉ course d'une war complète
+                    // (une war compte 12 courses) : tant que la war n'a pas 12 courses, aucune
+                    // n'est finale → toutes éditables (ticket #47). On ne se base PAS sur
+                    // `tracks.size` (nombre de courses jouées jusqu'ici), sinon la dernière course
+                    // jouée d'une war en cours serait faussement marquée finale.
                     val courseNumber = tracks.indexOf(track) + 1
-                    val isFinal = courseNumber == tracks.size
+                    val isFinal = courseNumber == 12
                     TrackCard(track = track, is24p = is24p, modifier = Modifier.weight(1f), onClick = { onTrackDetails(track, courseNumber, isFinal) })
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
