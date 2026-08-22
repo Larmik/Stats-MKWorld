@@ -288,6 +288,11 @@
     <string name="addtrack_next_positions">Suivant · Positions</string>
     <string name="addtrack_progress">Joueur %1$d / %2$d</string>
     <string name="addtrack_summary_score">Score de la manche</string>
+    <!-- Écran détails de course (ticket #47) -->
+    <string name="trackdetails_title">COURSE</string>
+    <string name="trackdetails_course_prefix">Course %1$d</string>
+    <string name="trackdetails_positions_shocks">Positions &amp; shocks</string>
+    <string name="trackdetails_edit">Éditer la course</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
     <string name="stats_scope_individual">Individuelles</string>
     <string name="stats_scope_team">Équipe</string>

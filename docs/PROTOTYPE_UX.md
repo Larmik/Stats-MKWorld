@@ -179,6 +179,20 @@ Barre d'app : ← retour + titre **COURSE**.
 2. **Positions & shocks** (eyebrow) : Pascal `P1 · 1 shock` · Larmik `P3 · 0 shock` · Juju `P5 · 2 shocks` · Max `P6 · 0 shock`.
 3. Bouton « **Éditer la course** » → `edittrack`.
 
+> **Implémentation (#47)** : écran refondu au niveau maquette (rules 13/15). Carte en-tête via
+> `StatCard` (illustration du circuit + nom Bungee + sous-titre « Course N · {score hôte - adverse}
+> (±diff) », le score des deux équipes (`WarTrackDetails.displayedResult`) suivi de la diff
+> colorisée) — l'illustration du circuit remplace la pastille à initiales de la maquette, par
+> cohérence avec la carte en-tête du Résumé d'AddTrack (même epic). Grille « Positions & shocks »
+> (tuiles `.two > .b`, lecture seule) : **position** rendue avec la font `MKPosition` colorée par
+> `Int.positionColor` (chiffre seul, comme partout dans l'app) + **icône shock `x{n}`** affichée
+> **uniquement** si le joueur a au moins un shock. Triées par position. Le numéro de course est
+> calculé au site de navigation (liste ordonnée des courses de la war). Le bouton « Éditer la
+> course » s'affiche tant que la war **n'est pas validée** (encore en cours, présente en DataStore)
+> et que l'édition est autorisée par l'appelant : **toutes** les courses restent éditables tant que
+> la war n'est pas validée, y compris la dernière. Depuis une war **validée** (WarDetails,
+> historique) l'édition est désactivée (`editing = false`) → bouton masqué.
+
 ### Écran `edittrack` — « ÉDITER LA COURSE »
 
 Barre d'app : ← retour + titre **ÉDITER LA COURSE**. Onglets `[data-tabs="et"]` :

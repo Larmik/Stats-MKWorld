@@ -33,7 +33,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
 fun WarDetailsScreen(
     viewModel: WarDetailsViewModel,
     onBack: () -> Unit,
-    onTrackClick: (WarTrackDetails) -> Unit,
+    onTrackClick: (WarTrackDetails, Int) -> Unit,
     onTab: (WarDetails) -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -64,20 +64,25 @@ fun WarDetailsScreen(
                     font = Fonts.NunitoBD,
                     modifier = Modifier.padding(top = 10.dp)
                 )
+                val tracks = it
                 LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-                    items(it, key = { it.track.id }) {
+                    items(tracks, key = { it.track.id }) { track ->
                         val borderColor = when {
                             state.value.teamOpponent.orEmpty().size > 1 -> Colors.transparent
-                            it.displayedDiff.contains("+") -> Colors.green
-                            it.displayedDiff.contains("-") -> Colors.red
+                            track.displayedDiff.contains("+") -> Colors.green
+                            track.displayedDiff.contains("-") -> Colors.red
                             else -> Colors.transparent
                         }
+                        // Numéro de course (1-based) pour l'en-tête « Course N » de l'écran détail.
+                        // L'édition est de toute façon désactivée depuis WarDetails (war validée /
+                        // historique : `editing = false`) — ticket #47.
+                        val courseNumber = tracks.indexOf(track) + 1
                         MapCell(
                             modifier = Modifier.padding(5.dp),
-                            track = it,
+                            track = track,
                             onClick = {},
                             is24p = state.value.teamOpponent.orEmpty().size > 1,
-                            onTrackDetails = onTrackClick,
+                            onTrackDetails = { onTrackClick(it, courseNumber) },
                             backgroundColor = Colors.whiteAlphaed,
                             textColor = Colors.black,
                             borderColor = borderColor

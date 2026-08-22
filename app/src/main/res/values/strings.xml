@@ -288,6 +288,11 @@
     <string name="addtrack_next_positions">Next · Positions</string>
     <string name="addtrack_progress">Player %1$d / %2$d</string>
     <string name="addtrack_summary_score">Race score</string>
+    <!-- Track details screen (ticket #47) -->
+    <string name="trackdetails_title">RACE</string>
+    <string name="trackdetails_course_prefix">Race %1$d</string>
+    <string name="trackdetails_positions_shocks">Positions &amp; shocks</string>
+    <string name="trackdetails_edit">Edit race</string>
     <!-- Stats pole — Statistics screen (ticket #25) -->
     <string name="stats_scope_individual">Individual</string>
     <string name="stats_scope_team">Team</string>

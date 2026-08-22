@@ -64,7 +64,7 @@ fun CurrentWarScreen(
     onBack: () -> Unit,
     onAddTrack: (Boolean) -> Unit,
     onActions: () -> Unit,
-    onTrackDetails: (WarTrackDetails) -> Unit,
+    onTrackDetails: (WarTrackDetails, Int) -> Unit,
     onWarValidated: () -> Unit,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -109,10 +109,11 @@ fun CurrentWarScreen(
                         )
                     }
 
-                    // 3. Actions. « Course suivante » (masqué à 12 courses) + « Plus
-                    //    d'actions » sur une MÊME ligne ; puis la validation selon la
-                    //    variante (12 j : « Valider la war » ; 24 j : saisie des scores
-                    //    adverses), uniquement à 12 courses jouées (isOver).
+                    // 3. Actions. CTA principal + « Plus d'actions » sur une MÊME ligne (même
+                    //    disposition en cours ET terminée) : le CTA vaut « Course suivante » tant
+                    //    que la war n'est pas terminée, puis « Valider la war » en 12 j terminée.
+                    //    En 24 j terminée, la validation passe par la saisie des scores adverses
+                    //    (bloc dédié affiché ensuite).
                     if (state.value.buttonsVisible) {
                         item {
                             ActionsBlock(
@@ -420,10 +421,15 @@ private fun PlayerRow(score: PlayerScore, trackCount: Int, modifier: Modifier = 
 }
 
 /**
- * Bloc d'actions : « Course suivante » (→ AddTrack, masqué à 12 courses) et « Plus
- * d'actions » (→ Actions) **côte à côte sur une même ligne** ; puis, une fois la war
- * terminée (12 courses), en 12 j, le CTA « Valider la war » directe. En 24 j, la
- * validation passe par la saisie des scores adverses (bloc séparé, cf. OpponentScoresBlock).
+ * Bloc d'actions : **CTA principal + « Plus d'actions » côte à côte sur une même ligne**, même
+ * structure quel que soit l'état (deux boutons `weight(1f)`, même espacement 9 dp, CTA en
+ * Gradient / « Plus d'actions » en Minor). Le CTA principal (colonne de gauche) vaut :
+ * - war **en cours** → « Course suivante » (→ AddTrack) ;
+ * - war **terminée** (12 courses) en **12 j** → « Valider la war » directe (→ onValidateWar).
+ *
+ * En **24 j** terminée, il n'y a pas de CTA de validation ici (elle passe par la saisie des
+ * scores adverses, cf. [OpponentScoresBlock]) : seule « Plus d'actions » est affichée, en pleine
+ * largeur.
  */
 @Composable
 private fun ActionsBlock(
@@ -433,27 +439,28 @@ private fun ActionsBlock(
     onActions: () -> Unit,
     onValidateWar: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            if (!isOver) MKButton(
+    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        // Colonne de gauche : CTA principal selon l'état (course suivante / valider la war).
+        // Absente uniquement en 24 j terminée (validation via les scores adverses).
+        when {
+            !isOver -> MKButton(
                 modifier = Modifier.weight(1f),
                 style = MKButtonStyle.Gradient,
                 text = stringResource(R.string.course_suivante),
                 onClick = onAddTrack
             )
-            MKButton(
+            !is24p -> MKButton(
                 modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Minor(Colors.black),
-                text = stringResource(R.string.more_actions),
-                onClick = onActions
+                style = MKButtonStyle.Gradient,
+                text = stringResource(R.string.valider_la_war),
+                onClick = onValidateWar
             )
         }
-        // « Valider la war » directe : uniquement en 12 j terminée.
-        if (isOver && !is24p) MKButton(
-            modifier = Modifier.fillMaxWidth(),
-            style = MKButtonStyle.Gradient,
-            text = stringResource(R.string.valider_la_war),
-            onClick = onValidateWar
+        MKButton(
+            modifier = Modifier.weight(1f),
+            style = MKButtonStyle.Minor(Colors.black),
+            text = stringResource(R.string.more_actions),
+            onClick = onActions
         )
     }
 }
@@ -554,7 +561,7 @@ private fun TeamCrestSmall(team: TeamEntity) {
 private fun TracksSection(
     tracks: List<WarTrackDetails>,
     is24p: Boolean,
-    onTrackDetails: (WarTrackDetails) -> Unit
+    onTrackDetails: (WarTrackDetails, Int) -> Unit
 ) {
     DashboardCard {
         Eyebrow(stringResource(R.string.currentwar_tracks_count, tracks.size))
@@ -565,7 +572,9 @@ private fun TracksSection(
             if (rowIndex > 0) Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 pair.forEach { track ->
-                    TrackCard(track = track, is24p = is24p, modifier = Modifier.weight(1f), onClick = { onTrackDetails(track) })
+                    // Numéro de course (1-based) pour l'en-tête « Course N » de l'écran détail.
+                    val courseNumber = tracks.indexOf(track) + 1
+                    TrackCard(track = track, is24p = is24p, modifier = Modifier.weight(1f), onClick = { onTrackDetails(track, courseNumber) })
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
