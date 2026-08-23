@@ -84,10 +84,23 @@ class FetchUseCase @Inject constructor(
         team?.let {
             dataStoreRepository.setMKCTeam(it)
             databaseRepository.clearPlayers()
-            it.rosters.filter { it.game == "mkworld" }.forEach { roster ->
+            // Photo de profil des membres (#50) : NI l'endpoint liste NI l'endpoint DÉTAIL
+            // d'équipe (registry/teams/{id}) ne portent l'avatar des membres de roster — seul
+            // registry/players/{id} le fait (user_settings.avatar). On la résout donc PAR
+            // membre, de façon SÉQUENTIELLE (comme fetchAllies, le chemin qui marche) : une
+            // rafale parallèle de getPlayer se fait throttler par MKCentral (réponses
+            // successResponse=null sans exception → aucun avatar membre, alors que les alliés,
+            // résolus un par un, en obtiennent). Chaque appel reste TOLÉRANT aux échecs
+            // (runCatching) : un membre en échec → avatar null (initiales), sans casser les
+            // autres. Tous les membres traités à l'identique, aucun cas spécial (#50).
+            it.rosters.filter { roster -> roster.game == "mkworld" }.forEach { roster ->
                 roster.players.forEach { player ->
-                    val user = firebaseRepository.getUser(teamId, player.playerId)
-                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString())
+                    val user = runCatching { firebaseRepository.getUser(teamId, player.playerId) }.getOrNull()
+                    val avatar = runCatching {
+                        mkCentralDataSource.getPlayer(player.playerId).successResponse
+                            ?.userSettings?.avatar?.takeIf { avatar -> avatar.isNotEmpty() }
+                    }.getOrNull()
+                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString(), avatar = avatar)
                     databaseRepository.writePlayer(playerEntity)
                 }
             }

@@ -125,6 +125,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
 
         composable(route = "Home/Registry") {
             RegistryScreen(
+                onBack = { navController.popBackStack() },
                 onPlayerProfile = { navController.navigate("Player/Profile/$it") },
                 onTeamProfile = { navController.navigate("Team/Profile/$it") }
             )
@@ -139,6 +140,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                         factory.create(type)
                     }
                 ),
+                onBack = { navController.popBackStack() },
                 onWarDetailsClick = {
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
                     navController.navigate("Home/WarDetails")

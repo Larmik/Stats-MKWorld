@@ -39,7 +39,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
@@ -111,7 +110,7 @@ fun TeamProfileScreen(
             }
         }
     ) {
-        BaseScreen(title = stringResource(R.string.team_profile)) {
+        BaseScreen(title = stringResource(R.string.team_profile), onBack = onBack) {
             TeamProfileContent(
                 viewModel = viewModel,
                 onPlayerClick = onPlayerClick,
@@ -206,7 +205,6 @@ fun ColumnScope.TeamProfileContent(
                                     // (retour utilisateur #28 ; solution d'attente avant le ticket UI).
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                                         MKButton(
-                                            style = MKButtonStyle.Gradient,
                                             text = stringResource(R.string.ajouter_un_ally),
                                             onClick = onAddAllyClick
                                         )
@@ -218,6 +216,8 @@ fun ColumnScope.TeamProfileContent(
                                         color = Colors.grey50,
                                         name = ally.name,
                                         role = ProfileRole.ALLY,
+                                        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales.
+                                        avatarUrl = ally.avatar?.let { "https://mkcentral.com$it" },
                                         subtitle = stringResource(R.string.profile_ally_external),
                                         onClick = { onPlayerClick(ally.id) }
                                     )

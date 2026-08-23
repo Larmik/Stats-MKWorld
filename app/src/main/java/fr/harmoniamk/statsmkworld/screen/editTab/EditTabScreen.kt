@@ -66,7 +66,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
         }
     }
 
-    BaseScreen(title = "Tab (PDF)") {
+    BaseScreen(title = "Tab (PDF)", onBack = onBack) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(9.dp)

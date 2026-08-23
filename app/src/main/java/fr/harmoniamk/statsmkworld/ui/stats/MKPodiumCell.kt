@@ -32,6 +32,7 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.cells.PlayerMedallion
 
 private val CardRadius = RoundedCornerShape(6.dp)
 
@@ -42,7 +43,7 @@ private val CardRadius = RoundedCornerShape(6.dp)
  * (#25/#36) ET par les grilles du pôle Classements (#26).
  *
  * Priorité de l'avatar : [pictureRes] (circuit) > [logo] (URL d'équipe MKCentral, préfixée
- * ici) > [initials] (pastille joueur) > `default_logo`.
+ * ici) > [initials] (pastille joueur, avec photo [avatar] superposée si dispo) > `default_logo`.
  */
 class PodiumEntry(
     val labelRes: Int? = null,       // circuit : @StringRes du nom de map
@@ -50,6 +51,8 @@ class PodiumEntry(
     val pictureRes: Int? = null,     // circuit : illustration @DrawableRes
     val logo: String? = null,        // adversaire : chemin logo MKCentral (sans domaine)
     val initials: String? = null,    // joueur : initiales (fallback pastille colorée)
+    val avatar: String? = null,      // joueur : chemin photo de profil MKCentral (#50 pt.4)
+    val avatarColor: Color = Colors.blue, // couleur de la pastille d'initiales
     val stats: List<Pair<Int, String>> // lignes @StringRes(label) → valeur
 )
 
@@ -115,12 +118,13 @@ fun RowScope.PodiumCell(
                 contentDescription = null,
                 modifier = Modifier.size(40.dp).clip(CircleShape)
             )
-            entry.initials != null -> Box(
-                Modifier.size(40.dp).clip(CircleShape).background(Colors.blue),
-                contentAlignment = Alignment.Center
-            ) {
-                MKText(text = entry.initials, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 13)
-            }
+            // Médaillon joueur mutualisé (#50 pt.4, rule 16) : photo si dispo, initiales sinon/pendant le chargement.
+            entry.initials != null -> PlayerMedallion(
+                initials = entry.initials,
+                avatarColor = entry.avatarColor,
+                avatarPath = entry.avatar,
+                size = 40.dp
+            )
             else -> Image(
                 painter = painterResource(R.drawable.default_logo),
                 contentDescription = null,

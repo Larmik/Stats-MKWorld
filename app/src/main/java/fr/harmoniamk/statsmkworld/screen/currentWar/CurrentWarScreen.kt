@@ -45,7 +45,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.cells.WarDashboardCard
@@ -79,6 +78,7 @@ fun CurrentWarScreen(
 
     BaseScreen(
         title = stringResource(R.string.currentwar_title),
+        onBack = onBack,
         modifier = Modifier.padding(bottom = 90.dp)
     ) {
         when (val details = state.value.details) {
@@ -249,20 +249,17 @@ private fun ActionsBlock(
         when {
             !isOver -> MKButton(
                 modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Gradient,
                 text = stringResource(R.string.course_suivante),
                 onClick = onAddTrack
             )
             !is24p -> MKButton(
                 modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Gradient,
                 text = stringResource(R.string.valider_la_war),
                 onClick = onValidateWar
             )
         }
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Minor(Colors.black),
             text = stringResource(R.string.more_actions),
             onClick = onActions
         )
@@ -304,7 +301,6 @@ private fun OpponentScoresBlock(
         }
         MKButton(
             modifier = Modifier.fillMaxWidth(),
-            style = MKButtonStyle.Gradient,
             text = stringResource(R.string.currentwar_save_scores),
             onClick = onValidateScore
         )

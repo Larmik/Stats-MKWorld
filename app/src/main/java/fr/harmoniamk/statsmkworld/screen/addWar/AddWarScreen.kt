@@ -44,7 +44,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -52,6 +51,7 @@ import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRow
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowCheck
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowChevron
+import fr.harmoniamk.statsmkworld.ui.cells.PlayerMedallion
 import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
@@ -80,7 +80,9 @@ fun AddWarScreen(
         viewModel.goToCurrent.collect { onCurrentWar() }
     }
 
-    BackHandler {
+    // Retour étape-conscient, partagé entre le back système et le bouton retour de
+    // l'appbar (#50 pt.2) pour un comportement cohérent.
+    val handleBack: () -> Unit = {
         when {
             // Sélecteur de roster déplié → le replier.
             state.expandedRosterTeamId != null -> viewModel.collapseRosterPicker()
@@ -91,8 +93,9 @@ fun AddWarScreen(
             else -> onBack()
         }
     }
+    BackHandler { handleBack() }
 
-    BaseScreen(title = stringResource(R.string.addwar_title), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.addwar_title), onBack = handleBack, modifier = Modifier.fillMaxSize()) {
         // Segmenté 12/24 : c'est ICI que vit le sélecteur de mode (pôle Wars). Le
         // changer met à jour l'état réactif du VM SANS re-navigation.
         MKSegmentedSelector(
@@ -356,13 +359,11 @@ private fun ColumnScope.RecapStep(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Minor(Colors.white),
             text = stringResource(R.string.addwar_previous),
             onClick = onPrevious
         )
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Gradient,
             text = stringResource(R.string.addwar_start_war),
             enabled = state.buttonEnabled,
             onClick = onStart
@@ -378,15 +379,15 @@ private fun OpponentPlayerRow(name: String, color: Color) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp)
     ) {
-        Box(
-            Modifier.size(28.dp)
-                .clip(CircleShape)
-                .background(color)
-                .border(2.dp, Colors.white.copy(alpha = 0.75f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            MKText(text = initialsOf(name), font = Fonts.Urbanist, fontSize = 11, textColor = Colors.white, resizable = false)
-        }
+        // Médaillon mutualisé (#50 pt.4) : joueur adverse → pas d'avatar dispo, initiales seules.
+        PlayerMedallion(
+            initials = initialsOf(name),
+            avatarColor = color,
+            size = 28.dp,
+            initialsFontSize = 11,
+            borderWidth = 2.dp,
+            borderColor = Colors.white.copy(alpha = 0.75f)
+        )
         MKText(text = name, font = Fonts.NunitoBD, fontSize = 13, textColor = Colors.white.copy(alpha = 0.8f), textAlign = TextAlign.Start)
     }
 }

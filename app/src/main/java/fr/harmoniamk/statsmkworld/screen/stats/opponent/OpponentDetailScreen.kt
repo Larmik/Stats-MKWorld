@@ -76,7 +76,7 @@ fun OpponentDetailScreen(
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BaseScreen(title = stringResource(R.string.opponent_detail_title)) {
+    BaseScreen(title = stringResource(R.string.opponent_detail_title), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             else -> {

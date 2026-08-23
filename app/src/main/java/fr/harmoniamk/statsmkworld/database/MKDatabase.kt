@@ -20,7 +20,9 @@ import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import kotlinx.coroutines.FlowPreview
 
 @TypeConverters(value = [WarTrackConverter::class, WarPositionConverter::class, WarPenaltyConverter::class, StringConverter::class, WarScoreConverter::class, RosterInfoConverter::class])
-@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class], version = 6)
+// v7 : ajout de PlayerEntity.avatar (photo de profil MKCentral). fallbackToDestructiveMigration
+// en place → perte des données locales acceptée (re-synchro Firebase/MKCentral). #50 pt.4.
+@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class], version = 7)
 abstract class MKDatabase : RoomDatabase() {
 
     abstract fun playerDao(): PlayerDao

@@ -34,3 +34,28 @@ migration teamId→rosterId) non résolvable à l'affichage — vérifier
 Côté données : conserver le rosterId comme id d'appariement (score/pénalité) et
 résoudre le nom/tag du roster via `TeamEntity.rosters : List<RosterInfo>`, sans
 appel réseau supplémentaire.
+
+## Médaillon joueur : photo si dispo, initiales sinon — ET cohérence intra-listing
+
+**Portée** : tout affichage d'un **joueur** avec son « médaillon » (pastille
+d'avatar). Composant unique `ui/cells/PlayerMedallion.kt` (rule 16 — ne pas
+redupliquer une pastille d'initiales locale).
+
+- **Photo si disponible, initiales sinon.** Afficher la photo de profil MKCentral
+  (`PlayerEntity.avatar` / `userSettings.avatar`, préfixée `https://mkcentral.com`)
+  quand elle existe ; sinon (null) **initiales** sur pastille colorée. Pendant le
+  chargement async (Coil) : **initiales en fallback** (photo dessinée au-dessus de
+  la couche d'initiales → elles transparaissent tant que rien n'est chargé et en
+  cas d'échec). Pas de placeholder gris/vide.
+- **Cohérence intra-listing (impératif).** Dans **un même listing de joueurs**,
+  tous les joueurs sont traités **à l'identique** : **aucun cas spécial** (surtout
+  pas pour le joueur courant). Si la photo n'est pas disponible pour les autres
+  lignes (→ initiales), le joueur courant affiche **aussi** ses initiales dans ce
+  listing. Corollaire côté données : ne pas enrichir l'avatar d'un seul joueur (ex.
+  le courant depuis le DataStore) au fetch alors que les autres restent sans photo
+  — soit on peuple l'avatar de **tous** les joueurs du listing (cf. rule 30 : fetch
+  en parallèle), soit **aucun**. Ne **jamais** régresser un écran où **tous** les
+  joueurs ont une photo (résolution réseau dédiée type `AddWar`/`TeamProfile`).
+- Deux sous-listes visuellement distinctes (ex. section **Membres** vs section
+  **Alliés** des Classements) sont des listings séparés : chacune doit être
+  cohérente en interne, elles peuvent différer entre elles.

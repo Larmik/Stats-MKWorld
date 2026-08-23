@@ -45,7 +45,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
@@ -78,15 +77,18 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
         viewModel.backToWar.collect { onBack() }
     }
 
-    BackHandler {
+    // Retour étape-conscient, partagé entre le back système et le bouton retour de
+    // l'appbar (#50 pt.2).
+    val handleBack: () -> Unit = {
         when {
             // Depuis une étape avancée → revenir à la précédente (réinitialise l'étape rejointe).
             state.step > 0 -> viewModel.onStepChange(state.step - 1)
             else -> onBack()
         }
     }
+    BackHandler { handleBack() }
 
-    BaseScreen(title = stringResource(R.string.addtrack_title), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.addtrack_title), onBack = handleBack, modifier = Modifier.fillMaxSize()) {
         // Libellés d'étapes selon le mode : l'Intermission ne figure qu'en 24p (wizard à 3
         // étapes en 12p, 4 en 24p). L'ordre suit les index sémantiques du State.
         val steps = when (state.is24p) {
@@ -311,7 +313,6 @@ private fun ColumnScope.PositionsStep(
     // Un seul bouton « Précédent » : le passage au Résumé est automatique à la dernière position.
     MKButton(
         modifier = Modifier.fillMaxWidth(),
-        style = MKButtonStyle.Minor(Colors.white),
         text = stringResource(R.string.addwar_previous),
         onClick = onPrevious
     )
@@ -437,13 +438,11 @@ private fun WizNav(onPrevious: () -> Unit, nextLabel: String, onNext: () -> Unit
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Minor(Colors.white),
             text = stringResource(R.string.addwar_previous),
             onClick = onPrevious
         )
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Gradient,
             text = nextLabel,
             onClick = onNext
         )

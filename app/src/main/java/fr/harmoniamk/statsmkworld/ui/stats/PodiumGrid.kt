@@ -11,11 +11,12 @@ import fr.harmoniamk.statsmkworld.ui.Colors
  *
  * **Mutualisé** (rule 16) entre l'écran Classements (`StatsRankingScreen`) et les
  * classements complets filtrés des fiches détail Adversaire/Circuit (#27). [contentColor]
- * pilote la couleur du texte (noir sur fond clair type Classements, blanc sur carte sombre).
+ * pilote la couleur du texte : BLANC par défaut, les cellules étant désormais posées dans
+ * un cadre transparent-noir sur tous les écrans (#50 pt.7).
  */
 fun <T> LazyListScope.podiumRows(
     items: List<Pair<PodiumEntry, T>>,
-    contentColor: Color = Colors.black,
+    contentColor: Color = Colors.white,
     onClick: ((T) -> Unit)? = null
 ) {
     items.chunked(3).forEachIndexed { rowIndex, rowItems ->

@@ -6,6 +6,7 @@ import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -43,6 +44,9 @@ class MainActivity : AppCompatActivity() {
         val splashscreen = installSplashScreen()
         splashscreen.setKeepOnScreenCondition { true }
         super.onCreate(savedInstanceState)
+        // Edge-to-edge : le contenu (et le fond d'appbar de BaseScreen) s'étend derrière la
+        // status bar ; BaseScreen compense l'inset haut sur son CONTENU seul (#50 header edge-to-edge).
+        enableEdgeToEdge()
         viewModel.processIntent(intent)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         viewModel.state

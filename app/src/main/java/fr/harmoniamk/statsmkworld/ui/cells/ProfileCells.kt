@@ -138,23 +138,16 @@ fun ProfilePersonCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Box(
-                Modifier
-                    .size(76.dp)
-                    .clip(CircleShape)
-                    .background(avatarColor)
-                    .border(3.dp, Colors.white85, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                when (avatarUrl) {
-                    null -> MKText(text = avatarFallback, font = Fonts.Urbanist, fontSize = 23, textColor = Colors.white, resizable = false)
-                    else -> AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = null,
-                        modifier = Modifier.size(76.dp).clip(CircleShape)
-                    )
-                }
-            }
+            // Médaillon mutualisé (#50 pt.4, rule 16) : photo/logo si dispo, initiales/tag sinon.
+            PlayerMedallion(
+                initials = avatarFallback,
+                avatarColor = avatarColor,
+                avatarPath = avatarUrl,
+                size = 76.dp,
+                initialsFontSize = 23,
+                borderWidth = 3.dp,
+                borderColor = Colors.white85
+            )
             MKText(text = name, font = Fonts.Bungee, fontSize = 20, textColor = Colors.white, modifier = Modifier.padding(top = 8.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 metaContent()

@@ -34,7 +34,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKDialog
 import fr.harmoniamk.statsmkworld.ui.MKLoaderDialog
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -85,7 +84,7 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
         )
     }
 
-    BaseScreen(title = "Debug") {
+    BaseScreen(title = "Debug", onBack = onBack) {
         LazyColumn {
             item {
                 Row(
@@ -341,7 +340,6 @@ private fun UnknownOpponentCell(
                                         fontSize = 12
                                     )
                                     MKButton(
-                                        style = MKButtonStyle.Gradient,
                                         text = "Réattribuer",
                                         onClick = { onReattribute(opponent.rawId, roster.rosterId) }
                                     )
@@ -362,7 +360,6 @@ private fun UnknownOpponentCell(
         }
         Spacer(Modifier.height(6.dp))
         MKButton(
-            style = MKButtonStyle.Minor(Colors.black),
             text = "Supprimer la war",
             onClick = onDelete
         )
@@ -393,7 +390,6 @@ private fun MissingPlayerCell(
         )
         Spacer(Modifier.height(6.dp))
         MKButton(
-            style = MKButtonStyle.Gradient,
             text = "Ajouter en ally",
             onClick = onAddAsAlly
         )

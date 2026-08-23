@@ -38,7 +38,6 @@ import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
@@ -80,7 +79,7 @@ fun EditTrackScreen(
         viewModel.backToCurrent.collect { onBackToCurrent() }
     }
 
-    BaseScreen(title = stringResource(R.string.edition_circuit), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.edition_circuit), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.circuit),
@@ -117,13 +116,11 @@ fun EditTrackScreen(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             MKButton(
                 modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Minor(Colors.white),
                 text = stringResource(R.string.cancel),
                 onClick = onBack
             )
             MKButton(
                 modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Gradient,
                 text = stringResource(R.string.confirmer),
                 enabled = state.buttonEnabled,
                 onClick = viewModel::onValidate

@@ -35,7 +35,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
@@ -66,7 +65,7 @@ fun TrackDetailsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     BackHandler { onBack() }
-    BaseScreen(title = stringResource(R.string.trackdetails_title), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.trackdetails_title), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         state.track?.let { track ->
             TrackHeaderCard(track = track, courseNumber = state.courseNumber)
             Spacer(Modifier.height(9.dp))
@@ -96,7 +95,6 @@ fun TrackDetailsScreen(
                 Spacer(Modifier.height(9.dp))
                 MKButton(
                     modifier = Modifier.fillMaxWidth(),
-                    style = MKButtonStyle.Gradient,
                     text = stringResource(R.string.trackdetails_edit),
                     onClick = { onEditTrack(track, track.is24p) }
                 )

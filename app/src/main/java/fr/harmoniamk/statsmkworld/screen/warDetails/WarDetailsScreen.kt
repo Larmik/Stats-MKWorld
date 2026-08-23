@@ -1,24 +1,15 @@
 package fr.harmoniamk.statsmkworld.screen.warDetails
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,8 +17,7 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
-import fr.harmoniamk.statsmkworld.ui.Colors
-import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.WarPlayerRankingCard
 import fr.harmoniamk.statsmkworld.ui.cells.WarScoreCard
@@ -42,7 +32,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
  * 1. **Carte score** hôte VS adversaire(s) ([WarScoreCard], sans sous-titre — war terminée).
  * 2. **Classement joueurs** ([WarPlayerRankingCard]) : tuiles nom + points, classées par
  *    points décroissants.
- * 3. Deux **boutons** ([WarActionButton]) : « Générer le Tab (PDF) » (→ EditTab, **12 j / 1v1
+ * 3. Deux **boutons** (`MKButton` à icône) : « Générer le Tab (PDF) » (→ EditTab, **12 j / 1v1
  *    uniquement** — masqué en 24 j) et « Voir l'adversaire » (→ fiche adversaire).
  * 4. **Courses jouées · N** ([WarTracksSection]) : grille des courses, chacune → TrackDetails.
  *
@@ -62,7 +52,7 @@ fun WarDetailsScreen(
     val state = viewModel.state.collectAsStateWithLifecycle()
 
     BackHandler { onBack() }
-    BaseScreen(title = stringResource(R.string.wardetails_title), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.wardetails_title), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         state.value.details?.let { details ->
             val is24p = state.value.teamOpponent.orEmpty().size > 1
             val opponentId = details.war.teamOpponent.firstOrNull()
@@ -92,7 +82,7 @@ fun WarDetailsScreen(
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                         if (!is24p) {
-                            WarActionButton(
+                            MKButton(
                                 icon = R.drawable.ic_share,
                                 text = stringResource(R.string.wardetails_generate_tab),
                                 modifier = Modifier.weight(1f),
@@ -100,7 +90,7 @@ fun WarDetailsScreen(
                             )
                         }
                         if (opponentId != null) {
-                            WarActionButton(
+                            MKButton(
                                 icon = R.drawable.ic_cup,
                                 text = stringResource(R.string.wardetails_see_opponent),
                                 modifier = Modifier.weight(1f),
@@ -125,40 +115,3 @@ fun WarDetailsScreen(
     }
 }
 
-/**
- * Bouton secondaire de la maquette (`.btn2`) : fond blanc translucide, bordure douce, icône
- * (16 dp, teintée blanc) + libellé blanc majuscule (Urbanist). Utilisé pour les deux actions
- * du bas de l'écran (Tab / Voir l'adversaire).
- */
-@Composable
-private fun WarActionButton(
-    icon: Int,
-    text: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier
-            .height(46.dp)
-            .background(Colors.white30, RoundedCornerShape(10.dp))
-            .border(1.dp, Colors.whiteBorderSoft, RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(icon),
-            contentDescription = null,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(Modifier.size(8.dp))
-        MKText(
-            text = text.uppercase(),
-            font = Fonts.Urbanist,
-            textColor = Colors.white,
-            fontSize = 12,
-            maxLines = 1
-        )
-    }
-}

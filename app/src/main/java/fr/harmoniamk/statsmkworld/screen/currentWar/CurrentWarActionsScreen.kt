@@ -37,7 +37,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRow
@@ -75,7 +74,7 @@ fun CurrentWarActionsScreen(
         launch { viewModel.onBack.collect { onBack() } }
     }
 
-    BaseScreen(title = stringResource(R.string.actions), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.actions), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.penalties),
@@ -222,6 +221,8 @@ private fun PlayerSelectRow(selector: PlayerSelector, onClick: () -> Unit) {
         initials = initialsOf(selector.player.name),
         avatarColor = playerAvatarColor(selector.player.id),
         name = selector.player.name,
+        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales.
+        avatarUrl = selector.player.avatar,
         onClick = onClick,
         trailing = { MKListRowCheck(selected = selector.isSelected) }
     )
@@ -244,34 +245,33 @@ private fun ColumnScope.CancelPanel(
             modifier = Modifier.fillMaxWidth()
         )
     }
-    // Bouton danger **plein** (`.btn2.danger` adapté) : fond rouge, texte sombre, bordure
-    // rouge — rendu franchement actif/cliquable (le fond translucide de la maquette
-    // donnait une impression de bouton désactivé côté Android, cf. retour utilisateur).
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Colors.red, RoundedCornerShape(10.dp))
-            .border(1.dp, Colors.red, RoundedCornerShape(10.dp))
-            .clickable(onClick = viewModel::cancelWar)
-            .padding(vertical = 13.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        MKText(
-            text = stringResource(R.string.delete_war).uppercase(),
-            font = Fonts.Urbanist,
-            textColor = Colors.black,
-            fontSize = 14,
-            maxLines = 1
+    Spacer(Modifier.height(2.dp))
+    // Deux actions sur UNE seule ligne, largeurs égales (weight 1f chacune, rules 16 / retour #50) :
+    // « Supprimer la war » (danger, fond rouge plein — rendu franchement actif) + « Annuler ».
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        Box(
+            Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Colors.red, RoundedCornerShape(10.dp))
+                .clickable(onClick = viewModel::cancelWar)
+                .padding(vertical = 13.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            MKText(
+                text = stringResource(R.string.delete_war).uppercase(),
+                font = Fonts.Urbanist,
+                textColor = Colors.black,
+                fontSize = 14,
+                maxLines = 1
+            )
+        }
+        MKButton(
+            modifier = Modifier.weight(1f),
+            text = stringResource(R.string.cancel),
+            onClick = onBack
         )
     }
-    Spacer(Modifier.height(2.dp))
-    MKButton(
-        modifier = Modifier.fillMaxWidth(),
-        style = MKButtonStyle.Minor(Colors.white),
-        text = stringResource(R.string.cancel),
-        onClick = onBack
-    )
 }
 
 /** Pied d'onglet : CTA principal (dégradé) + bouton Annuler secondaire. */
@@ -285,14 +285,12 @@ private fun ActionButtons(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Gradient,
             text = primaryLabel,
             enabled = primaryEnabled,
             onClick = onPrimary
         )
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Minor(Colors.white),
             text = stringResource(R.string.cancel),
             onClick = onCancel
         )

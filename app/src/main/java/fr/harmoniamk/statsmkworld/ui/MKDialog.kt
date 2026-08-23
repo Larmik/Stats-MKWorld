@@ -47,16 +47,25 @@ fun MKDialog(
                fontSize = 18,
            )
            MKText(text = message)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+            // Deux boutons sur une ligne → largeurs égales (weight 1f chacun, rule 16) ;
+            // un seul bouton → largeur intrinsèque centrée (non concerné par l'égalité).
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = if (secondButtonText != null) Arrangement.spacedBy(9.dp) else Arrangement.Center
+            ) {
+                    // Bouton blanc translucide (sans bordure) sur la surface CLAIRE du dialog
+                    // → libellé en Colors.black pour rester lisible (le blanc par défaut serait illisible). (#50)
                     MKButton(
-                        style = MKButtonStyle.Gradient,
+                        modifier = if (secondButtonText != null) Modifier.weight(1f) else Modifier,
                         text = buttonText,
+                        textColor = Colors.black,
                         onClick = onButtonClick
                     )
                 secondButtonText?.let {
                     MKButton(
-                        style = MKButtonStyle.Minor(Colors.black),
+                        modifier = Modifier.weight(1f),
                         text = it,
+                        textColor = Colors.black,
                         onClick = onSecondButtonClick
                     )
                 }

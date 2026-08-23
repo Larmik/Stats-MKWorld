@@ -23,7 +23,6 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.LottieAnimComposable
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 @Composable
@@ -61,7 +60,6 @@ fun TutorialPage(item: TutorialItem, onClick: (TutorialItem) -> Unit) {
 
                 item.buttonText?.let {
                     MKButton(
-                        style = MKButtonStyle.Gradient,
                         text = stringResource(it),
                         onClick = {
                             onClick(item)
