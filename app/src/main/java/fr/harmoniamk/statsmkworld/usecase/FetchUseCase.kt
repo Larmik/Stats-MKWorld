@@ -20,9 +20,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -82,7 +79,7 @@ class FetchUseCase @Inject constructor(
         return player
     }
 
-    override suspend fun fetchTeam(teamId: String): MKCTeam? = coroutineScope {
+    override suspend fun fetchTeam(teamId: String): MKCTeam? {
         val team = mkCentralDataSource.getTeam(teamId).successResponse
         team?.let {
             dataStoreRepository.setMKCTeam(it)
@@ -90,24 +87,25 @@ class FetchUseCase @Inject constructor(
             // Photo de profil des membres (#50) : NI l'endpoint liste NI l'endpoint DÉTAIL
             // d'équipe (registry/teams/{id}) ne portent l'avatar des membres de roster — seul
             // registry/players/{id} le fait (user_settings.avatar). On la résout donc PAR
-            // membre, mais EN PARALLÈLE (async/awaitAll, même pattern éprouvé que
-            // TeamProfileViewModel.resolveMembers) : un seul lot de requêtes par synchro, pas
-            // par frame. Tous les membres sont traités à l'identique (avatar réel si dispo,
-            // null → initiales), aucun cas spécial (cohérence des listings, #50).
-            it.rosters.filter { roster -> roster.game == "mkworld" }
-                .flatMap { roster -> roster.players.map { player -> roster to player } }
-                .map { (roster, player) ->
-                    async {
-                        val user = firebaseRepository.getUser(teamId, player.playerId)
-                        val avatar = mkCentralDataSource.getPlayer(player.playerId).successResponse
+            // membre, de façon SÉQUENTIELLE (comme fetchAllies, le chemin qui marche) : une
+            // rafale parallèle de getPlayer se fait throttler par MKCentral (réponses
+            // successResponse=null sans exception → aucun avatar membre, alors que les alliés,
+            // résolus un par un, en obtiennent). Chaque appel reste TOLÉRANT aux échecs
+            // (runCatching) : un membre en échec → avatar null (initiales), sans casser les
+            // autres. Tous les membres traités à l'identique, aucun cas spécial (#50).
+            it.rosters.filter { roster -> roster.game == "mkworld" }.forEach { roster ->
+                roster.players.forEach { player ->
+                    val user = runCatching { firebaseRepository.getUser(teamId, player.playerId) }.getOrNull()
+                    val avatar = runCatching {
+                        mkCentralDataSource.getPlayer(player.playerId).successResponse
                             ?.userSettings?.avatar?.takeIf { avatar -> avatar.isNotEmpty() }
-                        PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString(), avatar = avatar)
-                    }
+                    }.getOrNull()
+                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString(), avatar = avatar)
+                    databaseRepository.writePlayer(playerEntity)
                 }
-                .awaitAll()
-                .forEach { playerEntity -> databaseRepository.writePlayer(playerEntity) }
+            }
         }
-        team
+        return team
     }
 
     override suspend fun fetchAllies(teamId: String) {
