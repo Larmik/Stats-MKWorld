@@ -43,18 +43,20 @@ partagé.
 
 **Portée** : tout `MKButton` et tout nouveau bouton d'action.
 
-`MKButton` a **un seul style** (aligné `.btn2` maquette : fond blanc translucide
-`Colors.white30`, bordure `Colors.whiteBorderSoft`, libellé majuscule Urbanist), sur
-**demande utilisateur d'harmonisation** (#50). Ne **pas** réintroduire de variante de
-style (l'ancien `MKButtonStyle` `Gradient`/`.cta` + `Minor` a été supprimé) : tous les
-boutons de l'app sont identiques. Le **seul** paramètre variable est `textColor`
-(contraste selon le fond : blanc par défaut ; `Colors.black` sur surface claire type
-`MKDialog`) — ce n'est **pas** une variante de style, juste de la lisibilité.
+`MKButton` est le **SEUL** composant bouton de l'app, avec **un seul style** (aligné
+`.btn2` maquette : fond blanc translucide `Colors.white30`, bordure
+`Colors.whiteBorderSoft`, libellé majuscule Urbanist), sur **demande utilisateur
+d'harmonisation** (#50). Ne **pas** réintroduire de variante de style (l'ancien
+`MKButtonStyle` `Gradient`/`.cta` + `Minor` a été supprimé) **ni** de second composant
+bouton (l'ancien `WarActionButton` de `WarDetailsScreen` a été **fusionné dans
+`MKButton`**). Params variables (pas des variantes de style) : `textColor` (contraste
+selon le fond : blanc par défaut ; `Colors.black` sur surface claire type `MKDialog`) et
+`icon: Int?` (drawable de tête optionnel — couvre les boutons à icône « Générer le Tab »
+/ « Voir l'adversaire »).
 
 - **Divergence assumée vs maquette (rules 13/15)** : le prototype distingue un CTA
   primaire dégradé d'un bouton secondaire ; cette hiérarchie est **volontairement
   aplatie**. Ne pas la « rétablir » au nom du pixel-perfect.
-- Pour un bouton avec **icône** (ex. `WarActionButton` « Générer le Tab » / « Voir
-  l'adversaire »), garder le même style visuel (`.btn2`) ; `MKButton` n'ayant pas de
-  slot icône, un composant dédié reste licite tant qu'il **reproduit** ce style unique
-  (ne pas diverger).
+- **Besoin non couvert par `MKButton`** (icône, largeur, contenu…) → **généraliser
+  `MKButton` par un paramètre optionnel** (ex. `icon`), **jamais** créer un second
+  composant bouton (ce fut l'erreur corrigée avec `WarActionButton`).
