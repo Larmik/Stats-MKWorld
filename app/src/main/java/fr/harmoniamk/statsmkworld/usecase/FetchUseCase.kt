@@ -83,11 +83,18 @@ class FetchUseCase @Inject constructor(
         val team = mkCentralDataSource.getTeam(teamId).successResponse
         team?.let {
             dataStoreRepository.setMKCTeam(it)
+            // L'endpoint liste d'équipe (MKCTeamPlayer) ne porte pas l'avatar des membres.
+            // On enrichit au mieux le SEUL joueur courant depuis son profil DataStore
+            // (mkcPlayer.userSettings.avatar). Les alliés récupèrent le leur via fetchAllies
+            // (fetchés en MKCPlayer). #50 pt.4.
+            val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
+            val currentAvatar = currentPlayer?.userSettings?.avatar?.takeIf { avatar -> avatar.isNotEmpty() }
             databaseRepository.clearPlayers()
             it.rosters.filter { it.game == "mkworld" }.forEach { roster ->
                 roster.players.forEach { player ->
                     val user = firebaseRepository.getUser(teamId, player.playerId)
-                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString())
+                    val avatar = currentAvatar.takeIf { player.playerId == currentPlayer?.id?.toString() }
+                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString(), avatar = avatar)
                     databaseRepository.writePlayer(playerEntity)
                 }
             }

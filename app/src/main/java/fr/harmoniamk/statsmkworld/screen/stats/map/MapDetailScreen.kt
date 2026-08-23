@@ -25,6 +25,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatTile
 import fr.harmoniamk.statsmkworld.ui.stats.StatTiles
+import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
 import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -53,7 +54,7 @@ fun MapDetailScreen(
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BaseScreen(title = stringResource(R.string.map_detail_title)) {
+    BaseScreen(title = stringResource(R.string.map_detail_title), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             state.mapStats == null -> MKText(
@@ -149,6 +150,9 @@ internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
         name = player.name,
         initials = initialsOf(player.name),
+        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales sur pastille colorée.
+        avatar = player.avatar,
+        avatarColor = playerAvatarColor(player.id),
         stats = listOf(
             R.string.form_score to averageScore.toString(),
             R.string.average_position_short to averagePosition.toString(),

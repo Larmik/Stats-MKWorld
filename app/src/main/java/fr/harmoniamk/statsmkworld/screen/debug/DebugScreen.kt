@@ -85,7 +85,7 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
         )
     }
 
-    BaseScreen(title = "Debug") {
+    BaseScreen(title = "Debug", onBack = onBack) {
         LazyColumn {
             item {
                 Row(

@@ -21,7 +21,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -76,15 +75,15 @@ fun MKListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp)
     ) {
-        Box(
-            Modifier.size(avatarSize).clip(CircleShape).background(avatarColor).border(2.dp, Colors.white.copy(alpha = 0.75f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            when (avatarUrl) {
-                null -> MKText(text = initials, font = Fonts.Urbanist, fontSize = 13, textColor = Colors.white, resizable = false)
-                else -> AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.size(avatarSize).clip(CircleShape))
-            }
-        }
+        // Médaillon joueur mutualisé (#50 pt.4, rule 16) : photo si dispo, initiales sinon/pendant le chargement.
+        PlayerMedallion(
+            initials = initials,
+            avatarColor = avatarColor,
+            avatarPath = avatarUrl,
+            size = avatarSize,
+            borderWidth = 2.dp,
+            borderColor = Colors.white.copy(alpha = 0.75f)
+        )
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 MKText(text = name, font = Fonts.NunitoBD, fontSize = 14, textColor = Colors.white, textAlign = TextAlign.Start, maxLines = 1)

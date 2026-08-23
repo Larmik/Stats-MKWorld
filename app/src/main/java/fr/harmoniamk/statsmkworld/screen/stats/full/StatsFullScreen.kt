@@ -58,6 +58,8 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.WinTieLossBar
+import fr.harmoniamk.statsmkworld.ui.cells.PlayerMedallion
+import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
 import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 
 private val CardRadius = StatCardRadius
@@ -161,6 +163,9 @@ fun StatsFullScreen(
     BaseScreen(
         title = stringResource(R.string.statistiques),
         subtitle = subtitle,
+        // Bouton retour uniquement en fiche poussée (showTabs=false) ; en onglet du pôle
+        // Stats (showTabs=true), pas de retour d'appbar (rule 14, comportement onglet).
+        onBack = onBack?.takeIf { !viewModel.showTabs },
         modifier = Modifier.padding(bottom = if (viewModel.showTabs) 90.dp else 0.dp)
     ) {
         when {
@@ -626,7 +631,8 @@ private fun FormStreakCard(stats: Stats, title: String) {
                 Icon(painter = painterResource(R.drawable.ic_flame), contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f)) {
-                MKText(text = streakText, font = Fonts.NunitoBD, textColor = accent, fontSize = 15, textAlign = TextAlign.Start)
+                // Texte de la série en blanc (#50 pt.3) — l'accent (flamme) garde sa couleur V/D.
+                MKText(text = streakText, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start)
                 val deltaText = delta?.let { stringResource(R.string.stats_form_delta, if (it >= 0) "+$it" else "$it") } ?: ""
                 MKText(
                     text = stringResource(R.string.stats_form_record, deltaText, record),
@@ -695,12 +701,14 @@ private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributo
             else -> Colors.white55
         }
         MKText(text = rank.toString(), font = Fonts.Urbanist, textColor = rankColor, fontSize = 14, modifier = Modifier.width(18.dp))
-        Box(
-            Modifier.size(34.dp).clip(CircleShape).background(Colors.blue),
-            contentAlignment = Alignment.Center
-        ) {
-            MKText(text = initialsOf(contributor.player.name), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
-        }
+        // Médaillon joueur mutualisé (#50 pt.4) : photo si dispo, initiales sinon/pendant le chargement.
+        PlayerMedallion(
+            initials = initialsOf(contributor.player.name),
+            avatarColor = playerAvatarColor(contributor.player.id),
+            avatarPath = contributor.player.avatar,
+            size = 34.dp,
+            initialsFontSize = 12
+        )
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 MKText(text = contributor.player.name, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 14, textAlign = TextAlign.Start, maxLines = 1)

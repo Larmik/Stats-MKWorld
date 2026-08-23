@@ -79,6 +79,7 @@ fun CurrentWarScreen(
 
     BaseScreen(
         title = stringResource(R.string.currentwar_title),
+        onBack = onBack,
         modifier = Modifier.padding(bottom = 90.dp)
     ) {
         when (val details = state.value.details) {

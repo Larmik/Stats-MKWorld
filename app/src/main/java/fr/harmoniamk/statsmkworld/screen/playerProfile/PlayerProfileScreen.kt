@@ -77,7 +77,7 @@ fun PlayerProfileScreen(
     onDebug: () -> Unit
 ) {
     BackHandler { onBack() }
-    BaseScreen(title = stringResource(R.string.profil_joueur)) {
+    BaseScreen(title = stringResource(R.string.profil_joueur), onBack = onBack) {
         PlayerProfileContent(
             viewModel = viewModel,
             onDisconnect = onDisconnect,

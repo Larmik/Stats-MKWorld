@@ -66,7 +66,7 @@ fun TrackDetailsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     BackHandler { onBack() }
-    BaseScreen(title = stringResource(R.string.trackdetails_title), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.trackdetails_title), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         state.track?.let { track ->
             TrackHeaderCard(track = track, courseNumber = state.courseNumber)
             Spacer(Modifier.height(9.dp))

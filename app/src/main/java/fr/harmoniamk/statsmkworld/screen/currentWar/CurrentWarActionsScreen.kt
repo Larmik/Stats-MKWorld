@@ -75,7 +75,7 @@ fun CurrentWarActionsScreen(
         launch { viewModel.onBack.collect { onBack() } }
     }
 
-    BaseScreen(title = stringResource(R.string.actions), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.actions), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.penalties),
@@ -222,6 +222,8 @@ private fun PlayerSelectRow(selector: PlayerSelector, onClick: () -> Unit) {
         initials = initialsOf(selector.player.name),
         avatarColor = playerAvatarColor(selector.player.id),
         name = selector.player.name,
+        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales.
+        avatarUrl = selector.player.avatar,
         onClick = onClick,
         trailing = { MKListRowCheck(selected = selector.isSelected) }
     )

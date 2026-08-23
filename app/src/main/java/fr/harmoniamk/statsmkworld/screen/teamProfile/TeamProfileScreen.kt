@@ -111,7 +111,7 @@ fun TeamProfileScreen(
             }
         }
     ) {
-        BaseScreen(title = stringResource(R.string.team_profile)) {
+        BaseScreen(title = stringResource(R.string.team_profile), onBack = onBack) {
             TeamProfileContent(
                 viewModel = viewModel,
                 onPlayerClick = onPlayerClick,
@@ -218,6 +218,8 @@ fun ColumnScope.TeamProfileContent(
                                         color = Colors.grey50,
                                         name = ally.name,
                                         role = ProfileRole.ALLY,
+                                        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales.
+                                        avatarUrl = ally.avatar?.let { "https://mkcentral.com$it" },
                                         subtitle = stringResource(R.string.profile_ally_external),
                                         onClick = { onPlayerClick(ally.id) }
                                     )

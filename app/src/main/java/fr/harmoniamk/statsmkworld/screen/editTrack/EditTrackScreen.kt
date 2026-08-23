@@ -80,7 +80,7 @@ fun EditTrackScreen(
         viewModel.backToCurrent.collect { onBackToCurrent() }
     }
 
-    BaseScreen(title = stringResource(R.string.edition_circuit), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.edition_circuit), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.circuit),

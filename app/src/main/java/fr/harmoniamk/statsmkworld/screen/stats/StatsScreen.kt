@@ -41,9 +41,9 @@ import kotlinx.coroutines.FlowPreview
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
-fun StatsScreen(viewModel: StatsViewModel, onWarDetailsClick: (WarDetails) -> Unit) {
+fun StatsScreen(viewModel: StatsViewModel, onBack: (() -> Unit)? = null, onWarDetailsClick: (WarDetails) -> Unit) {
     val state = viewModel.state.collectAsState()
-    BaseScreen(title = stringResource(viewModel.type?.title ?: R.string.statistiques)) {
+    BaseScreen(title = stringResource(viewModel.type?.title ?: R.string.statistiques), onBack = onBack) {
         when (state.value.mapStats == null && state.value.stats == null) {
             true -> CircularProgressIndicator()
             else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {

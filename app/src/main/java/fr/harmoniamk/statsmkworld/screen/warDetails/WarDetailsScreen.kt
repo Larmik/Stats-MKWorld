@@ -62,7 +62,7 @@ fun WarDetailsScreen(
     val state = viewModel.state.collectAsStateWithLifecycle()
 
     BackHandler { onBack() }
-    BaseScreen(title = stringResource(R.string.wardetails_title), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.wardetails_title), onBack = onBack, modifier = Modifier.fillMaxSize()) {
         state.value.details?.let { details ->
             val is24p = state.value.teamOpponent.orEmpty().size > 1
             val opponentId = details.war.teamOpponent.firstOrNull()

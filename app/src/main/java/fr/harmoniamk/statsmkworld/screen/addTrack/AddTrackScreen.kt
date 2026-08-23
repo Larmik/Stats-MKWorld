@@ -78,15 +78,18 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
         viewModel.backToWar.collect { onBack() }
     }
 
-    BackHandler {
+    // Retour étape-conscient, partagé entre le back système et le bouton retour de
+    // l'appbar (#50 pt.2).
+    val handleBack: () -> Unit = {
         when {
             // Depuis une étape avancée → revenir à la précédente (réinitialise l'étape rejointe).
             state.step > 0 -> viewModel.onStepChange(state.step - 1)
             else -> onBack()
         }
     }
+    BackHandler { handleBack() }
 
-    BaseScreen(title = stringResource(R.string.addtrack_title), modifier = Modifier.fillMaxSize()) {
+    BaseScreen(title = stringResource(R.string.addtrack_title), onBack = handleBack, modifier = Modifier.fillMaxSize()) {
         // Libellés d'étapes selon le mode : l'Intermission ne figure qu'en 24p (wizard à 3
         // étapes en 12p, 4 en 24p). L'ordre suit les index sémantiques du State.
         val steps = when (state.is24p) {
