@@ -27,20 +27,20 @@ import androidx.compose.ui.unit.dp
 private val ButtonRadius = RoundedCornerShape(10.dp)
 
 /**
- * Bouton **unique** de l'app (#50) : bouton **PLEIN** (solide, **sans bordure**), fond
- * sombre opaque `Colors.black` (= `--ink` #3C4043 de la maquette), libellé (et icône)
- * **blancs** en majuscules (Urbanist), coins 10 dp. Le fond sombre garde les libellés ET
- * les icônes blanches (`ic_share`/`ic_cup`) lisibles sur **tous** les fonds où le bouton
- * apparaît — cartes `blackAlphaed`, dégradé de `BaseScreen`, et surface claire de
- * `MKDialog`. **Tous** les boutons passent par ici (l'ancien `WarActionButton` fusionné ;
- * les variantes `Gradient`/`.cta` et `.btn2`/bordé supprimées — rule 16).
+ * Bouton **unique** de l'app (#50) : fond **blanc translucide** (`Colors.white30`),
+ * **SANS bordure** (l'ancienne bordure `whiteBorderSoft` du `.btn2`, jugée disgracieuse,
+ * a été retirée — c'était le seul vrai souci), libellé **et icône blancs** en majuscules
+ * (Urbanist), coins 10 dp. **Tous** les boutons passent par ici (l'ancien `WarActionButton`
+ * fusionné ; les variantes `Gradient`/`.cta` et le bouton plein sombre supprimés — rule 16).
  *
  * [icon] optionnel : drawable d'icône **de tête** (16 dp, blanche). Sans icône, le libellé
  * est centré (fontSize 14) ; avec icône, le rendu reprend les métriques de l'ancien
  * `WarActionButton` (hauteur 46 dp, icône 16 dp + espace 8 dp + libellé fontSize 12).
  *
  * [textColor] n'est PAS une variante de style : juste l'ajustement de contraste du libellé
- * (blanc par défaut sur le fond sombre plein). L'état désactivé atténue fond + texte.
+ * selon le fond (blanc par défaut sur le dégradé/cartes sombres ; `Colors.black` sur une
+ * surface claire type `MKDialog` où le blanc serait illisible). L'état désactivé atténue
+ * fond + texte.
  */
 @Composable
 fun MKButton(
@@ -51,9 +51,11 @@ fun MKButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    val resolvedTextColor = if (enabled) textColor else Colors.white55
-    // Bouton PLEIN sans bordure : fond sombre opaque (enabled) / atténué (disabled).
-    val backgroundColor = if (enabled) Colors.black else Colors.blackAlphaed
+    // Désactivé : on atténue la couleur de libellé demandée (blanc sur fond sombre, noir
+    // sur surface claire type MKDialog) plutôt qu'une couleur fixe, pour rester lisible partout.
+    val resolvedTextColor = if (enabled) textColor else textColor.copy(alpha = 0.4f)
+    // Fond blanc translucide, SANS bordure : enabled = white30, disabled = whiteAlphaed.
+    val backgroundColor = if (enabled) Colors.white30 else Colors.whiteAlphaed
 
     Button(
         modifier = modifier,

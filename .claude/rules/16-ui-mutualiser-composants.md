@@ -43,22 +43,24 @@ partagé.
 
 **Portée** : tout `MKButton` et tout nouveau bouton d'action.
 
-`MKButton` est le **SEUL** composant bouton de l'app, avec **un seul style** : bouton
-**PLEIN, sans bordure** — fond **sombre opaque** `Colors.black` (= `--ink` #3C4043),
-libellé **et icône blancs** en majuscules (Urbanist), coins 10 dp — sur **demande
-utilisateur** (#50 : « bouton plein », la bordure `.btn2` jugée disgracieuse). Le fond
-sombre est imposé par le fait que libellés et icônes sont **blancs** (un fond blanc plein
-les rendrait invisibles) et qu'il doit rester lisible partout (cartes `blackAlphaed`,
-dégradé `BaseScreen`, surface claire de `MKDialog`). Ne **pas** réintroduire de bordure,
-ni de variante de style (l'ancien `MKButtonStyle` `Gradient`/`.cta` + `Minor`/`.btn2`
-supprimé), ni de second composant bouton (`WarActionButton` **fusionné dans `MKButton`**).
-Params variables (pas des variantes de style) : `textColor` (blanc par défaut ; le fond
-sombre étant identique partout, aucun callsite ne l'override plus) et `icon: Int?`
-(drawable de tête optionnel — couvre « Générer le Tab » / « Voir l'adversaire »).
+`MKButton` est le **SEUL** composant bouton de l'app, avec **un seul style** : fond
+**blanc translucide** (`Colors.white30`), **SANS bordure**, libellé **et icône blancs**
+en majuscules (Urbanist), coins 10 dp — sur **demande utilisateur** (#50 : garder le fond
+blanc transparent du `.btn2` mais **retirer la bordure** `whiteBorderSoft` jugée
+disgracieuse — c'était le seul vrai souci). Ne **pas** réintroduire la bordure, ni un fond
+plein/opaque, ni de variante de style (l'ancien `MKButtonStyle` `Gradient`/`.cta` +
+`Minor`/`.btn2` supprimé), ni de second composant bouton (`WarActionButton` **fusionné
+dans `MKButton`**). Params variables (pas des variantes de style) : `textColor` et
+`icon: Int?` (drawable de tête optionnel — couvre « Générer le Tab » / « Voir
+l'adversaire »). **`textColor` s'adapte au fond hôte** : blanc par défaut (sur le dégradé
+`BaseScreen` / cartes sombres), **`Colors.black` sur une surface CLAIRE** (les 2 boutons
+de `MKDialog`, fond blanc) où le blanc serait illisible ; l'état désactivé atténue la
+couleur demandée (`textColor.copy(alpha = 0.4f)`), lisible quel que soit le fond.
 
 - **Divergence assumée vs maquette (rules 13/15)** : le prototype propose un CTA dégradé
-  et un secondaire translucide bordé ; l'app retient **un unique bouton plein sombre**
-  (ni dégradé, ni bordé). Ne pas « rétablir » la bordure ni la hiérarchie au nom du
+  (`.cta`) et un secondaire translucide bordé (`.btn2`) ; l'app retient **un unique bouton
+  translucide sans bordure** (ni dégradé, ni bordé) — hiérarchie primaire/secondaire
+  aplatie. Ne pas « rétablir » la bordure, le dégradé ni la hiérarchie au nom du
   pixel-perfect.
 - **Besoin non couvert par `MKButton`** (icône, largeur, contenu…) → **généraliser
   `MKButton` par un paramètre optionnel** (ex. `icon`), **jamais** créer un second
