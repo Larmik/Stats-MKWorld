@@ -20,6 +20,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -79,27 +82,32 @@ class FetchUseCase @Inject constructor(
         return player
     }
 
-    override suspend fun fetchTeam(teamId: String): MKCTeam? {
+    override suspend fun fetchTeam(teamId: String): MKCTeam? = coroutineScope {
         val team = mkCentralDataSource.getTeam(teamId).successResponse
         team?.let {
             dataStoreRepository.setMKCTeam(it)
-            // L'endpoint liste d'équipe (MKCTeamPlayer) ne porte pas l'avatar des membres.
-            // On enrichit au mieux le SEUL joueur courant depuis son profil DataStore
-            // (mkcPlayer.userSettings.avatar). Les alliés récupèrent le leur via fetchAllies
-            // (fetchés en MKCPlayer). #50 pt.4.
-            val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
-            val currentAvatar = currentPlayer?.userSettings?.avatar?.takeIf { avatar -> avatar.isNotEmpty() }
             databaseRepository.clearPlayers()
-            it.rosters.filter { it.game == "mkworld" }.forEach { roster ->
-                roster.players.forEach { player ->
-                    val user = firebaseRepository.getUser(teamId, player.playerId)
-                    val avatar = currentAvatar.takeIf { player.playerId == currentPlayer?.id?.toString() }
-                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString(), avatar = avatar)
-                    databaseRepository.writePlayer(playerEntity)
+            // Photo de profil des membres (#50) : NI l'endpoint liste NI l'endpoint DÉTAIL
+            // d'équipe (registry/teams/{id}) ne portent l'avatar des membres de roster — seul
+            // registry/players/{id} le fait (user_settings.avatar). On la résout donc PAR
+            // membre, mais EN PARALLÈLE (async/awaitAll, même pattern éprouvé que
+            // TeamProfileViewModel.resolveMembers) : un seul lot de requêtes par synchro, pas
+            // par frame. Tous les membres sont traités à l'identique (avatar réel si dispo,
+            // null → initiales), aucun cas spécial (cohérence des listings, #50).
+            it.rosters.filter { roster -> roster.game == "mkworld" }
+                .flatMap { roster -> roster.players.map { player -> roster to player } }
+                .map { (roster, player) ->
+                    async {
+                        val user = firebaseRepository.getUser(teamId, player.playerId)
+                        val avatar = mkCentralDataSource.getPlayer(player.playerId).successResponse
+                            ?.userSettings?.avatar?.takeIf { avatar -> avatar.isNotEmpty() }
+                        PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString(), avatar = avatar)
+                    }
                 }
-            }
+                .awaitAll()
+                .forEach { playerEntity -> databaseRepository.writePlayer(playerEntity) }
         }
-        return team
+        team
     }
 
     override suspend fun fetchAllies(teamId: String) {

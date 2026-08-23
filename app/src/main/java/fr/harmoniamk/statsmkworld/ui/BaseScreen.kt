@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -128,6 +131,10 @@ fun BaseScreen(
 
     val viewModel: BaseViewModel = hiltViewModel()
     val colors = viewModel.colors.collectAsState()
+    // Inset de la status bar : la bande d'appbar (et le fond) s'étend DERRIÈRE la status bar
+    // (edge-to-edge, cf. MainActivity.enableEdgeToEdge), mais le CONTENU (titre/boutons) est
+    // décalé sous elle pour ne pas passer dessous (#50 header edge-to-edge).
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -137,17 +144,16 @@ fun BaseScreen(
                 end = Offset.Infinite
             ))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 30.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             title?.let {
-                // Bande d'appbar pleine largeur (`.appbar` : fond rgba(48,51,54,.5), maquette).
+                // Bande d'appbar pleine largeur ET jusqu'au bord haut physique (`.appbar` :
+                // fond rgba(48,51,54,.5)) : le fond couvre la zone status bar, le contenu de
+                // la Row est repoussé dessous par le top padding = inset status bar.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Colors.appbar)
+                        .padding(top = statusBarTop)
                         .padding(horizontal = 15.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(11.dp)
@@ -180,8 +186,8 @@ fun BaseScreen(
                     .fillMaxSize()
                     // Marge latérale du contenu (l'appbar est pleine largeur, elle, hors padding).
                     .padding(horizontal = 16.dp)
-                    // Sans titre (appbar absente), conserver la marge haute d'origine.
-                    .padding(top = if (title == null) 16.dp else 0.dp)
+                    // Sans appbar (pas de titre), compenser soi-même l'inset status bar + marge d'origine.
+                    .padding(top = if (title == null) statusBarTop + 16.dp else 0.dp)
                     .padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
