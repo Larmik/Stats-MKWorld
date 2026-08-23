@@ -65,3 +65,16 @@ couleur demandée (`textColor.copy(alpha = 0.4f)`), lisible quel que soit le fon
 - **Besoin non couvert par `MKButton`** (icône, largeur, contenu…) → **généraliser
   `MKButton` par un paramètre optionnel** (ex. `icon`), **jamais** créer un second
   composant bouton (ce fut l'erreur corrigée avec `WarActionButton`).
+- **Plusieurs boutons sur une même ligne (`Row`) → largeurs ÉGALES** : chaque bouton
+  reçoit `Modifier.weight(1f)` (+ `Arrangement.spacedBy(9.dp)` pour l'espace), afin qu'ils
+  occupent une largeur identique et remplissent la ligne. Vaut dans **toute** l'app (pieds
+  de wizard Précédent/Suivant, Confirmer/Annuler, détails de war, dialog à 2 boutons,
+  panneau « Annuler la war »…). Un **bouton seul** sur sa ligne n'est **pas** concerné
+  (garde sa largeur intrinsèque/centrée). Un bouton « danger » ad hoc (Box rouge) partageant
+  la ligne suit la même règle (`weight(1f)`).
+- **État désactivé sans boîte Material** : `MKButton` pose son fond sur son `Row` interne,
+  le container Material doit être transparent **à l'état actif ET désactivé**. Forcer dans
+  `ButtonDefaults.buttonColors(...)` **`disabledContainerColor = Color.Transparent`** (et
+  `containerColor`/`disabledContentColor` transparents) + `buttonElevation(disabledElevation
+  = 0.dp)` : sinon le `disabledContainerColor` par défaut (gris `onSurface .12`) réaffiche
+  une boîte/halo disgracieux derrière le bouton désactivé.

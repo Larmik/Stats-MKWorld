@@ -245,33 +245,33 @@ private fun ColumnScope.CancelPanel(
             modifier = Modifier.fillMaxWidth()
         )
     }
-    // Bouton danger **plein** (`.btn2.danger` adapté) : fond rouge, texte sombre, bordure
-    // rouge — rendu franchement actif/cliquable (le fond translucide de la maquette
-    // donnait une impression de bouton désactivé côté Android, cf. retour utilisateur).
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Colors.red, RoundedCornerShape(10.dp))
-            .border(1.dp, Colors.red, RoundedCornerShape(10.dp))
-            .clickable(onClick = viewModel::cancelWar)
-            .padding(vertical = 13.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        MKText(
-            text = stringResource(R.string.delete_war).uppercase(),
-            font = Fonts.Urbanist,
-            textColor = Colors.black,
-            fontSize = 14,
-            maxLines = 1
+    Spacer(Modifier.height(2.dp))
+    // Deux actions sur UNE seule ligne, largeurs égales (weight 1f chacune, rules 16 / retour #50) :
+    // « Supprimer la war » (danger, fond rouge plein — rendu franchement actif) + « Annuler ».
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        Box(
+            Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Colors.red, RoundedCornerShape(10.dp))
+                .clickable(onClick = viewModel::cancelWar)
+                .padding(vertical = 13.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            MKText(
+                text = stringResource(R.string.delete_war).uppercase(),
+                font = Fonts.Urbanist,
+                textColor = Colors.black,
+                fontSize = 14,
+                maxLines = 1
+            )
+        }
+        MKButton(
+            modifier = Modifier.weight(1f),
+            text = stringResource(R.string.cancel),
+            onClick = onBack
         )
     }
-    Spacer(Modifier.height(2.dp))
-    MKButton(
-        modifier = Modifier.fillMaxWidth(),
-        text = stringResource(R.string.cancel),
-        onClick = onBack
-    )
 }
 
 /** Pied d'onglet : CTA principal (dégradé) + bouton Annuler secondaire. */

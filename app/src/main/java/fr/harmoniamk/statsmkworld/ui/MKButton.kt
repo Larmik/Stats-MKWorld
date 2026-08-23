@@ -60,11 +60,19 @@ fun MKButton(
     Button(
         modifier = modifier,
         onClick = onClick,
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+        // Aucune élévation/halo, ni à l'état actif ni désactivé (le fond du bouton est
+        // porté par le Row interne, pas par le container Material).
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, disabledElevation = 0.dp),
         contentPadding = PaddingValues(),
         enabled = enabled,
+        // Container Material TOUJOURS transparent (actif ET désactivé) : sinon le
+        // disabledContainerColor par défaut (gris onSurface .12) réafficherait une
+        // boîte/halo derrière notre Row à l'état désactivé (#50).
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent
+            containerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            contentColor = Color.Transparent,
+            disabledContentColor = Color.Transparent
         ),
         shape = ButtonRadius,
     ) {
