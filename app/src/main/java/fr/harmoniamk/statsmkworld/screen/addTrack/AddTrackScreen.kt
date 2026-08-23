@@ -45,7 +45,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
@@ -314,7 +313,6 @@ private fun ColumnScope.PositionsStep(
     // Un seul bouton « Précédent » : le passage au Résumé est automatique à la dernière position.
     MKButton(
         modifier = Modifier.fillMaxWidth(),
-        style = MKButtonStyle.Minor(Colors.white),
         text = stringResource(R.string.addwar_previous),
         onClick = onPrevious
     )
@@ -440,13 +438,11 @@ private fun WizNav(onPrevious: () -> Unit, nextLabel: String, onNext: () -> Unit
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Minor(Colors.white),
             text = stringResource(R.string.addwar_previous),
             onClick = onPrevious
         )
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Gradient,
             text = nextLabel,
             onClick = onNext
         )

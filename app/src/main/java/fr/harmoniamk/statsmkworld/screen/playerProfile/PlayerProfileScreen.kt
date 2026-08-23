@@ -46,7 +46,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKDialog
 import fr.harmoniamk.statsmkworld.ui.MKLoaderDialog
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -253,7 +252,6 @@ fun ColumnScope.PlayerProfileContent(
                 if (state.value.buttonVisible) item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         MKButton(
-                            style = MKButtonStyle.Gradient,
                             text = stringResource(R.string.ajouter_en_tant_qu_ally),
                             onClick = viewModel::onAddAlly
                         )
@@ -272,7 +270,6 @@ fun ColumnScope.PlayerProfileContent(
                     item {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             MKButton(
-                                style = MKButtonStyle.Gradient,
                                 text = stringResource(label),
                                 onClick = viewModel::onSwitchRole
                             )

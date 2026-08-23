@@ -29,8 +29,6 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
-import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKChip
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
@@ -71,23 +69,23 @@ fun WarListScreen(
 
     BaseScreen(
         title = stringResource(R.string.wars),
-        subtitle = stringResource(R.string.wars_count, state.value.warCount)
+        subtitle = stringResource(R.string.wars_count, state.value.warCount),
+        // « Créer une war » dans l'action droite du header (#50), affichée UNIQUEMENT
+        // s'il n'y a pas de war en cours (même condition qu'auparavant, juste déplacée).
+        onSearch = { onAddWar(false) }.takeIf { state.value.currentWar == null },
+        actionIcon = R.drawable.ic_add,
+        actionContentDescription = stringResource(R.string.nouvelle_war)
     ) {
         LazyColumn(
             Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(11.dp)
         ) {
-            // 1. War en cours → bannière « Reprendre » ; sinon CTA « Nouvelle war »
-            //    (masqué tant qu'une war est en cours : règle métier existante).
-            item {
-                when (val war = state.value.currentWar) {
-                    null -> MKButton(
-                        style = MKButtonStyle.Gradient,
-                        text = stringResource(R.string.nouvelle_war),
-                        onClick = { onAddWar(false) }
-                    )
-                    else -> CurrentWarBanner(
+            // 1. War en cours → bannière « Reprendre » (le CTA « Créer une war » est
+            //    désormais dans l'action droite du header, masqué si une war est en cours).
+            state.value.currentWar?.let { war ->
+                item {
+                    CurrentWarBanner(
                         war = war,
                         withPlayers = false,
                         callToAction = stringResource(R.string.war_resume, war.tracks.size),

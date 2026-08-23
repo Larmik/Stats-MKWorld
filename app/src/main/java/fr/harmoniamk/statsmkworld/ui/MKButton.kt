@@ -12,80 +12,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-
-/**
- * Styles de bouton alignés sur la maquette prototype UX (#50 pt.1) :
- * - [Gradient] = bouton d'action principal `.cta` : dégradé violet→bleu→vert,
- *   texte sombre en capitales (Urbanist), coins arrondis 10 dp, légère ombre.
- * - [Minor] = bouton secondaire `.btn2` : fond blanc translucide, bordure douce,
- *   texte de la couleur [color] (blanc sur carte/fond sombre, sombre sur dialog clair).
- */
-sealed interface MKButtonStyle {
-    data class Minor(val color: Color) : MKButtonStyle
-    data object Gradient : MKButtonStyle
-}
 
 private val ButtonRadius = RoundedCornerShape(10.dp)
 
-// Dégradé exact du `.cta` de la maquette (linear-gradient(90deg,#D7AEFB,#AECBFA 45%,#81C995)).
-// Valeurs pastel figées ici (indépendantes de Colors.green/red, assombris pour le contraste
-// du texte) pour rester fidèle au rendu du CTA.
-private val CtaGradient = listOf(Color(0xFFD7AEFB), Color(0xFFAECBFA), Color(0xFF81C995))
-
+/**
+ * Bouton unique de l'app (#50), aligné sur le style `.btn2` de la maquette — celui des
+ * boutons de référence « Générer le Tab » / « Voir l'adversaire » (`WarActionButton`) :
+ * fond blanc translucide (`Colors.white30`), bordure douce (`Colors.whiteBorderSoft`),
+ * libellé majuscule (Urbanist). **Tous** les `MKButton` partagent ce style (demande
+ * utilisateur : harmonie ; l'ancienne variante `Gradient`/`.cta` a été supprimée).
+ *
+ * [textColor] n'est PAS une variante de style : juste l'ajustement de contraste du
+ * libellé selon le fond (blanc par défaut sur le dégradé/cartes sombres ; `Colors.black`
+ * sur une surface claire type dialog). L'état désactivé atténue fond + texte.
+ */
 @Composable
 fun MKButton(
     modifier: Modifier = Modifier,
-    style: MKButtonStyle,
     text: String,
+    textColor: Color = Colors.white,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    val backgroundColor: Color
-    val backgroundGradient: List<Color>
-    val textColor: Color
-    val borderColor: Color
-    val elevation: Dp
-    when {
-        style is MKButtonStyle.Gradient && enabled -> {
-            // `.cta` : dégradé, texte sombre, pas de bordure, légère ombre.
-            textColor = Colors.black
-            backgroundColor = Colors.transparent
-            backgroundGradient = CtaGradient
-            borderColor = Colors.transparent
-            elevation = 4.dp
-        }
-
-        style is MKButtonStyle.Minor && enabled -> {
-            // `.btn2` : fond blanc translucide, bordure douce, texte teinté.
-            textColor = style.color
-            backgroundColor = Colors.white30
-            backgroundGradient = listOf()
-            borderColor = Colors.whiteBorderSoft
-            elevation = 0.dp
-        }
-
-        // Désactivé (Gradient comme Minor) : gris translucide, texte atténué.
-        else -> {
-            textColor = Colors.blackAlphaed
-            backgroundColor = Colors.whiteAlphaed
-            backgroundGradient = listOf()
-            borderColor = Colors.transparent
-            elevation = 0.dp
-        }
-    }
+    val resolvedTextColor = if (enabled) textColor else Colors.blackAlphaed
+    val backgroundColor = if (enabled) Colors.white30 else Colors.whiteAlphaed
+    val borderColor = if (enabled) Colors.whiteBorderSoft else Colors.transparent
 
     Button(
         modifier = modifier,
         onClick = onClick,
         border = BorderStroke(1.dp, borderColor),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = elevation),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
         contentPadding = PaddingValues(),
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
@@ -93,14 +55,9 @@ fun MKButton(
         ),
         shape = ButtonRadius,
     ) {
-
-        val backgroundModifier = when (backgroundGradient.isNotEmpty()) {
-            true -> Modifier.background(brush = Brush.horizontalGradient(colors = backgroundGradient), shape = ButtonRadius)
-            else -> Modifier.background(color = backgroundColor, shape = ButtonRadius)
-        }
-
         Box(
-            modifier = backgroundModifier
+            modifier = Modifier
+                .background(color = backgroundColor, shape = ButtonRadius)
                 .clip(ButtonRadius)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center
@@ -112,9 +69,8 @@ fun MKButton(
                 font = Fonts.Urbanist,
                 fontSize = 14,
                 maxLines = 1,
-                textColor = textColor,
+                textColor = resolvedTextColor,
             )
         }
     }
-
 }

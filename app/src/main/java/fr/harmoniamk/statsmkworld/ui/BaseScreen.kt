@@ -126,6 +126,10 @@ fun BaseScreen(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     onSearch: (() -> Unit)? = null,
+    // Action droite de l'appbar : icône/libellé personnalisables (défaut = loupe→registre).
+    // Ex. écran Wars : « Créer une war » (ic_add), affiché seulement si aucune war en cours (#50).
+    actionIcon: Int = R.drawable.ic_search,
+    actionContentDescription: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
 
@@ -171,11 +175,11 @@ fun BaseScreen(
                             MKText(text = sub, textColor = Colors.white66, fontSize = 14, font = Fonts.NunitoBD, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp))
                         }
                     }
-                    onSearch?.let { search ->
+                    onSearch?.let { action ->
                         AppBarIconButton(
-                            iconRes = R.drawable.ic_search,
-                            contentDescription = stringResource(R.string.rechercher),
-                            onClick = search
+                            iconRes = actionIcon,
+                            contentDescription = actionContentDescription ?: stringResource(R.string.rechercher),
+                            onClick = action
                         )
                     }
                 }

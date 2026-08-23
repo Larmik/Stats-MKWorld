@@ -39,7 +39,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
@@ -206,7 +205,6 @@ fun ColumnScope.TeamProfileContent(
                                     // (retour utilisateur #28 ; solution d'attente avant le ticket UI).
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                                         MKButton(
-                                            style = MKButtonStyle.Gradient,
                                             text = stringResource(R.string.ajouter_un_ally),
                                             onClick = onAddAllyClick
                                         )

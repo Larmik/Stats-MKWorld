@@ -44,7 +44,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -360,13 +359,11 @@ private fun ColumnScope.RecapStep(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Minor(Colors.white),
             text = stringResource(R.string.addwar_previous),
             onClick = onPrevious
         )
         MKButton(
             modifier = Modifier.weight(1f),
-            style = MKButtonStyle.Gradient,
             text = stringResource(R.string.addwar_start_war),
             enabled = state.buttonEnabled,
             onClick = onStart

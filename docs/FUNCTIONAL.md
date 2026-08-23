@@ -98,7 +98,7 @@ Gating concret :
 
 `HomeScreen` = conteneur à **cinq pôles** (barre du bas — `Accueil · Wars · Stats · Classements · Profil`), avec conservation d'état entre onglets (`saveState`/`restoreState`). Chaque pôle est une destination du `NavHost` imbriqué de `HomeScreen`. L'**Annuaire** n'est plus un onglet : il est accessible via une **icône recherche** (loupe) dans l'app bar des écrans Accueil et Classements (route `Home/Registry` du graphe racine). Le graphe racine (`RootScreen`) conserve `startDestination = Signup` et les deep links Discord (`statsmkworld.com?...=code`) inchangés.
 
-**En-tête commun (app bar) — conforme maquette (#50).** L'app bar de tous les écrans reproduit la maquette : **bande sombre pleine largeur**, **titre aligné à gauche en blanc** + sous-titre, **bouton retour `←`** à gauche sur tous les **écrans poussés** (fiches, détails, war en cours, wizards, annuaire…) et **icône recherche** à droite (Accueil/Classements → Annuaire). Les **racines de pôle** (Accueil, Wars, Stats, Classements, Profil) n'ont pas de flèche retour ; le retour système y suit le comportement bottom-nav (retour au pôle Accueil, puis quitte depuis l'Accueil). Sur les wizards (Nouvelle war / Saisie de course), la flèche retour applique le **même recul par étape** que le retour système.
+**En-tête commun (app bar) — conforme maquette (#50).** L'app bar de tous les écrans reproduit la maquette : **bande sombre pleine largeur**, **titre aligné à gauche en blanc** + sous-titre, **bouton retour `←`** à gauche sur tous les **écrans poussés** (fiches, détails, war en cours, wizards, annuaire…) et une **action à droite** paramétrable : **icône recherche** (Accueil/Classements → Annuaire) ou, sur le pôle **Wars**, **icône « + » « Créer une war »** (masquée si une war est en cours, #50). Les **racines de pôle** (Accueil, Wars, Stats, Classements, Profil) n'ont pas de flèche retour ; le retour système y suit le comportement bottom-nav (retour au pôle Accueil, puis quitte depuis l'Accueil). Sur les wizards (Créer une war / Saisie de course), la flèche retour applique le **même recul par étape** que le retour système.
 
 ### Pôle 1 — Accueil (`WelcomeScreen`) — tableau de bord
 État : `teamName/teamLogo`, `playerName/playerLogo`, `currentWar`, `playerStats` + `teamStats` (les **deux** vues 12p, calculées d'emblée par le VM), `recentResults` (3 dernières wars 12p).
@@ -113,7 +113,7 @@ L'accueil est un **dashboard** qui met l'essentiel à portée immédiate. **Rend
 6. **Derniers résultats** : 3 wars 12p (`recentResults`, cliquables → détail de war) + lien **« Voir tout »** → pôle Wars (historique). Réutilise la **cellule `WarCell` unifiée** (voir ci-dessous).
 
 - **Icône recherche** (app bar) → Annuaire.
-- Le **sélecteur 12/24 joueurs** et le bouton **« Nouvelle war »** ne figurent plus sur l'accueil : ils vivent désormais dans le **pôle Wars** — le CTA « Nouvelle war » sur `WarListScreen`, le segmenté 12/24 en tête de `AddWarScreen` (cf. §6). Les destinations de navigation `Home/AddWar/{is24p}` restent inchangées.
+- Le **sélecteur 12/24 joueurs** et le bouton **« Créer une war »** ne figurent plus sur l'accueil : ils vivent désormais dans le **pôle Wars** — le bouton « Créer une war » dans l'**action droite de l'app bar** de `WarListScreen` (#50), le segmenté 12/24 en tête de `AddWarScreen` (cf. §6). Les destinations de navigation `Home/AddWar/{is24p}` restent inchangées.
 
 > **Cellule `WarCell` unifiée** : la cellule de résultat (`ui/cells/WarCell.kt`) est **partagée** par l'Accueil, l'historique (`WarListScreen`) et les stats (`StatsScreen`), signature publique inchangée. Elle rend **12p** avec le style pixel-perfect de l'Accueil (pastille V/N/D, pastille adversaire, « vs … » + date, score + écart + **maps gagnées**) et **24p** avec le podium des 3 équipes (style minimal, non régressé). L'ancienne implémentation dédoublée a été supprimée.
 
@@ -121,8 +121,8 @@ L'accueil est un **dashboard** qui met l'essentiel à portée immédiate. **Rend
 Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + sous-titre **« N wars »** (total affiché). L'écran enchaîne, de haut en bas :
 
 1. **War en cours / création** (règle métier existante) :
-   - si une war est en cours (écoutée en temps réel via `FirebaseRepository.listenToCurrentWar`, semée par `getCurrentWar`) → **bannière « En direct »** cliquable (composant partagé `CurrentWarBanner`, cf. ci-dessous) portant l'appel à l'action **« Reprendre — N courses jouées »** → `CurrentWarScreen` ;
-   - sinon → bouton **« Nouvelle war »** → `AddWarScreen` (le CTA est masqué tant qu'une war est en cours).
+   - **Création** : le bouton **« Créer une war »** est désormais l'**action à droite de l'app bar** (icône « + », #50), et non plus un CTA dans la liste. Il est **masqué tant qu'une war est en cours** (même condition qu'avant). → `AddWarScreen`.
+   - si une war est en cours (écoutée en temps réel via `FirebaseRepository.listenToCurrentWar`, semée par `getCurrentWar`) → **bannière « En direct »** cliquable (composant partagé `CurrentWarBanner`, cf. ci-dessous) portant l'appel à l'action **« Reprendre — N courses jouées »** → `CurrentWarScreen` (dans la liste).
 2. **Chips filtre de résultat** : `Tous` (actif par défaut) / `Victoires` / `Nuls` / `Défaites`. Filtre purement UI (état `rememberSaveable`), sur le signe de la marge de score (`WarDetails.scoreMargin`, 12j comme 24j).
 3. **Historique complet**, groupé par mois (en-têtes collants), triés du plus récent au plus ancien. **Tous les modes sont mélangés (12j ET 24j)** — l'ancien filtrage par mode (`is24PEnabled`) a été retiré. Clic sur une war → détail de war. Réutilise la cellule `WarCell` unifiée.
 
@@ -299,7 +299,7 @@ re-navigation ni pager animé), contenu scrollable.
 ## 7. Historique & détails
 
 ### Liste des wars (`WarListScreen`)
-- Bannière « War en cours » / CTA « Nouvelle war » + chips filtre de résultat (cf. §5, Pôle 2).
+- Bannière « War en cours » (dans la liste) / bouton « Créer une war » (action droite de l'app bar) + chips filtre de résultat (cf. §5, Pôle 2).
 - Wars **groupées par mois** (`Pair("Mois AAAA", [WarDetails])`), triées du plus récent au plus ancien, en-tête collant avec compte (recalculé après filtrage).
 - **Tous les modes (12j ET 24j) mélangés** : seul le filtre multi-roster subsiste (si désactivé : seulement `teamHost == rosterId`). L'ancien filtre par mode a été retiré.
 - Filtre de résultat V/N/D purement UI (chips), appliqué par mois : un mois sans war correspondant au filtre est masqué.
