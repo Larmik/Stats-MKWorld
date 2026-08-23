@@ -48,16 +48,15 @@ fun MKDialog(
            )
            MKText(text = message)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    // Dialog sur surface CLAIRE (blanche) → texte sombre pour rester lisible.
+                    // Bouton PLEIN sombre (fond opaque) → libellé blanc par défaut, lisible
+                    // même sur la surface claire du dialog (#50).
                     MKButton(
                         text = buttonText,
-                        textColor = Colors.black,
                         onClick = onButtonClick
                     )
                 secondButtonText?.let {
                     MKButton(
                         text = it,
-                        textColor = Colors.black,
                         onClick = onSecondButtonClick
                     )
                 }

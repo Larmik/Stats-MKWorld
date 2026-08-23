@@ -43,20 +43,23 @@ partagé.
 
 **Portée** : tout `MKButton` et tout nouveau bouton d'action.
 
-`MKButton` est le **SEUL** composant bouton de l'app, avec **un seul style** (aligné
-`.btn2` maquette : fond blanc translucide `Colors.white30`, bordure
-`Colors.whiteBorderSoft`, libellé majuscule Urbanist), sur **demande utilisateur
-d'harmonisation** (#50). Ne **pas** réintroduire de variante de style (l'ancien
-`MKButtonStyle` `Gradient`/`.cta` + `Minor` a été supprimé) **ni** de second composant
-bouton (l'ancien `WarActionButton` de `WarDetailsScreen` a été **fusionné dans
-`MKButton`**). Params variables (pas des variantes de style) : `textColor` (contraste
-selon le fond : blanc par défaut ; `Colors.black` sur surface claire type `MKDialog`) et
-`icon: Int?` (drawable de tête optionnel — couvre les boutons à icône « Générer le Tab »
-/ « Voir l'adversaire »).
+`MKButton` est le **SEUL** composant bouton de l'app, avec **un seul style** : bouton
+**PLEIN, sans bordure** — fond **sombre opaque** `Colors.black` (= `--ink` #3C4043),
+libellé **et icône blancs** en majuscules (Urbanist), coins 10 dp — sur **demande
+utilisateur** (#50 : « bouton plein », la bordure `.btn2` jugée disgracieuse). Le fond
+sombre est imposé par le fait que libellés et icônes sont **blancs** (un fond blanc plein
+les rendrait invisibles) et qu'il doit rester lisible partout (cartes `blackAlphaed`,
+dégradé `BaseScreen`, surface claire de `MKDialog`). Ne **pas** réintroduire de bordure,
+ni de variante de style (l'ancien `MKButtonStyle` `Gradient`/`.cta` + `Minor`/`.btn2`
+supprimé), ni de second composant bouton (`WarActionButton` **fusionné dans `MKButton`**).
+Params variables (pas des variantes de style) : `textColor` (blanc par défaut ; le fond
+sombre étant identique partout, aucun callsite ne l'override plus) et `icon: Int?`
+(drawable de tête optionnel — couvre « Générer le Tab » / « Voir l'adversaire »).
 
-- **Divergence assumée vs maquette (rules 13/15)** : le prototype distingue un CTA
-  primaire dégradé d'un bouton secondaire ; cette hiérarchie est **volontairement
-  aplatie**. Ne pas la « rétablir » au nom du pixel-perfect.
+- **Divergence assumée vs maquette (rules 13/15)** : le prototype propose un CTA dégradé
+  et un secondaire translucide bordé ; l'app retient **un unique bouton plein sombre**
+  (ni dégradé, ni bordé). Ne pas « rétablir » la bordure ni la hiérarchie au nom du
+  pixel-perfect.
 - **Besoin non couvert par `MKButton`** (icône, largeur, contenu…) → **généraliser
   `MKButton` par un paramètre optionnel** (ex. `icon`), **jamais** créer un second
   composant bouton (ce fut l'erreur corrigée avec `WarActionButton`).

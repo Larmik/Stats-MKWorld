@@ -1,6 +1,5 @@
 package fr.harmoniamk.statsmkworld.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,20 +27,20 @@ import androidx.compose.ui.unit.dp
 private val ButtonRadius = RoundedCornerShape(10.dp)
 
 /**
- * Bouton **unique** de l'app (#50), aligné sur le style `.btn2` de la maquette — celui des
- * boutons de référence « Générer le Tab » / « Voir l'adversaire » : fond blanc translucide
- * (`Colors.white30`), bordure douce (`Colors.whiteBorderSoft`), libellé majuscule (Urbanist),
- * coins 10 dp. **Tous** les boutons de l'app passent par ici (l'ancien `WarActionButton` a
- * été fusionné ; l'ancienne variante `Gradient`/`.cta` supprimée — rule 16).
+ * Bouton **unique** de l'app (#50) : bouton **PLEIN** (solide, **sans bordure**), fond
+ * sombre opaque `Colors.black` (= `--ink` #3C4043 de la maquette), libellé (et icône)
+ * **blancs** en majuscules (Urbanist), coins 10 dp. Le fond sombre garde les libellés ET
+ * les icônes blanches (`ic_share`/`ic_cup`) lisibles sur **tous** les fonds où le bouton
+ * apparaît — cartes `blackAlphaed`, dégradé de `BaseScreen`, et surface claire de
+ * `MKDialog`. **Tous** les boutons passent par ici (l'ancien `WarActionButton` fusionné ;
+ * les variantes `Gradient`/`.cta` et `.btn2`/bordé supprimées — rule 16).
  *
- * [icon] optionnel : drawable d'icône **de tête** (16 dp), pour les boutons à icône (ex.
- * partage / adversaire des détails de war). Sans icône, le libellé est centré (fontSize 14) ;
- * avec icône, le rendu reprend exactement l'ancien `WarActionButton` (icône 16 dp + espace
- * 8 dp + libellé fontSize 12).
+ * [icon] optionnel : drawable d'icône **de tête** (16 dp, blanche). Sans icône, le libellé
+ * est centré (fontSize 14) ; avec icône, le rendu reprend les métriques de l'ancien
+ * `WarActionButton` (hauteur 46 dp, icône 16 dp + espace 8 dp + libellé fontSize 12).
  *
  * [textColor] n'est PAS une variante de style : juste l'ajustement de contraste du libellé
- * selon le fond (blanc par défaut sur le dégradé/cartes sombres ; `Colors.black` sur une
- * surface claire type dialog). L'état désactivé atténue fond + texte.
+ * (blanc par défaut sur le fond sombre plein). L'état désactivé atténue fond + texte.
  */
 @Composable
 fun MKButton(
@@ -52,14 +51,13 @@ fun MKButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    val resolvedTextColor = if (enabled) textColor else Colors.blackAlphaed
-    val backgroundColor = if (enabled) Colors.white30 else Colors.whiteAlphaed
-    val borderColor = if (enabled) Colors.whiteBorderSoft else Colors.transparent
+    val resolvedTextColor = if (enabled) textColor else Colors.white55
+    // Bouton PLEIN sans bordure : fond sombre opaque (enabled) / atténué (disabled).
+    val backgroundColor = if (enabled) Colors.black else Colors.blackAlphaed
 
     Button(
         modifier = modifier,
         onClick = onClick,
-        border = BorderStroke(1.dp, borderColor),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
         contentPadding = PaddingValues(),
         enabled = enabled,
