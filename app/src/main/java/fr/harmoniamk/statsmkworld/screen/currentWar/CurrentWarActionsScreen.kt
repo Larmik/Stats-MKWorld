@@ -246,26 +246,15 @@ private fun ColumnScope.CancelPanel(
         )
     }
     Spacer(Modifier.height(2.dp))
-    // Deux actions sur UNE seule ligne, largeurs égales (weight 1f chacune, rules 16 / retour #50) :
-    // « Supprimer la war » (danger, fond rouge plein — rendu franchement actif) + « Annuler ».
+    // Deux actions sur UNE seule ligne, largeurs égales (weight 1f chacune, rules 16 / #67) :
+    // « Supprimer la war » + « Annuler ». Le bouton danger est aplati sur le style UNIQUE
+    // de MKButton (fond blanc translucide, plus de fond rouge ad hoc — rule 16 / #67).
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-        Box(
-            Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Colors.red, RoundedCornerShape(10.dp))
-                .clickable(onClick = viewModel::cancelWar)
-                .padding(vertical = 13.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            MKText(
-                text = stringResource(R.string.delete_war).uppercase(),
-                font = Fonts.Urbanist,
-                textColor = Colors.black,
-                fontSize = 14,
-                maxLines = 1
-            )
-        }
+        MKButton(
+            modifier = Modifier.weight(1f),
+            text = stringResource(R.string.delete_war),
+            onClick = viewModel::cancelWar
+        )
         MKButton(
             modifier = Modifier.weight(1f),
             text = stringResource(R.string.cancel),

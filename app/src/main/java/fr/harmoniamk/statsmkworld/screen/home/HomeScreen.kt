@@ -56,6 +56,11 @@ fun HomeScreen(
     // Lien « Résultats → » du pôle Stats (joueur courant) : remonte au graphe racine
     // pour ouvrir l'historique filtré sur « me » (#65) — évite le NavHost interne.
     onResults: () -> Unit,
+    // « Classement entier » Circuits / Adversaires du pôle Stats (joueur courant) → classement
+    // complet scopé (#67 round 3). `isTeam` = portée courante (Équipe vs Individuel). Remonte
+    // au graphe racine (les écrans de classement y vivent).
+    onMapsRanking: (isTeam: Boolean) -> Unit,
+    onOpponentsRanking: (isTeam: Boolean) -> Unit,
     onDisconnect: () -> Unit,
     onDebug: () -> Unit
 ) {
@@ -148,7 +153,12 @@ fun HomeScreen(
                             }
                         ),
                         // Historique du joueur courant : remonte au graphe racine (#65).
-                        onResults = onResults
+                        onResults = onResults,
+                        // « Classement entier » des podiums Circuits / Adversaires → classement
+                        // complet SCOPÉ au périmètre courant (joueur courant en Individuelles,
+                        // équipe en Équipe) sur le graphe racine (#67 round 3).
+                        onMapsSeeAll = onMapsRanking,
+                        onOpponentsSeeAll = onOpponentsRanking
                     )
                 }
                 composable(route = "Home/Rankings") {

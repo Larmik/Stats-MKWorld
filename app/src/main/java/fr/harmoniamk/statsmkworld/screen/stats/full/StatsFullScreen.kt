@@ -127,7 +127,13 @@ private fun ColumnScope.WindowSelector(index: Int, onChange: (Int) -> Unit) {
 fun StatsFullScreen(
     viewModel: StatsFullViewModel,
     onBack: (() -> Unit)? = null,
-    onResults: (() -> Unit)? = null
+    onResults: (() -> Unit)? = null,
+    // « Classement entier » des sections Circuits / Adversaires → classement complet **scopé
+    // au périmètre actif** (#67 round 3) : le booléen `isTeam` remonte la portée courante
+    // (Individuelles = false → données du joueur ; Équipe = true → données d'équipe), pour que
+    // l'appelant navigue vers le bon classement. Optionnels (masqués si null).
+    onMapsSeeAll: ((isTeam: Boolean) -> Unit)? = null,
+    onOpponentsSeeAll: ((isTeam: Boolean) -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // 0 = Individuelles, 1 = Équipe. Sur statsfull (pas d'onglets) → toujours 0.
@@ -191,8 +197,16 @@ fun StatsFullScreen(
                     verticalArrangement = Arrangement.spacedBy(11.dp)
                 ) {
                     when (scopeIndex) {
-                        1 -> teamSections(state.value, selectors)
-                        else -> individualSections(state.value, viewModel.showTabs, onResults, selectors)
+                        1 -> teamSections(
+                            state.value, selectors,
+                            onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(true) } },
+                            onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(true) } }
+                        )
+                        else -> individualSections(
+                            state.value, viewModel.showTabs, onResults, selectors,
+                            onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(false) } },
+                            onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(false) } }
+                        )
                     }
                 }
             }
@@ -208,7 +222,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     state: StatsFullViewModel.State,
     showTabs: Boolean,
     onResults: (() -> Unit)?,
-    selectors: SectionSelectors
+    selectors: SectionSelectors,
+    onMapsSeeAll: (() -> Unit)?,
+    onOpponentsSeeAll: (() -> Unit)?
 ) {
     val stats = state.playerStats ?: return
     // 1. En-tête (seulement dans l'onglet, pas sur statsfull qui a déjà le sous-titre).
@@ -246,13 +262,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     }
     // 5. Forme & séries + Records (grille 3×2 + sélecteur de fenêtre).
     item { FormStreakCard(stats, stringResource(R.string.stats_player_form_title)) }
-    item { RecordsTilesCard(stats, selectors) }
+    // Vue JOUEUR : min/max = score PERSO brut (pas de diff — #67 vise la seule vue Équipe).
+    item { RecordsTilesCard(stats, selectors, isTeam = false) }
     // 6. Distribution des positions (sélecteur de fenêtre + barres ancrées en bas).
     item { DistributionCard(stats, selectors) }
     // 7. Podium circuits (Top3 / Flop3 sur une ligne + sélecteur occ./winrate/score).
-    item { MapsPodiumCard(stats = stats, selectors = selectors, userId = state.targetUserId) }
+    item { MapsPodiumCard(stats = stats, selectors = selectors, userId = state.targetUserId, onSeeAll = onMapsSeeAll) }
     // 8. Podium adversaires (perspective joueur).
-    item { OpponentsPodiumCard(selectors = selectors, podiums = state.playerOpponents, userId = state.targetUserId) }
+    item { OpponentsPodiumCard(selectors = selectors, podiums = state.playerOpponents, userId = state.targetUserId, onSeeAll = onOpponentsSeeAll) }
 }
 
 // =====================================================================
@@ -262,7 +279,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     state: StatsFullViewModel.State,
-    selectors: SectionSelectors
+    selectors: SectionSelectors,
+    onMapsSeeAll: (() -> Unit)?,
+    onOpponentsSeeAll: (() -> Unit)?
 ) {
     val stats = state.teamStats ?: return
     // 1. En-tête.
@@ -282,7 +301,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     item { IndicatorsCard(stats = stats, isPlayer = false, selectors = selectors) }
     // 4. Forme & séries équipe + Records (grille 3×2 + sélecteur de fenêtre).
     item { FormStreakCard(stats, stringResource(R.string.stats_team_form_title)) }
-    item { RecordsTilesCard(stats, selectors) }
+    // Vue ÉQUIPE : min/max = ÉCART de points de war (warScoreToDiff), pas le total (#67).
+    item { RecordsTilesCard(stats, selectors, isTeam = true) }
     // 4bis. Top/Bot 5→2 au GLOBAL (détail que RecordsTilesCard n'affiche pas ; ligne N=6
     //       retirée car redondante avec « Records & séries », #64) : équipe ET adversaire
     //       (complément des positions). Masqués si aucune ligne affichable.
@@ -301,9 +321,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     // 5. Contributeurs (sélecteur de fenêtre : classement recalculé par fenêtre).
     item { ContributorsCard(state.contributorsByWindow, selectors) }
     // 6. Podium circuits équipe (Top3 / Flop3 sur une ligne + sélecteur occ./winrate/score).
-    item { MapsPodiumCard(stats = stats, selectors = selectors, userId = null) }
+    item { MapsPodiumCard(stats = stats, selectors = selectors, userId = null, onSeeAll = onMapsSeeAll) }
     // 7. Podium adversaires équipe.
-    item { OpponentsPodiumCard(selectors = selectors, podiums = state.teamOpponents, userId = null) }
+    item { OpponentsPodiumCard(selectors = selectors, podiums = state.teamOpponents, userId = null, onSeeAll = onOpponentsSeeAll) }
 }
 
 // =====================================================================
@@ -336,7 +356,8 @@ private fun IndicatorsCard(stats: Stats, isPlayer: Boolean, selectors: SectionSe
                 else -> {
                     // Vue ÉQUIPE : « Score moyen » = ÉCART de points (warScoreToDiff), pas le total.
                     add(MetricTile(stringResource(R.string.form_score), window?.averageScore?.warScoreToDiff(false) ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER))
-                    add(MetricTile(stringResource(R.string.average_map_score_short), window?.averageMapScore?.toString() ?: "-", if (showDelta) window?.mapScoreDelta else null, "", DeltaPolarity.HIGHER))
+                    // « Score moyen/map » = ÉCART de points par MANCHE (trackScoreToDiff), pas le total (#67).
+                    add(MetricTile(stringResource(R.string.average_map_score_short), window?.averageMapScore?.trackScoreToDiff(false) ?: "-", if (showDelta) window?.mapScoreDelta else null, "", DeltaPolarity.HIGHER))
                 }
             }
             add(MetricTile(stringResource(R.string.maps_gagn_es), window?.mapsWonPercent?.let { "$it%" } ?: "-", if (showDelta) window?.mapsWonDelta else null, "%", DeltaPolarity.HIGHER))
@@ -429,14 +450,19 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
  * - Ligne 3 : Top 6 | Bot 6 (compte).
  */
 @Composable
-private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors) {
+private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors, isTeam: Boolean) {
     val window = stats.windowForm(selectors.recordsWindowIndex)
+    // Vue ÉQUIPE : min/max de war affichés en ÉCART de points (warScoreToDiff) ; vue JOUEUR :
+    // score perso brut (#67). Formatage local selon le mode.
+    val formatScore: (Int?) -> String = { value ->
+        value?.let { if (isTeam) it.warScoreToDiff(false) else it.toString() } ?: "-"
+    }
     StatCard(title = stringResource(R.string.records_series)) {
         WindowSelector(selectors.recordsWindowIndex, selectors.onRecordsWindowChange)
         val tiles = buildList {
             // Ligne 1 — Amplitude scindée en min | max (par fenêtre).
-            add(MetricTile(stringResource(R.string.stats_amplitude_min), window?.scoreMin?.toString() ?: "-", null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.stats_amplitude_max), window?.scoreMax?.toString() ?: "-", null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.stats_amplitude_min), formatScore(window?.scoreMin), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.stats_amplitude_max), formatScore(window?.scoreMax), null, "", DeltaPolarity.NONE))
             // Ligne 2 — records de série (par fenêtre).
             add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
             add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
@@ -459,7 +485,7 @@ private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors) {
  * score/position du joueur ; null ⇒ score d'équipe.
  */
 @Composable
-private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: String?) {
+private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: String?, onSeeAll: (() -> Unit)? = null) {
     val (top, flop) = when (selectors.trackSortIndex) {
         1 -> stats.topMapsByWinrate to stats.flopMapsByWinrate
         2 -> stats.topMapsByScore to stats.flopMapsByScore
@@ -483,7 +509,10 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
             )
         )
     }
-    StatCard(title = stringResource(R.string.best_maps_section)) {
+    StatCard(
+        title = stringResource(R.string.best_maps_section),
+        titleTrailing = onSeeAll?.let { { SeeAllLink(it) } }
+    ) {
         SortSelector(selectors.trackSortIndex, selectors.onTrackSortChange)
         Spacer(Modifier.height(11.dp))
         PodiumLabel(stringResource(R.string.stats_podium_top))
@@ -504,7 +533,8 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
 private fun OpponentsPodiumCard(
     selectors: SectionSelectors,
     podiums: StatsFullViewModel.OpponentPodiums,
-    userId: String?
+    userId: String?,
+    onSeeAll: (() -> Unit)? = null
 ) {
     val (top, flop) = when (selectors.opponentSortIndex) {
         1 -> podiums.topByWinrate to podiums.flopByWinrate
@@ -527,7 +557,10 @@ private fun OpponentsPodiumCard(
             )
         )
     }
-    StatCard(title = stringResource(R.string.best_opponents_section)) {
+    StatCard(
+        title = stringResource(R.string.best_opponents_section),
+        titleTrailing = onSeeAll?.let { { SeeAllLink(it) } }
+    ) {
         SortSelector(selectors.opponentSortIndex, selectors.onOpponentSortChange)
         Spacer(Modifier.height(11.dp))
         PodiumLabel(stringResource(R.string.stats_podium_top))
@@ -556,6 +589,18 @@ private fun ColumnScope.SortSelector(index: Int, onChange: (Int) -> Unit) {
 @Composable
 private fun PodiumLabel(text: String) {
     MKText(text = text.uppercase(), font = Fonts.NunitoBD, textColor = Colors.white66, fontSize = 11, textAlign = TextAlign.Start, modifier = Modifier.padding(bottom = 4.dp))
+}
+
+/** Lien « Classement entier → » (même style que PodiumSectionCard, #67). */
+@Composable
+private fun SeeAllLink(onClick: () -> Unit) {
+    MKText(
+        text = stringResource(R.string.stats_see_full_ranking),
+        font = Fonts.NunitoBD,
+        textColor = Colors.yellow,
+        fontSize = 12,
+        modifier = Modifier.clickable(onClick = onClick)
+    )
 }
 
 // =====================================================================

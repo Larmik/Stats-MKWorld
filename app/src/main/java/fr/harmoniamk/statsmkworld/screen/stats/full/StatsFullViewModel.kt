@@ -91,14 +91,18 @@ class StatsFullViewModel @AssistedInject constructor(
         val playerOpponents: OpponentPodiums = OpponentPodiums()
     )
 
-    /** Les 6 classements adversaires d'un podium (top/flop × occurrences/winrate/score). */
+    /** Les 6 classements adversaires d'un podium (top/flop × occurrences/winrate/score) +
+     * la **liste complète** ([all]) pour le classement entier scopé (#67 round 3). */
     data class OpponentPodiums(
         val topByCount: List<RankingItem.OpponentRanking> = listOf(),
         val flopByCount: List<RankingItem.OpponentRanking> = listOf(),
         val topByWinrate: List<RankingItem.OpponentRanking> = listOf(),
         val flopByWinrate: List<RankingItem.OpponentRanking> = listOf(),
         val topByScore: List<RankingItem.OpponentRanking> = listOf(),
-        val flopByScore: List<RankingItem.OpponentRanking> = listOf()
+        val flopByScore: List<RankingItem.OpponentRanking> = listOf(),
+        // Liste complète des adversaires (non tronquée) au périmètre de la vue — triée par
+        // le classement entier selon son propre sélecteur. `rankable` = ≥ MIN_RANKING_SAMPLE.
+        val all: List<RankingItem.OpponentRanking> = listOf()
     )
 
     // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
@@ -212,7 +216,11 @@ class StatsFullViewModel @AssistedInject constructor(
             topByWinrate = rankable.sortedByDescending { it.winrate }.take(3),
             flopByWinrate = rankable.sortedBy { it.winrate }.take(3),
             topByScore = rankable.sortedByDescending { it.stats.averagePoints }.take(3),
-            flopByScore = rankable.sortedBy { it.stats.averagePoints }.take(3)
+            flopByScore = rankable.sortedBy { it.stats.averagePoints }.take(3),
+            // Liste complète des adversaires réellement affrontés (au périmètre de la vue),
+            // pour le classement entier scopé (#67 round 3). Tri par défaut = occurrences.
+            all = all.filter { it.stats.warStats.warsPlayed > 0 }
+                .sortedByDescending { it.stats.warStats.warsPlayed }
         )
     }
 

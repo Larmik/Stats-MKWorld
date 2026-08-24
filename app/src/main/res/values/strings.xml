@@ -298,6 +298,7 @@
     <string name="wardetails_title">WAR DETAILS</string>
     <string name="wardetails_player_ranking">Player ranking</string>
     <string name="wardetails_generate_tab">Generate Tab (PDF)</string>
+    <string name="tab_share_cta">Classic Tab &amp; share</string>
     <string name="wardetails_see_opponent">See opponent</string>
     <string name="wardetails_points_suffix">pts</string>
     <!-- Stats pole — Statistics screen (ticket #25) -->
@@ -346,6 +347,7 @@
     <string name="opponent_detail_avg_diff">Avg score diff</string>
     <string name="opponent_detail_player_score">Avg score</string>
     <string name="opponent_detail_best_tracks">Tracks against them</string>
+    <string name="opponent_detail_pilots">Pilots against them</string>
     <string name="opponent_detail_history">War history</string>
     <string name="map_detail_title">Track</string>
     <string name="map_detail_header">played %1$d times</string>
@@ -357,12 +359,13 @@
     <string name="map_detail_team_score">Team score</string>
     <string name="map_detail_player_position">Avg position</string>
     <string name="map_detail_pilots">Pilots on this track</string>
+    <string name="map_detail_opponents">Opponents on this track</string>
     <string name="stats_distribution_title_generic">Position distribution</string>
     <string name="stats_top_bottom_team_title">Top / Bot team</string>
     <string name="stats_top_bottom_opponent_title">Top / Bot opponent</string>
     <string name="stats_shocks_played">Shocks played</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
-    <string name="stats_see_full_ranking">See full ranking →</string>
+    <string name="stats_see_full_ranking">Full ranking →</string>
     <string name="profile_tab_player">Player</string>
     <string name="profile_tab_team">Team</string>
     <string name="profile_information">Information</string>

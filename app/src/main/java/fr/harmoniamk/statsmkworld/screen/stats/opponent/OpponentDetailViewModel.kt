@@ -6,8 +6,10 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
@@ -55,6 +57,18 @@ class OpponentDetailViewModel @AssistedInject constructor(
         ): OpponentDetailViewModel
     }
 
+    /** Un pilote de l'équipe classé face à cet adversaire (12p). */
+    data class PilotRanking(
+        val player: PlayerEntity,
+        // Score perso moyen (points) face à l'adversaire — critère de TRI et valeur affichée.
+        val averageScore: Int,
+        // Position moyenne réelle (1..12) face à l'adversaire — info secondaire affichée.
+        val averagePosition: Int,
+        // Nombre de manches courues face à l'adversaire (seuil MIN_RANKING_SAMPLE).
+        val played: Int,
+        val winrate: Int
+    )
+
     data class State(
         val loading: Boolean = true,
         // Mode courant : true = Individuel (joueur courant), false = Équipe.
@@ -82,6 +96,9 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val allTracks: List<TrackStats> = listOf(),
         // Stats de manche (Top/Bot 2→6, distribution) scopées à l'adversaire et au mode.
         val mapStats: MapStats? = null,
+        // Classement des pilotes (MEMBRES) ayant joué contre cet adversaire (du meilleur au
+        // pire score perso moyen) — affiché en mode ÉQUIPE uniquement (#67).
+        val pilots: List<PilotRanking> = listOf(),
         // Historique des wars face à eux (plus récente en premier).
         val history: List<WarDetails> = listOf()
     )
@@ -160,6 +177,10 @@ class OpponentDetailViewModel @AssistedInject constructor(
             // logique que l'écran Classements (rule 16). Score = perso en indiv, équipe sinon.
             val sortedTracks = stats.maps.sortedWith(trackComparator(sort, userId != null))
 
+            // Classement des pilotes (MEMBRES) face à cet adversaire — indépendant du mode
+            // (classement par pilote), affiché en mode ÉQUIPE uniquement côté UI (#67).
+            val pilots = computePilots(chronological)
+
             _state.value.copy(
                 loading = false,
                 isIndiv = indiv,
@@ -177,6 +198,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 flopTracks = sortedTracks.takeLast(3).reversed(),
                 allTracks = sortedTracks,
                 mapStats = mapStats,
+                pilots = pilots,
                 history = chronological.reversed()
             )
         }
@@ -191,6 +213,59 @@ class OpponentDetailViewModel @AssistedInject constructor(
     /** Change le tri des circuits (index du sélecteur = ordre de `SortType.entries`). */
     fun onTracksSortSelected(index: Int) {
         tracksSort.value = SortType.entries.getOrElse(index) { SortType.COUNT }
+    }
+
+    /**
+     * Classement des pilotes de l'équipe face à cet adversaire — **calculé UNIQUEMENT sur les
+     * wars jouées contre cet adversaire** ([wars] est déjà filtré `hasTeam(teamId)` + 12p, cf.
+     * #67 round 3). Pour CHAQUE pilote, on n'agrège que SES manches dans ces wars :
+     * - `played` = **nombre de wars** (distinctes) vs cet adversaire où le pilote a couru ;
+     * - `winrate` = manches en top 6 (points > 6) / total de SES manches vs cet adversaire ;
+     * - `averagePosition` = position moyenne sur SES manches vs cet adversaire ;
+     * - `averageScore` = score perso moyen (critère de tri).
+     *
+     * **Alliés exclus** (rosterId « -1 ») : membres uniquement. **Seuil** [Stats.MIN_RANKING_SAMPLE]
+     * (en manches) aligné sur les autres rankings. Rule 32 : logique mono-consommateur, non extraite.
+     */
+    private suspend fun computePilots(wars: List<WarDetails>): List<PilotRanking> {
+        if (wars.isEmpty()) return listOf()
+        // Positions du pilote (manches) ET nb de wars distinctes, agrégées SUR CES WARS
+        // (déjà restreintes à l'adversaire) — pas de fuite hors-adversaire possible.
+        val positionsByPlayer = mutableMapOf<String, MutableList<Int>>()
+        val warsByPlayer = mutableMapOf<String, Int>()
+        wars.forEach { war ->
+            val playersInWar = mutableSetOf<String>()
+            war.warTracks.forEach { track ->
+                track.track.positions.forEach { position ->
+                    positionsByPlayer.getOrPut(position.playerId) { mutableListOf() }.add(position.position)
+                    playersInWar.add(position.playerId)
+                }
+            }
+            playersInWar.forEach { playerId -> warsByPlayer[playerId] = (warsByPlayer[playerId] ?: 0) + 1 }
+        }
+        if (positionsByPlayer.isEmpty()) return listOf()
+
+        val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
+        return positionsByPlayer
+            .mapNotNull { (playerId, positions) ->
+                val player = players.firstOrNull { it.id == playerId } ?: return@mapNotNull null
+                // Exclure les alliés (rosterId sentinelle « -1 ») — membres uniquement.
+                if (player.rosterId == "-1") return@mapNotNull null
+                if (positions.size < Stats.MIN_RANKING_SAMPLE) return@mapNotNull null
+                val averageScore = positions.sumOf { it.positionToPoints(false) } / positions.size
+                val averagePosition = positions.sum() / positions.size
+                val wonCount = positions.count { it.positionToPoints(false) > 6 }
+                val winrate = (wonCount * 100) / positions.size
+                PilotRanking(
+                    player = player,
+                    averageScore = averageScore,
+                    averagePosition = averagePosition,
+                    // Nombre de WARS vs cet adversaire (distinctes) où le pilote a couru.
+                    played = warsByPlayer[playerId] ?: 0,
+                    winrate = winrate
+                )
+            }
+            .sortedByDescending { it.averageScore }
     }
 
     /**
