@@ -7,6 +7,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -64,6 +65,17 @@ class MapDetailViewModel @AssistedInject constructor(
         val winrate: Int
     )
 
+    /** Un adversaire rencontré sur ce circuit (12p, opposant unique). */
+    data class OpponentRanking(
+        val team: TeamEntity,
+        // Score moyen de l'ÉQUIPE sur le circuit face à cet adversaire — critère de TRI et
+        // valeur affichée (via `trackScoreToDiff` à l'affichage).
+        val averageTeamScore: Int,
+        // Nombre de manches jouées sur ce circuit contre cet adversaire (seuil MIN_RANKING_SAMPLE).
+        val played: Int,
+        val winrate: Int
+    )
+
     data class State(
         val loading: Boolean = true,
         val isIndiv: Boolean = false,
@@ -77,7 +89,10 @@ class MapDetailViewModel @AssistedInject constructor(
         val shockCount: Int = 0,
         // Classement des pilotes sur ce circuit (du meilleur au pire score moyen), MEMBRES
         // uniquement (alliés exclus).
-        val pilots: List<PilotRanking> = listOf()
+        val pilots: List<PilotRanking> = listOf(),
+        // Classement des adversaires rencontrés sur ce circuit (du meilleur au pire score
+        // moyen de l'équipe face à eux) — indépendant du mode.
+        val opponents: List<OpponentRanking> = listOf()
     )
 
     private val _state = MutableStateFlow(State(isIndiv = initialUserId != null))
@@ -132,7 +147,10 @@ class MapDetailViewModel @AssistedInject constructor(
                     shockCount = mapStats.shockCount,
                     // Classement des pilotes : toutes les manches, MEMBRES uniquement (alliés
                     // exclus), indépendant du mode (classement par pilote).
-                    pilots = computePilots(allTrackDetails)
+                    pilots = computePilots(allTrackDetails),
+                    // Classement des adversaires rencontrés sur ce circuit (toutes les manches),
+                    // indépendant du mode (classement par adversaire).
+                    opponents = computeOpponents(allTrackDetails)
                 )
             }
         }
@@ -179,5 +197,45 @@ class MapDetailViewModel @AssistedInject constructor(
                 )
             }
             .sortedByDescending { it.averageScore }
+    }
+
+    /**
+     * Classement des adversaires rencontrés sur ce circuit (12p, opposant unique), **du
+     * meilleur au pire score moyen d'équipe** face à eux — critère de tri ET valeur affichée
+     * (via `trackScoreToDiff` à l'affichage, transparence). Winrate = manches gagnées
+     * (`trackOutcome > 0`) / total. Nom/tag du roster + logo de l'équipe parente résolus via
+     * le cache local (rule 12, adversaire non résolu dégradé en « Équipe inconnue »).
+     * **Seuil** [Stats.MIN_RANKING_SAMPLE] aligné sur le classement pilotes.
+     */
+    private suspend fun computeOpponents(details: List<MapDetails>): List<OpponentRanking> {
+        // 12p : chaque war a un opposant unique. On groupe les manches du circuit par opposant.
+        val tracksByOpponent = details
+            .mapNotNull { detail -> detail.war.war.teamOpponent.firstOrNull()?.let { it to detail.warTrack } }
+            .groupBy({ it.first }, { it.second })
+        if (tracksByOpponent.isEmpty()) return listOf()
+
+        return tracksByOpponent
+            .mapNotNull { (opponentId, tracks) ->
+                if (tracks.size < Stats.MIN_RANKING_SAMPLE) return@mapNotNull null
+                val averageTeamScore = tracks.sumOf { it.teamScore } / tracks.size
+                val wonCount = tracks.count { it.trackOutcome() > 0 }
+                val winrate = (wonCount * 100) / tracks.size
+                // Rule 12 : nom/tag du roster, logo de l'équipe parente ; non résolu → dégradé.
+                val team = databaseRepository.getTeam(opponentId)?.let { resolved ->
+                    val roster = resolved.rosters.firstOrNull { it.id == opponentId }
+                    resolved.copy(
+                        id = opponentId,
+                        name = roster?.name ?: resolved.name,
+                        tag = roster?.tag ?: resolved.tag
+                    )
+                } ?: TeamEntity(id = opponentId, name = "Équipe inconnue", tag = "???", color = null, logo = null)
+                OpponentRanking(
+                    team = team,
+                    averageTeamScore = averageTeamScore,
+                    played = tracks.size,
+                    winrate = winrate
+                )
+            }
+            .sortedByDescending { it.averageTeamScore }
     }
 }

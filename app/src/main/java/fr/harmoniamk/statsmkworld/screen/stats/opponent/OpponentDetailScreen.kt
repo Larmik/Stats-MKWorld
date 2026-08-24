@@ -38,12 +38,15 @@ import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
+import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
+import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 import fr.harmoniamk.statsmkworld.ui.stats.BalanceCard
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumSectionCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
+import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.SortType
@@ -71,7 +74,8 @@ fun OpponentDetailScreen(
     viewModel: OpponentDetailViewModel,
     onBack: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
-    onTracksRanking: () -> Unit
+    onTracksRanking: () -> Unit,
+    onPilotsRanking: () -> Unit
 ) {
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -146,6 +150,16 @@ fun OpponentDetailScreen(
                                 // Sélecteur de tri (sur carte sombre → onDark).
                                 TracksSortSelector(state.tracksSort, onDark = true, onSelect = viewModel::onTracksSortSelected)
                             }
+                        )
+                    }
+                    // 5bis. Pilotes contre eux (podium Top3/Flop3 par score perso moyen) —
+                    //       mode ÉQUIPE uniquement (#67, modèle de « Circuits contre eux »).
+                    if (!state.isIndiv && state.pilots.isNotEmpty()) item {
+                        PodiumSectionCard(
+                            title = stringResource(R.string.opponent_detail_pilots),
+                            top = state.pilots.take(3).map { it.toPodiumEntry() },
+                            flop = state.pilots.takeLast(3).reversed().map { it.toPodiumEntry() },
+                            onSeeAll = onPilotsRanking
                         )
                     }
                     // 6. Sections détaillées mutualisées (mêmes calculs que StatsFullScreen,
@@ -314,16 +328,19 @@ internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int)
 }
 
 /**
- * Circuit → entrée de podium (illustration + nb joué + winrate + score). Score = écart
- * d'équipe (`trackScoreToDiff`) en vue équipe, points perso en vue individuelle — même
- * convention que le podium circuits de `StatsFullScreen`. Partagé avec le classement
- * complet [OpponentTracksRankingScreen].
+ * Circuit → entrée de podium (illustration + nb joué + winrate + score/position). En vue
+ * ÉQUIPE : écart d'équipe (`trackScoreToDiff`), libellé « Score ». En vue INDIVIDUELLE :
+ * **position moyenne** (points perso convertis via `pointsToPosition`), libellé « Position
+ * moyenne » — même convention que le podium circuits de `StatsFullScreen` et le podium
+ * pilotes de la fiche circuit (#67, correction du libellé/valeur en indiv). Partagé avec
+ * le classement complet [OpponentTracksRankingScreen].
  */
 internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
     val map = map?.firstOrNull()
-    val scoreValue = when {
-        isIndiv -> playerScore?.toString() ?: "-"
-        else -> teamScore?.trackScoreToDiff(false) ?: "-"
+    val (scoreLabel, scoreValue) = when {
+        isIndiv -> R.string.average_position_short to
+                (playerScore.pointsToPosition(false).firstOrNull()?.toString() ?: "-")
+        else -> R.string.form_score to (teamScore?.trackScoreToDiff(false) ?: "-")
     }
     return PodiumEntry(
         labelRes = map?.label,
@@ -331,7 +348,26 @@ internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
         stats = listOf(
             R.string.times_played_short to totalPlayed.toString(),
             R.string.form_winrate to "${winRate ?: 0}%",
-            R.string.form_score to scoreValue
+            scoreLabel to scoreValue
         )
     )
 }
+
+/**
+ * Pilote → entrée de podium (photo/initiales + score perso moyen + position moyenne + nb
+ * joué). Modèle identique au podium pilotes de la fiche circuit (#67). Partagé entre la
+ * fiche (podium Top3/Flop3) et le classement complet [OpponentPilotsRankingScreen].
+ */
+internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
+    PodiumEntry(
+        name = player.name,
+        initials = initialsOf(player.name),
+        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales sur pastille colorée.
+        avatar = player.avatar,
+        avatarColor = playerAvatarColor(player.id),
+        stats = listOf(
+            R.string.form_score to averageScore.toString(),
+            R.string.average_position_short to averagePosition.toString(),
+            R.string.times_played_short to played.toString()
+        )
+    )

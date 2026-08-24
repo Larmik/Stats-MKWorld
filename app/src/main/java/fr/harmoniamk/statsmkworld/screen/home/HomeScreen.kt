@@ -26,6 +26,7 @@ import fr.harmoniamk.statsmkworld.screen.profile.ProfileScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
+import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingTab
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListViewModel
@@ -148,16 +149,30 @@ fun HomeScreen(
                             }
                         ),
                         // Historique du joueur courant : remonte au graphe racine (#65).
-                        onResults = onResults
+                        onResults = onResults,
+                        // « Voir en entier » des podiums Circuits / Adversaires → pôle
+                        // Classements avec l'onglet correspondant présélectionné (#67).
+                        onMapsSeeAll = {
+                            navController.currentBackStackEntry?.savedStateHandle?.set("rankingsTab", RankingTab.TRACKS)
+                            navController.navigate("Home/Rankings")
+                        },
+                        onOpponentsSeeAll = {
+                            navController.currentBackStackEntry?.savedStateHandle?.set("rankingsTab", RankingTab.OPPONENTS)
+                            navController.navigate("Home/Rankings")
+                        }
                     )
                 }
                 composable(route = "Home/Rankings") {
                     // Pôle Classements (#26) : écran unique à sous-onglets Joueurs /
                     // Adversaires / Circuits (plus de menu intermédiaire). Les lignes
-                    // mènent aux fiches statistiques via onStats.
+                    // mènent aux fiches statistiques via onStats. Un onglet initial peut
+                    // être demandé par « Voir en entier » du pôle Stats (#67).
+                    val initialTab = navController.previousBackStackEntry
+                        ?.savedStateHandle?.get<RankingTab>("rankingsTab")
                     StatsRankingScreen(
                         viewModel = hiltViewModel(key = "rankings"),
-                        onStats = onStats
+                        onStats = onStats,
+                        initialTab = initialTab
                     )
                 }
                 composable(route = "Home/Profile") {

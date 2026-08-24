@@ -298,6 +298,7 @@
     <string name="wardetails_title">DÉTAILS DE LA WAR</string>
     <string name="wardetails_player_ranking">Classement joueurs</string>
     <string name="wardetails_generate_tab">Générer le Tab (PDF)</string>
+    <string name="tab_share_cta">Tab classique &amp; partager</string>
     <string name="wardetails_see_opponent">Voir l\'adversaire</string>
     <string name="wardetails_points_suffix">pts</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
@@ -346,6 +347,7 @@
     <string name="opponent_detail_avg_diff">Différence moy.</string>
     <string name="opponent_detail_player_score">Score moyen</string>
     <string name="opponent_detail_best_tracks">Circuits contre eux</string>
+    <string name="opponent_detail_pilots">Pilotes contre eux</string>
     <string name="opponent_detail_history">Historique des wars</string>
     <string name="map_detail_title">Circuit</string>
     <string name="map_detail_header">joué %1$d fois</string>
@@ -357,6 +359,7 @@
     <string name="map_detail_team_score">Score équipe</string>
     <string name="map_detail_player_position">Position moy.</string>
     <string name="map_detail_pilots">Pilotes sur ce circuit</string>
+    <string name="map_detail_opponents">Adversaires sur ce circuit</string>
     <string name="stats_distribution_title_generic">Répartition des positions</string>
     <string name="stats_top_bottom_team_title">Top / Bot équipe</string>
     <string name="stats_top_bottom_opponent_title">Top / Bot adversaire</string>

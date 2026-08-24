@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
@@ -49,7 +50,8 @@ import kotlinx.coroutines.FlowPreview
 fun MapDetailScreen(
     viewModel: MapDetailViewModel,
     onBack: () -> Unit,
-    onPilotsRanking: () -> Unit
+    onPilotsRanking: () -> Unit,
+    onOpponentsRanking: () -> Unit
 ) {
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -108,7 +110,8 @@ fun MapDetailScreen(
                                 tiles = listOf(
                                     StatTile(
                                         label = stringResource(R.string.map_detail_team_score),
-                                        value = state.teamScore.toString()
+                                        // Score équipe affiché en ÉCART de points par manche (#67).
+                                        value = state.teamScore.trackScoreToDiff(false)
                                     ),
                                     StatTile(
                                         label = stringResource(R.string.map_detail_player_position),
@@ -131,6 +134,16 @@ fun MapDetailScreen(
                             top = state.pilots.take(3).map { it.toPodiumEntry() },
                             flop = state.pilots.takeLast(3).reversed().map { it.toPodiumEntry() },
                             onSeeAll = onPilotsRanking
+                        )
+                    }
+                    // 6. Classement des adversaires rencontrés sur ce circuit (#67) — modèle
+                    //    identique à la section pilotes, indépendant du mode.
+                    if (state.opponents.isNotEmpty()) item {
+                        PodiumSectionCard(
+                            title = stringResource(R.string.map_detail_opponents),
+                            top = state.opponents.take(3).map { it.toPodiumEntry() },
+                            flop = state.opponents.takeLast(3).reversed().map { it.toPodiumEntry() },
+                            onSeeAll = onOpponentsRanking
                         )
                     }
                     item { Spacer(Modifier.height(90.dp)) }
@@ -157,6 +170,24 @@ internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
             R.string.form_score to averageScore.toString(),
             R.string.average_position_short to averagePosition.toString(),
             R.string.times_played_short to played.toString()
+        )
+    )
+
+/**
+ * Adversaire → entrée de podium (logo équipe + nb joué + winrate + écart d'équipe). Score
+ * d'équipe affiché en ÉCART de points par manche (`trackScoreToDiff`) — même convention que
+ * les circuits/adversaires ailleurs (#67). Partagé entre la fiche (podium Top3/Flop3) et le
+ * classement complet [MapOpponentsRankingScreen].
+ */
+internal fun MapDetailViewModel.OpponentRanking.toPodiumEntry(): PodiumEntry =
+    PodiumEntry(
+        // Rule 12 : nom du roster + logo de l'équipe parente (adversaire non résolu déjà dégradé).
+        name = team.name,
+        logo = team.logo,
+        stats = listOf(
+            R.string.times_played_short to played.toString(),
+            R.string.form_winrate to "$winrate%",
+            R.string.form_score to averageTeamScore.trackScoreToDiff(false)
         )
     )
 

@@ -52,10 +52,19 @@ import fr.harmoniamk.statsmkworld.ui.stats.podiumRows
 @Composable
 fun StatsRankingScreen(
     viewModel: StatsRankingViewModel,
-    onStats: (StatsType) -> Unit
+    onStats: (StatsType) -> Unit,
+    // Onglet à présélectionner à l'ouverture (« Voir en entier » depuis les podiums Stats,
+    // #67) ; null = comportement par défaut (onglet Joueurs). Appliqué une seule fois.
+    initialTab: RankingTab? = null
 ) {
     val state by viewModel.state.collectAsState()
     val is24p = state.is24PEnabled == true
+
+    // Présélection de l'onglet demandé au premier affichage uniquement (rule 11 : bascule
+    // d'état interne, pas de re-navigation).
+    androidx.compose.runtime.LaunchedEffect(initialTab) {
+        initialTab?.let { viewModel.onTabSelected(it.ordinal) }
+    }
 
     // padding bas = hauteur de la bottom bar des 5 pôles, pour que le dernier élément de
     // la grille reste visible au-dessus d'elle (même valeur/approche que Accueil/Stats : 90.dp).
