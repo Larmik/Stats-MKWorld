@@ -48,6 +48,8 @@ import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
+import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
+import fr.harmoniamk.statsmkworld.screen.warList.WarListViewModel
 import fr.harmoniamk.statsmkworld.worker.MKWorkerBuilder
 import fr.harmoniamk.statsmkworld.worker.UpdateDataWorker
 
@@ -105,10 +107,12 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.navigate("Home/WarDetails")
                 },
                 onStats = { type ->
-                    // Fiches dédiées Adversaire (#27) et Circuit (#27) ; les autres portées
-                    // (joueur/équipe) restent sur l'écran Stats générique. Le userId (nullable)
+                    // Fiches dédiées Joueur (#65 : StatsFullScreen centré sur le joueur cliqué,
+                    // sans sélecteur Indiv/Équipe), Adversaire (#27) et Circuit (#27) ; les autres
+                    // portées (ex. équipe) restent sur l'écran Stats générique. Le userId (nullable)
                     // sème le mode initial Indiv/Équipe de la fiche (rule 11) ; « null » = Équipe.
                     when (type) {
+                        is StatsType.PlayerStats -> navController.navigate("Statsfull/${type.userId}")
                         is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}/${type.userId ?: "null"}")
                         is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}/${type.userId ?: "null"}")
                         else -> {
@@ -118,6 +122,10 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     }
                 },
                 onSearch = { navController.navigate("Home/Registry") },
+                // Lien « Résultats → » du pôle Stats (joueur courant) : historique filtré
+                // sur « me », poussé sur le GRAPHE RACINE (route accessible depuis ici),
+                // évitant la route interne au NavHost de HomeScreen (#65).
+                onResults = { navController.navigate("Home/WarList/me") },
                 onDisconnect = { navController.navigate("Signup") },
                 onDebug = { navController.navigate("Player/Profile/Debug") }
             )
@@ -265,7 +273,32 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     }
                 ),
                 onBack = { navController.popBackStack() },
-                onResults = { navController.navigate("Home/WarList") }
+                // « Résultats → » : historique filtré sur CE joueur (#65).
+                onResults = { navController.navigate("Home/WarList/$userId") }
+            )
+        }
+
+        // Historique des wars FILTRÉ sur un joueur (#65), poussé sur le graphe racine
+        // (au-dessus du pôle) → back = retour à StatsFullScreen (rule 14). `userId` = id
+        // du joueur, ou « me » = joueur courant (résolu par le VM).
+        composable(
+            route = "Home/WarList/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) {
+            val userId = it.arguments?.getString("userId")
+            WarListScreen(
+                viewModel = hiltViewModel(
+                    key = "warlist-$userId",
+                    creationCallback = { factory: WarListViewModel.Factory ->
+                        factory.create(userId = userId)
+                    }
+                ),
+                onWarDetailsClick = { warDetails ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("war", warDetails)
+                    navController.navigate("Home/WarDetails")
+                },
+                onAddWar = { navController.navigate("Home/AddWar/$it") },
+                onBack = { navController.popBackStack() }
             )
         }
 

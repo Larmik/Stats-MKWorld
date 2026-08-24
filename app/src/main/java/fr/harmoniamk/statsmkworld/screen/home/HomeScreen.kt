@@ -28,6 +28,7 @@ import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
+import fr.harmoniamk.statsmkworld.screen.warList.WarListViewModel
 import fr.harmoniamk.statsmkworld.screen.welcome.WelcomeScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 
@@ -52,6 +53,9 @@ fun HomeScreen(
     onWarDetailsClick: (WarDetails) -> Unit,
     onStats: (StatsType) -> Unit,
     onSearch: () -> Unit,
+    // Lien « Résultats → » du pôle Stats (joueur courant) : remonte au graphe racine
+    // pour ouvrir l'historique filtré sur « me » (#65) — évite le NavHost interne.
+    onResults: () -> Unit,
     onDisconnect: () -> Unit,
     onDebug: () -> Unit
 ) {
@@ -120,10 +124,16 @@ fun HomeScreen(
                     )
                 }
                 composable(route = "Home/WarList") {
+                    // Pôle Wars : historique complet de l'équipe (pas de filtre joueur).
                     WarListScreen(
+                        viewModel = hiltViewModel(
+                            key = "warlist-all",
+                            creationCallback = { factory: WarListViewModel.Factory ->
+                                factory.create(userId = null)
+                            }
+                        ),
                         onWarDetailsClick = onWarDetailsClick,
-                        onAddWar = onAddWar,
-                        onCurrentWar = onCurrentWar
+                        onAddWar = onAddWar
                     )
                 }
                 composable(route = "Home/Stats") {
@@ -137,7 +147,8 @@ fun HomeScreen(
                                 factory.create(userId = null, showTabs = true)
                             }
                         ),
-                        onResults = { navController.navigate("Home/WarList") }
+                        // Historique du joueur courant : remonte au graphe racine (#65).
+                        onResults = onResults
                     )
                 }
                 composable(route = "Home/Rankings") {

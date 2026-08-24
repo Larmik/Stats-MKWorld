@@ -31,7 +31,6 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKChip
 import fr.harmoniamk.statsmkworld.ui.MKText
-import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
@@ -58,18 +57,24 @@ private fun WarDetails.matches(filter: WarFilter): Boolean {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WarListScreen(
-    viewModel: WarListViewModel = hiltViewModel(),
+    viewModel: WarListViewModel,
     onWarDetailsClick: (WarDetails) -> Unit,
     onAddWar: (Boolean) -> Unit,
-    onCurrentWar: () -> Unit
+    onBack: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // Filtre de résultat : pur état UI, survit à la rotation (rule 11).
     var filter by rememberSaveable { mutableStateOf(WarFilter.ALL) }
 
+    // Sous-titre : « wars de <joueur> » si l'historique est filtré sur un joueur (#65),
+    // sinon le décompte habituel « N wars ».
+    val subtitle = state.value.playerName
+        ?.let { stringResource(R.string.wars_of_player, it, state.value.warCount) }
+        ?: stringResource(R.string.wars_count, state.value.warCount)
     BaseScreen(
         title = stringResource(R.string.wars),
-        subtitle = stringResource(R.string.wars_count, state.value.warCount),
+        subtitle = subtitle,
+        onBack = onBack,
         // « Créer une war » dans l'action droite du header (#50), affichée UNIQUEMENT
         // s'il n'y a pas de war en cours (même condition qu'auparavant, juste déplacée).
         onSearch = { onAddWar(false) }.takeIf { state.value.currentWar == null },
@@ -81,20 +86,11 @@ fun WarListScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(11.dp)
         ) {
-            // 1. War en cours → bannière « Reprendre » (le CTA « Créer une war » est
-            //    désormais dans l'action droite du header, masqué si une war est en cours).
-            state.value.currentWar?.let { war ->
-                item {
-                    CurrentWarBanner(
-                        war = war,
-                        withPlayers = false,
-                        callToAction = stringResource(R.string.war_resume, war.tracks.size),
-                        onClick = onCurrentWar
-                    )
-                }
-            }
+            // La war en cours n'apparaît PLUS sur l'historique (bannière « Reprendre »
+            // retirée, #65) : l'écran ne liste que les wars terminées. Le bouton « Créer
+            // une war » du header reste masqué tant qu'une war est en cours (voir plus haut).
 
-            // 2. Chips filtre Tous / Victoires / Nuls / Défaites.
+            // 1. Chips filtre Tous / Victoires / Nuls / Défaites.
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     WarFilter.entries.forEach { entry ->
@@ -107,7 +103,7 @@ fun WarListScreen(
                 }
             }
 
-            // 3. Historique groupé par mois (sticky headers), filtré par résultat.
+            // 2. Historique groupé par mois (sticky headers), filtré par résultat.
             state.value.wars.forEach { (month, wars) ->
                 val filtered = wars.filter { it.matches(filter) }
                 if (filtered.isNotEmpty()) {
