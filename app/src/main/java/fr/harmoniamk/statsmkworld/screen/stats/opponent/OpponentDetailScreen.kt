@@ -354,9 +354,11 @@ internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
 }
 
 /**
- * Pilote → entrée de podium (photo/initiales + score perso moyen + position moyenne + nb
- * joué). Modèle identique au podium pilotes de la fiche circuit (#67). Partagé entre la
- * fiche (podium Top3/Flop3) et le classement complet [OpponentPilotsRankingScreen].
+ * Pilote → entrée de podium (photo/initiales + **Nb joué / Winrate / Position moy.**), calculé
+ * UNIQUEMENT sur les manches jouées contre CET adversaire (`computePilots` scopé aux wars vs
+ * l'opposant). Trois métriques alignées sur le podium pilotes de la fiche circuit (#67 retour) —
+ * pas de score. Partagé entre la fiche (podium Top3/Flop3) et le classement complet
+ * [OpponentPilotsRankingScreen].
  */
 internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
@@ -366,8 +368,8 @@ internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
-            R.string.form_score to averageScore.toString(),
-            R.string.average_position_short to averagePosition.toString(),
-            R.string.times_played_short to played.toString()
+            R.string.times_played_short to played.toString(),
+            R.string.form_winrate to "$winrate%",
+            R.string.average_position_short to averagePosition.toString()
         )
     )

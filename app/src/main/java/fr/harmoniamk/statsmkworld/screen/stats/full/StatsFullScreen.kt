@@ -581,7 +581,7 @@ private fun PodiumLabel(text: String) {
     MKText(text = text.uppercase(), font = Fonts.NunitoBD, textColor = Colors.white66, fontSize = 11, textAlign = TextAlign.Start, modifier = Modifier.padding(bottom = 4.dp))
 }
 
-/** Lien « Voir le classement en entier → » (même style que PodiumSectionCard, #67). */
+/** Lien « Classement entier → » (même style que PodiumSectionCard, #67). */
 @Composable
 private fun SeeAllLink(onClick: () -> Unit) {
     MKText(

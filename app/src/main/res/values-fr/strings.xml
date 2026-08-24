@@ -365,7 +365,7 @@
     <string name="stats_top_bottom_opponent_title">Top / Bot adversaire</string>
     <string name="stats_shocks_played">Shocks joués</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
-    <string name="stats_see_full_ranking">Voir le classement en entier →</string>
+    <string name="stats_see_full_ranking">Classement entier →</string>
     <string name="profile_tab_player">Joueur</string>
     <string name="profile_tab_team">Équipe</string>
     <string name="profile_information">Informations</string>
