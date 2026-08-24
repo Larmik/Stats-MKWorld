@@ -12,6 +12,8 @@ import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.local.MapDetails
+import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -77,6 +79,10 @@ class StatsFullViewModel @AssistedInject constructor(
         // Stats (12p uniquement — 24p retiré, ticket #37).
         val playerStats: Stats? = null,
         val teamStats: Stats? = null,
+        // Tables Top/Bot 2→6 au GLOBAL (toutes manches, vue équipe) : équipe ET adversaire
+        // (complément des positions), alimentées par un MapStats global (userId null, 12p).
+        // Réutilisées par les StatCard « Top/Bot équipe » / « Top/Bot adversaire ».
+        val teamMapStats: MapStats? = null,
         // Vue Équipe : contributeurs du roster par fenêtre (0 = all-time, 1 = 5, 2 = 10).
         val contributorsByWindow: Map<Int, List<Contributor>> = mapOf(),
         // Classements adversaires top3/flop3 (occurrences, winrate ET score), au
@@ -141,6 +147,16 @@ class StatsFullViewModel @AssistedInject constructor(
                 .withFullStats(databaseRepository, is24p = is24p)
                 .firstOrNull()
 
+            // MapStats GLOBAL (toutes manches, vue équipe = userId null) : fournit les tables
+            // Top/Bot 2→6 d'équipe ET adversaire (détail 2→6 que RecordsTilesCard n'a pas).
+            val teamMapStats = MapStats(
+                list = teamWarsMode.flatMap { war ->
+                    war.warTracks.map { track -> MapDetails(war = war, warTrack = track, position = null) }
+                },
+                userId = null,
+                is24p = is24p
+            )
+
             // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10).
             val contributorsByWindow = computeContributorsByWindow(teamWarsMode, targetUserId)
 
@@ -160,6 +176,7 @@ class StatsFullViewModel @AssistedInject constructor(
                 targetUserId = targetUserId,
                 playerStats = playerStats,
                 teamStats = teamStats,
+                teamMapStats = teamMapStats,
                 contributorsByWindow = contributorsByWindow,
                 teamOpponents = teamOpponents,
                 playerOpponents = playerOpponents

@@ -672,6 +672,32 @@ class MapStats(
         }
     }
 
+    // Tables ADVERSAIRE (12p uniquement, vue équipe) : les 6 positions adverses d'une
+    // manche sont le COMPLÉMENT des 6 positions de l'équipe hôte sur 1..12. On applique
+    // exactement la même logique de comptage que les tables d'équipe sur ces positions
+    // complémentaires. Neutralisées à 0 en vue individuelle (pas de notion d'adversaire)
+    // ET en 24p (le complément 1..12 n'a pas de sens hors 12p).
+    val opponentTopsTable = when {
+        isIndiv || is24p -> (6 downTo 2).map { "Top $it" to 0 }
+        else -> (6 downTo 2).map { n ->
+            "Top $n" to list.count { detail ->
+                val oppPositions = (1..12) - detail.warTrack.track.positions.map { it.position }.toSet()
+                oppPositions.count { pos -> pos <= n } == n
+            }
+        }
+    }
+    val opponentBottomsTable = when {
+        isIndiv || is24p -> (6 downTo 2).map { "Bot $it" to 0 }
+        else -> (6 downTo 2).map { n ->
+            // seuil bas : Bot 6 -> >=7, Bot 5 -> >=8, … Bot 2 -> >=11
+            val threshold = 13 - n
+            "Bot $n" to list.count { detail ->
+                val oppPositions = (1..12) - detail.warTrack.track.positions.map { it.position }.toSet()
+                oppPositions.count { pos -> pos >= threshold } == n
+            }
+        }
+    }
+
     // Tables individuelles : nombre de manches où le joueur a fini à la position N.
     val indivTopsTable = (1..6).map { n ->
         n.toString() to when {

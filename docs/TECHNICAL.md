@@ -603,11 +603,15 @@ adversaires** dédié reste alimenté par `opponentRankList`/`playerOpponentRank
 | `averagePlayerPosLabel` | unique → `"N"` ; sinon `"first - last"` | `playerPosition` | Écran Statistiques de circuit (mode joueur) : `MKWarDetailsStatsView` « Position moyenne » (fallback `mapStats`, ligne 90) |
 | `topsTable` | équipe : `count { positions.count { pos ≤ N } == N }` pour N=6..2 ; indiv : `0` | `WarPosition.position` | Écran Statistiques de circuit : `MKTopBottomCell(indiv=false)` colonne « Tops » (affiché seulement si au moins une valeur > 0) |
 | `bottomsTable` | équipe : `count { positions.count { pos ≥ 13−N } == N }` pour N=6..2 (Bot 6 → ≥ 7 … Bot 2 → ≥ 11) ; indiv : `0` | `WarPosition.position` | Écran Statistiques de circuit : `MKTopBottomCell(indiv=false)` colonne « Bottoms » |
+| `opponentTopsTable` | équipe 12p : positions adverses = **complément** `(1..12) − teamPositions` par manche, puis `count { oppPositions.count { pos ≤ N } == N }` pour N=6..2 ; indiv **ou 24p** : `0` | `WarPosition.position` (complément) | Section **« Top/Bot adversaire »** (`ui/stats/MapStatsSections.kt`) — fiches Adversaire/Circuit ET page Stats équipe (`StatsFullScreen.teamSections`) |
+| `opponentBottomsTable` | idem, `count { oppPositions.count { pos ≥ 13−N } == N }` pour N=6..2 ; indiv **ou 24p** : `0` | `WarPosition.position` (complément) | idem — colonne « Bottoms » de « Top/Bot adversaire » |
 | `indivTopsTable` | indiv : `count { positions.singleOrNull { pos == N }?.playerId == userId }` pour N=1..6 ; équipe : `0` | `WarPosition` du `userId` | Écran Statistiques de circuit (mode joueur) : `MKTopBottomCell(indiv=true)` colonne « Tops » (positions 1→6) |
 | `indivBottomsTable` | idem pour N=7..12 | `WarPosition` du `userId` | Écran Statistiques de circuit (mode joueur) : `MKTopBottomCell(indiv=true)` colonne « Bottoms » (positions 7→12) |
 | `shockCount` | `Σ warTrack.track.shocks.filter { !isIndiv \|\| playerId == userId }.count` | `Shock` | Écran Statistiques de circuit : `MKWarDetailsStatsView` « Shocks » (fallback `mapStats`, ligne 101) |
 
 > Les tables d'équipe (`topsTable`/`bottomsTable`) ne comptent que quand `!isIndiv` (sinon `0`), et inversement pour les tables individuelles : un `MapStats` est soit « équipe », soit « joueur », jamais les deux. Côté UI, `StatsScreen` n'affiche `MKTopBottomCell` que si la table concernée contient au moins une valeur > 0 (lignes 83-90).
+
+> **Tops/bots adversaire (#64)** : `opponentTopsTable`/`opponentBottomsTable` appliquent la même logique de comptage aux **positions adverses**, dérivées comme le **complément** `(1..12) − teamPositions` des 6 positions de l'équipe hôte sur chaque manche (12p ⇒ 6v6 se partagent 1..12). Neutralisées à `0` en vue individuelle **et** en 24p (le complément n'a de sens qu'en 12p). Rendues via le même composable `TopBottomColumns` dans une 2ᵉ carte « Top/Bot adversaire » (sous « Top/Bot équipe »), masquée si aucune occurrence. Point de contrôle : pour **N=6** l'opponent Top6 == team Bot6 et opponent Bot6 == team Top6 (strict complément) ; pour N=2..5 les tables diffèrent réellement.
 
 ### 9.9 `War.withPlayersList(...)` → `List<PlayerScore>`
 

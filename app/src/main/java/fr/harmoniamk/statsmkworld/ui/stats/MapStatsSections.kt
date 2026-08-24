@@ -32,10 +32,18 @@ fun LazyListScope.mapStatsDetailSections(mapStats: MapStats) {
         }
     }
 
-    // Top/Bot 2→6 (compteurs d'équipe) — masqué si aucune occurrence.
+    // Top/Bot 2→6 (compteurs d'ÉQUIPE) — masqué si aucune occurrence.
     if (mapStats.topsTable.any { it.second > 0 } || mapStats.bottomsTable.any { it.second > 0 }) item {
-        StatCard(title = stringResource(R.string.stats_top_bottom_title)) {
+        StatCard(title = stringResource(R.string.stats_top_bottom_team_title)) {
             TopBottomColumns(tops = mapStats.topsTable, bottoms = mapStats.bottomsTable)
+        }
+    }
+
+    // Top/Bot 2→6 de l'ADVERSAIRE (complément des positions, 12p/vue équipe uniquement —
+    // les tables sont neutralisées à 0 sinon) — masqué si aucune occurrence.
+    if (mapStats.opponentTopsTable.any { it.second > 0 } || mapStats.opponentBottomsTable.any { it.second > 0 }) item {
+        StatCard(title = stringResource(R.string.stats_top_bottom_opponent_title)) {
+            TopBottomColumns(tops = mapStats.opponentTopsTable, bottoms = mapStats.opponentBottomsTable)
         }
     }
 }
