@@ -77,8 +77,12 @@ class WarListViewModel @AssistedInject constructor(
                 ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
             // Aucun filtre par mode (12/24) : l'historique mélange tous les modes,
             // conformément à la maquette. Filtre par roster hôte, + par joueur si demandé.
+            // L'historique = wars TERMINÉES uniquement : on exclut la war en cours (live),
+            // par égalité d'id (id entité = String, id war en cours = Long → toString).
+            val currentWarId = currentWar?.id?.toString()
             val details = wars
                 .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+                .filter { it.id != currentWarId }
                 .filter { !filterByPlayer || it.hasPlayer(targetUserId) }
                 .map { War(it) }
                 .map { WarDetails(it) }
