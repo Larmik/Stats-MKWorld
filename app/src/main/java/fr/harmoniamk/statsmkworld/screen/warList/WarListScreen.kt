@@ -31,7 +31,6 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKChip
 import fr.harmoniamk.statsmkworld.ui.MKText
-import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
@@ -61,7 +60,6 @@ fun WarListScreen(
     viewModel: WarListViewModel,
     onWarDetailsClick: (WarDetails) -> Unit,
     onAddWar: (Boolean) -> Unit,
-    onCurrentWar: () -> Unit,
     onBack: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -88,20 +86,11 @@ fun WarListScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(11.dp)
         ) {
-            // 1. War en cours → bannière « Reprendre » (le CTA « Créer une war » est
-            //    désormais dans l'action droite du header, masqué si une war est en cours).
-            state.value.currentWar?.let { war ->
-                item {
-                    CurrentWarBanner(
-                        war = war,
-                        withPlayers = false,
-                        callToAction = stringResource(R.string.war_resume, war.tracks.size),
-                        onClick = onCurrentWar
-                    )
-                }
-            }
+            // La war en cours n'apparaît PLUS sur l'historique (bannière « Reprendre »
+            // retirée, #65) : l'écran ne liste que les wars terminées. Le bouton « Créer
+            // une war » du header reste masqué tant qu'une war est en cours (voir plus haut).
 
-            // 2. Chips filtre Tous / Victoires / Nuls / Défaites.
+            // 1. Chips filtre Tous / Victoires / Nuls / Défaites.
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     WarFilter.entries.forEach { entry ->
@@ -114,7 +103,7 @@ fun WarListScreen(
                 }
             }
 
-            // 3. Historique groupé par mois (sticky headers), filtré par résultat.
+            // 2. Historique groupé par mois (sticky headers), filtré par résultat.
             state.value.wars.forEach { (month, wars) ->
                 val filtered = wars.filter { it.matches(filter) }
                 if (filtered.isNotEmpty()) {

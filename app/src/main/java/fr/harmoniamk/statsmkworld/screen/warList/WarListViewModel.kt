@@ -31,13 +31,12 @@ import java.util.Date
  * - [userId] renseigné (autre joueur, ex. lien « Résultats → » depuis `Statsfull/{userId}`,
  *   #65) ⇒ historique **filtré sur les wars où CE joueur a joué** (`War.hasPlayer`).
  *
- * **War en cours exclue de l'historique** : la war live (reprenable via la bannière
- * « Reprendre ») ne doit pas apparaître dans la liste. La source de vérité pour « la war
- * en cours » est le **listener temps réel** `listenToCurrentWar(rosterId)` — la MÊME source
- * qui alimente la bannière (`State.currentWar`). L'exclusion et la bannière partagent donc
- * ce flux, combiné réactivement avec la liste Room, pour rester synchronisés en continu
- * (un `getCurrentWar` ponctuel dans un `zip` restait périmé/nul tant que Room ne ré-émettait
- * pas : la war créée n'ayant pas encore d'entrée Room, le `zip` ne se relançait pas).
+ * **War en cours** : elle n'apparaît PAS dans l'historique — non par un filtre, mais
+ * parce qu'elle n'est écrite dans Room qu'à la **validation** (`CurrentWarViewModel.onValidateWar`) ;
+ * tant qu'elle est « en cours », elle n'est pas dans `getWars()`. La bannière « Reprendre »
+ * a par ailleurs été retirée de l'écran (#65). `State.currentWar` (issu du listener temps réel
+ * `listenToCurrentWar(rosterId)`) ne sert plus qu'au **gating du bouton « Créer une war »**
+ * (masqué tant qu'une war est en cours) — pas à un filtrage de la liste.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = WarListViewModel.Factory::class)
@@ -68,7 +67,8 @@ class WarListViewModel @AssistedInject constructor(
         .mapNotNull { it.rosters?.firstOrNull { roster -> roster.game == "mkworld" }?.rosterID?.toString() }
 
     val state = currentRosterId
-        // La war en cours vient du MÊME listener que la bannière → exclusion synchronisée.
+        // `listenToCurrentWar` alimente `State.currentWar` (gating du bouton « Créer une war ») ;
+        // il n'est PAS utilisé pour filtrer la liste (la war en cours n'est pas dans Room).
         .flatMapLatest { rosterId ->
             combine(
                 databaseRepository.getWars(),
@@ -84,13 +84,10 @@ class WarListViewModel @AssistedInject constructor(
                     ?.takeIf { filterByPlayer }
                     ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
                 // Aucun filtre par mode (12/24) : l'historique mélange tous les modes.
-                // Filtre par roster hôte, + par joueur si demandé. L'historique = wars
-                // TERMINÉES : on exclut la war en cours par égalité d'id (id entité = String,
-                // id war en cours = Long → toString ; null si aucune war en cours → rien exclu).
-                val currentWarId = currentWar?.id?.toString()
+                // Filtre par roster hôte, + par joueur si demandé. Pas de filtre sur la war
+                // en cours : elle n'est pas dans Room tant qu'elle n'est pas validée.
                 val details = wars
                     .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-                    .filter { it.id != currentWarId }
                     .filter { !filterByPlayer || it.hasPlayer(targetUserId) }
                     .map { War(it) }
                     .map { WarDetails(it) }

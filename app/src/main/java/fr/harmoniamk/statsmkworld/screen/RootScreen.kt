@@ -298,7 +298,6 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.navigate("Home/WarDetails")
                 },
                 onAddWar = { navController.navigate("Home/AddWar/$it") },
-                onCurrentWar = { navController.navigate("Home/CurrentWar") },
                 onBack = { navController.popBackStack() }
             )
         }

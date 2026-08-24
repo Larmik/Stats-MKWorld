@@ -133,8 +133,7 @@ fun HomeScreen(
                             }
                         ),
                         onWarDetailsClick = onWarDetailsClick,
-                        onAddWar = onAddWar,
-                        onCurrentWar = onCurrentWar
+                        onAddWar = onAddWar
                     )
                 }
                 composable(route = "Home/Stats") {
