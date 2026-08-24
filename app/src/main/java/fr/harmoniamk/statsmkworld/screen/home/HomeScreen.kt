@@ -26,7 +26,6 @@ import fr.harmoniamk.statsmkworld.screen.profile.ProfileScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
-import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingTab
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListViewModel
@@ -57,6 +56,11 @@ fun HomeScreen(
     // Lien « Résultats → » du pôle Stats (joueur courant) : remonte au graphe racine
     // pour ouvrir l'historique filtré sur « me » (#65) — évite le NavHost interne.
     onResults: () -> Unit,
+    // « Classement entier » Circuits / Adversaires du pôle Stats (joueur courant) → classement
+    // complet scopé (#67 round 3). `isTeam` = portée courante (Équipe vs Individuel). Remonte
+    // au graphe racine (les écrans de classement y vivent).
+    onMapsRanking: (isTeam: Boolean) -> Unit,
+    onOpponentsRanking: (isTeam: Boolean) -> Unit,
     onDisconnect: () -> Unit,
     onDebug: () -> Unit
 ) {
@@ -150,29 +154,20 @@ fun HomeScreen(
                         ),
                         // Historique du joueur courant : remonte au graphe racine (#65).
                         onResults = onResults,
-                        // « Voir en entier » des podiums Circuits / Adversaires → pôle
-                        // Classements avec l'onglet correspondant présélectionné (#67).
-                        onMapsSeeAll = {
-                            navController.currentBackStackEntry?.savedStateHandle?.set("rankingsTab", RankingTab.TRACKS)
-                            navController.navigate("Home/Rankings")
-                        },
-                        onOpponentsSeeAll = {
-                            navController.currentBackStackEntry?.savedStateHandle?.set("rankingsTab", RankingTab.OPPONENTS)
-                            navController.navigate("Home/Rankings")
-                        }
+                        // « Classement entier » des podiums Circuits / Adversaires → classement
+                        // complet SCOPÉ au périmètre courant (joueur courant en Individuelles,
+                        // équipe en Équipe) sur le graphe racine (#67 round 3).
+                        onMapsSeeAll = onMapsRanking,
+                        onOpponentsSeeAll = onOpponentsRanking
                     )
                 }
                 composable(route = "Home/Rankings") {
                     // Pôle Classements (#26) : écran unique à sous-onglets Joueurs /
                     // Adversaires / Circuits (plus de menu intermédiaire). Les lignes
-                    // mènent aux fiches statistiques via onStats. Un onglet initial peut
-                    // être demandé par « Voir en entier » du pôle Stats (#67).
-                    val initialTab = navController.previousBackStackEntry
-                        ?.savedStateHandle?.get<RankingTab>("rankingsTab")
+                    // mènent aux fiches statistiques via onStats.
                     StatsRankingScreen(
                         viewModel = hiltViewModel(key = "rankings"),
-                        onStats = onStats,
-                        initialTab = initialTab
+                        onStats = onStats
                     )
                 }
                 composable(route = "Home/Profile") {

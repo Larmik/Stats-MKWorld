@@ -216,16 +216,33 @@ class OpponentDetailViewModel @AssistedInject constructor(
     }
 
     /**
-     * Classement des pilotes de l'équipe face à cet adversaire, **du meilleur au pire score
-     * perso moyen** (points 12p) — critère de tri ET valeur affichée. Winrate perso = manches
-     * en top 6 (points > 6) / total. **Alliés exclus** (rosterId « -1 ») : membres uniquement.
-     * **Seuil** [Stats.MIN_RANKING_SAMPLE] aligné sur les autres rankings. Modèle identique à
-     * `MapDetailViewModel.computePilots` (rule 32 : logique mono-consommateur, non extraite).
+     * Classement des pilotes de l'équipe face à cet adversaire — **calculé UNIQUEMENT sur les
+     * wars jouées contre cet adversaire** ([wars] est déjà filtré `hasTeam(teamId)` + 12p, cf.
+     * #67 round 3). Pour CHAQUE pilote, on n'agrège que SES manches dans ces wars :
+     * - `played` = **nombre de wars** (distinctes) vs cet adversaire où le pilote a couru ;
+     * - `winrate` = manches en top 6 (points > 6) / total de SES manches vs cet adversaire ;
+     * - `averagePosition` = position moyenne sur SES manches vs cet adversaire ;
+     * - `averageScore` = score perso moyen (critère de tri).
+     *
+     * **Alliés exclus** (rosterId « -1 ») : membres uniquement. **Seuil** [Stats.MIN_RANKING_SAMPLE]
+     * (en manches) aligné sur les autres rankings. Rule 32 : logique mono-consommateur, non extraite.
      */
     private suspend fun computePilots(wars: List<WarDetails>): List<PilotRanking> {
-        val positionsByPlayer = wars
-            .flatMap { war -> war.warTracks.flatMap { it.track.positions } }
-            .groupBy({ it.playerId }, { it.position })
+        if (wars.isEmpty()) return listOf()
+        // Positions du pilote (manches) ET nb de wars distinctes, agrégées SUR CES WARS
+        // (déjà restreintes à l'adversaire) — pas de fuite hors-adversaire possible.
+        val positionsByPlayer = mutableMapOf<String, MutableList<Int>>()
+        val warsByPlayer = mutableMapOf<String, Int>()
+        wars.forEach { war ->
+            val playersInWar = mutableSetOf<String>()
+            war.warTracks.forEach { track ->
+                track.track.positions.forEach { position ->
+                    positionsByPlayer.getOrPut(position.playerId) { mutableListOf() }.add(position.position)
+                    playersInWar.add(position.playerId)
+                }
+            }
+            playersInWar.forEach { playerId -> warsByPlayer[playerId] = (warsByPlayer[playerId] ?: 0) + 1 }
+        }
         if (positionsByPlayer.isEmpty()) return listOf()
 
         val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
@@ -243,7 +260,8 @@ class OpponentDetailViewModel @AssistedInject constructor(
                     player = player,
                     averageScore = averageScore,
                     averagePosition = averagePosition,
-                    played = positions.size,
+                    // Nombre de WARS vs cet adversaire (distinctes) où le pilote a couru.
+                    played = warsByPlayer[playerId] ?: 0,
                     winrate = winrate
                 )
             }

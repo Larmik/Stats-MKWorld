@@ -136,9 +136,9 @@ fun MapDetailScreen(
                             onSeeAll = onPilotsRanking
                         )
                     }
-                    // 6. Classement des adversaires rencontrés sur ce circuit (#67) — modèle
-                    //    identique à la section pilotes, indépendant du mode.
-                    if (state.opponents.isNotEmpty()) item {
+                    // 6. Classement des adversaires rencontrés sur ce circuit — **mode ÉQUIPE
+                    //    uniquement** (#67 round 3, comme la section pilotes ; masqué en Indiv).
+                    if (!state.isIndiv && state.opponents.isNotEmpty()) item {
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_opponents),
                             top = state.opponents.take(3).map { it.toPodiumEntry() },
@@ -154,10 +154,10 @@ fun MapDetailScreen(
 }
 
 /**
- * Pilote → entrée de podium. Stat principale = **score perso moyen** (identique au critère
- * de TRI — transparence), puis position moyenne et nombre de manches jouées en infos
- * secondaires. Partagé entre la fiche (podium Top3/Flop3) et le classement complet
- * [MapPilotsRankingScreen].
+ * Pilote → entrée de podium : cellules **Nb joué / Winrate / Position moy.** (#67 round 3 —
+ * le score moyen est remplacé par le winrate, aligné sur « Pilotes contre eux » de la fiche
+ * adversaire). Le tri du classement reste le score perso moyen (`averageScore`). Partagé entre
+ * la fiche (podium Top3/Flop3) et le classement complet [MapPilotsRankingScreen].
  */
 internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
@@ -167,9 +167,9 @@ internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
-            R.string.form_score to averageScore.toString(),
-            R.string.average_position_short to averagePosition.toString(),
-            R.string.times_played_short to played.toString()
+            R.string.times_played_short to played.toString(),
+            R.string.form_winrate to "$winrate%",
+            R.string.average_position_short to averagePosition.toString()
         )
     )
 

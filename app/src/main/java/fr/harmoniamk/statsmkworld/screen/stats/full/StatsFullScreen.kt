@@ -128,10 +128,12 @@ fun StatsFullScreen(
     viewModel: StatsFullViewModel,
     onBack: (() -> Unit)? = null,
     onResults: (() -> Unit)? = null,
-    // « Voir en entier » des sections Circuits / Adversaires → classement complet
-    // (pôle Classements, onglet correspondant) — #67. Optionnels (masqués si null).
-    onMapsSeeAll: (() -> Unit)? = null,
-    onOpponentsSeeAll: (() -> Unit)? = null
+    // « Classement entier » des sections Circuits / Adversaires → classement complet **scopé
+    // au périmètre actif** (#67 round 3) : le booléen `isTeam` remonte la portée courante
+    // (Individuelles = false → données du joueur ; Équipe = true → données d'équipe), pour que
+    // l'appelant navigue vers le bon classement. Optionnels (masqués si null).
+    onMapsSeeAll: ((isTeam: Boolean) -> Unit)? = null,
+    onOpponentsSeeAll: ((isTeam: Boolean) -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // 0 = Individuelles, 1 = Équipe. Sur statsfull (pas d'onglets) → toujours 0.
@@ -195,8 +197,16 @@ fun StatsFullScreen(
                     verticalArrangement = Arrangement.spacedBy(11.dp)
                 ) {
                     when (scopeIndex) {
-                        1 -> teamSections(state.value, selectors, onMapsSeeAll, onOpponentsSeeAll)
-                        else -> individualSections(state.value, viewModel.showTabs, onResults, selectors, onMapsSeeAll, onOpponentsSeeAll)
+                        1 -> teamSections(
+                            state.value, selectors,
+                            onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(true) } },
+                            onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(true) } }
+                        )
+                        else -> individualSections(
+                            state.value, viewModel.showTabs, onResults, selectors,
+                            onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(false) } },
+                            onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(false) } }
+                        )
                     }
                 }
             }

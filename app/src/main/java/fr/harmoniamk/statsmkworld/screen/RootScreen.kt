@@ -34,6 +34,8 @@ import fr.harmoniamk.statsmkworld.screen.signup.SignupScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
+import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerMapsRankingScreen
+import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerOpponentsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.map.MapDetailScreen
@@ -128,6 +130,11 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 // sur « me », poussé sur le GRAPHE RACINE (route accessible depuis ici),
                 // évitant la route interne au NavHost de HomeScreen (#65).
                 onResults = { navController.navigate("Home/WarList/me") },
+                // « Classement entier » Circuits / Adversaires du pôle Stats (joueur courant) :
+                // classement complet SCOPÉ (userId « me » → le VM résout le joueur courant en
+                // Individuelles ; isTeam en Équipe), poussé sur le graphe racine (#67 round 3).
+                onMapsRanking = { isTeam -> navController.navigate("Statsfull/me/Maps/$isTeam") },
+                onOpponentsRanking = { isTeam -> navController.navigate("Statsfull/me/Opponents/$isTeam") },
                 onDisconnect = { navController.navigate("Signup") },
                 onDebug = { navController.navigate("Player/Profile/Debug") }
             )
@@ -323,7 +330,57 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 ),
                 onBack = { navController.popBackStack() },
                 // « Résultats → » : historique filtré sur CE joueur (#65).
-                onResults = { navController.navigate("Home/WarList/$userId") }
+                onResults = { navController.navigate("Home/WarList/$userId") },
+                // « Classement entier » Circuits / Adversaires SUR LA FICHE D'UN JOUEUR TIERS
+                // (#67 round 3, point 2) : mène au classement complet scopé à CE joueur.
+                // showTabs=false ⇒ portée toujours Individuelles ⇒ isTeam = false.
+                onMapsSeeAll = { isTeam -> navController.navigate("Statsfull/$userId/Maps/$isTeam") },
+                onOpponentsSeeAll = { isTeam -> navController.navigate("Statsfull/$userId/Opponents/$isTeam") }
+            )
+        }
+
+        // Classement complet des CIRCUITS scopé à un joueur/équipe (« Classement entier » des
+        // podiums Circuits de StatsFullScreen, #67 round 3). userId « me » ⇒ joueur courant.
+        composable(
+            route = "Statsfull/{userId}/Maps/{isTeam}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("isTeam") { type = NavType.BoolType }
+            )
+        ) {
+            val userIdArg = it.arguments?.getString("userId")?.takeIf { id -> id != "me" }
+            val isTeam = it.arguments?.getBoolean("isTeam") == true
+            PlayerMapsRankingScreen(
+                viewModel = hiltViewModel(
+                    key = "$userIdArg-maps-$isTeam",
+                    creationCallback = { factory: StatsFullViewModel.Factory ->
+                        factory.create(userId = userIdArg, showTabs = false)
+                    }
+                ),
+                isTeam = isTeam,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // Classement complet des ADVERSAIRES scopé à un joueur/équipe (#67 round 3).
+        composable(
+            route = "Statsfull/{userId}/Opponents/{isTeam}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("isTeam") { type = NavType.BoolType }
+            )
+        ) {
+            val userIdArg = it.arguments?.getString("userId")?.takeIf { id -> id != "me" }
+            val isTeam = it.arguments?.getBoolean("isTeam") == true
+            PlayerOpponentsRankingScreen(
+                viewModel = hiltViewModel(
+                    key = "$userIdArg-opponents-$isTeam",
+                    creationCallback = { factory: StatsFullViewModel.Factory ->
+                        factory.create(userId = userIdArg, showTabs = false)
+                    }
+                ),
+                isTeam = isTeam,
+                onBack = { navController.popBackStack() }
             )
         }
 
