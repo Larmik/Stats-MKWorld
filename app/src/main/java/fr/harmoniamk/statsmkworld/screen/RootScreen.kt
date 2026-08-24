@@ -105,11 +105,12 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.navigate("Home/WarDetails")
                 },
                 onStats = { type ->
-                    // Fiches dédiées Joueur (#65), Adversaire (#27) et Circuit (#27) ; les autres
+                    // Fiches dédiées Joueur (#65 : StatsFullScreen centré sur le joueur cliqué,
+                    // sans sélecteur Indiv/Équipe), Adversaire (#27) et Circuit (#27) ; les autres
                     // portées (ex. équipe) restent sur l'écran Stats générique. Le userId (nullable)
                     // sème le mode initial Indiv/Équipe de la fiche (rule 11) ; « null » = Équipe.
                     when (type) {
-                        is StatsType.PlayerStats -> navController.navigate("Player/Profile/${type.userId}")
+                        is StatsType.PlayerStats -> navController.navigate("Statsfull/${type.userId}")
                         is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}/${type.userId ?: "null"}")
                         is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}/${type.userId ?: "null"}")
                         else -> {

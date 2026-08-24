@@ -145,7 +145,7 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 
 > Les sections « Rythme de war », « Comparatif 12/24 » et l'accordéon « Indicateurs avancés » ont été retirés : leurs indicateurs sont surfacés ailleurs (régularité, marges, pénalités → Indicateurs ; amplitude, records, invaincu → Records), **sauf la position moyenne 1ʳᵉ/2ᵉ moitié de war** qui disparaît avec le rythme (choix produit assumé).
 
-> **`statsfull` — vue « pour un joueur donné »** : même rendu que l'onglet Individuelles, paramétré par `userId` (`StatsFullScreen(showTabs = false)`, route `Statsfull/{userId}`), avec barre de retour et sous-titre = nom du joueur. Mutualisé avec la vue Individuelles. Les **points d'entrée** (Classements onglet Joueurs #26, fiche joueur « Voir ses statistiques ») relèvent d'autres tickets ; la route réutilisable est déjà en place.
+> **`statsfull` — vue « pour un joueur donné »** : même rendu que l'onglet Individuelles, paramétré par `userId` (`StatsFullScreen(showTabs = false)`, route `Statsfull/{userId}`), avec barre de retour et sous-titre = nom du joueur. Mutualisé avec la vue Individuelles. **Point d'entrée câblé** : le clic sur une ligne joueur des **Classements** (#65) ouvre cette vue via `Statsfull/{userId}`. (Un autre point d'entrée « fiche joueur → Voir ses statistiques » relève d'un ticket ultérieur ; la route réutilisable est déjà en place.)
 >
 > **Saisons masquées** : les libellés de saison (« Record 8 · S2 25 ») dépendent du ticket #30 (non livré) → non affichés (« record 8 » sans suffixe).
 
@@ -159,7 +159,7 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 
 **Divergence assumée vs prototype** : la maquette prévoit une carte « En bref » (On domine / Bête noire ; Meilleur / Pire) sur les onglets Adversaires et Circuits. Elle a été **retirée sur décision explicite de l'utilisateur** (remplacée par le curseur d'occurrences), au profit d'un contrôle direct de l'échantillon.
 
-Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global de l'équipe** (le prototype n'a pas de switch individuel/équipe sur les Classements). Depuis une ligne Adversaire/Circuit, la navigation ouvre désormais la **fiche dédiée** correspondante (#27, cf. ci-dessous) ; la ligne Joueur ouvre la **nouvelle fiche joueur** `PlayerProfileScreen` (#65, route `Player/Profile/{userId}`, avec le bon `userId`) — et non plus l'ancien écran `Stats` générique. Le retour (`←`/back système) revient aux Classements (fiche poussée sur le graphe racine par-dessus le pôle, `popBackStack`).
+Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global de l'équipe** (le prototype n'a pas de switch individuel/équipe sur les Classements). Depuis une ligne Adversaire/Circuit, la navigation ouvre désormais la **fiche dédiée** correspondante (#27, cf. ci-dessous) ; la ligne Joueur ouvre l'**écran Statistiques du joueur cliqué** (#65, route `Statsfull/{userId}` → `StatsFullScreen(showTabs = false)` : rendu Individuelles seul du bon joueur, **sans** sélecteur Indiv/Équipe, sous-titre = nom du joueur) — et non plus l'ancien écran `Stats` générique ni le profil. Le retour (`←`/back système) revient aux Classements (fiche poussée sur le graphe racine par-dessus le pôle, `popBackStack`).
 
 #### Fiches détail Adversaire & Circuit (#27)
 
