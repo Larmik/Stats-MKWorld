@@ -250,6 +250,7 @@
     <string name="see_all">See all →</string>
     <!-- Wars pole -->
     <string name="wars_count">%1$d wars</string>
+    <string name="wars_of_player">%1$s\'s wars · %2$d</string>
     <string name="war_live">Live</string>
     <string name="war_resume">Resume — %1$d tracks played</string>
     <string name="wars_filter_all">All</string>

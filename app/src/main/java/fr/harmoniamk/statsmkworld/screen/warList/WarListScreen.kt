@@ -58,18 +58,25 @@ private fun WarDetails.matches(filter: WarFilter): Boolean {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WarListScreen(
-    viewModel: WarListViewModel = hiltViewModel(),
+    viewModel: WarListViewModel,
     onWarDetailsClick: (WarDetails) -> Unit,
     onAddWar: (Boolean) -> Unit,
-    onCurrentWar: () -> Unit
+    onCurrentWar: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // Filtre de résultat : pur état UI, survit à la rotation (rule 11).
     var filter by rememberSaveable { mutableStateOf(WarFilter.ALL) }
 
+    // Sous-titre : « wars de <joueur> » si l'historique est filtré sur un joueur (#65),
+    // sinon le décompte habituel « N wars ».
+    val subtitle = state.value.playerName
+        ?.let { stringResource(R.string.wars_of_player, it, state.value.warCount) }
+        ?: stringResource(R.string.wars_count, state.value.warCount)
     BaseScreen(
         title = stringResource(R.string.wars),
-        subtitle = stringResource(R.string.wars_count, state.value.warCount),
+        subtitle = subtitle,
+        onBack = onBack,
         // « Créer une war » dans l'action droite du header (#50), affichée UNIQUEMENT
         // s'il n'y a pas de war en cours (même condition qu'auparavant, juste déplacée).
         onSearch = { onAddWar(false) }.takeIf { state.value.currentWar == null },

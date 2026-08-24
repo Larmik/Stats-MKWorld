@@ -48,6 +48,8 @@ import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
+import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
+import fr.harmoniamk.statsmkworld.screen.warList.WarListViewModel
 import fr.harmoniamk.statsmkworld.worker.MKWorkerBuilder
 import fr.harmoniamk.statsmkworld.worker.UpdateDataWorker
 
@@ -120,6 +122,10 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     }
                 },
                 onSearch = { navController.navigate("Home/Registry") },
+                // Lien « Résultats → » du pôle Stats (joueur courant) : historique filtré
+                // sur « me », poussé sur le GRAPHE RACINE (route accessible depuis ici),
+                // évitant la route interne au NavHost de HomeScreen (#65).
+                onResults = { navController.navigate("Home/WarList/me") },
                 onDisconnect = { navController.navigate("Signup") },
                 onDebug = { navController.navigate("Player/Profile/Debug") }
             )
@@ -267,7 +273,33 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     }
                 ),
                 onBack = { navController.popBackStack() },
-                onResults = { navController.navigate("Home/WarList") }
+                // « Résultats → » : historique filtré sur CE joueur (#65).
+                onResults = { navController.navigate("Home/WarList/$userId") }
+            )
+        }
+
+        // Historique des wars FILTRÉ sur un joueur (#65), poussé sur le graphe racine
+        // (au-dessus du pôle) → back = retour à StatsFullScreen (rule 14). `userId` = id
+        // du joueur, ou « me » = joueur courant (résolu par le VM).
+        composable(
+            route = "Home/WarList/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) {
+            val userId = it.arguments?.getString("userId")
+            WarListScreen(
+                viewModel = hiltViewModel(
+                    key = "warlist-$userId",
+                    creationCallback = { factory: WarListViewModel.Factory ->
+                        factory.create(userId = userId)
+                    }
+                ),
+                onWarDetailsClick = { warDetails ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("war", warDetails)
+                    navController.navigate("Home/WarDetails")
+                },
+                onAddWar = { navController.navigate("Home/AddWar/$it") },
+                onCurrentWar = { navController.navigate("Home/CurrentWar") },
+                onBack = { navController.popBackStack() }
             )
         }
 

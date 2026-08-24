@@ -221,8 +221,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             isTeam = false
         )
     }
-    // 2. Bilan.
-    item { BalanceCard(stats, showResultsLink = !showTabs, onResults = onResults) }
+    // 2. Bilan (#65 : lien « Résultats → » TOUJOURS visible, dans les deux contextes —
+    //    pôle Stats comme fiche joueur — vers l'historique filtré sur le joueur).
+    item { BalanceCard(stats, showResultsLink = true, onResults = onResults) }
     // 3. Indicateurs (grille régulière) — vue JOUEUR : points/war, position, régularité,
     //    marges V/D, pénalités, maps gagnées, shocks… (fenêtre all/5/10 + deltas).
     item { IndicatorsCard(stats = stats, isPlayer = true, selectors = selectors) }
