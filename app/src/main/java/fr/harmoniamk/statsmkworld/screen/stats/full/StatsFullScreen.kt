@@ -57,6 +57,8 @@ import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
+import fr.harmoniamk.statsmkworld.ui.stats.TopBottomColumns
+import fr.harmoniamk.statsmkworld.ui.stats.hasDisplayableTopBottom
 import fr.harmoniamk.statsmkworld.ui.stats.WinTieLossBar
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerMedallion
 import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
@@ -256,6 +258,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
 // Onglet Équipe
 // =====================================================================
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     state: StatsFullViewModel.State,
     selectors: SectionSelectors
@@ -279,6 +282,21 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     // 4. Forme & séries équipe + Records (grille 3×2 + sélecteur de fenêtre).
     item { FormStreakCard(stats, stringResource(R.string.stats_team_form_title)) }
     item { RecordsTilesCard(stats, selectors) }
+    // 4bis. Top/Bot 5→2 au GLOBAL (détail que RecordsTilesCard n'affiche pas ; ligne N=6
+    //       retirée car redondante avec « Records & séries », #64) : équipe ET adversaire
+    //       (complément des positions). Masqués si aucune ligne affichable.
+    state.teamMapStats?.let { mapStats ->
+        if (hasDisplayableTopBottom(mapStats.topsTable, mapStats.bottomsTable)) item {
+            StatCard(title = stringResource(R.string.stats_top_bottom_team_title)) {
+                TopBottomColumns(tops = mapStats.topsTable, bottoms = mapStats.bottomsTable)
+            }
+        }
+        if (hasDisplayableTopBottom(mapStats.opponentTopsTable, mapStats.opponentBottomsTable)) item {
+            StatCard(title = stringResource(R.string.stats_top_bottom_opponent_title)) {
+                TopBottomColumns(tops = mapStats.opponentTopsTable, bottoms = mapStats.opponentBottomsTable)
+            }
+        }
+    }
     // 5. Contributeurs (sélecteur de fenêtre : classement recalculé par fenêtre).
     item { ContributorsCard(state.contributorsByWindow, selectors) }
     // 6. Podium circuits équipe (Top3 / Flop3 sur une ligne + sélecteur occ./winrate/score).
