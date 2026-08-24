@@ -16,16 +16,24 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 /**
- * Contenu « Top / Bot » (compteurs Top 2→6 et Bot 2→6), au style maquette (dans une
- * [StatCard]). Deux colonnes (Tops | Bottoms), une ligne par seuil (libellé → nombre).
- * Mutualisé entre les fiches détail Adversaire/Circuit (#27) — remplace l'ancien
- * `MKTopBottomCell` non aligné maquette pour ces écrans.
+ * Contenu « Top / Bot » (compteurs Top 5→2 et Bot 5→2 côté équipe/adversaire), au style
+ * maquette (dans une [StatCard]). Deux colonnes (Tops | Bottoms), une ligne par seuil
+ * (libellé → nombre). Mutualisé entre les fiches détail Adversaire/Circuit (#27) et la
+ * page Stats équipe (#64) — remplace l'ancien `MKTopBottomCell` non aligné maquette.
  *
  * [tops] / [bottoms] = listes (libellé → compte), telles que fournies par
  * [fr.harmoniamk.statsmkworld.model.local.MapStats.topsTable] /
- * [fr.harmoniamk.statsmkworld.model.local.MapStats.bottomsTable] (équipe) ou les tables
- * individuelles. [labelFont] permet d'utiliser la police MKPosition pour les tables
- * individuelles (positions), sinon la police par défaut.
+ * [fr.harmoniamk.statsmkworld.model.local.MapStats.bottomsTable] (équipe/adversaire) ou
+ * les tables individuelles. [usePositionFont] permet d'utiliser la police MKPosition pour
+ * les tables individuelles (positions), sinon la police par défaut.
+ *
+ * Deux règles d'affichage pour les tables **équipe/adversaire** (#64, `usePositionFont`
+ * false) :
+ * - **la ligne Top 6 / Bot 6 est retirée** (redondante avec le Top6/Bot6 de « Records &
+ *   séries » / `RecordsTilesCard`) → seuls N = 5→2 sont affichés ;
+ * - **une ligne à 0 est masquée** (on ne montre que les compteurs > 0).
+ * Les tables individuelles (positions, `usePositionFont` true) conservent TOUTES leurs
+ * lignes (aucun filtre) : chaque position doit rester visible, y compris à 0.
  */
 @Composable
 fun ColumnScope.TopBottomColumns(
@@ -39,6 +47,24 @@ fun ColumnScope.TopBottomColumns(
     }
 }
 
+/**
+ * Lignes réellement AFFICHÉES d'une table Top/Bot équipe/adversaire (#64) : on retire la
+ * ligne N=6 (redondante avec le Top6/Bot6 de « Records & séries ») et les lignes à 0.
+ * Source de vérité unique du rendu ET du masquage de section (`hasDisplayableTopBottom`) :
+ * une section n'est visible que si au moins une de ces lignes reste.
+ */
+fun List<Pair<String, Int>>.displayableTopBottomRows(): List<Pair<String, Int>> = this
+    .filterNot { (label, _) -> label == "Top 6" || label == "Bot 6" }
+    .filter { (_, count) -> count > 0 }
+
+/**
+ * Une carte Top/Bot équipe/adversaire ne doit être affichée que s'il reste au moins une
+ * ligne affichable (N=5→2, > 0) sur l'une des deux colonnes. Aligne le masquage de
+ * section sur le filtre de rendu de [TopBottomColumns] (pas de carte au titre vide).
+ */
+fun hasDisplayableTopBottom(tops: List<Pair<String, Int>>, bottoms: List<Pair<String, Int>>): Boolean =
+    tops.displayableTopBottomRows().isNotEmpty() || bottoms.displayableTopBottomRows().isNotEmpty()
+
 @Composable
 private fun androidx.compose.foundation.layout.RowScope.TopBottomColumn(
     title: String,
@@ -46,6 +72,13 @@ private fun androidx.compose.foundation.layout.RowScope.TopBottomColumn(
     accent: androidx.compose.ui.graphics.Color,
     usePositionFont: Boolean
 ) {
+    // Tables individuelles (positions) : toutes les lignes ; équipe/adversaire : lignes
+    // affichables uniquement (N=6 retirée + zéros masqués), même règle que le masquage
+    // de section.
+    val displayed = when (usePositionFont) {
+        true -> entries
+        else -> entries.displayableTopBottomRows()
+    }
     Column(Modifier.weight(1f)) {
         MKText(
             text = title.uppercase(),
@@ -55,7 +88,7 @@ private fun androidx.compose.foundation.layout.RowScope.TopBottomColumn(
             textAlign = TextAlign.Start,
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
         )
-        entries.forEach { (label, count) ->
+        displayed.forEach { (label, count) ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 3.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,

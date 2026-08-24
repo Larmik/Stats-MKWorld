@@ -58,6 +58,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.TopBottomColumns
+import fr.harmoniamk.statsmkworld.ui.stats.hasDisplayableTopBottom
 import fr.harmoniamk.statsmkworld.ui.stats.WinTieLossBar
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerMedallion
 import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
@@ -281,15 +282,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     // 4. Forme & séries équipe + Records (grille 3×2 + sélecteur de fenêtre).
     item { FormStreakCard(stats, stringResource(R.string.stats_team_form_title)) }
     item { RecordsTilesCard(stats, selectors) }
-    // 4bis. Top/Bot 2→6 au GLOBAL (détail que RecordsTilesCard n'affiche pas) : équipe
-    //       ET adversaire (complément des positions). Masqués si aucune occurrence.
+    // 4bis. Top/Bot 5→2 au GLOBAL (détail que RecordsTilesCard n'affiche pas ; ligne N=6
+    //       retirée car redondante avec « Records & séries », #64) : équipe ET adversaire
+    //       (complément des positions). Masqués si aucune ligne affichable.
     state.teamMapStats?.let { mapStats ->
-        if (mapStats.topsTable.any { it.second > 0 } || mapStats.bottomsTable.any { it.second > 0 }) item {
+        if (hasDisplayableTopBottom(mapStats.topsTable, mapStats.bottomsTable)) item {
             StatCard(title = stringResource(R.string.stats_top_bottom_team_title)) {
                 TopBottomColumns(tops = mapStats.topsTable, bottoms = mapStats.bottomsTable)
             }
         }
-        if (mapStats.opponentTopsTable.any { it.second > 0 } || mapStats.opponentBottomsTable.any { it.second > 0 }) item {
+        if (hasDisplayableTopBottom(mapStats.opponentTopsTable, mapStats.opponentBottomsTable)) item {
             StatCard(title = stringResource(R.string.stats_top_bottom_opponent_title)) {
                 TopBottomColumns(tops = mapStats.opponentTopsTable, bottoms = mapStats.opponentBottomsTable)
             }
