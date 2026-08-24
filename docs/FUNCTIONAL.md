@@ -159,7 +159,7 @@ Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + s
 
 **Divergence assumée vs prototype** : la maquette prévoit une carte « En bref » (On domine / Bête noire ; Meilleur / Pire) sur les onglets Adversaires et Circuits. Elle a été **retirée sur décision explicite de l'utilisateur** (remplacée par le curseur d'occurrences), au profit d'un contrôle direct de l'échantillon.
 
-Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global de l'équipe** (le prototype n'a pas de switch individuel/équipe sur les Classements). Depuis une ligne Adversaire/Circuit, la navigation ouvre désormais la **fiche dédiée** correspondante (#27, cf. ci-dessous) ; la ligne Joueur ouvre l'écran `Stats` (`StatsType.PlayerStats`).
+Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global de l'équipe** (le prototype n'a pas de switch individuel/équipe sur les Classements). Depuis une ligne Adversaire/Circuit, la navigation ouvre désormais la **fiche dédiée** correspondante (#27, cf. ci-dessous) ; la ligne Joueur ouvre la **nouvelle fiche joueur** `PlayerProfileScreen` (#65, route `Player/Profile/{userId}`, avec le bon `userId`) — et non plus l'ancien écran `Stats` générique. Le retour (`←`/back système) revient aux Classements (fiche poussée sur le graphe racine par-dessus le pôle, `popBackStack`).
 
 #### Fiches détail Adversaire & Circuit (#27)
 
