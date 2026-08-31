@@ -236,36 +236,41 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     // 3. Indicateurs (grille régulière) — vue JOUEUR : points/war, position, régularité,
     //    marges V/D, pénalités, maps gagnées, shocks… (fenêtre globale + deltas vs all-time).
     item { IndicatorsCard(stats = allTimeStats, isPlayer = true, selectors = selectors) }
-    // 4. Contribution (rang lu sur le classement des contributeurs de la MÊME fenêtre — #68).
-    //    Deux lignes (#69) : part de POINTS (moyenne existante) + part de SHOCKS (total/total).
-    stats.playerContribution?.let { contribution ->
-        item {
-            StatCard(title = stringResource(R.string.stats_contribution_title)) {
-                IconLine(
-                    icon = R.drawable.stats,
-                    accent = Colors.yellow,
-                    title = stringResource(R.string.stats_contribution_value, contribution),
-                    subtitle = state.contributorsByWindow[selectors.windowIndex].orEmpty()
-                        .indexOfFirst { it.isMe }
-                        .takeIf { it >= 0 }
-                        ?.let { stringResource(R.string.stats_contribution_rank, it + 1) }
-                        ?: ""
-                )
-                // 2ᵉ ligne : part de shocks du joueur (total shocks joueur / total équipe),
-                // affichée à l'identique de la ligne de points. Rang lu sur le classement
-                // des baggeurs de la MÊME fenêtre. Masquée si l'équipe n'a aucun shock.
-                state.playerShockShareByWindow[selectors.windowIndex]?.let { shockShare ->
-                    Spacer(Modifier.height(11.dp))
+    // 4. Contribution (#69, retour PR #75) : deux lignes (part de POINTS + part de SHOCKS),
+    //    LUES depuis le classement Contributeurs/Baggeurs de la MÊME fenêtre (source de vérité
+    //    UNIQUE), pour que le % du joueur soit IDENTIQUE ici et dans le classement équipe.
+    //    Les DEUX parts sont désormais des ratios TOTAL/TOTAL (la ligne points n'est plus une
+    //    moyenne par war). Rang = position de la ligne `isMe` dans le classement correspondant.
+    run {
+        val contributors = state.contributorsByWindow[selectors.windowIndex].orEmpty()
+        val baggers = state.baggersByWindow[selectors.windowIndex].orEmpty()
+        val meContributorRank = contributors.indexOfFirst { it.isMe }.takeIf { it >= 0 }
+        val meBaggerRank = baggers.indexOfFirst { it.isMe }.takeIf { it >= 0 }
+        val me = contributors.firstOrNull { it.isMe }
+        me?.let { contributor ->
+            item {
+                StatCard(title = stringResource(R.string.stats_contribution_title)) {
                     IconLine(
-                        icon = R.drawable.shock,
+                        icon = R.drawable.stats,
                         accent = Colors.yellow,
-                        title = stringResource(R.string.stats_bag_contribution_value, shockShare),
-                        subtitle = state.baggersByWindow[selectors.windowIndex].orEmpty()
-                            .indexOfFirst { it.isMe }
-                            .takeIf { it >= 0 }
-                            ?.let { stringResource(R.string.stats_bag_contribution_rank, it + 1) }
+                        title = stringResource(R.string.stats_contribution_value, contributor.pointsShare),
+                        subtitle = meContributorRank
+                            ?.let { stringResource(R.string.stats_contribution_rank, it + 1) }
                             ?: ""
                     )
+                    // 2ᵉ ligne : part de shocks du joueur (même valeur que dans « Baggeurs »).
+                    // Masquée si le joueur n'a aucun shock sur la fenêtre.
+                    if (contributor.shockShare > 0) {
+                        Spacer(Modifier.height(11.dp))
+                        IconLine(
+                            icon = R.drawable.shock,
+                            accent = Colors.yellow,
+                            title = stringResource(R.string.stats_bag_contribution_value, contributor.shockShare),
+                            subtitle = meBaggerRank
+                                ?.let { stringResource(R.string.stats_bag_contribution_rank, it + 1) }
+                                ?: ""
+                        )
+                    }
                 }
             }
         }

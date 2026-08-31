@@ -501,12 +501,28 @@ Point d'entrée du calcul d'un bloc `Stats` (stats joueur, équipe, adversaire o
 >   **`null`** si l'équipe n'a obtenu aucun shock (pas de dénominateur).
 >
 > La **part de shocks** est donc un **ratio de TOTAUX** (shocks du joueur / shocks de
-> l'équipe), **jamais une moyenne par war** — à la différence de `Stats.playerContribution`
-> (part de points, moyenne war par war) et de `FormStats.shocksPerWar` (moyenne). Les
-> ViewModels consommateurs (`StatsFullViewModel` baggeurs/contribution shocks ;
+> l'équipe), **jamais une moyenne par war** (≠ `FormStats.shocksPerWar`, moyenne). Les
+> ViewModels consommateurs (`StatsFullViewModel.computeContributors` — points ET shocks ;
 > `OpponentDetailViewModel.computeBaggers` ; `MapDetailViewModel.computeBaggers`, ce dernier
 > agrégeant les `Shock` au niveau des manches du circuit) réutilisent ces helpers. Les
 > classements baggeurs excluent les **alliés** (rosterId « -1 ») et les joueurs à 0 shock.
+>
+> **Cohérence indiv ↔ équipe (retour PR #75) — source de vérité UNIQUE.** La section indiv
+> « Ta contribution » de `StatsFullScreen` NE recalcule plus ses parts : elle **lit la ligne
+> du joueur (`isMe`) dans `contributorsByWindow`/`baggersByWindow`** (produits par
+> `computeContributors`). Le % (points **et** shocks) y est donc **strictement identique** à
+> celui du même joueur dans les classements équipe « Contributeurs »/« Meilleurs baggeurs ».
+> **Cause de l'ancien écart** (16 % vs 12 % sur les shocks, 16 % vs 14 % sur les points) :
+> l'indiv agrégeait sur un **sous-ensemble de wars** (celles où le joueur a joué,
+> `hasPlayer`), tandis que le classement équipe agrège sur **toutes les wars de la fenêtre**
+> → **dénominateurs différents**. En conséquence, la **part de points de la contribution indiv
+> a été alignée sur le total/total** de `computeContributors` (elle n'est **plus** la moyenne
+> war par war `Stats.playerContribution`, qui reste seulement utilisée par l'ancienne cellule
+> `MKAdvancedStatsCell`/`StatsScreen`). `computeContributors` calcule `pointsShare` =
+> `points membre × 100 ÷ Σ points des membres` et `shockShare` =
+> `windowWars.totalShocks(membre) × 100 ÷ windowWars.totalShocks()` sur **la même fenêtre de
+> wars d'équipe** pour tous les membres. La contribution indiv ne s'affiche que pour un
+> **membre du roster** (ligne `isMe` présente).
 
 ### 9.5 `List<WarEntity>.withTrackStats(userId?, teamId?)` → `List<TrackStats>`
 

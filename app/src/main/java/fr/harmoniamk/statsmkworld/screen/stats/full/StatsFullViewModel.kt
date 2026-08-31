@@ -9,7 +9,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
-import fr.harmoniamk.statsmkworld.extension.shockShare
 import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
@@ -99,9 +98,6 @@ class StatsFullViewModel @AssistedInject constructor(
         // Vue Équipe : MÊMES lignes que les contributeurs, mais triées par part de SHOCKS
         // (« Meilleurs baggeurs », #69). Part de shocks = total shocks joueur / total équipe.
         val baggersByWindow: Map<Int, List<Contributor>> = mapOf(),
-        // Vue Individuelles : part de shocks du joueur ciblé par fenêtre (total shocks
-        // joueur / total shocks équipe), 2ᵉ ligne de la section « Ta contribution » (#69).
-        val playerShockShareByWindow: Map<Int, Int?> = mapOf(),
         // Classements adversaires top3/flop3 (occurrences, winrate ET score) PAR FENÊTRE, au
         // périmètre de la vue (équipe = tous ; individuelles = du point de vue du joueur).
         val teamOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
@@ -208,15 +204,12 @@ class StatsFullViewModel @AssistedInject constructor(
             val baggersByWindow = contributorsByWindow.mapValues { (_, contributors) ->
                 contributors.sortedByDescending { it.shockShare }
             }
-            // Part de shocks du joueur ciblé par fenêtre (vue Individuelles, #69) : total
-            // shocks joueur / total shocks équipe sur les wars du joueur DANS la fenêtre.
-            val chronologicalPlayerWars = teamWarsMode
-                .filter { targetUserId != null && it.war.hasPlayer(targetUserId) }
-                .sortedBy { it.war.id }
-            val playerShockShareByWindow = windowSizes.associate { (index, lastN) ->
-                val windowWars = lastN?.let { chronologicalPlayerWars.takeLast(it) } ?: chronologicalPlayerWars
-                index to targetUserId?.let { windowWars.shockShare(it) }
-            }
+            // NB (#69, retour PR #75) : la section indiv « Ta contribution » NE recalcule
+            // PLUS sa part de points/shocks. Elle LIT la ligne du joueur (`isMe`) dans
+            // `contributorsByWindow` (source de vérité UNIQUE), garantissant un % IDENTIQUE
+            // à celui du classement équipe pour un même joueur/fenêtre. L'ancien calcul indiv
+            // (`playerShockShareByWindow`, `Stats.playerContribution`) divergeait car il
+            // agrégeait sur un SOUS-ENSEMBLE de wars (celles du joueur) → dénominateur ≠.
 
             State(
                 loading = false,
@@ -230,7 +223,6 @@ class StatsFullViewModel @AssistedInject constructor(
                 teamMapStatsByWindow = teamMapStatsByWindow,
                 contributorsByWindow = contributorsByWindow,
                 baggersByWindow = baggersByWindow,
-                playerShockShareByWindow = playerShockShareByWindow,
                 teamOpponentsByWindow = teamOpponentsByWindow,
                 playerOpponentsByWindow = playerOpponentsByWindow
             )
@@ -276,7 +268,12 @@ class StatsFullViewModel @AssistedInject constructor(
     /**
      * Contributeurs du roster pour les **3 fenêtres** (all-time / 5 / 10 dernières wars),
      * keyées par index (0/1/2) pour le sélecteur de la section. Chaque membre : part de
-     * ses points (÷ total cumulé des membres) + winrate, sur la fenêtre. Trié décroissant.
+     * ses points (÷ total cumulé des membres), part de ses shocks (÷ total shocks équipe)
+     * et winrate, sur la fenêtre. Trié décroissant.
+     *
+     * **Source de vérité UNIQUE** (retour PR #75) : la section indiv « Ta contribution »
+     * lit la ligne du joueur (`isMe`) ici même — mêmes wars, même dénominateur — au lieu
+     * de recalculer sur un sous-ensemble, ce qui garantit des % identiques indiv ↔ équipe.
      */
     private suspend fun computeContributorsByWindow(
         wars: List<WarDetails>,
