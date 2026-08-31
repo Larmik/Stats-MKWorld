@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -56,10 +57,17 @@ class StatsFullViewModel @AssistedInject constructor(
         fun create(@Assisted("userId") userId: String?, showTabs: Boolean): StatsFullViewModel
     }
 
-    /** Un contributeur du roster (vue Équipe) : joueur, part de points, winrate. */
+    /**
+     * Une ligne de classement du roster (vue Équipe) : joueur, part de points
+     * (« Contributeurs »), part de shocks (« Meilleurs baggeurs », #69) et winrate.
+     * Le MÊME modèle alimente les deux classements ; seul le critère de tri diffère
+     * (pointsShare vs shockShare). part de shocks = total shocks joueur / total shocks
+     * équipe (ratio TOTAL/TOTAL, jamais une moyenne).
+     */
     data class Contributor(
         val player: PlayerEntity,
         val pointsShare: Int,
+        val shockShare: Int,
         val winrate: Int,
         val isMe: Boolean
     )
@@ -87,6 +95,9 @@ class StatsFullViewModel @AssistedInject constructor(
         val teamMapStatsByWindow: Map<Int, MapStats> = mapOf(),
         // Vue Équipe : contributeurs du roster par fenêtre (0 = all-time, 1 = 5, 2 = 10).
         val contributorsByWindow: Map<Int, List<Contributor>> = mapOf(),
+        // Vue Équipe : MÊMES lignes que les contributeurs, mais triées par part de SHOCKS
+        // (« Meilleurs baggeurs », #69). Part de shocks = total shocks joueur / total équipe.
+        val baggersByWindow: Map<Int, List<Contributor>> = mapOf(),
         // Classements adversaires top3/flop3 (occurrences, winrate ET score) PAR FENÊTRE, au
         // périmètre de la vue (équipe = tous ; individuelles = du point de vue du joueur).
         val teamOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
@@ -189,6 +200,16 @@ class StatsFullViewModel @AssistedInject constructor(
 
             // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10).
             val contributorsByWindow = computeContributorsByWindow(teamWarsMode, targetUserId)
+            // Meilleurs baggeurs (#69) : MÊMES lignes triées par part de SHOCKS décroissante.
+            val baggersByWindow = contributorsByWindow.mapValues { (_, contributors) ->
+                contributors.sortedByDescending { it.shockShare }
+            }
+            // NB (#69, retour PR #75) : la section indiv « Ta contribution » NE recalcule
+            // PLUS sa part de points/shocks. Elle LIT la ligne du joueur (`isMe`) dans
+            // `contributorsByWindow` (source de vérité UNIQUE), garantissant un % IDENTIQUE
+            // à celui du classement équipe pour un même joueur/fenêtre. L'ancien calcul indiv
+            // (`playerShockShareByWindow`, `Stats.playerContribution`) divergeait car il
+            // agrégeait sur un SOUS-ENSEMBLE de wars (celles du joueur) → dénominateur ≠.
 
             State(
                 loading = false,
@@ -201,6 +222,7 @@ class StatsFullViewModel @AssistedInject constructor(
                 teamStatsByWindow = teamStatsByWindow,
                 teamMapStatsByWindow = teamMapStatsByWindow,
                 contributorsByWindow = contributorsByWindow,
+                baggersByWindow = baggersByWindow,
                 teamOpponentsByWindow = teamOpponentsByWindow,
                 playerOpponentsByWindow = playerOpponentsByWindow
             )
@@ -246,7 +268,12 @@ class StatsFullViewModel @AssistedInject constructor(
     /**
      * Contributeurs du roster pour les **3 fenêtres** (all-time / 5 / 10 dernières wars),
      * keyées par index (0/1/2) pour le sélecteur de la section. Chaque membre : part de
-     * ses points (÷ total cumulé des membres) + winrate, sur la fenêtre. Trié décroissant.
+     * ses points (÷ total cumulé des membres), part de ses shocks (÷ total shocks équipe)
+     * et winrate, sur la fenêtre. Trié décroissant.
+     *
+     * **Source de vérité UNIQUE** (retour PR #75) : la section indiv « Ta contribution »
+     * lit la ligne du joueur (`isMe`) ici même — mêmes wars, même dénominateur — au lieu
+     * de recalculer sur un sous-ensemble, ce qui garantit des % identiques indiv ↔ équipe.
      */
     private suspend fun computeContributorsByWindow(
         wars: List<WarDetails>,
@@ -283,11 +310,15 @@ class StatsFullViewModel @AssistedInject constructor(
         }
         val totalPoints = perPlayer.sumOf { it.second.warScores.sumOf { score -> score.score } }
             .takeIf { it > 0 } ?: return listOf()
+        // Dénominateur SHOCKS (#69) : total des shocks de l'ÉQUIPE sur la fenêtre (tous
+        // joueurs). Part de chaque membre = ses shocks / ce total (ratio TOTAL/TOTAL).
+        val totalTeamShocks = windowWars.totalShocks()
         return perPlayer
             .map { (player, stats) ->
                 Contributor(
                     player = player,
                     pointsShare = (stats.warScores.sumOf { it.score } * 100) / totalPoints,
+                    shockShare = if (totalTeamShocks > 0) windowWars.totalShocks(player.id) * 100 / totalTeamShocks else 0,
                     winrate = stats.allTimeForm?.winrate ?: 0,
                     isMe = player.id == meId
                 )

@@ -316,6 +316,8 @@
     <string name="stats_contribution_title">Contribution</string>
     <string name="stats_contribution_value">%1$d %% of team points</string>
     <string name="stats_contribution_rank">Roster contributor #%1$d</string>
+    <string name="stats_bag_contribution_value">%1$d %% of team shocks</string>
+    <string name="stats_bag_contribution_rank">Roster bagger #%1$d</string>
     <string name="stats_player_form_title">Form &amp; streaks</string>
     <string name="stats_team_form_title">Team form &amp; streaks</string>
     <string name="stats_form_delta">Form %1$s %% over 10 wars</string>
@@ -323,6 +325,8 @@
     <string name="stats_distribution_title">Position distribution</string>
     <string name="stats_contributors_title">Contributors</string>
     <string name="stats_points_share">%1$d %% of points</string>
+    <string name="stats_baggers_title">Best baggers</string>
+    <string name="stats_shocks_share">%1$d %% of shocks</string>
     <string name="stats_podium_top">Top 3</string>
     <string name="stats_podium_flop">Flop 3</string>
     <string name="stats_sort_winrate">Winrate</string>
@@ -348,6 +352,7 @@
     <string name="opponent_detail_player_score">Avg score</string>
     <string name="opponent_detail_best_tracks">Tracks against them</string>
     <string name="opponent_detail_pilots">Pilots against them</string>
+    <string name="opponent_detail_baggers">Baggers against them</string>
     <string name="opponent_detail_history">War history</string>
     <string name="map_detail_title">Track</string>
     <string name="map_detail_header">played %1$d times</string>
@@ -359,12 +364,15 @@
     <string name="map_detail_team_score">Team score</string>
     <string name="map_detail_player_position">Avg position</string>
     <string name="map_detail_pilots">Pilots on this track</string>
+    <string name="map_detail_baggers">Baggers on this track</string>
     <string name="map_detail_opponents">Opponents on this track</string>
     <string name="stats_distribution_title_generic">Position distribution</string>
     <string name="stats_top_bottom_team_title">Top / Bot team</string>
     <string name="stats_top_bottom_opponent_title">Top / Bot opponent</string>
     <string name="stats_shocks_played">Shocks played</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
+    <string name="stats_bag_share_short">Shocks</string>
+    <string name="stats_bag_share_pct">Share</string>
     <string name="stats_see_full_ranking">Full ranking →</string>
     <string name="profile_tab_player">Player</string>
     <string name="profile_tab_team">Team</string>

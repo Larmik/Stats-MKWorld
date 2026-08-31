@@ -65,6 +65,18 @@ class MapDetailViewModel @AssistedInject constructor(
         val winrate: Int
     )
 
+    /**
+     * Un baggeur de l'équipe classé sur ce circuit (#69) : part de shocks = ses shocks sur
+     * ce circuit / total shocks de l'ÉQUIPE sur ce circuit (ratio TOTAL/TOTAL — critère de
+     * TRI et valeur affichée). [shockCount] = nb de shocks ; [played] = nb de manches courues.
+     */
+    data class BaggerRanking(
+        val player: PlayerEntity,
+        val shockShare: Int,
+        val shockCount: Int,
+        val played: Int
+    )
+
     /** Un adversaire rencontré sur ce circuit (12p, opposant unique). */
     data class OpponentRanking(
         val team: TeamEntity,
@@ -90,6 +102,9 @@ class MapDetailViewModel @AssistedInject constructor(
         // Classement des pilotes sur ce circuit (du meilleur au pire score moyen), MEMBRES
         // uniquement (alliés exclus).
         val pilots: List<PilotRanking> = listOf(),
+        // Classement des baggeurs sur ce circuit par part de shocks (#69), MEMBRES uniquement,
+        // indépendant du mode (affiché en mode ÉQUIPE côté UI).
+        val baggers: List<BaggerRanking> = listOf(),
         // Classement des adversaires rencontrés sur ce circuit (du meilleur au pire score
         // moyen de l'équipe face à eux) — indépendant du mode.
         val opponents: List<OpponentRanking> = listOf()
@@ -148,6 +163,9 @@ class MapDetailViewModel @AssistedInject constructor(
                     // Classement des pilotes : toutes les manches, MEMBRES uniquement (alliés
                     // exclus), indépendant du mode (classement par pilote).
                     pilots = computePilots(allTrackDetails),
+                    // Classement des baggeurs sur ce circuit (#69) : part de shocks (total/total),
+                    // toutes les manches, MEMBRES uniquement, indépendant du mode.
+                    baggers = computeBaggers(allTrackDetails),
                     // Classement des adversaires rencontrés sur ce circuit (toutes les manches),
                     // indépendant du mode (classement par adversaire).
                     opponents = computeOpponents(allTrackDetails)
@@ -197,6 +215,41 @@ class MapDetailViewModel @AssistedInject constructor(
                 )
             }
             .sortedByDescending { it.averageScore }
+    }
+
+    /**
+     * Classement des baggeurs de l'équipe sur ce circuit (#69) : part de shocks de chaque
+     * membre = ses shocks sur ce circuit / total shocks de l'ÉQUIPE sur ce circuit (ratio
+     * TOTAL/TOTAL, jamais une moyenne). **Alliés exclus** (rosterId « -1 ») ; on ne garde que
+     * les baggeurs ayant au moins un shock. Rule 32 : logique mono-consommateur, non extraite.
+     */
+    private suspend fun computeBaggers(details: List<MapDetails>): List<BaggerRanking> {
+        val allShocks = details.flatMap { it.warTrack.track.shocks.orEmpty() }
+        val totalTeamShocks = allShocks.sumOf { it.count }.takeIf { it > 0 } ?: return listOf()
+        // Nb de manches courues par chaque joueur sur ce circuit (info « joué »).
+        val runsByPlayer = details
+            .flatMap { it.warTrack.track.positions }
+            .groupingBy { it.playerId }
+            .eachCount()
+        val shocksByPlayer = allShocks
+            .groupBy { it.playerId }
+            .mapValues { (_, shocks) -> shocks.sumOf { it.count } }
+
+        val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
+        return shocksByPlayer
+            .mapNotNull { (playerId, shockCount) ->
+                if (shockCount == 0) return@mapNotNull null
+                val player = players.firstOrNull { it.id == playerId } ?: return@mapNotNull null
+                // Membres uniquement (alliés = rosterId sentinelle « -1 »).
+                if (player.rosterId == "-1") return@mapNotNull null
+                BaggerRanking(
+                    player = player,
+                    shockShare = shockCount * 100 / totalTeamShocks,
+                    shockCount = shockCount,
+                    played = runsByPlayer[playerId] ?: 0
+                )
+            }
+            .sortedByDescending { it.shockShare }
     }
 
     /**

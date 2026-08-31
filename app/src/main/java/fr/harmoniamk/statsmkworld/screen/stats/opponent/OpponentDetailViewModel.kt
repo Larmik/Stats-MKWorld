@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
+import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
@@ -69,6 +70,18 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val winrate: Int
     )
 
+    /**
+     * Un baggeur de l'équipe classé face à cet adversaire (#69) : part de shocks = ses
+     * shocks / total shocks de l'équipe face à eux (ratio TOTAL/TOTAL — critère de TRI et
+     * valeur affichée). [shockCount] = nb de shocks obtenus ; [played] = nb de wars vs eux.
+     */
+    data class BaggerRanking(
+        val player: PlayerEntity,
+        val shockShare: Int,
+        val shockCount: Int,
+        val played: Int
+    )
+
     data class State(
         val loading: Boolean = true,
         // Mode courant : true = Individuel (joueur courant), false = Équipe.
@@ -99,6 +112,9 @@ class OpponentDetailViewModel @AssistedInject constructor(
         // Classement des pilotes (MEMBRES) ayant joué contre cet adversaire (du meilleur au
         // pire score perso moyen) — affiché en mode ÉQUIPE uniquement (#67).
         val pilots: List<PilotRanking> = listOf(),
+        // Classement des baggeurs (MEMBRES) face à cet adversaire par part de shocks (#69),
+        // affiché en mode ÉQUIPE uniquement.
+        val baggers: List<BaggerRanking> = listOf(),
         // Historique des wars face à eux (plus récente en premier).
         val history: List<WarDetails> = listOf()
     )
@@ -180,6 +196,9 @@ class OpponentDetailViewModel @AssistedInject constructor(
             // Classement des pilotes (MEMBRES) face à cet adversaire — indépendant du mode
             // (classement par pilote), affiché en mode ÉQUIPE uniquement côté UI (#67).
             val pilots = computePilots(chronological)
+            // Classement des baggeurs (MEMBRES) face à cet adversaire (#69) — part de shocks
+            // (total/total), indépendant du mode, affiché en mode ÉQUIPE uniquement côté UI.
+            val baggers = computeBaggers(chronological)
 
             _state.value.copy(
                 loading = false,
@@ -199,6 +218,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 allTracks = sortedTracks,
                 mapStats = mapStats,
                 pilots = pilots,
+                baggers = baggers,
                 history = chronological.reversed()
             )
         }
@@ -266,6 +286,43 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 )
             }
             .sortedByDescending { it.averageScore }
+    }
+
+    /**
+     * Classement des baggeurs de l'équipe face à cet adversaire (#69) — **calculé sur les
+     * wars jouées contre cet adversaire** ([wars] déjà filtré `hasTeam(teamId)` + 12p). Part
+     * de shocks de chaque membre = ses shocks / total shocks de l'ÉQUIPE face à eux (ratio
+     * TOTAL/TOTAL, jamais une moyenne). **Alliés exclus** (rosterId « -1 ») ; on ne garde que
+     * les baggeurs ayant au moins un shock (0 % n'a pas de sens dans un classement de bag).
+     * Rule 32 : logique mono-consommateur, non extraite.
+     */
+    private suspend fun computeBaggers(wars: List<WarDetails>): List<BaggerRanking> {
+        val totalTeamShocks = wars.totalShocks().takeIf { it > 0 } ?: return listOf()
+        val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
+        // Nb de wars vs cet adversaire où chaque joueur a couru (pour l'info « joué »).
+        val warsByPlayer = mutableMapOf<String, Int>()
+        wars.forEach { war ->
+            war.war.tracks
+                .flatMap { it.positions }
+                .map { it.playerId }
+                .toSet()
+                .forEach { playerId -> warsByPlayer[playerId] = (warsByPlayer[playerId] ?: 0) + 1 }
+        }
+        return warsByPlayer.keys
+            .mapNotNull { playerId ->
+                val player = players.firstOrNull { it.id == playerId } ?: return@mapNotNull null
+                // Membres uniquement (alliés = rosterId sentinelle « -1 »).
+                if (player.rosterId == "-1") return@mapNotNull null
+                val shockCount = wars.totalShocks(playerId)
+                if (shockCount == 0) return@mapNotNull null
+                BaggerRanking(
+                    player = player,
+                    shockShare = shockCount * 100 / totalTeamShocks,
+                    shockCount = shockCount,
+                    played = warsByPlayer[playerId] ?: 0
+                )
+            }
+            .sortedByDescending { it.shockShare }
     }
 
     /**

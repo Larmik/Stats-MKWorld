@@ -316,6 +316,8 @@
     <string name="stats_contribution_title">Contribution</string>
     <string name="stats_contribution_value">%1$d %% des points de l\'équipe</string>
     <string name="stats_contribution_rank">%1$dᵉ contributeur du roster</string>
+    <string name="stats_bag_contribution_value">%1$d %% des shocks de l\'équipe</string>
+    <string name="stats_bag_contribution_rank">%1$dᵉ baggeur du roster</string>
     <string name="stats_player_form_title">Forme &amp; séries</string>
     <string name="stats_team_form_title">Forme &amp; séries équipe</string>
     <string name="stats_form_delta">Forme %1$s %% sur 10 wars</string>
@@ -323,6 +325,8 @@
     <string name="stats_distribution_title">Distribution des positions</string>
     <string name="stats_contributors_title">Contributeurs</string>
     <string name="stats_points_share">%1$d %% des points</string>
+    <string name="stats_baggers_title">Meilleurs baggeurs</string>
+    <string name="stats_shocks_share">%1$d %% des shocks</string>
     <string name="stats_podium_top">Top 3</string>
     <string name="stats_podium_flop">Flop 3</string>
     <string name="stats_sort_winrate">Winrate</string>
@@ -348,6 +352,7 @@
     <string name="opponent_detail_player_score">Score moyen</string>
     <string name="opponent_detail_best_tracks">Circuits contre eux</string>
     <string name="opponent_detail_pilots">Pilotes contre eux</string>
+    <string name="opponent_detail_baggers">Baggeurs contre eux</string>
     <string name="opponent_detail_history">Historique des wars</string>
     <string name="map_detail_title">Circuit</string>
     <string name="map_detail_header">joué %1$d fois</string>
@@ -359,12 +364,15 @@
     <string name="map_detail_team_score">Score équipe</string>
     <string name="map_detail_player_position">Position moy.</string>
     <string name="map_detail_pilots">Pilotes sur ce circuit</string>
+    <string name="map_detail_baggers">Baggeurs sur ce circuit</string>
     <string name="map_detail_opponents">Adversaires sur ce circuit</string>
     <string name="stats_distribution_title_generic">Répartition des positions</string>
     <string name="stats_top_bottom_team_title">Top / Bot équipe</string>
     <string name="stats_top_bottom_opponent_title">Top / Bot adversaire</string>
     <string name="stats_shocks_played">Shocks joués</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
+    <string name="stats_bag_share_short">Shocks</string>
+    <string name="stats_bag_share_pct">Part</string>
     <string name="stats_see_full_ranking">Classement entier →</string>
     <string name="profile_tab_player">Joueur</string>
     <string name="profile_tab_team">Équipe</string>
