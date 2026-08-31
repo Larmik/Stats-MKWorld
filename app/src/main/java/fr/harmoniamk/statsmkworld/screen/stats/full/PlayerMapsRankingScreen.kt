@@ -50,7 +50,9 @@ fun PlayerMapsRankingScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sortIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    val stats = if (isTeam) state.teamStats else state.playerStats
+    // Classement ENTIER = all-time (index 0) : cet écran est une destination autonome sans
+    // sélecteur de période (le filtre global de #68 ne concerne que le pôle Stats).
+    val stats = if (isTeam) state.teamStatsByWindow[0] else state.playerStatsByWindow[0]
     val userId = if (isTeam) null else state.targetUserId
     val maps = stats?.maps.orEmpty()
         // Seuls les circuits réellement joués figurent au classement.
