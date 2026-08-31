@@ -76,19 +76,21 @@ class StatsFullViewModel @AssistedInject constructor(
         // Id du joueur affiché (résolu : soit userId, soit joueur courant) — sert à
         // reconstruire un StatsType pour les cellules ui/stats/* réutilisées.
         val targetUserId: String? = null,
-        // Stats (12p uniquement — 24p retiré, ticket #37).
-        val playerStats: Stats? = null,
-        val teamStats: Stats? = null,
-        // Tables Top/Bot 2→6 au GLOBAL (toutes manches, vue équipe) : équipe ET adversaire
-        // (complément des positions), alimentées par un MapStats global (userId null, 12p).
+        // Stats (12p uniquement — 24p retiré, ticket #37), déclinées par FENÊTRE de période
+        // (#68) : 0 = all-time, 1 = 5 dernières, 2 = 10 dernières. Le sélecteur de période
+        // GLOBAL de l'écran choisit l'index ; toutes les sections lisent la même fenêtre.
+        val playerStatsByWindow: Map<Int, Stats> = mapOf(),
+        val teamStatsByWindow: Map<Int, Stats> = mapOf(),
+        // Tables Top/Bot 2→6 (toutes manches, vue équipe) : équipe ET adversaire (complément
+        // des positions), alimentées par un MapStats par fenêtre (userId null, 12p).
         // Réutilisées par les StatCard « Top/Bot équipe » / « Top/Bot adversaire ».
-        val teamMapStats: MapStats? = null,
+        val teamMapStatsByWindow: Map<Int, MapStats> = mapOf(),
         // Vue Équipe : contributeurs du roster par fenêtre (0 = all-time, 1 = 5, 2 = 10).
         val contributorsByWindow: Map<Int, List<Contributor>> = mapOf(),
-        // Classements adversaires top3/flop3 (occurrences, winrate ET score), au
+        // Classements adversaires top3/flop3 (occurrences, winrate ET score) PAR FENÊTRE, au
         // périmètre de la vue (équipe = tous ; individuelles = du point de vue du joueur).
-        val teamOpponents: OpponentPodiums = OpponentPodiums(),
-        val playerOpponents: OpponentPodiums = OpponentPodiums()
+        val teamOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
+        val playerOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf()
     )
 
     /** Les 6 classements adversaires d'un podium (top/flop × occurrences/winrate/score) +
@@ -107,6 +109,11 @@ class StatsFullViewModel @AssistedInject constructor(
 
     // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
     private val is24p = false
+
+    // Fenêtres de période du sélecteur GLOBAL (#68) : (indexUI, N dernières wars) — 0 =
+    // all-time (null), 1 = 5, 2 = 10. Source unique partagée par tout le fenêtrage du VM
+    // (stats/tops-bots/adversaires/contributeurs) pour rester cohérent entre sections.
+    private val windowSizes = listOf(0 to null, 1 to 5, 2 to 10)
 
     private val _state = MutableStateFlow(State())
 
@@ -143,33 +150,45 @@ class StatsFullViewModel @AssistedInject constructor(
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { "https://mkcentral.com$it" }
 
-            // Stats 12p (player + team).
-            val playerStats = teamWarsMode
-                .withFullStats(databaseRepository, userId = targetUserId, is24p = is24p)
-                .firstOrNull()
-            val teamStats = teamWarsMode
-                .withFullStats(databaseRepository, is24p = is24p)
-                .firstOrNull()
+            // Wars de l'équipe triées chronologiquement (war.id = timestamp) : base commune
+            // du fenêtrage de TOUTES les sections (#68). La fenêtre N = N dernières wars de
+            // l'équipe, cohérente entre stats/contributeurs/adversaires/tops-bots.
+            val chronologicalWars = teamWarsMode.sortedBy { it.war.id }
+            val currentTeamId = team?.id?.toString()
 
-            // MapStats GLOBAL (toutes manches, vue équipe = userId null) : fournit les tables
-            // Top/Bot 2→6 d'équipe ET adversaire (détail 2→6 que RecordsTilesCard n'a pas).
-            val teamMapStats = MapStats(
-                list = teamWarsMode.flatMap { war ->
-                    war.warTracks.map { track -> MapDetails(war = war, warTrack = track, position = null) }
-                },
-                userId = null,
-                is24p = is24p
-            )
+            // Chaque section est déclinée sur les 3 fenêtres (0 = all-time, 1 = 5, 2 = 10)
+            // et keyée par index. Le sélecteur de période GLOBAL de l'écran choisit l'index ;
+            // toutes les sections lisent alors la même fenêtre. Fenêtrage à la demande sur
+            // `takeLast(n)` des wars chrono (rule 13 : justesse ; pas de valeur en dur).
+            val playerStatsByWindow = mutableMapOf<Int, Stats>()
+            val teamStatsByWindow = mutableMapOf<Int, Stats>()
+            val teamMapStatsByWindow = mutableMapOf<Int, MapStats>()
+            val teamOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
+            val playerOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
+            windowSizes.forEach { (index, lastN) ->
+                val windowWars = lastN?.let { chronologicalWars.takeLast(it) } ?: chronologicalWars
+                windowWars.withFullStats(databaseRepository, userId = targetUserId, is24p = is24p)
+                    .firstOrNull()?.let { playerStatsByWindow[index] = it }
+                windowWars.withFullStats(databaseRepository, is24p = is24p)
+                    .firstOrNull()?.let { teamStatsByWindow[index] = it }
+                // MapStats (toutes manches, vue équipe = userId null) : tables Top/Bot 2→6
+                // d'équipe ET adversaire (détail 2→6 que RecordsTilesCard n'a pas).
+                teamMapStatsByWindow[index] = MapStats(
+                    list = windowWars.flatMap { war ->
+                        war.warTracks.map { track -> MapDetails(war = war, warTrack = track, position = null) }
+                    },
+                    userId = null,
+                    is24p = is24p
+                )
+                // Classements top3/flop3 adversaires (occurrences/winrate/score), au périmètre
+                // de la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
+                // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
+                teamOpponentsByWindow[index] = computeOpponentRankings(windowWars, currentTeamId, userId = null)
+                playerOpponentsByWindow[index] = computeOpponentRankings(windowWars, currentTeamId, userId = targetUserId)
+            }
 
             // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10).
             val contributorsByWindow = computeContributorsByWindow(teamWarsMode, targetUserId)
-
-            // Classements top3/flop3 adversaires (occurrences/winrate/score), au périmètre
-            // de la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
-            // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
-            val currentTeamId = team?.id?.toString()
-            val teamOpponents = computeOpponentRankings(teamWarsMode, currentTeamId, userId = null)
-            val playerOpponents = computeOpponentRankings(teamWarsMode, currentTeamId, userId = targetUserId)
 
             State(
                 loading = false,
@@ -178,12 +197,12 @@ class StatsFullViewModel @AssistedInject constructor(
                 playerLogo = playerLogo,
                 teamLogo = teamLogo,
                 targetUserId = targetUserId,
-                playerStats = playerStats,
-                teamStats = teamStats,
-                teamMapStats = teamMapStats,
+                playerStatsByWindow = playerStatsByWindow,
+                teamStatsByWindow = teamStatsByWindow,
+                teamMapStatsByWindow = teamMapStatsByWindow,
                 contributorsByWindow = contributorsByWindow,
-                teamOpponents = teamOpponents,
-                playerOpponents = playerOpponents
+                teamOpponentsByWindow = teamOpponentsByWindow,
+                playerOpponentsByWindow = playerOpponentsByWindow
             )
         }
 
@@ -238,7 +257,7 @@ class StatsFullViewModel @AssistedInject constructor(
             .orEmpty()
             // Membres du roster mkworld courant uniquement (les alliés n'ont pas de rosterId matché).
             .filter { player -> roster?.any { it.id.toString() == player.rosterId } == true }
-        return listOf(0 to null, 1 to 5, 2 to 10).associate { (index, lastN) ->
+        return windowSizes.associate { (index, lastN) ->
             index to computeContributors(wars, members, meId, lastN)
         }
     }

@@ -48,7 +48,10 @@ fun PlayerOpponentsRankingScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sortIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    val podiums = if (isTeam) state.teamOpponents else state.playerOpponents
+    // Classement ENTIER = all-time (index 0) : destination autonome sans sélecteur de
+    // période (le filtre global de #68 ne concerne que le pôle Stats).
+    val podiums = (if (isTeam) state.teamOpponentsByWindow[0] else state.playerOpponentsByWindow[0])
+        ?: StatsFullViewModel.OpponentPodiums()
     val opponents = podiums.all.let { list ->
         when (sortIndex) {
             1 -> list.sortedByDescending { it.winratePercent }
