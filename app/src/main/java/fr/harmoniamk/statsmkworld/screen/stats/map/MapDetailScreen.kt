@@ -51,6 +51,7 @@ fun MapDetailScreen(
     viewModel: MapDetailViewModel,
     onBack: () -> Unit,
     onPilotsRanking: () -> Unit,
+    onBaggersRanking: () -> Unit,
     onOpponentsRanking: () -> Unit
 ) {
     BackHandler { onBack() }
@@ -136,6 +137,16 @@ fun MapDetailScreen(
                             onSeeAll = onPilotsRanking
                         )
                     }
+                    // 5bis. Classement des baggeurs sur ce circuit (#69) — mode ÉQUIPE
+                    //       uniquement (même dispositif que « Pilotes sur ce circuit »).
+                    if (!state.isIndiv && state.baggers.isNotEmpty()) item {
+                        PodiumSectionCard(
+                            title = stringResource(R.string.map_detail_baggers),
+                            top = state.baggers.take(3).map { it.toPodiumEntry() },
+                            flop = state.baggers.takeLast(3).reversed().map { it.toPodiumEntry() },
+                            onSeeAll = onBaggersRanking
+                        )
+                    }
                     // 6. Classement des adversaires rencontrés sur ce circuit — **mode ÉQUIPE
                     //    uniquement** (#67 round 3, comme la section pilotes ; masqué en Indiv).
                     if (!state.isIndiv && state.opponents.isNotEmpty()) item {
@@ -170,6 +181,24 @@ internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
             R.string.times_played_short to played.toString(),
             R.string.form_winrate to "$winrate%",
             R.string.average_position_short to averagePosition.toString()
+        )
+    )
+
+/**
+ * Baggeur → entrée de podium (#69) : photo/initiales + **Nb joué / Shocks / % shocks**. Part
+ * de shocks = ses shocks sur ce circuit / total shocks de l'équipe (total/total). Partagé entre
+ * la fiche (podium Top3/Flop3) et le classement complet [MapBaggersRankingScreen].
+ */
+internal fun MapDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
+    PodiumEntry(
+        name = player.name,
+        initials = initialsOf(player.name),
+        avatar = player.avatar,
+        avatarColor = playerAvatarColor(player.id),
+        stats = listOf(
+            R.string.times_played_short to played.toString(),
+            R.string.stats_bag_share_short to shockCount.toString(),
+            R.string.stats_bag_share_pct to "$shockShare%"
         )
     )
 

@@ -75,7 +75,8 @@ fun OpponentDetailScreen(
     onBack: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
     onTracksRanking: () -> Unit,
-    onPilotsRanking: () -> Unit
+    onPilotsRanking: () -> Unit,
+    onBaggersRanking: () -> Unit
 ) {
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -160,6 +161,16 @@ fun OpponentDetailScreen(
                             top = state.pilots.take(3).map { it.toPodiumEntry() },
                             flop = state.pilots.takeLast(3).reversed().map { it.toPodiumEntry() },
                             onSeeAll = onPilotsRanking
+                        )
+                    }
+                    // 5ter. Baggeurs contre eux (podium Top3/Flop3 par part de shocks, #69) —
+                    //       mode ÉQUIPE uniquement (même dispositif que « Pilotes contre eux »).
+                    if (!state.isIndiv && state.baggers.isNotEmpty()) item {
+                        PodiumSectionCard(
+                            title = stringResource(R.string.opponent_detail_baggers),
+                            top = state.baggers.take(3).map { it.toPodiumEntry() },
+                            flop = state.baggers.takeLast(3).reversed().map { it.toPodiumEntry() },
+                            onSeeAll = onBaggersRanking
                         )
                     }
                     // 6. Sections détaillées mutualisées (mêmes calculs que StatsFullScreen,
@@ -371,5 +382,23 @@ internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
             R.string.times_played_short to played.toString(),
             R.string.form_winrate to "$winrate%",
             R.string.average_position_short to averagePosition.toString()
+        )
+    )
+
+/**
+ * Baggeur → entrée de podium (#69) : photo/initiales + **Nb joué / Shocks / % shocks**.
+ * Part de shocks = ses shocks / total shocks de l'équipe face à eux (total/total). Partagé
+ * entre la fiche (podium Top3/Flop3) et le classement complet [OpponentBaggersRankingScreen].
+ */
+internal fun OpponentDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
+    PodiumEntry(
+        name = player.name,
+        initials = initialsOf(player.name),
+        avatar = player.avatar,
+        avatarColor = playerAvatarColor(player.id),
+        stats = listOf(
+            R.string.times_played_short to played.toString(),
+            R.string.stats_bag_share_short to shockCount.toString(),
+            R.string.stats_bag_share_pct to "$shockShare%"
         )
     )

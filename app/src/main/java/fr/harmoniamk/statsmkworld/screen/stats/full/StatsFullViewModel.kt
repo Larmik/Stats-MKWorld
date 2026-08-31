@@ -9,6 +9,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.shockShare
+import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -56,10 +58,17 @@ class StatsFullViewModel @AssistedInject constructor(
         fun create(@Assisted("userId") userId: String?, showTabs: Boolean): StatsFullViewModel
     }
 
-    /** Un contributeur du roster (vue Équipe) : joueur, part de points, winrate. */
+    /**
+     * Une ligne de classement du roster (vue Équipe) : joueur, part de points
+     * (« Contributeurs »), part de shocks (« Meilleurs baggeurs », #69) et winrate.
+     * Le MÊME modèle alimente les deux classements ; seul le critère de tri diffère
+     * (pointsShare vs shockShare). part de shocks = total shocks joueur / total shocks
+     * équipe (ratio TOTAL/TOTAL, jamais une moyenne).
+     */
     data class Contributor(
         val player: PlayerEntity,
         val pointsShare: Int,
+        val shockShare: Int,
         val winrate: Int,
         val isMe: Boolean
     )
@@ -87,6 +96,12 @@ class StatsFullViewModel @AssistedInject constructor(
         val teamMapStatsByWindow: Map<Int, MapStats> = mapOf(),
         // Vue Équipe : contributeurs du roster par fenêtre (0 = all-time, 1 = 5, 2 = 10).
         val contributorsByWindow: Map<Int, List<Contributor>> = mapOf(),
+        // Vue Équipe : MÊMES lignes que les contributeurs, mais triées par part de SHOCKS
+        // (« Meilleurs baggeurs », #69). Part de shocks = total shocks joueur / total équipe.
+        val baggersByWindow: Map<Int, List<Contributor>> = mapOf(),
+        // Vue Individuelles : part de shocks du joueur ciblé par fenêtre (total shocks
+        // joueur / total shocks équipe), 2ᵉ ligne de la section « Ta contribution » (#69).
+        val playerShockShareByWindow: Map<Int, Int?> = mapOf(),
         // Classements adversaires top3/flop3 (occurrences, winrate ET score) PAR FENÊTRE, au
         // périmètre de la vue (équipe = tous ; individuelles = du point de vue du joueur).
         val teamOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
@@ -189,6 +204,19 @@ class StatsFullViewModel @AssistedInject constructor(
 
             // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10).
             val contributorsByWindow = computeContributorsByWindow(teamWarsMode, targetUserId)
+            // Meilleurs baggeurs (#69) : MÊMES lignes triées par part de SHOCKS décroissante.
+            val baggersByWindow = contributorsByWindow.mapValues { (_, contributors) ->
+                contributors.sortedByDescending { it.shockShare }
+            }
+            // Part de shocks du joueur ciblé par fenêtre (vue Individuelles, #69) : total
+            // shocks joueur / total shocks équipe sur les wars du joueur DANS la fenêtre.
+            val chronologicalPlayerWars = teamWarsMode
+                .filter { targetUserId != null && it.war.hasPlayer(targetUserId) }
+                .sortedBy { it.war.id }
+            val playerShockShareByWindow = windowSizes.associate { (index, lastN) ->
+                val windowWars = lastN?.let { chronologicalPlayerWars.takeLast(it) } ?: chronologicalPlayerWars
+                index to targetUserId?.let { windowWars.shockShare(it) }
+            }
 
             State(
                 loading = false,
@@ -201,6 +229,8 @@ class StatsFullViewModel @AssistedInject constructor(
                 teamStatsByWindow = teamStatsByWindow,
                 teamMapStatsByWindow = teamMapStatsByWindow,
                 contributorsByWindow = contributorsByWindow,
+                baggersByWindow = baggersByWindow,
+                playerShockShareByWindow = playerShockShareByWindow,
                 teamOpponentsByWindow = teamOpponentsByWindow,
                 playerOpponentsByWindow = playerOpponentsByWindow
             )
@@ -283,11 +313,15 @@ class StatsFullViewModel @AssistedInject constructor(
         }
         val totalPoints = perPlayer.sumOf { it.second.warScores.sumOf { score -> score.score } }
             .takeIf { it > 0 } ?: return listOf()
+        // Dénominateur SHOCKS (#69) : total des shocks de l'ÉQUIPE sur la fenêtre (tous
+        // joueurs). Part de chaque membre = ses shocks / ce total (ratio TOTAL/TOTAL).
+        val totalTeamShocks = windowWars.totalShocks()
         return perPlayer
             .map { (player, stats) ->
                 Contributor(
                     player = player,
                     pointsShare = (stats.warScores.sumOf { it.score } * 100) / totalPoints,
+                    shockShare = if (totalTeamShocks > 0) windowWars.totalShocks(player.id) * 100 / totalTeamShocks else 0,
                     winrate = stats.allTimeForm?.winrate ?: 0,
                     isMe = player.id == meId
                 )

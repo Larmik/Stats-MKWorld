@@ -38,10 +38,12 @@ import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerMapsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerOpponentsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullViewModel
+import fr.harmoniamk.statsmkworld.screen.stats.map.MapBaggersRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.map.MapDetailScreen
 import fr.harmoniamk.statsmkworld.screen.stats.map.MapDetailViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.map.MapOpponentsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.map.MapPilotsRankingScreen
+import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentBaggersRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentDetailScreen
 import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentDetailViewModel
 import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentPilotsRankingScreen
@@ -190,7 +192,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.navigate("Home/WarDetails")
                 },
                 onTracksRanking = { navController.navigate("Opponent/$teamId/$userId/Tracks") },
-                onPilotsRanking = { navController.navigate("Opponent/$teamId/$userId/Pilots") }
+                onPilotsRanking = { navController.navigate("Opponent/$teamId/$userId/Pilots") },
+                onBaggersRanking = { navController.navigate("Opponent/$teamId/$userId/Baggers") }
             )
         }
 
@@ -236,6 +239,27 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
+        // Classement complet des baggeurs face à l'adversaire (« Voir en entier » #69).
+        composable(
+            route = "Opponent/{teamId}/{userId}/Baggers",
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.StringType; nullable = true }
+            )
+        ) {
+            val teamId = it.arguments?.getString("teamId").orEmpty()
+            val userId = it.arguments?.getString("userId")
+            OpponentBaggersRankingScreen(
+                viewModel = hiltViewModel(
+                    key = "$teamId-$userId-baggers",
+                    creationCallback = { factory: OpponentDetailViewModel.Factory ->
+                        factory.create(teamId = teamId, initialUserId = userId)
+                    }
+                ),
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         // Fiche détail CIRCUIT (#27) : atteinte depuis les Classements. trackIndex =
         // index(es) de map (CSV) ; userId (« null » = Équipe) sème le mode initial.
         composable(
@@ -260,6 +284,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 ),
                 onBack = { navController.popBackStack() },
                 onPilotsRanking = { navController.navigate("Map/$csv/$userId/Pilots") },
+                onBaggersRanking = { navController.navigate("Map/$csv/$userId/Baggers") },
                 onOpponentsRanking = { navController.navigate("Map/$csv/$userId/Opponents") }
             )
         }
@@ -280,6 +305,30 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             MapPilotsRankingScreen(
                 viewModel = hiltViewModel(
                     key = "${trackIndex.joinToString(",")}-$userId-pilots",
+                    creationCallback = { factory: MapDetailViewModel.Factory ->
+                        factory.create(trackIndex = trackIndex, initialUserId = userId)
+                    }
+                ),
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // Classement complet des baggeurs sur le circuit (« Voir en entier » #69).
+        composable(
+            route = "Map/{trackIndex}/{userId}/Baggers",
+            arguments = listOf(
+                navArgument("trackIndex") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.StringType; nullable = true }
+            )
+        ) {
+            val trackIndex = it.arguments?.getString("trackIndex")
+                ?.split(",")
+                ?.mapNotNull { part -> part.toIntOrNull() }
+                .orEmpty()
+            val userId = it.arguments?.getString("userId")
+            MapBaggersRankingScreen(
+                viewModel = hiltViewModel(
+                    key = "${trackIndex.joinToString(",")}-$userId-baggers",
                     creationCallback = { factory: MapDetailViewModel.Factory ->
                         factory.create(trackIndex = trackIndex, initialUserId = userId)
                     }

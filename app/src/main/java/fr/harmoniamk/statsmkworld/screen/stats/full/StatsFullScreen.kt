@@ -237,6 +237,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     //    marges V/D, pénalités, maps gagnées, shocks… (fenêtre globale + deltas vs all-time).
     item { IndicatorsCard(stats = allTimeStats, isPlayer = true, selectors = selectors) }
     // 4. Contribution (rang lu sur le classement des contributeurs de la MÊME fenêtre — #68).
+    //    Deux lignes (#69) : part de POINTS (moyenne existante) + part de SHOCKS (total/total).
     stats.playerContribution?.let { contribution ->
         item {
             StatCard(title = stringResource(R.string.stats_contribution_title)) {
@@ -250,6 +251,22 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
                         ?.let { stringResource(R.string.stats_contribution_rank, it + 1) }
                         ?: ""
                 )
+                // 2ᵉ ligne : part de shocks du joueur (total shocks joueur / total équipe),
+                // affichée à l'identique de la ligne de points. Rang lu sur le classement
+                // des baggeurs de la MÊME fenêtre. Masquée si l'équipe n'a aucun shock.
+                state.playerShockShareByWindow[selectors.windowIndex]?.let { shockShare ->
+                    Spacer(Modifier.height(11.dp))
+                    IconLine(
+                        icon = R.drawable.shock,
+                        accent = Colors.yellow,
+                        title = stringResource(R.string.stats_bag_contribution_value, shockShare),
+                        subtitle = state.baggersByWindow[selectors.windowIndex].orEmpty()
+                            .indexOfFirst { it.isMe }
+                            .takeIf { it >= 0 }
+                            ?.let { stringResource(R.string.stats_bag_contribution_rank, it + 1) }
+                            ?: ""
+                    )
+                }
             }
         }
     }
@@ -327,6 +344,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     }
     // 5. Contributeurs (classement recalculé sur la fenêtre globale).
     item { ContributorsCard(state.contributorsByWindow, selectors) }
+    // 5bis. Meilleurs baggeurs (#69) : MÊME carte, part de SHOCKS (total/total). Masquée
+    //       si aucun baggeur avec shock sur la fenêtre.
+    if (state.baggersByWindow[selectors.windowIndex].orEmpty().any { it.shockShare > 0 }) {
+        item {
+            ContributorsCard(
+                byWindow = state.baggersByWindow,
+                selectors = selectors,
+                title = stringResource(R.string.stats_baggers_title),
+                axis = ContributionAxis.SHOCKS
+            )
+        }
+    }
     // 6. Podium circuits équipe (Top3 / Flop3 sur une ligne + sélecteur occ./winrate/score).
     item { MapsPodiumCard(stats = stats, selectors = selectors, userId = null, onSeeAll = onMapsSeeAll) }
     // 7. Podium adversaires équipe, sur la fenêtre globale.
@@ -743,29 +772,35 @@ private fun DistributionCard(stats: Stats, selectors: SectionSelectors) {
     }
 }
 
-// --- Contributeurs (`.lrow`) -------------------------------------------------
+// --- Contributeurs / Baggeurs (`.lrow`) --------------------------------------
+
+/** Axe de contribution affiché par [ContributorsCard] : part de POINTS ou de SHOCKS (#69). */
+private enum class ContributionAxis { POINTS, SHOCKS }
 
 /**
- * Carte « Contributeurs » : sélecteur de fenêtre (all-time / 5 / 10) + classement du
- * roster recalculé par fenêtre (part de points + winrate). Rien à afficher si la
- * fenêtre est vide.
+ * Carte de classement du roster par fenêtre (all-time / 5 / 10), MUTUALISÉE (#69) entre
+ * « Contributeurs » (part de points) et « Meilleurs baggeurs » (part de shocks, total/total).
+ * [axis] pilote la valeur affichée sous chaque nom ; les lignes reçues sont déjà triées
+ * selon l'axe (VM). Rien à afficher si la fenêtre est vide.
  */
 @Composable
 private fun ContributorsCard(
     byWindow: Map<Int, List<StatsFullViewModel.Contributor>>,
-    selectors: SectionSelectors
+    selectors: SectionSelectors,
+    title: String = stringResource(R.string.stats_contributors_title),
+    axis: ContributionAxis = ContributionAxis.POINTS
 ) {
     val contributors = byWindow[selectors.windowIndex].orEmpty()
-    StatCard(title = stringResource(R.string.stats_contributors_title)) {
+    StatCard(title = title) {
         when {
             contributors.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 12)
-            else -> contributors.forEachIndexed { index, contributor -> ContributorRow(index + 1, contributor) }
+            else -> contributors.forEachIndexed { index, contributor -> ContributorRow(index + 1, contributor, axis) }
         }
     }
 }
 
 @Composable
-private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributor) {
+private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributor, axis: ContributionAxis) {
     Row(
         Modifier.fillMaxWidth().padding(vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -795,7 +830,11 @@ private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributo
                     }
                 }
             }
-            MKText(text = stringResource(R.string.stats_points_share, contributor.pointsShare), textColor = Colors.white66, fontSize = 11, textAlign = TextAlign.Start)
+            val shareText = when (axis) {
+                ContributionAxis.POINTS -> stringResource(R.string.stats_points_share, contributor.pointsShare)
+                ContributionAxis.SHOCKS -> stringResource(R.string.stats_shocks_share, contributor.shockShare)
+            }
+            MKText(text = shareText, textColor = Colors.white66, fontSize = 11, textAlign = TextAlign.Start)
         }
         Column(horizontalAlignment = Alignment.End) {
             MKText(text = "${contributor.winrate}%", font = Fonts.Urbanist, textColor = Colors.white, fontSize = 14)

@@ -147,6 +147,30 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
     )
 }
 
+/**
+ * Total de shocks (éclairs obtenus) sur ces wars — filtré sur [playerId] si non-null
+ * (shocks de ce joueur), sinon TOUS les shocks de l'équipe hôte. Somme des `count` de
+ * tous les `Shock` de toutes les manches. Base commune du classement des **baggeurs**
+ * (#69) : la part d'un joueur = ses shocks / total équipe (ratio TOTAL/TOTAL, PAS une
+ * moyenne par war — cf. domaine « bagging »).
+ */
+fun List<WarDetails>.totalShocks(playerId: String? = null): Int = sumOf { war ->
+    war.war.tracks.sumOf { track ->
+        track.shocks
+            ?.filter { playerId == null || it.playerId == playerId }
+            ?.sumOf { it.count } ?: 0
+    }
+}
+
+/**
+ * Part de shocks d'un joueur sur ces wars, en % (total shocks joueur / total shocks
+ * équipe). `null` si l'équipe n'a obtenu aucun shock sur la fenêtre (pas de dénominateur).
+ * Règle UNIQUE réutilisée par les 4 emplacements « baggeurs » (indiv/équipe/adversaire/
+ * circuit, #69) : ratio de TOTAUX, jamais une moyenne.
+ */
+fun List<WarDetails>.shockShare(playerId: String): Int? =
+    totalShocks().takeIf { it > 0 }?.let { totalShocks(playerId) * 100 / it }
+
 fun List<TeamEntity>.withFullTeamStats(
     wars: List<WarEntity>,
     databaseRepository: DatabaseRepositoryInterface,

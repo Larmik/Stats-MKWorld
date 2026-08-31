@@ -491,6 +491,23 @@ Point d'entrée du calcul d'un bloc `Stats` (stats joueur, équipe, adversaire o
 > section top3/flop3 par winrate+score. `withFullStats` renvoie donc désormais
 > directement `flowOf(Stats(...))`.
 
+> **Part de shocks / classement des baggeurs (#69) :** deux extensions dédiées de
+> `ListExtension.kt` factorisent la règle **total/total** partagée par les 4 emplacements
+> « baggeurs » (contribution indiv, section Équipe, fiches adversaire/circuit) :
+> - `List<WarDetails>.totalShocks(playerId? = null)` = `Σ` des `count` de tous les
+>   `Shock` des manches, **filtrés sur `playerId`** si non-null (shocks du joueur), sinon
+>   tous les shocks de l'équipe hôte ;
+> - `List<WarDetails>.shockShare(playerId)` = `totalShocks(playerId) × 100 / totalShocks()`,
+>   **`null`** si l'équipe n'a obtenu aucun shock (pas de dénominateur).
+>
+> La **part de shocks** est donc un **ratio de TOTAUX** (shocks du joueur / shocks de
+> l'équipe), **jamais une moyenne par war** — à la différence de `Stats.playerContribution`
+> (part de points, moyenne war par war) et de `FormStats.shocksPerWar` (moyenne). Les
+> ViewModels consommateurs (`StatsFullViewModel` baggeurs/contribution shocks ;
+> `OpponentDetailViewModel.computeBaggers` ; `MapDetailViewModel.computeBaggers`, ce dernier
+> agrégeant les `Shock` au niveau des manches du circuit) réutilisent ces helpers. Les
+> classements baggeurs excluent les **alliés** (rosterId « -1 ») et les joueurs à 0 shock.
+
 ### 9.5 `List<WarEntity>.withTrackStats(userId?, teamId?)` → `List<TrackStats>`
 
 Agrège **par index de circuit** (`groupBy { it.index }`, tri décroissant par nombre de courses). `is24p` est déduit du dernier `teamOpponent.size` rencontré. Pour chaque groupe (une seule passe, A6) :
