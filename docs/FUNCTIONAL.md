@@ -72,6 +72,7 @@ Gating concret :
 - Le bouton **« Nouvelle war »** n'apparaît que si `role > 0` **ou** le mode matrix est actif (et qu'aucune war n'est en cours).
 - Le bouton **« Ajouter en allié »** apparaît si le joueur consulté n'est pas dans l'équipe, n'est pas soi-même, et n'est pas déjà allié.
 - Le bouton **« Basculer le rôle »** apparaît si un leader consulte un membre de l'équipe qui n'est ni lui-même ni déjà leader.
+- L'action **« Démarrer une nouvelle saison »** (réglages du profil) est réservée au **leader strict** (`role == 2`, **pas** les admins `role == 1`) — cf. §11.
 - L'accès à l'**écran debug** est réservé (utilisateur de référence id `18595` ou mode matrix actif).
 
 ---
@@ -189,7 +190,7 @@ Le routage par type se fait dans `RootScreen` (`onStats` dispatche `OpponentStat
 ### Pôle 5 — Profil (`ProfileScreen`, onglets fusionnés Joueur / Équipe)
 Profil unique du joueur courant / de mon équipe (`me`), **à onglets fusionnés** (écran `profile` du prototype, ticket #28), **rendu pixel-perfect** vis-à-vis de la maquette (rules 13/15). Un seul `BaseScreen` (titre **Profil**), un **segmented partagé** `Joueur` / `Équipe` (`MKSegmentedSelector`) qui bascule l'onglet **dynamiquement** (état interne réactif, sans re-navigation — rule 11). Le contenu de chaque onglet **réutilise** le contenu existant des fiches profil, restylé au niveau maquette via des **composants profil mutualisés** (`ui/cells/ProfileCells.kt` : `ProfilePersonCard`, `ProfileInfoCard`, `ProfileMemberRow`, `ProfileSettingRow`, `RolePill`, `MkcBadge`) :
 
-- **Onglet Joueur** (`PlayerProfileContent`) : **carte identité** centrée (avatar rond 76dp / pastille d'initiales, nom Bungee, pays + **pastille de rôle** Membre/Admin/Leader, bio italique, **badge « Profil MKCentral »**) ; **carte Informations** (grille 2 colonnes : Équipe + tag, Membre depuis **[date exacte jj/mm/aaaa]**, Code ami, Discord, Inscription **[date exacte]**, Rôle) ; boutons de règles métier (fiche d'un autre joueur — « Ajouter en ally », « Changer le rôle ») **en largeur intrinsèque, centrés** ; **carte Réglages** (lignes `setrow` avec **icône de tête** : Rafraîchir, Notifications + toggle, Multi-roster + toggle si ≥ 2 rosters, entrée **Debug** si joueur 18595 / mode matrice, **Déconnexion** en rouge) ; **ligne version** « Stats MKWorld · vX » + dernière synchro.
+- **Onglet Joueur** (`PlayerProfileContent`) : **carte identité** centrée (avatar rond 76dp / pastille d'initiales, nom Bungee, pays + **pastille de rôle** Membre/Admin/Leader, bio italique, **badge « Profil MKCentral »**) ; **carte Informations** (grille 2 colonnes : Équipe + tag, Membre depuis **[date exacte jj/mm/aaaa]**, Code ami, Discord, Inscription **[date exacte]**, Rôle) ; boutons de règles métier (fiche d'un autre joueur — « Ajouter en ally », « Changer le rôle ») **en largeur intrinsèque, centrés** ; **carte Réglages** (lignes `setrow` avec **icône de tête** : Rafraîchir, Notifications + toggle, Multi-roster + toggle si ≥ 2 rosters, **Démarrer une nouvelle saison** si **leader strict** (`role == 2`, #30), entrée **Debug** si joueur 18595 / mode matrice, **Déconnexion** en rouge) ; **ligne version** « Stats MKWorld · vX » + dernière synchro.
 - **Onglet Équipe** (`TeamProfileContent`) : **carte identité** équipe (logo / pastille de tag, nom, `TAG XX · créée le jj/mm/aaaa`, bio, **badge « Équipe MKCentral »**) ; **carte Informations** (Membres, Alliés, Créée le **[date exacte]**) ; **sous-onglets `MKSegmentedSelector`** Membres / Alliés (remplaçant l'ancien `MKSelectorViewPager`, conformément au style pill de la maquette) ; **lignes membres** (`ProfileMemberRow` : **photo de profil MKCentral** du membre — fallback initiales colorées par roster — nom, **pastille de rôle réel** [nœud Firebase `users` : Leader=2 / Admin=1 / Membre=0], chevron → fiche joueur), **regroupées par roster** (un en-tête par roster) **si l'équipe a ≥ 2 rosters** mkworld, sinon liste plate ; onglet Alliés = bouton « **Ajouter un ally** » **en largeur intrinsèque, centré** (sheet hébergé par l'écran) + lignes alliés (« roster externe »).
 
 Pastilles de rôle (couleurs de la maquette) : **Leader** = or (`gold`), **Admin** = bleu, **Membre / Ally** = blanc translucide. Le **rôle réel** provient du nœud Firebase `users` (un allié vaut toujours 0) ; pour une équipe publique (sans nœud `users`), repli sur les indicateurs MKCentral leader/manager.
@@ -692,6 +693,13 @@ Le rendu et l'enregistrement (galerie / partage) sont décrits dans [TECHNICAL.m
 - **Multi-roster** : périmètre de calcul des stats (tous les rosters vs le sien).
 - **Synchronisation** : tâche de fond quotidienne (~4 h) rafraîchissant les données ; rafraîchissement manuel depuis le profil.
 - **Fonctionnement hors-ligne** : données en cache local (Room/DataStore), wars synchronisées via Firebase (la war en cours est écoutée en temps réel).
+
+### Saisons (#30)
+
+Une **saison** découpe l'activité d'une équipe dans le temps (`number`, date de début, date de fin — la saison en cours n'a **pas** de date de fin). L'historique réel est **initialisé** à la première synchro (l'app est déjà en **saison 3**) : S1 05/06/2025 → 21/12/2025, S2 22/12/2025 → 03/05/2026, S3 04/05/2026 → **en cours**. Une saison commence toujours le **lendemain** de la fin de la précédente.
+
+- **Démarrer une nouvelle saison** (réglages du profil, **leader strict** uniquement — `role == 2`, pas les admins) : au clic, une **confirmation** insiste sur le caractère **important et irréversible** de l'action. À la validation, la saison en cours est **close** (sa date de fin = l'instant du clic) et une **nouvelle saison** démarre (numéro suivant, sans date de fin). Une fois close, une saison ne peut **plus** être rouverte.
+- **Hors périmètre de ce ticket** : le **filtrage des stats/classements par saison** et l'affichage du libellé de saison sur les écrans (records, carte équipe) feront l'objet d'un autre ticket. Ici seuls le **modèle de données** (RTDB `seasons/{teamId}` + cache Room), la **gestion** (démarrage) et le **seeding initial** sont livrés.
 
 ### Écran debug (`DebugScreen`) — réservé
 1. **Update Tags** — pousse les tags d'équipes vers Firebase.

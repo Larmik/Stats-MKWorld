@@ -399,6 +399,12 @@
     <string name="profile_setting_multiroster_sub">Stats across all rosters (restart required)</string>
     <string name="profile_setting_debug">Debug / Matrix</string>
     <string name="profile_setting_debug_sub">Staff only</string>
+    <!-- Seasons (ticket #30) -->
+    <string name="profile_setting_new_season">Start a new season</string>
+    <string name="profile_setting_new_season_sub">Leader only · irreversible</string>
+    <string name="new_season_dialog_title">New season</string>
+    <string name="new_season_dialog_message">You are about to close the current season and start a new one. This action is important and irreversible: the current season will be permanently locked. Are you sure?</string>
+    <string name="new_season_confirm">Start the season</string>
     <string name="profile_ally_role">Ally</string>
     <string name="profile_ally_external">external roster</string>
     <!-- Current war screen (ticket #43) -->

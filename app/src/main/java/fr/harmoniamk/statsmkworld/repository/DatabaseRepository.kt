@@ -5,9 +5,11 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.datasource.local.PlayerLocalDataSourceInterface
+import fr.harmoniamk.statsmkworld.datasource.local.SeasonLocalDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.local.TeamLocalDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.local.WarLocalDataSource
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +45,12 @@ interface DatabaseRepositoryInterface {
     suspend fun writeWars(list: List<WarEntity>)
     suspend fun writeWar(war: WarEntity)
     suspend fun clearWars()
+
+    fun getSeasons(): Flow<List<SeasonEntity>>
+    suspend fun getCurrentSeason(): SeasonEntity?
+    suspend fun writeSeasons(list: List<SeasonEntity>)
+    suspend fun writeSeason(season: SeasonEntity)
+    suspend fun clearSeasons()
 }
 
 @FlowPreview
@@ -61,6 +69,7 @@ class DatabaseRepository @Inject constructor(
     private val playerLocalDataSource: PlayerLocalDataSourceInterface,
     private val teamLocalDataSource: TeamLocalDataSourceInterface,
     private val warLocalDataSource: WarLocalDataSource,
+    private val seasonLocalDataSource: SeasonLocalDataSourceInterface,
 ) : DatabaseRepositoryInterface {
 
     override fun getPlayers(): Flow<List<PlayerEntity>> = playerLocalDataSource.getAll().flowOn(Dispatchers.IO)
@@ -92,5 +101,11 @@ class DatabaseRepository @Inject constructor(
     override suspend fun writeWars(list: List<WarEntity>) = withContext(Dispatchers.IO) { warLocalDataSource.insert(list) }
     override suspend fun writeWar(war: WarEntity) = withContext(Dispatchers.IO) { warLocalDataSource.insert(war) }
     override suspend fun clearWars() = withContext(Dispatchers.IO) { warLocalDataSource.clear() }
+
+    override fun getSeasons(): Flow<List<SeasonEntity>> = seasonLocalDataSource.getAll().flowOn(Dispatchers.IO)
+    override suspend fun getCurrentSeason(): SeasonEntity? = withContext(Dispatchers.IO) { seasonLocalDataSource.getCurrent() }
+    override suspend fun writeSeasons(list: List<SeasonEntity>) = withContext(Dispatchers.IO) { seasonLocalDataSource.insert(list) }
+    override suspend fun writeSeason(season: SeasonEntity) = withContext(Dispatchers.IO) { seasonLocalDataSource.insert(season) }
+    override suspend fun clearSeasons() = withContext(Dispatchers.IO) { seasonLocalDataSource.clear() }
 
 }

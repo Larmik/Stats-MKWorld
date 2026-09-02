@@ -47,7 +47,7 @@ Un quatrième, **`mkwrs.com`**, est scrapé (Jsoup) pour les records du monde (f
 | `minSdk` / `targetSdk` / `compileSdk` | 28 / 35 / 35 |
 | Langage / JVM | Kotlin 2.2.20 / Java 17 |
 | Projet Firebase | `stats-mkworld` — RTDB région `europe-west1` |
-| Base de données Room | `mk_db`, version 6, `fallbackToDestructiveMigration()` |
+| Base de données Room | `mk_db`, version 8, `fallbackToDestructiveMigration()` |
 | MultiDex | activé |
 
 ---
@@ -239,6 +239,10 @@ model/network/                 model/local/                 model/firebase/
    │  └ Shock          War ── wrap ──► WarDetails ──► WarStats ──► Stats
    ├ WarScore                          (présentation / calcul — jamais persisté)
    └ WarPenalty        War ── conv ──► WarEntity (Room · historique)
+
+[Saison — #30]
+  Season ◄──── conv ────► SeasonEntity (Room · cache)   ← source RTDB seasons/{teamId}
+   (number, start, end?)   (PK composite teamId+number)
 ```
 
 ### Chaînes de conversion
@@ -246,6 +250,7 @@ model/network/                 model/local/                 model/firebase/
 - **War** : `Firebase JSON ──parse──► War` ↔ `DatastoreWar` ↔ `WarProto` (war en cours uniquement) ; `War ──► WarEntity` (Room, via TypeConverters) ; `War ──wrap──► WarDetails` (scores calculés).
 - **Joueur** : `MKCPlayer`/`MKCTeamPlayer ──► PlayerEntity` (Room) ; `MKCPlayer`/`PlayerEntity ──► User` (Firebase).
 - **Équipe** : `MKCTeam`/`MKCTeamRoster ──► TeamEntity` (Room).
+- **Saison** (#30) : `Firebase JSON ──parse (Map.toSeason)──► Season` ↔ `SeasonEntity` (Room, PK composite `teamId+number`), via constructeurs dédiés `Season(entity)` / `SeasonEntity(teamId, season)`. `Season` est `@Parcelize`/`Serializable`. Pas de couche DataStore (la saison n'a pas d'état « en cours » local type war).
 
 Les modèles firebase (`War`, `WarTrack`, `WarPosition`, `WarPenalty`, `WarScore`, `Shock`) sont `@Parcelize`/`Serializable` et possèdent chacun un `constructor(datastore…)`. Les `Datastore*` possèdent un `constructor(firebase…)`, un `constructor(proto…)` et un getter `proto`. À noter : `DatastoreWar` **réutilise directement** les types firebase `WarTrack`/`WarScore`/`WarPenalty` dans ses champs (seuls `DatastoreWarTrack`/`DatastoreWarPosition` sont des classes distinctes). Les DTO `MKCPlayer`/`MKCTeam` portent quant à eux leur sérialisation Protobuf **en interne** (getter `proto` + `constructor(proto…)`, via les `serializers/`), sans classe `Datastore*` dédiée.
 
@@ -886,12 +891,20 @@ Accès RTDB **+ authentification anonyme**. `suspend fun signInAnonymously(): Bo
 | `getAllies(teamId)` | `newAllies/{teamId}` | `.get()` |
 | `writeAlly` / `deleteAlly` | `newAllies/{teamId}/{id}` | `setValue` / `removeValue` |
 | `updateAllyCurrentWar` | `newAllies/{teamId}/{id}` | `updateChildren({currentWar})` (fallback `setValue` si absent) |
+| `getSeasons(teamId)` | `seasons/{teamId}` | `.get()` — **tableau indexé** `Map.toSeason()` (#30) |
+| `writeSeasons(teamId, seasons)` | `seasons/{teamId}` | `setValue(List<Season>)` (réécrit **tout** l'index : clôture + nouvelle saison) |
 | `log(message, type)` | `debug/{dd-MM-yyyy}/{type}/{Date().time}` | `setValue` |
 | `writeTags(tags)` | `tags` | `setValue` |
 
 `updateUserCurrentWar` / `updateAllyCurrentWar` (audit B10) servent au **cycle de vie d'une war** (création, validation, annulation, remplacement de joueur) : elles ne touchent **que** le champ `currentWar` via `updateChildren`, laissant `role` / `name` / `discordId` intacts. C'est volontaire — un `setValue(user)` complet réécrivait tout l'objet et écrasait le `role` d'un membre à `0` dès que la `PlayerEntity` locale était périmée. Si le nœud n'existe pas encore (membre jamais synchronisé), elles retombent sur un `setValue` complet pour ne pas créer de nœud partiel.
 
 Les lectures désérialisent le `DataSnapshot.value` (Map) via les helpers privés `Map.toUser()` / `Map.toWar()` (eux-mêmes basés sur `extension/ListExtension.kt` : `toMapList()`, `parseTracks()`, `parsePenalties()`, `parseScores()`). `getWars` renvoie `emptyList` si le nœud est absent (cas normal ⇒ `fetchWars` vide alors le cache local).
+
+### SeasonRepository
+Repository **dédié** à la notion de **saison** (#30). Agrège deux sources sans repository naturel unique — RTDB (`FirebaseRepository`, source de vérité `seasons/{teamId}`) et Room (`DatabaseRepository`, cache local `SeasonEntity`) — d'où un repository propre (interface + module `@Binds @Singleton`) plutôt qu'une extension d'un UseCase partagé (rule 32). Deux responsabilités :
+
+- **`fetchSeasons(teamId)`** — synchro RTDB → Room, appelée par `FetchUseCase.fetchData` après les wars (rattachée à l'**équipe**, comme `newAllies`/`users` — `team.id`, pas le roster). **Seeding-si-vide** : si `seasons/{teamId}` est vide en RTDB, écrit l'historique réel (l'app est déjà en **saison 3**), S3 laissée **ouverte** (`end == null`) — 3 saisons aux timestamps 00:00 UTC (ms) : S1 `1749081600000 → 1766275200000` (05/06/2025 → 21/12/2025), S2 `1766361600000 → 1777766400000` (22/12/2025 → 03/05/2026), S3 `1777852800000 → null` (04/05/2026 → en cours). Les 6 dates sont un **littéral de seeding mono-site** (inline, rule 61). Une saison commence toujours **le lendemain** de la fin de la précédente. Puis `clearSeasons()` + `writeSeasons(List<SeasonEntity>)` en Room.
+- **`startNewSeason(teamId)`** — action **leader strict** « Démarrer une nouvelle saison » : lit `getSeasons`, **clôt** la dernière saison en cours (`end == null` → `end = System.currentTimeMillis()`), **ajoute** une nouvelle saison (`number` incrémenté, `start = maintenant`, `end = null`), puis écrit le tableau complet **en RTDB (`writeSeasons`) ET en Room** (`clearSeasons` + `writeSeasons`). Irréversible (d'où la confirmation `MKDialog` côté UI).
 
 ### StatsRepository
 Cache mémoire (cf. §9).
@@ -975,6 +988,7 @@ suspend fun fetchData(playerId) {
           fetchTeams()                                     // équipes mkworld (paginé) + "6v6 Squad"
           team?.rosters?.filter { game == "mkworld" }?.map { it.id }
               ?.forEach { fetchWars(it) }                  // wars/{rosterId} → clearWars + writeWars
+          seasonRepository.fetchSeasons(team?.id)          // seasons/{teamId} → Room (+ seeding si vide) (#30)
           setLastUpdate(now)
       }
 }
@@ -986,6 +1000,7 @@ Méthodes annexes :
 - `fetchTeam` : pour chaque joueur du roster mkworld, fusionne le `User` Firebase (role, currentWar, discordId) et écrit un `PlayerEntity`.
 - `fetchTeams` : itère les pages MKCentral (`page_count`) via `getTeams` — équipes `mkworld` **uniquement** (domaine exclusivement mkworld, cf. rule `.claude/rules/31-mkworld-only.md` ; l'accès mk8dx a été supprimé), filtrées **actives, non historiques et à effectif ≥ 6 joueurs** (`min_player_count=6`, miroir du filtre par défaut du site MKCentral) — plus l'équipe synthétique « 6v6 Squad ». Chaque `TeamEntity` porte ses `rosters` mkworld ; les équipes **sans** roster mkworld ne sont **pas persistées** (hors « 6v6 Squad »). ⚠️ **Conséquence assumée** du filtre ≥ 6 joueurs : une équipe dont **tous** les rosters mkworld ont < 6 joueurs (ex. quasi-doublon inactif « Rozando la Katastrofe » id 3182, 0 joueur) n'entre plus dans le cache — donc absente du registre, de la sélection d'adversaire et de la résolution `opponentTeams`. **Synchro = purge + réécriture** : la table est vidée (`clearTeams()`) puis réécrite, afin que le cache reflète **exactement** l'état MKCentral mkworld courant et flushe tout reliquat périmé keyé par un ancien id (rosterId d'un schéma antérieur, reliquat mk8dx d'avant la purge) — sinon deux entrées de la même équipe cohabitent sous des ids différents et le registre affiche un **doublon** (bug « deux Rozando la Katástrofe »). **Garde-fou anti-wipe** : la purge n'a lieu **que si la récupération réseau a réussi** (page 1 non nulle) ; sur erreur/réponse vide, on n'écrit rien et le cache existant est préservé. La « 6v6 Squad » est réinjectée après la purge.
 - `fetchWars(teamId)` : `clearWars()` puis `writeWars` (mapping `War → WarEntity`).
+- `fetchSeasons` (délégué à `SeasonRepository`, cf. ci-dessus) : `seasons/{teamId}` → Room, avec seeding de l'historique réel si le nœud RTDB est vide (#30).
 - `fetchTags` : pousse les tags d'équipes locaux vers `tags`.
 - `manageTransferts` : réconcilie roster MKCentral ↔ DB locale (déplace les joueurs entrés/sortis entre `users` et `newAllies`, ajuste `rosterId`).
 

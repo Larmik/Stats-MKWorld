@@ -16,6 +16,7 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamList
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,7 +58,8 @@ class FetchUseCase @Inject constructor(
     private val firebaseRepository: FirebaseRepositoryInterface,
     private val mkCentralDataSource: MKCentralDataSourceInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface
 ) : FetchUseCaseInterface, CoroutineScope {
 
     override suspend fun fetchData(playerId: String) = fetchPlayer(playerId)
@@ -68,6 +70,9 @@ class FetchUseCase @Inject constructor(
             fetchTeams()
             val rostersId = team?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
             rostersId?.forEach { fetchWars(it) }
+            // Saisons (#30) : RTDB seasons/{teamId} → Room, avec seeding si le nœud est
+            // vide (rattaché à l'ÉQUIPE, comme newAllies/users — pas au roster).
+            team?.id?.let { seasonRepository.fetchSeasons(it.toString()) }
             dataStoreRepository.setLastUpdate(Date().time)
         } ?: Unit
 
