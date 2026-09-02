@@ -162,19 +162,6 @@ fun ColumnScope.PlayerProfileContent(
             onSecondButtonClick = viewModel::dismissPopup
         )
     }
-    // Confirmation « Démarrer une nouvelle saison » (leader strict, #30) : action
-    // importante et irréversible (clôt la saison en cours, en ouvre une nouvelle).
-    state.value.newSeasonDialog?.let {
-        MKDialog(
-            title = stringResource(R.string.new_season_dialog_title),
-            message = stringResource(it),
-            buttonText = stringResource(R.string.new_season_confirm),
-            secondButtonText = stringResource(R.string.back),
-            onButtonClick = viewModel::onConfirmNewSeason,
-            onSecondButtonClick = viewModel::dismissNewSeason,
-            onDismiss = viewModel::dismissNewSeason
-        )
-    }
 
     if (showPopup.value) {
         MKDialog(
@@ -324,15 +311,6 @@ fun ColumnScope.PlayerProfileContent(
                                         onChange = { viewModel.onMultiRoster() }
                                     )
                                 }
-                            // Action leader STRICT (role == 2) : démarrer une nouvelle
-                            // saison (clôt la courante). Confirmation via MKDialog (#30).
-                            if (state.value.isLeaderStrict)
-                                ProfileSettingRow(
-                                    title = stringResource(R.string.profile_setting_new_season),
-                                    leadingIcon = R.drawable.ic_podium,
-                                    subtitle = stringResource(R.string.profile_setting_new_season_sub),
-                                    onClick = viewModel::onNewSeasonClick
-                                )
                             if (showDebug)
                                 ProfileSettingRow(
                                     title = stringResource(R.string.profile_setting_debug),

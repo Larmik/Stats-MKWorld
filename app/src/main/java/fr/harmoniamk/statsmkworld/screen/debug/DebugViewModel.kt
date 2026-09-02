@@ -12,6 +12,7 @@ import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DiagnosticRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.WorldRecordsRepositoryInterface
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
@@ -42,6 +43,7 @@ class DebugViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val worldRecordsRepository: WorldRecordsRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface,
     private val pdfRepository: PDFRepositoryInterface
 ) : ViewModel() {
 
@@ -217,6 +219,20 @@ class DebugViewModel @Inject constructor(
     fun loadWRs() {
         viewModelScope.launch {
             worldRecordsRepository.getCurrentWRs()
+        }
+    }
+
+    // Inscrit rétroactivement l'historique réel des 3 saisons dans RTDB seasons/{teamId}
+    // + Room (#30). Réinitialise l'index (écriture inconditionnelle) — outil de
+    // maintenance. La logique (et les 6 dates) vit dans SeasonRepository (rule 32).
+    fun onSeedSeasons() {
+        viewModelScope.launch {
+            _sharedLoading.emit("Inscription des saisons...")
+            dataStoreRepository.mkcTeam.firstOrNull()?.id?.let {
+                seasonRepository.seedInitialSeasons(it.toString())
+            }
+            _sharedLoading.emit(null)
+            _sharedToast.emit("Saisons inscrites")
         }
     }
 

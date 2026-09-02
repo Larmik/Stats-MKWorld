@@ -17,14 +17,17 @@ import javax.inject.Singleton
  * `seasons/{teamId}`) et Room (`DatabaseRepository`, cache local) — d'où un
  * repository propre plutôt qu'une extension d'un UseCase partagé (rule 32).
  *
- * Deux responsabilités :
+ * Responsabilités :
  * - [fetchSeasons] : synchro RTDB → Room, avec **seeding** de l'historique réel si le
  *   nœud est vide (appelée par la chaîne `FetchUseCase.fetchData`) ;
+ * - [seedInitialSeasons] : (ré)inscrit l'historique réel des 3 saisons dans RTDB + Room,
+ *   **inconditionnellement** — outil de maintenance appelé par l'écran Debug (#30) ;
  * - [startNewSeason] : action leader « démarrer une nouvelle saison » (clôt la courante,
  *   en ouvre une nouvelle), écrite **en RTDB ET en Room**.
  */
 interface SeasonRepositoryInterface {
     suspend fun fetchSeasons(teamId: String)
+    suspend fun seedInitialSeasons(teamId: String)
     suspend fun startNewSeason(teamId: String)
 }
 
@@ -47,22 +50,29 @@ class SeasonRepository @Inject constructor(
 
     override suspend fun fetchSeasons(teamId: String) {
         // Seeding-si-vide : si aucune saison n'existe en RTDB pour l'équipe, on écrit
-        // l'historique réel (l'app est déjà en saison 3, S3 laissée ouverte : end=null).
-        // Les 6 dates sont un littéral de seeding mono-site → inline (rule 61).
+        // l'historique réel via seedInitialSeasons (qui persiste RTDB + Room et renvoie
+        // la liste). Sinon on rafraîchit simplement le cache Room depuis RTDB.
+        val remoteSeasons = firebaseRepository.getSeasons(teamId).ifEmpty { return seedInitialSeasons(teamId) }
+        databaseRepository.clearSeasons()
+        databaseRepository.writeSeasons(remoteSeasons.map { SeasonEntity(teamId, it) })
+    }
+
+    override suspend fun seedInitialSeasons(teamId: String) {
+        // Historique réel des 3 saisons (l'app est déjà en saison 3, S3 laissée ouverte :
+        // end=null). Écriture INCONDITIONNELLE (RTDB + Room) — seuls appelants : le
+        // seeding-si-vide de fetchSeasons et l'outil de maintenance Debug (2 sites → le
+        // littéral partagé est légitime ici, il empêche la divergence entre les deux, rule 61).
         // Timestamps 00:00 UTC (ms). Une saison commence le lendemain de la fin de la
         // précédente. La fin prévue de la S3 (~01/11/2026) N'est PAS préremplie :
         // l'end réel sera le timestamp du clic « Démarrer une nouvelle saison ».
-        val remoteSeasons = firebaseRepository.getSeasons(teamId).ifEmpty {
-            val seeded = listOf(
-                Season(number = 1, start = 1749081600000, end = 1766275200000), // 05/06/2025 → 21/12/2025
-                Season(number = 2, start = 1766361600000, end = 1777766400000), // 22/12/2025 → 03/05/2026
-                Season(number = 3, start = 1777852800000, end = null)           // 04/05/2026 → en cours
-            )
-            firebaseRepository.writeSeasons(teamId, seeded)
-            seeded
-        }
+        val seeded = listOf(
+            Season(number = 1, start = 1749081600000, end = 1766275200000), // 05/06/2025 → 21/12/2025
+            Season(number = 2, start = 1766361600000, end = 1777766400000), // 22/12/2025 → 03/05/2026
+            Season(number = 3, start = 1777852800000, end = null)           // 04/05/2026 → en cours
+        )
+        firebaseRepository.writeSeasons(teamId, seeded)
         databaseRepository.clearSeasons()
-        databaseRepository.writeSeasons(remoteSeasons.map { SeasonEntity(teamId, it) })
+        databaseRepository.writeSeasons(seeded.map { SeasonEntity(teamId, it) })
     }
 
     override suspend fun startNewSeason(teamId: String) {

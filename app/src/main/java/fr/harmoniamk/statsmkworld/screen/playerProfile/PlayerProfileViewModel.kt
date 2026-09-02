@@ -19,7 +19,6 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.NotificationRepositoryInterface
-import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,8 +44,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
     private val fetchUseCase: FetchUseCaseInterface,
     private val authDataSource: DiscordDataSourceInterface,
     private val mkCentralDataSource: MKCentralDataSourceInterface,
-    private val notificationRepository: NotificationRepositoryInterface,
-    private val seasonRepository: SeasonRepositoryInterface
+    private val notificationRepository: NotificationRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -69,12 +67,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
         val isMatrixMode: Boolean = false,
         val notificationsEnabled: Boolean? = null,
         val hasMultiRoster: Boolean = false,
-        val multiRosterEnabled: Boolean = false,
-        // Leader STRICT (role == 2, pas admin) du profil « me » : conditionne l'action
-        // « Démarrer une nouvelle saison » (#30).
-        val isLeaderStrict: Boolean = false,
-        // Affiche le dialog de confirmation « nouvelle saison » quand non-null.
-        @StringRes val newSeasonDialog: Int? = null
+        val multiRosterEnabled: Boolean = false
     )
 
     private val _state = MutableStateFlow(State())
@@ -156,9 +149,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
                 isMatrixMode = matrixMode == true,
                 hasMultiRoster = hasMultiRoster,
                 multiRosterEnabled = multiRosterEnabled,
-                notificationsEnabled = notificationRepository.notificationsEnabled && notificationsActivated,
-                // Action saison réservée au leader strict, uniquement sur le profil « me ».
-                isLeaderStrict = isLeader == true && id == "me"
+                notificationsEnabled = notificationRepository.notificationsEnabled && notificationsActivated
             )
         }
         .mergeWith(_state)
@@ -318,23 +309,6 @@ class PlayerProfileViewModel @AssistedInject constructor(
         viewModelScope.launch {
             _state.value =
                 state.value.copy(notificationsEnabled = notificationRepository.notificationsEnabled && dataStoreRepository.notifEnabled.firstOrNull() == true)
-        }
-    }
-
-    fun onNewSeasonClick() {
-        _state.value = state.value.copy(newSeasonDialog = R.string.new_season_dialog_message)
-    }
-
-    fun dismissNewSeason() {
-        _state.value = state.value.copy(newSeasonDialog = null)
-    }
-
-    fun onConfirmNewSeason() {
-        viewModelScope.launch {
-            dataStoreRepository.mkcTeam.firstOrNull()?.id?.let {
-                seasonRepository.startNewSeason(it.toString())
-            }
-            _state.value = state.value.copy(newSeasonDialog = null)
         }
     }
 }
