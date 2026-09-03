@@ -78,12 +78,14 @@ class SeasonRepository @Inject constructor(
     override suspend fun startNewSeason(teamId: String) {
         val now = System.currentTimeMillis()
         val seasons = firebaseRepository.getSeasons(teamId)
-        // Clôt la dernière saison en cours (end == null) au timestamp actuel, puis
-        // ouvre une nouvelle saison (numéro incrémenté, start = maintenant, end = null).
+        // Clôt la dernière saison en cours (end == null) au timestamp du clic, puis ouvre
+        // une nouvelle saison (numéro incrémenté, end = null). Règle des bornes : une saison
+        // commence toujours LE LENDEMAIN de la fin de la précédente → start = end + 1 jour
+        // (86_400_000 ms, cohérent avec l'écart end/start du tableau de seeding).
         val currentNumber = seasons.maxOfOrNull { it.number } ?: 0
         val updated = seasons.map { season ->
             if (season.end == null) season.copy(end = now) else season
-        } + Season(number = currentNumber + 1, start = now, end = null)
+        } + Season(number = currentNumber + 1, start = now + 86_400_000, end = null)
         firebaseRepository.writeSeasons(teamId, updated)
         databaseRepository.clearSeasons()
         databaseRepository.writeSeasons(updated.map { SeasonEntity(teamId, it) })
