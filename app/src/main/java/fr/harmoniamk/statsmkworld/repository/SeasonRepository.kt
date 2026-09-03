@@ -9,7 +9,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.Season
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import java.time.Instant
-import java.time.ZoneOffset
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -78,13 +78,15 @@ class SeasonRepository @Inject constructor(
     }
 
     override suspend fun startNewSeason(teamId: String) {
-        // Bornes « propres » autour de minuit, calculées en UTC pour rester cohérent avec
-        // les timestamps du seeding (00:00 UTC). Le jour est celui du clic (now → LocalDate
-        // en UTC) : la saison en cours se termine ce jour-là à 23:59, la nouvelle commence
-        // le lendemain à 00:01 (précision minute, comme demandé). java.time (minSdk 28 ≥ 26).
-        val clickDay = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneOffset.UTC).toLocalDate()
-        val closeEnd = clickDay.atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
-        val newStart = clickDay.plusDays(1).atTime(0, 1).toInstant(ZoneOffset.UTC).toEpochMilli()
+        // Bornes « propres » autour de minuit, calculées dans le fuseau horaire de
+        // l'APPAREIL (ZoneId.systemDefault()) : le jour est celui du clic (now → LocalDate
+        // local), la saison en cours se termine ce jour-là à 23:59, la nouvelle commence
+        // le lendemain à 00:01 (précision minute, comme demandé). Le seeding (dates figées
+        // à 00:00 UTC) reste inchangé — seul startNewSeason est en local. java.time (minSdk 28 ≥ 26).
+        val zone = ZoneId.systemDefault()
+        val clickDay = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(zone).toLocalDate()
+        val closeEnd = clickDay.atTime(23, 59).atZone(zone).toInstant().toEpochMilli()
+        val newStart = clickDay.plusDays(1).atTime(0, 1).atZone(zone).toInstant().toEpochMilli()
         val seasons = firebaseRepository.getSeasons(teamId)
         // Clôt la dernière saison en cours (end == null), puis ouvre une nouvelle saison
         // (numéro incrémenté, end = null) commençant le lendemain (règle des bornes).
