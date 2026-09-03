@@ -7,18 +7,27 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.withFullStats
+import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
+import fr.harmoniamk.statsmkworld.extension.withTrackStats
+import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
+import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
-import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -98,11 +107,11 @@ sealed interface RankingItem {
     }
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class StatsRankingViewModel @Inject constructor(
-    dataStoreRepository: DataStoreRepositoryInterface,
-    private val statsRepository: StatsRepositoryInterface,
+    private val dataStoreRepository: DataStoreRepositoryInterface,
+    private val databaseRepository: DatabaseRepositoryInterface,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -127,8 +136,28 @@ class StatsRankingViewModel @Inject constructor(
         val minOccurrences: Int = 1,
         val maxOccurrences: Int = 1,
         val currentUserId: String? = null,
-        val is24PEnabled: Boolean? = null
+        val is24PEnabled: Boolean? = null,
+        // Filtre par saison (#70) : liste des saisons (ordre chrono) + saison sélectionnée
+        // (`selectedSeasonNumber` null = tout l'historique, défaut = saison en cours). Les
+        // rankings sont recalculés à la volée sur les wars de l'intervalle sélectionné.
+        val seasons: List<SeasonEntity> = listOf(),
+        val selectedSeasonNumber: Int? = null
     )
+
+    /**
+     * Sélection de saison (#70), même modèle que StatsFullViewModel. [Default] = saison en
+     * cours (résolue après chargement) ; [AllTime] = tout l'historique ; [Specific] = saison
+     * passée précise.
+     */
+    sealed interface SeasonFilter {
+        data object Default : SeasonFilter
+        data object AllTime : SeasonFilter
+        data class Specific(val number: Int) : SeasonFilter
+    }
+
+    // Sélection de saison courante (#70) : recompute déclenché à chaque changement via
+    // `combine` avec le flux de wars → recalcul à la volée des rankings sur l'intervalle.
+    private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
 
     private val _state = MutableStateFlow(State())
     private var currentUser: MKCPlayer? = null
@@ -139,26 +168,87 @@ class StatsRankingViewModel @Inject constructor(
     private var allOpponents: List<RankingItem.OpponentRanking> = listOf()
     private var allTracks: List<RankingItem.TrackRanking> = listOf()
 
-    val state = flowOf(Unit)
-        .map {
+    val state = combine(databaseRepository.getWars(), _seasonFilter) { warEntities, seasonFilter ->
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
-            val is24p = dataStoreRepository.is24PEnabled.firstOrNull()
-            val playersByGroup = statsRepository.playersRankList
-                .mapValues { entry -> entry.value.filter { it.stats.warStats.warsPlayed > 0 } }
-            // Clé Pair.first : 0 = membre (rattaché à un roster mkworld), 1 = allié.
-            allMembers = playersByGroup.filterKeys { it.first == 0 }.values.flatten()
-            allAllies = playersByGroup.filterKeys { it.first == 1 }.values.flatten()
-            // Perspective ÉQUIPE pour adversaires/circuits (winrate global de l'équipe),
-            // conforme au prototype qui n'a pas de switch indiv/équipe.
-            allOpponents = statsRepository.opponentRankList.mapNotNull { it as? RankingItem.OpponentRanking }
-            allTracks = statsRepository.trackRankList.mapNotNull { it as? RankingItem.TrackRanking }
+            val is24p = dataStoreRepository.is24PEnabled.firstOrNull() == true
+            val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+            val activeSeason = when (seasonFilter) {
+                is SeasonFilter.AllTime -> null
+                is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
+                is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
+            }
+            // Rankings recalculés à la volée sur les wars filtrées par saison (recompute
+            // on-the-fly, stratégie recommandée du ticket), remplaçant le cache mono-jeu de
+            // StatsRepository (peuplé all-time par InitStatsWorker). Filtres alignés sur le
+            // worker : host/roster + 12p/24p, PLUS l'intervalle de saison.
+            computeRankings(warEntities.filterBySeason(activeSeason), is24p)
             _state.value.copy(
                 currentUserId = currentUser?.id.toString(),
-                is24PEnabled = is24p
+                is24PEnabled = is24p,
+                seasons = seasons,
+                selectedSeasonNumber = activeSeason?.number
             ).recompute(resetOccurrences = true)
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+    /**
+     * Recalcule les listes brutes de rankings (membres/alliés/adversaires/circuits) sur
+     * les [wars] déjà filtrées par saison. Réplique la logique de `InitStatsWorker`
+     * (mono-consommateur ici → dans le VM, rule 32) : filtre host/roster + 12p/24p, puis
+     * calcule joueurs (groupés membres/alliés), adversaires et circuits.
+     */
+    private suspend fun computeRankings(warEntities: List<WarEntity>, is24p: Boolean) {
+        val currentPlayer = currentUser
+        val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
+        val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
+        val currentTeam = dataStoreRepository.mkcTeam.firstOrNull()
+        val rosters = currentTeam?.rosters
+
+        val warList = warEntities
+            .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+            .filter { (is24p && it.teamOpponent.size > 1) || (!is24p && it.teamOpponent.size == 1) }
+        val warDetailsList = warList.map { WarDetails(War(it)) }
+
+        // Circuits (équipe).
+        allTracks = warList.withTrackStats().map { RankingItem.TrackRanking(it) }
+
+        // Joueurs : groupés membre (rattaché à un roster mkworld) / allié (Pair(1,"Allies")).
+        val userList = databaseRepository.getPlayers().firstOrNull().orEmpty().sortedBy { it.name }
+        val playersByGroup = userList
+            .mapNotNull { user ->
+                warDetailsList
+                    .filter { it.war.hasPlayer(user.id) }
+                    .withFullStats(databaseRepository, userId = user.id, is24p = is24p)
+                    .firstOrNull()
+                    ?.takeIf { it.warStats.warsPlayed > 0 }
+                    ?.let { RankingItem.PlayerRanking(user, it) }
+            }
+            .groupBy { ranking ->
+                when (rosters?.firstOrNull { it.id.toString() == ranking.player.rosterId }) {
+                    null -> 1 // allié
+                    else -> 0 // membre
+                }
+            }
+        allMembers = playersByGroup[0].orEmpty()
+        allAllies = playersByGroup[1].orEmpty()
+
+        // Adversaires (perspective équipe, comme le prototype : pas de switch indiv/équipe).
+        val teams = databaseRepository.getTeams().firstOrNull().orEmpty()
+            .filterNot { it.id == currentTeam?.id.toString() }
+            .sortedBy { it.name }
+        allOpponents = teams
+            .withFullTeamStats(wars = warList, databaseRepository = databaseRepository, is24p = is24p)
+            .firstOrNull()
+            .orEmpty()
+            .sortedByDescending { it.second.warStats.warsPlayed }
+            .map { RankingItem.OpponentRanking(it.first, it.second) }
+    }
+
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    fun onSeasonSelected(number: Int?) {
+        _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
+    }
 
     fun onTabSelected(index: Int) {
         val tab = RankingTab.entries.getOrElse(index) { RankingTab.PLAYERS }

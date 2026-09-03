@@ -7,7 +7,9 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
@@ -24,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -101,7 +104,12 @@ class StatsFullViewModel @AssistedInject constructor(
         // Classements adversaires top3/flop3 (occurrences, winrate ET score) PAR FENÊTRE, au
         // périmètre de la vue (équipe = tous ; individuelles = du point de vue du joueur).
         val teamOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
-        val playerOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf()
+        val playerOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
+        // Filtre par saison (#70) : liste des saisons (ordre chrono) + saison sélectionnée
+        // (`selectedSeasonNumber` null = tout l'historique, défaut = saison en cours). Les
+        // wars sont filtrées sur l'intervalle [start, end] AVANT tout calcul d'agrégat.
+        val seasons: List<SeasonEntity> = listOf(),
+        val selectedSeasonNumber: Int? = null
     )
 
     /** Les 6 classements adversaires d'un podium (top/flop × occurrences/winrate/score) +
@@ -118,6 +126,18 @@ class StatsFullViewModel @AssistedInject constructor(
         val all: List<RankingItem.OpponentRanking> = listOf()
     )
 
+    /**
+     * Sélection de saison (#70) hissée dans le VM (rule 11 : état, pas de re-nav).
+     * [Default] = première ouverture → la saison EN COURS ; [AllTime] = tout l'historique ;
+     * [Specific] = une saison passée précise. Distinct de « saison courante » car le
+     * défaut doit se résoudre APRÈS chargement des saisons (numéro pas connu d'avance).
+     */
+    sealed interface SeasonFilter {
+        data object Default : SeasonFilter
+        data object AllTime : SeasonFilter
+        data class Specific(val number: Int) : SeasonFilter
+    }
+
     // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
     private val is24p = false
 
@@ -126,14 +146,42 @@ class StatsFullViewModel @AssistedInject constructor(
     // (stats/tops-bots/adversaires/contributeurs) pour rester cohérent entre sections.
     private val windowSizes = listOf(0 to null, 1 to 5, 2 to 10)
 
+    // Sélection de saison courante (#70). Recompute déclenché à chaque changement via
+    // `combine` avec le flux de wars → recalcul à la volée (stratégie recommandée du ticket).
+    private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
+
     private val _state = MutableStateFlow(State())
 
     val state = compute()
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
-    private fun compute() = databaseRepository.getWars()
-        .map { warEntities ->
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    fun onSeasonSelected(number: Int?) {
+        _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
+    }
+
+    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter) { warEntities, seasonFilter ->
+            // Saisons (cache Room) : liste pour le sélecteur + résolution de la saison
+            // effective (défaut = saison en cours). `null` = tout l'historique (aucun filtre).
+            val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+            val currentSeason = seasons.lastOrNull { it.end == null }
+            val activeSeason = when (seasonFilter) {
+                is SeasonFilter.AllTime -> null
+                is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
+                is SeasonFilter.Default -> currentSeason
+            }
+            // Filtre saison appliqué AVANT tout autre filtre/calcul (calculé sur war.id).
+            val seasonWars = warEntities.filterBySeason(activeSeason)
+            computeState(seasonWars, seasons, activeSeason?.number)
+        }
+
+    private suspend fun computeState(
+        warEntities: List<WarEntity>,
+        seasons: List<SeasonEntity>,
+        activeSeasonNumber: Int?
+    ) = warEntities
+        .let { warEntities ->
             val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
             val targetUserId = userId ?: currentPlayer?.id?.toString()
             val team = dataStoreRepository.mkcTeam.firstOrNull()
@@ -224,7 +272,9 @@ class StatsFullViewModel @AssistedInject constructor(
                 contributorsByWindow = contributorsByWindow,
                 baggersByWindow = baggersByWindow,
                 teamOpponentsByWindow = teamOpponentsByWindow,
-                playerOpponentsByWindow = playerOpponentsByWindow
+                playerOpponentsByWindow = playerOpponentsByWindow,
+                seasons = seasons,
+                selectedSeasonNumber = activeSeasonNumber
             )
         }
 

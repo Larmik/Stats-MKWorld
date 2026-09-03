@@ -92,6 +92,9 @@ fun WelcomeScreen(
                         GreetingCard(
                             greeting = stringResource(R.string.home_greeting, state.value.playerName.orEmpty()),
                             subtitle = stringResource(R.string.home_profile_subtitle, state.value.teamName.orEmpty()),
+                            // Saison en cours (#70) : chip « Saison N » sous le sous-titre profil,
+                            // dans le style de la carte profil équipe (prototype « TAG · Saison 5 »).
+                            seasonNumber = state.value.currentSeasonNumber,
                             image = state.value.playerLogo,
                             initials = initialsOf(state.value.playerName),
                             crestColor = state.value.teamColor?.let { Color(it) } ?: Colors.blue,
@@ -196,6 +199,7 @@ private fun DashboardCard(modifier: Modifier = Modifier, content: @Composable Co
 private fun GreetingCard(
     greeting: String,
     subtitle: String,
+    seasonNumber: Int?,
     image: String?,
     initials: String,
     crestColor: Color,
@@ -209,6 +213,25 @@ private fun GreetingCard(
             Column(Modifier.weight(1f)) {
                 MKText(text = greeting, font = Fonts.Bungee, textColor = Colors.white, fontSize = 18, textAlign = TextAlign.Start)
                 MKText(text = subtitle, textColor = Colors.white66, fontSize = 13, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 3.dp))
+                // Chip « Saison N » (#70) : ajout hors maquette actuelle (écart assumé,
+                // cf. rule 15) — placé sous le sous-titre profil, pastille jaune discrète.
+                seasonNumber?.let { number ->
+                    Box(
+                        Modifier
+                            .padding(top = 6.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Colors.white30)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        MKText(
+                            text = stringResource(R.string.home_season_current, number),
+                            font = Fonts.NunitoBD,
+                            textColor = Colors.white,
+                            fontSize = 11,
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                }
             }
         }
         Spacer(Modifier.height(12.dp))

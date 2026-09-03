@@ -39,6 +39,9 @@ class WelcomeViewModel @Inject constructor(
         val teamColor: Long? = null,
         val playerName: String? = null,
         val playerLogo: String? = null,
+        // Numéro de la saison en cours (#70) : affiché sur le dashboard Accueil.
+        // Null tant que la table `seasons` n'est pas hydratée (aucune saison en cours).
+        val currentSeasonNumber: Int? = null,
         val currentWar: War? = null,
         // Les deux vues de stats 12p sont calculées une seule fois ; le segmenté
         // Moi/Équipe du dashboard choisit celle affichée (pas de recalcul au switch).
@@ -72,6 +75,8 @@ class WelcomeViewModel @Inject constructor(
                     teamColor = team.color.takeIf { it != 0L },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
+                    // Saison en cours (#70) : celle sans date de fin (end == null), cache Room.
+                    currentSeasonNumber = databaseRepository.getCurrentSeason()?.number,
                     currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty()),
                     // Vue équipe (userId = null) et vue joueur (userId = id MKCentral
                     // du joueur courant) calculées d'emblée.

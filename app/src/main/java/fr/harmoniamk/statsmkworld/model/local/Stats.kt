@@ -106,6 +106,12 @@ data class Stats(
     /** Record de série de défaites (max historique). */
     val worstLossStreak: Int = longestStreak(chronologicalWars) { it < 0 }
 
+    // war.id (timestamp) de la war qui CLÔT le record de série (#70) : sert à résoudre la
+    // saison où le record a été établi, pour afficher le libellé « (SN) » en vue all-time.
+    // Null si aucun record (aucune série).
+    val bestWinStreakWarId: Long? = longestStreakEndWarId(chronologicalWars) { it > 0 }
+    val worstLossStreakWarId: Long? = longestStreakEndWarId(chronologicalWars) { it < 0 }
+
     private fun longestStreak(wars: List<WarDetails>, predicate: (Int) -> Boolean): Int {
         var best = 0
         var current = 0
@@ -119,6 +125,26 @@ data class Stats(
             }
         }
         return best
+    }
+
+    /** war.id de la dernière war du plus long streak validant [predicate] (null si aucun). */
+    private fun longestStreakEndWarId(wars: List<WarDetails>, predicate: (Int) -> Boolean): Long? {
+        var best = 0
+        var current = 0
+        var bestEndWarId: Long? = null
+        wars.forEach { war ->
+            when (predicate(war.outcome())) {
+                true -> {
+                    current++
+                    if (current > best) {
+                        best = current
+                        bestEndWarId = war.war.id
+                    }
+                }
+                else -> current = 0
+            }
+        }
+        return bestEndWarId
     }
 
     private fun currentStreakOf(wars: List<WarDetails>): Int {
@@ -427,6 +453,11 @@ data class Stats(
     /** Amplitude min/max des scores par war (null si aucune war). */
     val scoreMin: Int? = scoreValues.minOrNull()
     val scoreMax: Int? = scoreValues.maxOrNull()
+
+    // war.id (timestamp) de la war du score min/max (#70) : résolution de la saison du
+    // record (libellé « (SN) » en vue all-time). Null si aucune war.
+    val scoreMinWarId: Long? = chronologicalScores.minByOrNull { it.score }?.war?.war?.id
+    val scoreMaxWarId: Long? = chronologicalScores.maxByOrNull { it.score }?.war?.war?.id
 
     // --- Vague 2 : distribution complète des positions P1→P12 (vue joueur) ---
     /**
