@@ -122,6 +122,25 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
                         .background(Colors.blackAlphaed)
                 )
             }
+            // Inscrit rétroactivement l'historique des 3 saisons dans RTDB + Room (#30).
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.onSeedSeasons() }) {
+                    MKText(
+                        text = "Inscrire les saisons existantes",
+                        font = Fonts.Urbanist,
+                        modifier = Modifier.padding(vertical = 20.dp)
+                    )
+                }
+                Spacer(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Colors.blackAlphaed)
+                )
+            }
             item {
                 Row(
                     modifier = Modifier

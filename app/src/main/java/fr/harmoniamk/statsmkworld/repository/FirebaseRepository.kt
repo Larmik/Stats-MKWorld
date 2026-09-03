@@ -16,6 +16,7 @@ import fr.harmoniamk.statsmkworld.extension.parsePenalties
 import fr.harmoniamk.statsmkworld.extension.parseScores
 import fr.harmoniamk.statsmkworld.extension.parseTracks
 import fr.harmoniamk.statsmkworld.extension.toMapList
+import fr.harmoniamk.statsmkworld.model.firebase.Season
 import fr.harmoniamk.statsmkworld.model.firebase.Tag
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -57,6 +58,12 @@ interface FirebaseRepositoryInterface {
     suspend fun writeCurrentWar(war: War)
     suspend fun deleteCurrentWar(teamId: String)
     suspend fun restoreCurrentWarIfHost(war: War?)
+
+    // seasons/{teamId} : tableau indexé (0,1,2…) d'objets Season, ordre chronologique.
+    suspend fun getSeasons(teamId: String): List<Season>
+    // Écrit l'intégralité du tableau seasons/{teamId} (une saison close + une nouvelle
+    // en cours = réécriture de tout l'index).
+    suspend fun writeSeasons(teamId: String, seasons: List<Season>)
 
     suspend fun getAllies(teamId: String): List<User>
     suspend fun writeAlly(teamId: String, user: User)
@@ -123,6 +130,16 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         database.child("wars").child(teamId).get().awaitSnapshot()?.children
             ?.mapNotNull { (it.value as? Map<*, *>)?.toWar() }
             .orEmpty()
+    }
+
+    override suspend fun getSeasons(teamId: String): List<Season> = withContext(Dispatchers.IO) {
+        database.child("seasons").child(teamId).get().awaitSnapshot()?.children
+            ?.mapNotNull { (it.value as? Map<*, *>)?.toSeason() }
+            .orEmpty()
+    }
+
+    override suspend fun writeSeasons(teamId: String, seasons: List<Season>) {
+        database.child("seasons").child(teamId).setValue(seasons)
     }
 
     override suspend fun getCurrentWar(teamId: String): War? = withContext(Dispatchers.IO) {
@@ -240,6 +257,13 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         role = this["role"].toString().toIntOrNull() ?: 0,
         name = this["name"].toString(),
         discordId = this["discordId"].toString()
+    )
+
+    private fun Map<*, *>.toSeason() = Season(
+        number = this["number"].toString().toInt(),
+        start = this["start"].toString().toLong(),
+        // end nullable : null (ou absent) = saison en cours.
+        end = this["end"]?.toString()?.toLongOrNull()
     )
 
     private fun Map<*, *>.toWar() = War(

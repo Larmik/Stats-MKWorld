@@ -399,6 +399,11 @@
     <string name="profile_setting_multiroster_sub">Stats sur tous les rosters (redémarrage requis)</string>
     <string name="profile_setting_debug">Debug / Matrice</string>
     <string name="profile_setting_debug_sub">Réservé staff</string>
+    <!-- Saisons (ticket #30) -->
+    <string name="profile_setting_new_season">Démarrer une nouvelle saison</string>
+    <string name="new_season_dialog_title">Nouvelle saison</string>
+    <string name="new_season_dialog_message">Tu es sur le point de clore la saison en cours et d\'en démarrer une nouvelle. Cette action est importante et irréversible : la saison en cours sera définitivement verrouillée. Es-tu sûr ?</string>
+    <string name="new_season_confirm">Démarrer la saison</string>
     <string name="profile_ally_role">Ally</string>
     <string name="profile_ally_external">roster externe</string>
     <!-- Écran War en cours (ticket #43) -->

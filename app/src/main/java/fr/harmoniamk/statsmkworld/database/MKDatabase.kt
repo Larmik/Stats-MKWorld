@@ -12,22 +12,27 @@ import fr.harmoniamk.statsmkworld.database.converters.WarPositionConverter
 import fr.harmoniamk.statsmkworld.database.converters.WarScoreConverter
 import fr.harmoniamk.statsmkworld.database.converters.WarTrackConverter
 import fr.harmoniamk.statsmkworld.database.dao.PlayerDao
+import fr.harmoniamk.statsmkworld.database.dao.SeasonDao
 import fr.harmoniamk.statsmkworld.database.dao.TeamDao
 import fr.harmoniamk.statsmkworld.database.dao.WarDao
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import kotlinx.coroutines.FlowPreview
 
 @TypeConverters(value = [WarTrackConverter::class, WarPositionConverter::class, WarPenaltyConverter::class, StringConverter::class, WarScoreConverter::class, RosterInfoConverter::class])
-// v7 : ajout de PlayerEntity.avatar (photo de profil MKCentral). fallbackToDestructiveMigration
-// en place → perte des données locales acceptée (re-synchro Firebase/MKCentral). #50 pt.4.
-@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class], version = 7)
+// v7 : ajout de PlayerEntity.avatar (photo de profil MKCentral).
+// v8 : ajout de SeasonEntity (cache local des saisons, source RTDB seasons/{teamId}). #30.
+// fallbackToDestructiveMigration en place → perte des données locales acceptée
+// (re-synchro Firebase/MKCentral). #50 pt.4.
+@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class, SeasonEntity::class], version = 8)
 abstract class MKDatabase : RoomDatabase() {
 
     abstract fun playerDao(): PlayerDao
     abstract fun teamDao(): TeamDao
     abstract fun warDao(): WarDao
+    abstract fun seasonDao(): SeasonDao
 
     @FlowPreview
     companion object {

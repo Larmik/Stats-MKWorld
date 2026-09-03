@@ -16,6 +16,7 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -40,7 +41,8 @@ class TeamProfileViewModel @AssistedInject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val mkCentralDataSource: MKCentralDataSourceInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface) : ViewModel() {
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
@@ -70,7 +72,12 @@ class TeamProfileViewModel @AssistedInject constructor(
         val members: List<MemberInfo> = listOf(),
         val allyList: List<PlayerEntity> = listOf(),
         val playerList: List<MKCPlayer> = listOf(),
-        val addAllyVisible: Boolean = false
+        val addAllyVisible: Boolean = false,
+        // Leader STRICT (role == 2, pas admin) de mon équipe : conditionne l'action
+        // « Démarrer une nouvelle saison » (#30).
+        val newSeasonVisible: Boolean = false,
+        // true = affiche le dialog de confirmation « nouvelle saison » (irréversible).
+        val newSeasonDialog: Boolean = false
     )
 
     private val _state = MutableSharedFlow<State>()
@@ -115,13 +122,15 @@ class TeamProfileViewModel @AssistedInject constructor(
                 "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()
                 else -> listOf()
             }
-            val buttonVisible = (firebaseRepository
+            val role = firebaseRepository
                 .getUser(team.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
-                ?.role ?: 0) > 0
+                ?.role ?: 0
             State(
                 team = team,
                 members = resolveMembers(team),
-                addAllyVisible = buttonVisible,
+                addAllyVisible = role > 0,
+                // Action saison réservée au leader STRICT (role == 2) de MON équipe.
+                newSeasonVisible = role == 2 && id == "me",
                 allyList = allyList
             )
         }
@@ -187,5 +196,23 @@ class TeamProfileViewModel @AssistedInject constructor(
             }
             .launchIn(viewModelScope)
 
+    }
+
+    fun onNewSeasonClick() {
+        viewModelScope.launch { _state.emit(state.value.copy(newSeasonDialog = true)) }
+    }
+
+    fun dismissNewSeason() {
+        viewModelScope.launch { _state.emit(state.value.copy(newSeasonDialog = false)) }
+    }
+
+    // Clôt la saison en cours et en démarre une nouvelle (RTDB + Room). Leader strict.
+    fun onConfirmNewSeason() {
+        viewModelScope.launch {
+            dataStoreRepository.mkcTeam.firstOrNull()?.id?.let {
+                seasonRepository.startNewSeason(it.toString())
+            }
+            _state.emit(state.value.copy(newSeasonDialog = false))
+        }
     }
 }

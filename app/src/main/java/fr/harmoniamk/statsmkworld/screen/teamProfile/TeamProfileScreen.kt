@@ -39,6 +39,7 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
+import fr.harmoniamk.statsmkworld.ui.MKDialog
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
@@ -141,6 +142,20 @@ fun ColumnScope.TeamProfileContent(
     // Résolu hors du LazyListScope (stringResource n'y est pas appelable).
     val membersHeader = stringResource(R.string.profile_members)
 
+    // Confirmation « Démarrer une nouvelle saison » (leader strict, #30) : action
+    // importante et irréversible (clôt la saison en cours, en ouvre une nouvelle).
+    if (state.value.newSeasonDialog) {
+        MKDialog(
+            title = stringResource(R.string.new_season_dialog_title),
+            message = stringResource(R.string.new_season_dialog_message),
+            buttonText = stringResource(R.string.new_season_confirm),
+            secondButtonText = stringResource(R.string.back),
+            onButtonClick = viewModel::onConfirmNewSeason,
+            onSecondButtonClick = viewModel::dismissNewSeason,
+            onDismiss = viewModel::dismissNewSeason
+        )
+    }
+
     when (val team = state.value.team) {
         null -> CircularProgressIndicator()
         else -> {
@@ -183,6 +198,18 @@ fun ColumnScope.TeamProfileContent(
                         add(ProfileInfo(stringResource(R.string.profile_info_created), Date(team.creationDate * 1000).displayedString("dd MMMM yyyy")))
                     }
                     ProfileInfoCard(infos)
+                }
+
+                // Action leader STRICT (role == 2, #30) : démarrer une nouvelle saison
+                // (clôt la courante). Confirmation via MKDialog. Bouton en largeur
+                // intrinsèque, centré (même traitement que « Ajouter un ally »).
+                if (state.value.newSeasonVisible) item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        MKButton(
+                            text = stringResource(R.string.profile_setting_new_season),
+                            onClick = viewModel::onNewSeasonClick
+                        )
+                    }
                 }
 
                 when (isMe) {
