@@ -8,6 +8,8 @@ import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.model.firebase.Season
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import java.time.Instant
+import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -76,16 +78,20 @@ class SeasonRepository @Inject constructor(
     }
 
     override suspend fun startNewSeason(teamId: String) {
-        val now = System.currentTimeMillis()
+        // Bornes « propres » autour de minuit, calculées en UTC pour rester cohérent avec
+        // les timestamps du seeding (00:00 UTC). Le jour est celui du clic (now → LocalDate
+        // en UTC) : la saison en cours se termine ce jour-là à 23:59, la nouvelle commence
+        // le lendemain à 00:01 (précision minute, comme demandé). java.time (minSdk 28 ≥ 26).
+        val clickDay = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneOffset.UTC).toLocalDate()
+        val closeEnd = clickDay.atTime(23, 59).toInstant(ZoneOffset.UTC).toEpochMilli()
+        val newStart = clickDay.plusDays(1).atTime(0, 1).toInstant(ZoneOffset.UTC).toEpochMilli()
         val seasons = firebaseRepository.getSeasons(teamId)
-        // Clôt la dernière saison en cours (end == null) au timestamp du clic, puis ouvre
-        // une nouvelle saison (numéro incrémenté, end = null). Règle des bornes : une saison
-        // commence toujours LE LENDEMAIN de la fin de la précédente → start = end + 1 jour
-        // (86_400_000 ms, cohérent avec l'écart end/start du tableau de seeding).
+        // Clôt la dernière saison en cours (end == null), puis ouvre une nouvelle saison
+        // (numéro incrémenté, end = null) commençant le lendemain (règle des bornes).
         val currentNumber = seasons.maxOfOrNull { it.number } ?: 0
         val updated = seasons.map { season ->
-            if (season.end == null) season.copy(end = now) else season
-        } + Season(number = currentNumber + 1, start = now + 86_400_000, end = null)
+            if (season.end == null) season.copy(end = closeEnd) else season
+        } + Season(number = currentNumber + 1, start = newStart, end = null)
         firebaseRepository.writeSeasons(teamId, updated)
         databaseRepository.clearSeasons()
         databaseRepository.writeSeasons(updated.map { SeasonEntity(teamId, it) })
