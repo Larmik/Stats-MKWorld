@@ -30,6 +30,7 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKChip
+import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
@@ -79,7 +80,16 @@ fun WarListScreen(
         // s'il n'y a pas de war en cours (même condition qu'auparavant, juste déplacée).
         onSearch = { onAddWar(false) }.takeIf { state.value.currentWar == null },
         actionIcon = R.drawable.ic_add,
-        actionContentDescription = stringResource(R.string.nouvelle_war)
+        actionContentDescription = stringResource(R.string.nouvelle_war),
+        // Dropdown de saison (#70) : filtre la liste des wars affichées (composant partagé,
+        // aligné à droite avant le bouton « Créer une war »). Défaut = saison en cours.
+        headerTrailing = {
+            MKSeasonDropdown(
+                seasons = state.value.seasons,
+                selectedSeasonNumber = state.value.selectedSeasonNumber,
+                onSeasonSelected = viewModel::onSeasonSelected
+            )
+        }
     ) {
         LazyColumn(
             Modifier.fillMaxSize(),

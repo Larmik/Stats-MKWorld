@@ -48,6 +48,7 @@ import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.stats.DistributionChart
@@ -93,34 +94,6 @@ private fun Stats.windowForm(index: Int) = when (index) {
     1 -> recentForm5
     2 -> recentForm10
     else -> allTimeForm
-}
-
-/**
- * Sélecteur de SAISON (#70) partagé (rule 15/16 : segmented unique). Items = « Tout
- * l'historique » suivi de chaque saison (« Saison N »), sur le fond clair du dégradé
- * (onDark = false). [selectedSeasonNumber] `null` ⇒ « Tout l'historique » sélectionné ;
- * sinon la saison correspondante. Remonte à l'appelant le numéro choisi (`null` = tout).
- */
-@Composable
-private fun SeasonSelector(
-    seasons: List<SeasonEntity>,
-    selectedSeasonNumber: Int?,
-    onSeasonSelected: (Int?) -> Unit
-) {
-    // Rien à filtrer tant que les saisons ne sont pas chargées.
-    if (seasons.isEmpty()) return
-    // Index 0 = « Tout l'historique », puis une entrée par saison (ordre chrono de la liste).
-    val items = listOf(stringResource(R.string.all_seasons)) +
-            seasons.map { stringResource(R.string.season_label, it.number) }
-    val selectedIndex = selectedSeasonNumber
-        ?.let { number -> seasons.indexOfFirst { it.number == number }.takeIf { it >= 0 }?.plus(1) }
-        ?: 0
-    MKSegmentedSelector(
-        items = items,
-        page = selectedIndex,
-        onClick = { index -> onSeasonSelected(if (index == 0) null else seasons[index - 1].number) }
-    )
-    Spacer(Modifier.height(11.dp))
 }
 
 /**
@@ -187,6 +160,16 @@ fun StatsFullScreen(
         // Bouton retour uniquement en fiche poussée (showTabs=false) ; en onglet du pôle
         // Stats (showTabs=true), pas de retour d'appbar (rule 14, comportement onglet).
         onBack = onBack?.takeIf { !viewModel.showTabs },
+        // Sélecteur de SAISON (#70) : menu déroulant aligné à droite dans le header (composant
+        // partagé MKSeasonDropdown, rule 16). Défaut = saison en cours. Change l'état VM ⇒
+        // recalcul à la volée des agrégats sur l'intervalle [start, end] (rule 11, pas de re-nav).
+        headerTrailing = {
+            MKSeasonDropdown(
+                seasons = state.value.seasons,
+                selectedSeasonNumber = state.value.selectedSeasonNumber,
+                onSeasonSelected = viewModel::onSeasonSelected
+            )
+        },
         modifier = Modifier.padding(bottom = if (viewModel.showTabs) 90.dp else 0.dp)
     ) {
         when {
@@ -205,15 +188,6 @@ fun StatsFullScreen(
                     )
                     Spacer(Modifier.height(11.dp))
                 }
-                // Sélecteur de SAISON (#70) : saison courante (défaut), saisons passées et
-                // « Tout l'historique ». Segmented partagé (rule 15/16) car le nombre de
-                // saisons reste raisonnable (3 seedées). Change l'état VM ⇒ recalcul à la
-                // volée des agrégats sur l'intervalle [start, end] (rule 11, pas de re-nav).
-                SeasonSelector(
-                    seasons = state.value.seasons,
-                    selectedSeasonNumber = state.value.selectedSeasonNumber,
-                    onSeasonSelected = viewModel::onSeasonSelected
-                )
                 // Sélecteur de période GLOBAL (#68), juste sous le sélecteur indiv/équipe et
                 // AU-DESSUS de toutes les sections. Reste visible même quand indiv/équipe est
                 // masqué (showTabs == false, stats d'un joueur donné). Sur le fond clair du

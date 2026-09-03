@@ -3,6 +3,8 @@ package fr.harmoniamk.statsmkworld.screen.welcome
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
+import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.extension.withFullStats
@@ -16,6 +18,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -39,29 +42,54 @@ class WelcomeViewModel @Inject constructor(
         val teamColor: Long? = null,
         val playerName: String? = null,
         val playerLogo: String? = null,
-        // Numéro de la saison en cours (#70) : affiché sur le dashboard Accueil.
-        // Null tant que la table `seasons` n'est pas hydratée (aucune saison en cours).
-        val currentSeasonNumber: Int? = null,
         val currentWar: War? = null,
         // Les deux vues de stats 12p sont calculées une seule fois ; le segmenté
         // Moi/Équipe du dashboard choisit celle affichée (pas de recalcul au switch).
         val playerStats: Stats? = null,
         val teamStats: Stats? = null,
         // 3 dernières wars 12p (résultats récents → WarDetails). Réutilise WarCell.
-        val recentResults: List<WarDetails> = listOf()
+        val recentResults: List<WarDetails> = listOf(),
+        // Filtre par saison (#70) : liste des saisons + saison sélectionnée (null = tout
+        // l'historique, défaut = saison en cours). Filtre TOUS les agrégats du dashboard
+        // (momentum, séries, records, chiffres clés, derniers résultats).
+        val seasons: List<SeasonEntity> = listOf(),
+        val selectedSeasonNumber: Int? = null
     )
+
+    /**
+     * Sélection de saison (#70), même modèle que Stats/Classements/Wars. [Default] = saison
+     * en cours (résolue après chargement) ; [AllTime] = tout l'historique ; [Specific] = passée.
+     */
+    sealed interface SeasonFilter {
+        data object Default : SeasonFilter
+        data object AllTime : SeasonFilter
+        data class Specific(val number: Int) : SeasonFilter
+    }
+
+    // Sélection de saison courante (#70) : recompute déclenché à chaque changement via combine.
+    private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
 
     private val _state = MutableStateFlow(State())
 
-    val state = dataStoreRepository.mkcPlayer
-        .mapNotNull { player ->
+    val state = combine(dataStoreRepository.mkcPlayer, _seasonFilter) { player, seasonFilter ->
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
-                // Dashboard 12p uniquement (le support 24p relève de tickets dédiés) :
-                // on ne garde que les wars à un seul adversaire.
+                // Saisons (cache Room) : liste pour le dropdown + résolution de la saison
+                // effective (défaut = saison en cours ; null = tout l'historique).
+                val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+                val activeSeason = when (seasonFilter) {
+                    is SeasonFilter.AllTime -> null
+                    is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
+                    is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
+                }
+                // Dashboard 12p uniquement (le support 24p relève de tickets dédiés) : wars à un
+                // seul adversaire. Filtre par SAISON (#70) appliqué en premier ⇒ momentum, séries,
+                // records, chiffres clés et derniers résultats reflètent la saison choisie (ou
+                // tout l'historique en mode « Tout l'historique »).
                 val wars = databaseRepository.getWars()
                     .firstOrNull()
+                    ?.filterBySeason(activeSeason)
                     ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
                     ?.map { War(it) }
                     ?.map { WarDetails(it) }
@@ -75,23 +103,29 @@ class WelcomeViewModel @Inject constructor(
                     teamColor = team.color.takeIf { it != 0L },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
-                    // Saison en cours (#70) : celle sans date de fin (end == null), cache Room.
-                    currentSeasonNumber = databaseRepository.getCurrentSeason()?.number,
                     currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty()),
                     // Vue équipe (userId = null) et vue joueur (userId = id MKCentral
-                    // du joueur courant) calculées d'emblée.
+                    // du joueur courant) calculées d'emblée, sur les wars de la saison.
                     teamStats = wars.takeIf { it.isNotEmpty() }
                         ?.withFullStats(databaseRepository, is24p = false)
                         ?.firstOrNull(),
                     playerStats = wars.takeIf { it.isNotEmpty() }
                         ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
                         ?.firstOrNull(),
-                    recentResults = wars.safeSubList(0, 3)
+                    recentResults = wars.safeSubList(0, 3),
+                    seasons = seasons,
+                    selectedSeasonNumber = activeSeason?.number
                 )
             }
         }
+        .mapNotNull { it }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
+
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    fun onSeasonSelected(number: Int?) {
+        _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
+    }
 
     init {
         dataStoreRepository.mkcPlayer

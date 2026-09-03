@@ -6,6 +6,8 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
+import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.format
 import fr.harmoniamk.statsmkworld.extension.get
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -14,6 +16,7 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
@@ -60,11 +63,28 @@ class WarListViewModel @AssistedInject constructor(
         // War en cours (bannière « En direct ») ; null → CTA « Nouvelle war ».
         val currentWar: War? = null,
         // Nom du joueur filtré (sous-titre « wars de … ») ; null = pas de filtre joueur.
-        val playerName: String? = null
+        val playerName: String? = null,
+        // Filtre par saison (#70) : liste des saisons + saison sélectionnée (null = tout
+        // l'historique, défaut = saison en cours). Filtre la liste des wars affichées.
+        val seasons: List<SeasonEntity> = listOf(),
+        val selectedSeasonNumber: Int? = null
     )
+
+    /**
+     * Sélection de saison (#70), même modèle que Stats/Classements. [Default] = saison en
+     * cours (résolue après chargement) ; [AllTime] = tout l'historique ; [Specific] = passée.
+     */
+    sealed interface SeasonFilter {
+        data object Default : SeasonFilter
+        data object AllTime : SeasonFilter
+        data class Specific(val number: Int) : SeasonFilter
+    }
 
     private val currentRosterId = dataStoreRepository.mkcPlayer
         .mapNotNull { it.rosters?.firstOrNull { roster -> roster.game == "mkworld" }?.rosterID?.toString() }
+
+    // Sélection de saison courante (#70) : recompute déclenché à chaque changement via combine.
+    private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
 
     val state = currentRosterId
         // `listenToCurrentWar` alimente `State.currentWar` (gating du bouton « Créer une war ») ;
@@ -72,8 +92,9 @@ class WarListViewModel @AssistedInject constructor(
         .flatMapLatest { rosterId ->
             combine(
                 databaseRepository.getWars(),
-                firebaseRepository.listenToCurrentWar(rosterId)
-            ) { wars, currentWar ->
+                firebaseRepository.listenToCurrentWar(rosterId),
+                _seasonFilter
+            ) { wars, currentWar, seasonFilter ->
                 val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
                 // "me"/null = joueur courant ; sinon le joueur passé. Filtre de participation
                 // uniquement pour un joueur donné (autre que la vue « toute l'équipe »).
@@ -83,10 +104,19 @@ class WarListViewModel @AssistedInject constructor(
                 val playerName = targetUserId
                     ?.takeIf { filterByPlayer }
                     ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
+                // Saisons (cache Room) : liste pour le dropdown + résolution de la saison
+                // effective (défaut = saison en cours ; null = tout l'historique).
+                val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+                val activeSeason = when (seasonFilter) {
+                    is SeasonFilter.AllTime -> null
+                    is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
+                    is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
+                }
                 // Aucun filtre par mode (12/24) : l'historique mélange tous les modes.
-                // Filtre par roster hôte, + par joueur si demandé. Pas de filtre sur la war
-                // en cours : elle n'est pas dans Room tant qu'elle n'est pas validée.
+                // Filtre par saison (#70) + roster hôte + par joueur si demandé. Pas de filtre
+                // sur la war en cours : elle n'est pas dans Room tant qu'elle n'est pas validée.
                 val details = wars
+                    .filterBySeason(activeSeason)
                     .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
                     .filter { !filterByPlayer || it.hasPlayer(targetUserId) }
                     .map { War(it) }
@@ -104,9 +134,21 @@ class WarListViewModel @AssistedInject constructor(
                             Pair(date.format("MMMM yyyy"), it.value)
                         }
                     }
-                State(wars = grouped, warCount = details.size, currentWar = currentWar, playerName = playerName)
+                State(
+                    wars = grouped,
+                    warCount = details.size,
+                    currentWar = currentWar,
+                    playerName = playerName,
+                    seasons = seasons,
+                    selectedSeasonNumber = activeSeason?.number
+                )
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
+
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    fun onSeasonSelected(number: Int?) {
+        _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
+    }
 
 }

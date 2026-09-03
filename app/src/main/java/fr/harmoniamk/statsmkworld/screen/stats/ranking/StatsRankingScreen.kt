@@ -27,6 +27,7 @@ import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
@@ -59,23 +60,20 @@ fun StatsRankingScreen(
 
     // padding bas = hauteur de la bottom bar des 5 pôles, pour que le dernier élément de
     // la grille reste visible au-dessus d'elle (même valeur/approche que Accueil/Stats : 90.dp).
-    BaseScreen(title = stringResource(R.string.classements), modifier = Modifier.padding(bottom = 90.dp)) {
-        // Sélecteur de SAISON (#70) : saison courante (défaut), saisons passées, « Tout
-        // l'historique ». Segmented partagé (rule 15/16). Change l'état VM ⇒ recalcul à la
-        // volée des classements (rule 11, pas de re-nav). Masqué tant qu'aucune saison chargée.
-        if (state.seasons.isNotEmpty()) {
-            MKSegmentedSelector(
-                items = listOf(stringResource(R.string.all_seasons)) +
-                        state.seasons.map { stringResource(R.string.season_label, it.number) },
-                page = state.selectedSeasonNumber
-                    ?.let { number -> state.seasons.indexOfFirst { it.number == number }.takeIf { it >= 0 }?.plus(1) }
-                    ?: 0,
-                onClick = { index ->
-                    viewModel.onSeasonSelected(if (index == 0) null else state.seasons[index - 1].number)
-                }
+    BaseScreen(
+        title = stringResource(R.string.classements),
+        modifier = Modifier.padding(bottom = 90.dp),
+        // Sélecteur de SAISON (#70) : menu déroulant aligné à droite dans le header (composant
+        // partagé MKSeasonDropdown, rule 16). Change l'état VM ⇒ recalcul à la volée des
+        // classements (rule 11, pas de re-nav). Masqué tant qu'aucune saison chargée.
+        headerTrailing = {
+            MKSeasonDropdown(
+                seasons = state.seasons,
+                selectedSeasonNumber = state.selectedSeasonNumber,
+                onSeasonSelected = viewModel::onSeasonSelected
             )
-            Spacer(Modifier.height(6.dp))
         }
+    ) {
         // Label « Palmarès triable » retiré (#50 pt.5) : la fonction est évidente.
         MKSegmentedSelector(
             items = listOf(
