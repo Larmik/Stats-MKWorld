@@ -92,6 +92,10 @@ class StatsFullViewModel @AssistedInject constructor(
         // GLOBAL de l'écran choisit l'index ; toutes les sections lisent la même fenêtre.
         val playerStatsByWindow: Map<Int, Stats> = mapOf(),
         val teamStatsByWindow: Map<Int, Stats> = mapOf(),
+        // Taux de participation du joueur (#78) PAR FENÊTRE (0 = all-time, 1 = 5, 2 = 10) :
+        // % de wars de l'équipe (dénominateur = wars de la fenêtre) où le joueur est présent.
+        // Numérateur et dénominateur sur la MÊME fenêtre filtrée (saison + all-time/5/10).
+        val participationRateByWindow: Map<Int, Int> = mapOf(),
         // Tables Top/Bot 2→6 (toutes manches, vue équipe) : équipe ET adversaire (complément
         // des positions), alimentées par un MapStats par fenêtre (userId null, 12p).
         // Réutilisées par les StatCard « Top/Bot équipe » / « Top/Bot adversaire ».
@@ -224,8 +228,16 @@ class StatsFullViewModel @AssistedInject constructor(
             val teamMapStatsByWindow = mutableMapOf<Int, MapStats>()
             val teamOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
             val playerOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
+            // Taux de participation (#78) par fenêtre : wars du joueur / wars de l'équipe (même
+            // fenêtre). Garde-fou dénominateur nul → 0 %. Calculé dans le VM (mono-consommateur,
+            // rule 32) sur `windowWars`, la même base filtrée que les autres agrégats.
+            val participationRateByWindow = mutableMapOf<Int, Int>()
             windowSizes.forEach { (index, lastN) ->
                 val windowWars = lastN?.let { chronologicalWars.takeLast(it) } ?: chronologicalWars
+                participationRateByWindow[index] = when (val teamCount = windowWars.size) {
+                    0 -> 0
+                    else -> windowWars.count { it.war.hasPlayer(targetUserId) } * 100 / teamCount
+                }
                 windowWars.withFullStats(databaseRepository, userId = targetUserId, is24p = is24p)
                     .firstOrNull()?.let { playerStatsByWindow[index] = it }
                 windowWars.withFullStats(databaseRepository, is24p = is24p)
@@ -268,6 +280,7 @@ class StatsFullViewModel @AssistedInject constructor(
                 targetUserId = targetUserId,
                 playerStatsByWindow = playerStatsByWindow,
                 teamStatsByWindow = teamStatsByWindow,
+                participationRateByWindow = participationRateByWindow,
                 teamMapStatsByWindow = teamMapStatsByWindow,
                 contributorsByWindow = contributorsByWindow,
                 baggersByWindow = baggersByWindow,

@@ -246,7 +246,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     item { BalanceCard(stats, showResultsLink = true, onResults = onResults) }
     // 3. Indicateurs (grille régulière) — vue JOUEUR : points/war, position, régularité,
     //    marges V/D, pénalités, maps gagnées, shocks… (fenêtre globale + deltas vs all-time).
-    item { IndicatorsCard(stats = allTimeStats, isPlayer = true, selectors = selectors) }
+    item {
+        IndicatorsCard(
+            stats = allTimeStats,
+            isPlayer = true,
+            selectors = selectors,
+            participationByWindow = state.participationRateByWindow
+        )
+    }
     // 4. Contribution (#69, retour PR #75) : deux lignes (part de POINTS + part de SHOCKS),
     //    LUES depuis le classement Contributeurs/Baggeurs de la MÊME fenêtre (source de vérité
     //    UNIQUE), pour que le % du joueur soit IDENTIQUE ici et dans le classement équipe.
@@ -397,7 +404,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
  * **équipe** (points d'équipe/war, score moyen/manche).
  */
 @Composable
-private fun IndicatorsCard(stats: Stats, isPlayer: Boolean, selectors: SectionSelectors) {
+private fun IndicatorsCard(
+    stats: Stats,
+    isPlayer: Boolean,
+    selectors: SectionSelectors,
+    // Taux de participation (#78) par fenêtre — vue JOUEUR uniquement (l'équipe est
+    // à 100 % par définition). Delta vs all-time (index 0) affiché comme les autres tuiles.
+    participationByWindow: Map<Int, Int>? = null
+) {
     val window = stats.windowForm(selectors.windowIndex)
     // Deltas seulement hors all-time (index 0 = pas de comparaison).
     val showDelta = selectors.windowIndex != 0
@@ -410,6 +424,13 @@ private fun IndicatorsCard(stats: Stats, isPlayer: Boolean, selectors: SectionSe
                     // Vue JOUEUR : score = points/war (brut) + position moyenne.
                     add(MetricTile(stringResource(R.string.stats_points_per_war), window?.averageScore?.toString() ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER))
                     add(MetricTile(stringResource(R.string.average_position_short), window?.averagePosition?.toString() ?: "-", if (showDelta) window?.positionDelta else null, "", DeltaPolarity.LOWER))
+                    // Taux de participation (#78) : % de wars de l'équipe jouées par le joueur sur
+                    // la fenêtre. Delta vs all-time (polarité « plus haut = mieux »).
+                    participationByWindow?.let { byWindow ->
+                        val participation = byWindow[selectors.windowIndex]
+                        val participationDelta = participation?.minus(byWindow[0] ?: 0)
+                        add(MetricTile(stringResource(R.string.participation_rate), participation?.let { "$it%" } ?: "-", if (showDelta) participationDelta else null, "%", DeltaPolarity.HIGHER))
+                    }
                 }
                 else -> {
                     // Vue ÉQUIPE : « Score moyen » = ÉCART de points (warScoreToDiff), pas le total.
