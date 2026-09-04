@@ -36,6 +36,7 @@ Un clic sur un bouton de la barre appelle `goRoot` (réinitialise l'historique).
 | `edittrack` | ÉDITER LA COURSE | Wars |
 | `wardetails` | DÉTAILS DE LA WAR | Wars |
 | `edittab` | TAB (PDF) | Wars |
+| `period` | PAR PÉRIODE (extension #80, hors maquette) | Wars |
 | `stats` | STATISTIQUES | Stats |
 | `statsfull` | STATISTIQUES | Stats |
 | `classements` | CLASSEMENTS | Classements |
@@ -259,6 +260,18 @@ Barre d'app : ← retour + titre **TAB (PDF)**.
 3. **Lignes de saisie** (paires « Adversaire N » + « Score ») générées dynamiquement selon le compteur.
 4. CTA « **Tab classique & partager** » (icône share ; toast : « Tab généré — partage ouvert »).
 5. Hint : « Contenu : logos, tags, scores finaux (pénalités incluses), top joueurs avec couronne/argent/bronze. « Tab détaillé » (circuits + courbe) présent mais désactivé dans l'app. »
+
+### Écran `period` — « PAR PÉRIODE » (extension epic, hors maquette d'origine — #80)
+
+> **Ajout au périmètre de l'epic** (pas dans la maquette HTML source) : écran d'aide à la composition des line-ups. Documenté ici comme extension du pôle Wars ; pas de critère de conformité structurelle maquette (rule 15), mais rendu pixel-perfect par réutilisation des composants existants (rule 13).
+
+Accès : bouton **« Voir par période »** en tête de l'écran `wars` (pôle Wars uniquement). Barre d'app : ← retour + titre **PAR PÉRIODE**.
+
+1. **Deux sélecteurs de dates** `Du` / `Au` (tuiles translucides ouvrant un `DatePickerDialog` Material3) → plage `[dateA, dateB]`. **Défaut = saison en cours** (début de saison → aujourd'hui), modifiable ; `dateA ≤ dateB`.
+2. **Segmenté** (`MKSegmentedSelector`) `Wars` / `Joueurs`.
+   - **Wars** : compteur « N wars sur la période » + liste des wars de la plage (12p) via la cellule `WarCell` (clic → `wardetails`).
+   - **Joueurs** : classement (cellules podium, 3 par ligne) de tous les joueurs ayant joué ≥ 1 war sur la période. Par joueur : **Wars** `nb joué (% participation)`, **Score moyen** (par war), **Shocks** (cumul). Tri par nb de wars décroissant.
+3. Plage sans war → état vide « Aucune war sur cette période ».
 
 ---
 

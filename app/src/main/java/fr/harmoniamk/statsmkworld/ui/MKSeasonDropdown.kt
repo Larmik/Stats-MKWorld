@@ -1,14 +1,7 @@
 package fr.harmoniamk.statsmkworld.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
@@ -57,33 +49,20 @@ fun MKSeasonDropdown(
         ?.let { number -> stringResource(R.string.season_label, number) }
         ?: stringResource(R.string.all_seasons)
 
-    val shape = RoundedCornerShape(10.dp)
     // Le trigger ET le menu sont dans un même Box aligné à droite (`wrapContentSize(TopEnd)`) :
     // le popup s'ancre alors sur le bord DROIT du sélecteur et s'ouvre juste en dessous
     // (bord droit aligné), au lieu de déborder vers la gauche (retour utilisateur, point 3).
     Box(modifier = modifier.wrapContentSize(Alignment.TopEnd)) {
-        Row(
-            modifier = Modifier
-                .clip(shape)
-                .background(Colors.white30, shape)
-                .border(1.dp, Colors.whiteBorderSoft, shape)
-                .clickable { expanded = true }
-                .padding(horizontal = 10.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            MKText(
-                text = currentLabel,
-                font = Fonts.NunitoBD,
-                textColor = Colors.white,
-                fontSize = 12,
-                textAlign = TextAlign.Start,
-                maxLines = 1
-            )
-            // Chevron « ▾ » (aucun drawable de flèche vers le bas dans le projet ; le texte
-            // évite d'ajouter un asset — écart mineur documenté).
-            MKText(text = "▾", font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
-        }
+        // Pastille de header partagée (rule 16) : même style que « Voir par période » (#80),
+        // avec un chevron « ▾ » en trailing (aucun drawable de flèche vers le bas dans le
+        // projet ; le texte évite d'ajouter un asset — écart mineur documenté).
+        MKHeaderChip(
+            label = currentLabel,
+            onClick = { expanded = true },
+            trailing = {
+                MKText(text = "▾", font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
+            }
+        )
 
         DropdownMenu(
             expanded = expanded,

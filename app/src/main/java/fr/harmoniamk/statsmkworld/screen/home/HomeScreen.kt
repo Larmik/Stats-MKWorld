@@ -51,6 +51,8 @@ fun HomeScreen(
     // onAddWar est désormais consommé par le pôle Wars (WarListScreen), plus par
     // l'Accueil : le sélecteur/CTA « Nouvelle war » a déménagé vers le pôle Wars.
     onWarDetailsClick: (WarDetails) -> Unit,
+    // Ouvre l'écran « Voir par période » (#80) depuis le pôle Wars → graphe racine.
+    onPeriodView: () -> Unit,
     onStats: (StatsType) -> Unit,
     onSearch: () -> Unit,
     // Lien « Résultats → » du pôle Stats (joueur courant) : remonte au graphe racine
@@ -138,7 +140,8 @@ fun HomeScreen(
                             }
                         ),
                         onWarDetailsClick = onWarDetailsClick,
-                        onAddWar = onAddWar
+                        onAddWar = onAddWar,
+                        onPeriodView = onPeriodView
                     )
                 }
                 composable(route = "Home/Stats") {
