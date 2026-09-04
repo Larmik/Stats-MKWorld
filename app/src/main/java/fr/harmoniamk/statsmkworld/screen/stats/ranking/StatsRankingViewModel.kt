@@ -167,6 +167,12 @@ class StatsRankingViewModel @Inject constructor(
     private var allAllies: List<RankingItem.PlayerRanking> = listOf()
     private var allOpponents: List<RankingItem.OpponentRanking> = listOf()
     private var allTracks: List<RankingItem.TrackRanking> = listOf()
+    // Saisons chargées + sélection courante (#70) : mémorisées ici pour être ré-injectées à
+    // CHAQUE recompute(). Sinon une interaction (onglet/tri/recherche/curseur) émet un `_state`
+    // dont les `seasons` sont vides (le `_state` interne n'est pas alimenté par la branche
+    // `combine`) → le dropdown de saison disparaîtrait après toute interaction.
+    private var loadedSeasons: List<SeasonEntity> = listOf()
+    private var loadedSelectedSeasonNumber: Int? = null
 
     val state = combine(databaseRepository.getWars(), _seasonFilter) { warEntities, seasonFilter ->
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
@@ -177,16 +183,17 @@ class StatsRankingViewModel @Inject constructor(
                 is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
                 is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
             }
+            loadedSeasons = seasons
+            loadedSelectedSeasonNumber = activeSeason?.number
             // Rankings recalculés à la volée sur les wars filtrées par saison (recompute
             // on-the-fly, stratégie recommandée du ticket), remplaçant le cache mono-jeu de
-            // StatsRepository (peuplé all-time par InitStatsWorker). Filtres alignés sur le
-            // worker : host/roster + 12p/24p, PLUS l'intervalle de saison.
+            // StatsRepository (peuplé all-time par InitStatsWorker). Le filtre saison
+            // s'applique à `warList`, base des QUATRE classements (membres, alliés,
+            // adversaires, circuits). Filtres alignés sur le worker : host/roster + 12p/24p.
             computeRankings(warEntities.filterBySeason(activeSeason), is24p)
             _state.value.copy(
                 currentUserId = currentUser?.id.toString(),
-                is24PEnabled = is24p,
-                seasons = seasons,
-                selectedSeasonNumber = activeSeason?.number
+                is24PEnabled = is24p
             ).recompute(resetOccurrences = true)
         }
         .mergeWith(_state)
@@ -288,6 +295,10 @@ class StatsRankingViewModel @Inject constructor(
         }.maxOfOrNull { it.sampleSize }?.coerceAtLeast(1) ?: 1
         val newMin = if (resetOccurrences) 1 else minOccurrences.coerceIn(1, newMax)
 
+        // Saisons + sélection ré-injectées à CHAQUE recompute (y compris les recompute
+        // déclenchés par interaction via `_state`) → le dropdown de saison reste renseigné
+        // en permanence, quel que soit l'onglet ou la vacuité de la liste filtrée.
+        val base = copy(seasons = loadedSeasons, selectedSeasonNumber = loadedSelectedSeasonNumber)
         return when (tab) {
             RankingTab.PLAYERS -> {
                 val sections = listOf(
@@ -296,18 +307,18 @@ class StatsRankingViewModel @Inject constructor(
                     PlayerSection(R.string.rankings_section_allies,
                         allAllies.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints }))
                 ).filter { it.players.isNotEmpty() }
-                copy(playerSections = sections, opponents = listOf(), tracks = listOf(),
+                base.copy(playerSections = sections, opponents = listOf(), tracks = listOf(),
                     minOccurrences = newMin, maxOccurrences = newMax)
             }
 
-            RankingTab.OPPONENTS -> copy(
+            RankingTab.OPPONENTS -> base.copy(
                 playerSections = listOf(),
                 opponents = allOpponents.finalize(sort, query, newMin, { it.team.name }, { it.stats.averagePoints }),
                 tracks = listOf(),
                 minOccurrences = newMin, maxOccurrences = newMax
             )
 
-            RankingTab.TRACKS -> copy(
+            RankingTab.TRACKS -> base.copy(
                 playerSections = listOf(),
                 opponents = listOf(),
                 tracks = allTracks.finalize(sort, query, newMin, { it.trackName() }, { it.stats.teamScore ?: 0 }),
