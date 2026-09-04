@@ -338,6 +338,9 @@
     <string name="stats_amplitude_max">Score max</string>
     <string name="stats_sort_occurrences">Occurrences</string>
     <string name="times_played_short">Joué</string>
+    <!-- Taux de participation (#78) : présence du joueur aux wars de l'équipe sur la période. -->
+    <string name="participation_rate">Taux de participation</string>
+    <string name="participation_rate_short">Participation</string>
     <string name="stats_no_data">Aucune donnée sur cette période</string>
     <!-- Fiches détail Adversaire & Circuit (ticket #27) -->
     <string name="opponent_detail_title">Adversaire</string>

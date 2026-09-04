@@ -54,7 +54,16 @@ sealed interface RankingItem {
     /** Nombre de matchs de l'entrée (wars / confrontations / fois jouée) — base du seuil. */
     val sampleSize: Int
 
-    class PlayerRanking(val player: PlayerEntity, val stats: Stats) : RankingItem {
+    /**
+     * [participationRate] (#78) : % de wars de l'équipe (sur la fenêtre/saison filtrée)
+     * où le joueur est présent = `warsPlayed × 100 / total wars équipe`. Calculé dans le VM
+     * (mono-consommateur, rule 32) avec le total d'équipe, absent du modèle [Stats].
+     */
+    class PlayerRanking(
+        val player: PlayerEntity,
+        val stats: Stats,
+        val participationRate: Int
+    ) : RankingItem {
 
         override val sampleSize: Int
             get() = stats.warStats.warsPlayed
@@ -73,6 +82,9 @@ sealed interface RankingItem {
 
         val winrateLabel: String
             get() = "$winratePercent %"
+
+        val participationRateLabel: String
+            get() = "$participationRate %"
     }
 
     class OpponentRanking(val team: TeamEntity, val stats: Stats) : RankingItem {
@@ -222,6 +234,9 @@ class StatsRankingViewModel @Inject constructor(
 
         // Joueurs : groupés membre (rattaché à un roster mkworld) / allié (Pair(1,"Allies")).
         val userList = databaseRepository.getPlayers().firstOrNull().orEmpty().sortedBy { it.name }
+        // Dénominateur du taux de participation (#78) = wars de l'équipe sur la fenêtre/saison.
+        // Garde-fou dénominateur nul → 0 % (pas de division par zéro).
+        val teamWarsCount = warDetailsList.size
         val playersByGroup = userList
             .mapNotNull { user ->
                 warDetailsList
@@ -229,7 +244,13 @@ class StatsRankingViewModel @Inject constructor(
                     .withFullStats(databaseRepository, userId = user.id, is24p = is24p)
                     .firstOrNull()
                     ?.takeIf { it.warStats.warsPlayed > 0 }
-                    ?.let { RankingItem.PlayerRanking(user, it) }
+                    ?.let { stats ->
+                        val participationRate = when (teamWarsCount) {
+                            0 -> 0
+                            else -> stats.warStats.warsPlayed * 100 / teamWarsCount
+                        }
+                        RankingItem.PlayerRanking(user, stats, participationRate)
+                    }
             }
             .groupBy { ranking ->
                 when (rosters?.firstOrNull { it.id.toString() == ranking.player.rosterId }) {

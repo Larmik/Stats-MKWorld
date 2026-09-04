@@ -204,7 +204,8 @@ fun PlayerCellPreview() {
                 listOf(),
                 listOf(),
                 listOf(),
-            )
+            ),
+            participationRate = 0
         )
     )
 }

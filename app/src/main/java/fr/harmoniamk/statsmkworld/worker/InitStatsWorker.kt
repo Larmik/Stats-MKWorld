@@ -78,11 +78,20 @@ class InitStatsWorker @AssistedInject constructor(
                 .onEach { userList ->
                     val rosters = dataStoreRepository.mkcTeam.firstOrNull()?.rosters
                     val players = mutableListOf<RankingItem>()
+                    // Dénominateur du taux de participation (#78) = wars all-time de l'équipe.
+                    // Garde-fou dénominateur nul → 0 %.
+                    val teamWarsCount = warDetailsList.size
                     userList.forEach { user ->
                         warDetailsList
                             .filter { it.war.hasPlayer(user.id) }
                             .withFullStats(databaseRepository, userId = user.id)
-                            .map { players.add(RankingItem.PlayerRanking(user, it)) }
+                            .map { stats ->
+                                val participationRate = when (teamWarsCount) {
+                                    0 -> 0
+                                    else -> stats.warStats.warsPlayed * 100 / teamWarsCount
+                                }
+                                players.add(RankingItem.PlayerRanking(user, stats, participationRate))
+                            }
                             .firstOrNull()
                     }
                     statsRepository.playersRankList = players

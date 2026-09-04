@@ -179,6 +179,8 @@ private fun RankingItem.PlayerRanking.toPodiumEntry(): Pair<PodiumEntry, Ranking
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
             R.string.times_played_short to warsPlayedLabel,
+            // 4ᵉ ligne (#78) : taux de participation, juste sous « Wars jouées ».
+            R.string.participation_rate_short to participationRateLabel,
             R.string.form_winrate to winrateLabel,
             R.string.form_score to averageLabel
         )

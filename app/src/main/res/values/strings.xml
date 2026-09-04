@@ -338,6 +338,9 @@
     <string name="stats_amplitude_max">Max score</string>
     <string name="stats_sort_occurrences">Occurrences</string>
     <string name="times_played_short">Played</string>
+    <!-- Participation rate (#78): player's presence in the team's wars over the period. -->
+    <string name="participation_rate">Participation rate</string>
+    <string name="participation_rate_short">Participation</string>
     <string name="stats_no_data">No data for this period</string>
     <!-- Opponent &amp; Track detail sheets (ticket #27) -->
     <string name="opponent_detail_title">Opponent</string>
