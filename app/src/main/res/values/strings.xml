@@ -208,7 +208,6 @@
     <string name="all_time">All-time</string>
     <!-- Season filter (#70) -->
     <string name="season_label">Season %1$d</string>
-    <string name="season_short">S%1$d</string>
     <string name="all_seasons">All-time</string>
     <string name="form_winrate">Winrate</string>
     <string name="form_score">Average score</string>

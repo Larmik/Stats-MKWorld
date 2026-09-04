@@ -208,7 +208,6 @@
     <string name="all_time">All-time</string>
     <!-- Filtre par saison (#70) -->
     <string name="season_label">Saison %1$d</string>
-    <string name="season_short">S%1$d</string>
     <string name="all_seasons">Tout l\'historique</string>
     <string name="form_winrate">Winrate</string>
     <string name="form_score">Score moyen</string>

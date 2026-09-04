@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
-import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
@@ -94,19 +93,6 @@ private fun Stats.windowForm(index: Int) = when (index) {
     1 -> recentForm5
     2 -> recentForm10
     else -> allTimeForm
-}
-
-/**
- * Libellé de saison « SN » (#70) de la saison qui contient [warId] (timestamp epoch ms).
- * Rattachement calculé : saison dont `[start, end]` contient le timestamp (`end == null`
- * = saison en cours → borne haute = maintenant). `null` si [warId] null ou hors saisons.
- */
-@Composable
-private fun seasonLabelForWar(warId: Long?, seasons: List<SeasonEntity>): String? {
-    warId ?: return null
-    val season = seasons.firstOrNull { warId in it.start..(it.end ?: System.currentTimeMillis()) }
-        ?: return null
-    return stringResource(R.string.season_short, season.number)
 }
 
 /**
@@ -304,13 +290,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     //    FormStats de la fenêtre + deltas vs all-time → all-time stats).
     item { FormStreakCard(allTimeStats, stringResource(R.string.stats_player_form_title)) }
     // Vue JOUEUR : min/max = score PERSO brut (pas de diff — #67 vise la seule vue Équipe).
-    // Libellés de saison des records (#70) : seulement en vue « Tout l'historique » ET période all-time.
-    item {
-        RecordsTilesCard(
-            allTimeStats, selectors, isTeam = false,
-            seasons = state.seasons.takeIf { state.selectedSeasonNumber == null && selectors.windowIndex == 0 }
-        )
-    }
+    item { RecordsTilesCard(allTimeStats, selectors, isTeam = false) }
     // 6. Distribution des positions (barres ancrées en bas, sur la fenêtre globale).
     item { DistributionCard(stats, selectors) }
     // 7. Podium circuits (Top3 / Flop3 sur une ligne + sélecteur occ./winrate/score).
@@ -362,13 +342,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     // 4. Forme & séries équipe (série en cours = all-time) + Records (FormStats fenêtre).
     item { FormStreakCard(allTimeStats, stringResource(R.string.stats_team_form_title)) }
     // Vue ÉQUIPE : min/max = ÉCART de points de war (warScoreToDiff), pas le total (#67).
-    // Libellés de saison des records (#70) : seulement en vue « Tout l'historique » ET période all-time.
-    item {
-        RecordsTilesCard(
-            allTimeStats, selectors, isTeam = true,
-            seasons = state.seasons.takeIf { state.selectedSeasonNumber == null && selectors.windowIndex == 0 }
-        )
-    }
+    item { RecordsTilesCard(allTimeStats, selectors, isTeam = true) }
     // 4bis. Top/Bot 5→2 sur la FENÊTRE globale (détail que RecordsTilesCard n'affiche pas ;
     //       ligne N=6 retirée car redondante avec « Records & séries », #64) : équipe ET
     //       adversaire (complément des positions). Masqués si aucune ligne affichable.
@@ -458,15 +432,13 @@ private fun IndicatorsCard(stats: Stats, isPlayer: Boolean, selectors: SectionSe
 
 private enum class DeltaPolarity { HIGHER, LOWER, NONE }
 
-/** Donnée d'une tuile d'indicateur : valeur + delta signé optionnel + légende optionnelle. */
+/** Donnée d'une tuile d'indicateur : valeur + delta signé optionnel. */
 private data class MetricTile(
     val label: String,
     val value: String,
     val delta: Int?,
     val deltaSuffix: String,
-    val polarity: DeltaPolarity,
-    // Légende optionnelle sous le libellé (#70) : libellé de saison « (SN) » d'un record.
-    val caption: String? = null
+    val polarity: DeltaPolarity
 )
 
 // Hauteurs RÉSERVÉES pour figer la taille des tuiles quel que soit le contenu :
@@ -520,10 +492,6 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
         Box(Modifier.padding(top = 6.dp).height(LabelSlotHeight)) {
             MKText(text = tile.label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, maxLines = 2)
         }
-        // Légende de saison (#70) : « S2 » sous le libellé, en vue all-time uniquement.
-        tile.caption?.let { caption ->
-            MKText(text = caption, font = Fonts.NunitoBD, textColor = Colors.yellow, fontSize = 9, textAlign = TextAlign.Start, maxLines = 1)
-        }
     }
 }
 
@@ -540,39 +508,22 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
  * - Ligne 3 : Top 6 | Bot 6 (compte).
  */
 @Composable
-private fun RecordsTilesCard(
-    stats: Stats,
-    selectors: SectionSelectors,
-    isTeam: Boolean,
-    // Libellés de saison sur les records (#70) : renseignés UNIQUEMENT en vue « Tout
-    // l'historique » ET sur la période all-time (windowIndex == 0), où les war.id de
-    // record de `Stats` sont pertinents. `null` ⇒ pas de suffixe (vue saison précise ou
-    // fenêtre 5/10) : le libellé serait redondant/non pertinent.
-    seasons: List<SeasonEntity>? = null
-) {
+private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors, isTeam: Boolean) {
     val window = stats.windowForm(selectors.windowIndex)
     // Vue ÉQUIPE : min/max de war affichés en ÉCART de points (warScoreToDiff) ; vue JOUEUR :
     // score perso brut (#67). Formatage local selon le mode.
     val formatScore: (Int?) -> String = { value ->
         value?.let { if (isTeam) it.warScoreToDiff(false) else it.toString() } ?: "-"
     }
-    // Suffixe de saison d'un record (all-time only) : « SN » de la saison qui contient
-    // le war.id du record. Résolus ICI (contexte @Composable) car seasonLabelForWar lit
-    // stringResource — on ne peut pas l'appeler depuis une lambda non-composable. Null hors
-    // vue all-time (seasons == null) ou record introuvable.
-    val minCaption = seasons?.let { seasonLabelForWar(stats.scoreMinWarId, it) }
-    val maxCaption = seasons?.let { seasonLabelForWar(stats.scoreMaxWarId, it) }
-    val bestWinCaption = seasons?.let { seasonLabelForWar(stats.bestWinStreakWarId, it) }
-    val worstLossCaption = seasons?.let { seasonLabelForWar(stats.worstLossStreakWarId, it) }
     StatCard(title = stringResource(R.string.records_series)) {
         val tiles = buildList {
             // Ligne 1 — Amplitude scindée en min | max (par fenêtre).
-            add(MetricTile(stringResource(R.string.stats_amplitude_min), formatScore(window?.scoreMin), null, "", DeltaPolarity.NONE, minCaption))
-            add(MetricTile(stringResource(R.string.stats_amplitude_max), formatScore(window?.scoreMax), null, "", DeltaPolarity.NONE, maxCaption))
+            add(MetricTile(stringResource(R.string.stats_amplitude_min), formatScore(window?.scoreMin), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.stats_amplitude_max), formatScore(window?.scoreMax), null, "", DeltaPolarity.NONE))
             // Ligne 2 — records de série (par fenêtre).
-            add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, "", DeltaPolarity.NONE, bestWinCaption))
-            add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, "", DeltaPolarity.NONE, worstLossCaption))
-            // Ligne 3 — Top6 / Bot6 (compte, par fenêtre) : pas de libellé de saison (agrégat, pas un record daté).
+            add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
+            // Ligne 3 — Top6 / Bot6 (compte, par fenêtre).
             add(MetricTile(stringResource(R.string.top6_count), (window?.top6Count ?: 0).toString(), null, "", DeltaPolarity.NONE))
             add(MetricTile(stringResource(R.string.bot6_count), (window?.bot6Count ?: 0).toString(), null, "", DeltaPolarity.NONE))
         }
