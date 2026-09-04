@@ -187,7 +187,6 @@
     <string name="rankings_tab_tracks">Tracks</string>
     <string name="rankings_sort_winrate">Winrate</string>
     <string name="rankings_sort_score">Avg. score</string>
-    <string name="rankings_sort_wars">Wars</string>
     <string name="rankings_sort_occurrences">Occurrences</string>
     <string name="rankings_sort_frequency">Frequency</string>
     <string name="rankings_search_player">Search for a player</string>

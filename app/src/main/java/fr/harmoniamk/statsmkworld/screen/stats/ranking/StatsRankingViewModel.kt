@@ -39,9 +39,10 @@ import javax.inject.Inject
 enum class RankingTab { PLAYERS, OPPONENTS, TRACKS }
 
 /**
- * Critères de tri : compteur (Wars · Occurrences · Fréquence selon l'onglet, **défaut**),
+ * Critères de tri : COUNT (Participation · Occurrences · Fréquence selon l'onglet, **défaut** —
+ * pour l'onglet Joueurs, tri par **taux de participation** #78 ; sinon par compteur),
  * Winrate, Score moyen. L'ordre de l'enum = ordre des chips affichés (COUNT en 1ʳᵉ
- * position et sélectionné par défaut, tri décroissant par occurrences). L'ancien
+ * position et sélectionné par défaut, tri décroissant). L'ancien
  * `SortType.NAME` (chip « Nom ») n'apparaît pas dans le prototype → non proposé.
  */
 enum class SortType { COUNT, WINRATE, AVERAGE }
@@ -324,9 +325,9 @@ class StatsRankingViewModel @Inject constructor(
             RankingTab.PLAYERS -> {
                 val sections = listOf(
                     PlayerSection(R.string.rankings_section_members,
-                        allMembers.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints })),
+                        allMembers.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints }, { it.participationRate })),
                     PlayerSection(R.string.rankings_section_allies,
-                        allAllies.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints }))
+                        allAllies.finalize(sort, query, newMin, { it.player.name }, { it.stats.averagePoints }, { it.participationRate }))
                 ).filter { it.players.isNotEmpty() }
                 base.copy(playerSections = sections, opponents = listOf(), tracks = listOf(),
                     minOccurrences = newMin, maxOccurrences = newMax)
@@ -348,13 +349,18 @@ class StatsRankingViewModel @Inject constructor(
         }
     }
 
-    /** Recherche (par [name]) + filtre occurrences (`sampleSize >= min`) + tri [sort]. */
+    /**
+     * Recherche (par [name]) + filtre occurrences (`sampleSize >= min`) + tri [sort].
+     * [count] = valeur du tri COUNT (défaut = `sampleSize`) ; l'onglet Joueurs le
+     * surcharge avec le taux de participation (#78), les autres gardent le compteur.
+     */
     private fun <T : RankingItem> List<T>.finalize(
         sort: SortType,
         query: String,
         min: Int,
         name: (T) -> String,
-        average: (T) -> Int
+        average: (T) -> Int,
+        count: (T) -> Int = { it.sampleSize }
     ): List<T> = this
         .filter { query.isEmpty() || name(it).lowercase().contains(query) }
         .filter { it.sampleSize >= min }
@@ -362,7 +368,7 @@ class StatsRankingViewModel @Inject constructor(
             when (sort) {
                 SortType.WINRATE -> list.sortedByDescending { it.winratePercent }
                 SortType.AVERAGE -> list.sortedByDescending(average)
-                SortType.COUNT -> list.sortedByDescending { it.sampleSize }
+                SortType.COUNT -> list.sortedByDescending(count)
             }
         }
 

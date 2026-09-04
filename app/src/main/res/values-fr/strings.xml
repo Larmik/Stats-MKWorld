@@ -187,7 +187,6 @@
     <string name="rankings_tab_tracks">Circuits</string>
     <string name="rankings_sort_winrate">Winrate</string>
     <string name="rankings_sort_score">Score moy.</string>
-    <string name="rankings_sort_wars">Wars</string>
     <string name="rankings_sort_occurrences">Occurrences</string>
     <string name="rankings_sort_frequency">Fréquence</string>
     <string name="rankings_search_player">Rechercher un joueur</string>

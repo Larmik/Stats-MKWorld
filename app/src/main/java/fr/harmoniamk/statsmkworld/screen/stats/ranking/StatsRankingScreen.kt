@@ -101,14 +101,15 @@ fun StatsRankingScreen(
         )
         Spacer(Modifier.height(6.dp))
 
-        // Chips de tri (3 par onglet) : le chip d'OCCURRENCES est en 1ʳᵉ position et
-        // sélectionné par défaut (libellé variable Wars / Occurrences / Fréquence),
+        // Chips de tri (3 par onglet) : le chip de COUNT est en 1ʳᵉ position et
+        // sélectionné par défaut (libellé variable Participation / Occurrences / Fréquence),
         // suivi de Winrate puis Score moy. — ordre calé sur SortType.entries (COUNT en 0).
+        // Onglet Joueurs : ce chip trie désormais par taux de participation (#78).
         MKSegmentedSelector(
             items = listOf(
                 stringResource(
                     when (state.tab) {
-                        RankingTab.PLAYERS -> R.string.rankings_sort_wars
+                        RankingTab.PLAYERS -> R.string.participation_rate_short
                         RankingTab.OPPONENTS -> R.string.rankings_sort_occurrences
                         RankingTab.TRACKS -> R.string.rankings_sort_frequency
                     }
