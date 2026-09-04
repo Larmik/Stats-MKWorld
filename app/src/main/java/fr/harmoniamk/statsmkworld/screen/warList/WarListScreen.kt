@@ -29,8 +29,8 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
-import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKChip
+import fr.harmoniamk.statsmkworld.ui.MKHeaderChip
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
@@ -85,14 +85,27 @@ fun WarListScreen(
         onSearch = { onAddWar(false) }.takeIf { state.value.currentWar == null },
         actionIcon = R.drawable.ic_add,
         actionContentDescription = stringResource(R.string.nouvelle_war),
-        // Dropdown de saison (#70) : filtre la liste des wars affichées (composant partagé,
-        // aligné à droite avant le bouton « Créer une war »). Défaut = saison en cours.
+        // Header trailing (#70 + #80) : « Voir par période » à gauche du dropdown de saison,
+        // tous deux dans la même Row, avec le MÊME style de pastille (MKHeaderChip).
+        // « Voir par période » n'apparaît que quand onPeriodView est fourni (pas dans
+        // l'historique filtré sur un joueur, #65) — comportement conservé.
         headerTrailing = {
-            MKSeasonDropdown(
-                seasons = state.value.seasons,
-                selectedSeasonNumber = state.value.selectedSeasonNumber,
-                onSeasonSelected = viewModel::onSeasonSelected
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                onPeriodView?.let { periodView ->
+                    MKHeaderChip(
+                        label = stringResource(R.string.period_view),
+                        onClick = periodView
+                    )
+                }
+                MKSeasonDropdown(
+                    seasons = state.value.seasons,
+                    selectedSeasonNumber = state.value.selectedSeasonNumber,
+                    onSeasonSelected = viewModel::onSeasonSelected
+                )
+            }
         }
     ) {
         LazyColumn(
@@ -103,18 +116,6 @@ fun WarListScreen(
             // La war en cours n'apparaît PLUS sur l'historique (bannière « Reprendre »
             // retirée, #65) : l'écran ne liste que les wars terminées. Le bouton « Créer
             // une war » du header reste masqué tant qu'une war est en cours (voir plus haut).
-
-            // 0. « Voir par période » (#80) : ouvre l'aide à la composition des line-ups sur
-            // une plage de dates (seulement sur le pôle Wars, pas l'historique filtré joueur).
-            onPeriodView?.let { periodView ->
-                item {
-                    MKButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = stringResource(R.string.period_view),
-                        onClick = periodView
-                    )
-                }
-            }
 
             // 1. Chips filtre Tous / Victoires / Nuls / Défaites.
             item {
