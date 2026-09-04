@@ -145,9 +145,9 @@ private fun WarsTab(wars: List<WarDetails>, onWarDetailsClick: (WarDetails) -> U
 }
 
 /**
- * Onglet Joueurs : classement des joueurs de la période (nb wars + % participation, score
- * moyen par war, shocks) via la cellule podium mutualisée (`PodiumRow`/`MKPodiumCell`,
- * rules 15/16), 3 par ligne.
+ * Onglet Joueurs : classement des joueurs de la période (nb wars, taux de participation en
+ * ligne dédiée, score moyen par war, shocks) via la cellule podium mutualisée
+ * (`PodiumRow`/`MKPodiumCell`, rules 15/16), 3 par ligne.
  */
 @Composable
 private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
@@ -168,15 +168,20 @@ private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
     }
 }
 
-/** Adapte un agrégat joueur en `PodiumEntry` (médaillon + 3 stats), libellés #80. */
+/**
+ * Adapte un agrégat joueur en `PodiumEntry` (médaillon + stats), libellés #80. Le taux de
+ * participation est une **ligne dédiée** (`participation_rate_short` → « X % ») — même
+ * présentation que la cellule de classement joueur de #78/#81 (`StatsRankingScreen`), pas
+ * un % entre parenthèses accolé au nb de wars.
+ */
 @Composable
 private fun PeriodViewModel.PlayerPeriodStats.toPodiumEntry(): PodiumEntry = PodiumEntry(
     name = player.name,
     initials = initialsOf(player.name),
     avatar = player.avatar,
     stats = listOf(
-        R.string.period_players_wars_short to
-                stringResource(R.string.period_players_wars_value, warsPlayed, participationRate),
+        R.string.period_players_wars_short to warsPlayed.toString(),
+        R.string.participation_rate_short to "$participationRate %",
         R.string.period_players_average_short to averageScore.toString(),
         R.string.period_players_shocks_short to shockCount.toString()
     )

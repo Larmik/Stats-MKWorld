@@ -433,5 +433,4 @@
     <string name="period_players_wars_short">Wars</string>
     <string name="period_players_average_short">Score moyen</string>
     <string name="period_players_shocks_short">Shocks</string>
-    <string name="period_players_wars_value">%1$d (%2$d %%)</string>
 </resources>
