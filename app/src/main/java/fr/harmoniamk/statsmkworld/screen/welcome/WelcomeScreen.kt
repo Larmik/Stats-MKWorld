@@ -48,6 +48,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
@@ -72,7 +73,20 @@ fun WelcomeScreen(
     // (0 = 5 dernières, 1 = 10 dernières). Survivent à la rotation.
     var profileIndex by rememberSaveable { mutableIntStateOf(0) }
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
-    BaseScreen(title = stringResource(R.string.accueil), modifier = Modifier.padding(bottom = 90.dp), onSearch = onSearch) {
+    BaseScreen(
+        title = stringResource(R.string.accueil),
+        modifier = Modifier.padding(bottom = 90.dp),
+        onSearch = onSearch,
+        // Dropdown de saison (#70) : filtre TOUS les agrégats du dashboard (momentum, séries,
+        // records, chiffres clés, derniers résultats). Aligné à droite, avant la loupe.
+        headerTrailing = {
+            MKSeasonDropdown(
+                seasons = state.value.seasons,
+                selectedSeasonNumber = state.value.selectedSeasonNumber,
+                onSeasonSelected = viewModel::onSeasonSelected
+            )
+        }
+    ) {
 
         when (state.value.playerName.isNullOrEmpty()) {
             true -> CircularProgressIndicator()
@@ -209,6 +223,8 @@ private fun GreetingCard(
             Column(Modifier.weight(1f)) {
                 MKText(text = greeting, font = Fonts.Bungee, textColor = Colors.white, fontSize = 18, textAlign = TextAlign.Start)
                 MKText(text = subtitle, textColor = Colors.white66, fontSize = 13, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 3.dp))
+                // La saison en cours est désormais montrée par le dropdown de saison du header
+                // (#70, retour utilisateur) — plus de pastille redondante ici.
             }
         }
         Spacer(Modifier.height(12.dp))

@@ -47,6 +47,7 @@ import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.stats.DistributionChart
@@ -145,6 +146,16 @@ fun StatsFullScreen(
         // Bouton retour uniquement en fiche poussée (showTabs=false) ; en onglet du pôle
         // Stats (showTabs=true), pas de retour d'appbar (rule 14, comportement onglet).
         onBack = onBack?.takeIf { !viewModel.showTabs },
+        // Sélecteur de SAISON (#70) : menu déroulant aligné à droite dans le header (composant
+        // partagé MKSeasonDropdown, rule 16). Défaut = saison en cours. Change l'état VM ⇒
+        // recalcul à la volée des agrégats sur l'intervalle [start, end] (rule 11, pas de re-nav).
+        headerTrailing = {
+            MKSeasonDropdown(
+                seasons = state.value.seasons,
+                selectedSeasonNumber = state.value.selectedSeasonNumber,
+                onSeasonSelected = viewModel::onSeasonSelected
+            )
+        },
         modifier = Modifier.padding(bottom = if (viewModel.showTabs) 90.dp else 0.dp)
     ) {
         when {

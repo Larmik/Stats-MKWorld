@@ -27,6 +27,7 @@ import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
@@ -59,7 +60,20 @@ fun StatsRankingScreen(
 
     // padding bas = hauteur de la bottom bar des 5 pôles, pour que le dernier élément de
     // la grille reste visible au-dessus d'elle (même valeur/approche que Accueil/Stats : 90.dp).
-    BaseScreen(title = stringResource(R.string.classements), modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(
+        title = stringResource(R.string.classements),
+        modifier = Modifier.padding(bottom = 90.dp),
+        // Sélecteur de SAISON (#70) : menu déroulant aligné à droite dans le header (composant
+        // partagé MKSeasonDropdown, rule 16). Change l'état VM ⇒ recalcul à la volée des
+        // classements (rule 11, pas de re-nav). Masqué tant qu'aucune saison chargée.
+        headerTrailing = {
+            MKSeasonDropdown(
+                seasons = state.seasons,
+                selectedSeasonNumber = state.selectedSeasonNumber,
+                onSeasonSelected = viewModel::onSeasonSelected
+            )
+        }
+    ) {
         // Label « Palmarès triable » retiré (#50 pt.5) : la fonction est évidente.
         MKSegmentedSelector(
             items = listOf(

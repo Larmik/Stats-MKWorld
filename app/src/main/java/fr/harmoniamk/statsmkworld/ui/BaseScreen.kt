@@ -130,6 +130,10 @@ fun BaseScreen(
     // Ex. écran Wars : « Créer une war » (ic_add), affiché seulement si aucune war en cours (#50).
     actionIcon: Int = R.drawable.ic_search,
     actionContentDescription: String? = null,
+    // Contenu additionnel aligné à DROITE dans l'app bar, avant l'icône d'action (#70) :
+    // sert au menu déroulant de saison (MKSeasonDropdown), mutualisé sur Accueil/Wars/
+    // Stats/Classements. Null = rien (comportement inchangé pour les autres écrans).
+    headerTrailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
 
@@ -175,6 +179,8 @@ fun BaseScreen(
                             MKText(text = sub, textColor = Colors.white66, fontSize = 14, font = Fonts.NunitoBD, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp))
                         }
                     }
+                    // Dropdown de saison (#70) aligné à droite, avant l'icône d'action.
+                    headerTrailing?.invoke()
                     onSearch?.let { action ->
                         AppBarIconButton(
                             iconRes = actionIcon,

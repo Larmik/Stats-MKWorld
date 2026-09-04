@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.extension
 
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
@@ -268,4 +269,17 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
 
 }
 
+/**
+ * Filtre une liste de wars sur l'intervalle d'une saison (#70). Rattachement war →
+ * saison **calculé** (pas de `seasonId` dénormalisé sur la war) : `war.id` est le
+ * timestamp (epoch ms) de la war, une war appartient à la saison dont l'intervalle
+ * `[start, end]` le contient. [season] `null` = **tout l'historique** (aucun filtre).
+ * `season.end == null` (saison en cours) → borne haute = maintenant.
+ */
+fun List<WarEntity>.filterBySeason(season: SeasonEntity?): List<WarEntity> {
+    season ?: return this
+    val upperBound = season.end ?: System.currentTimeMillis()
+    // WarEntity.id est le timestamp (epoch ms) stocké en String → conversion pour comparer.
+    return filter { war -> war.id.toLongOrNull()?.let { it in season.start..upperBound } == true }
+}
 

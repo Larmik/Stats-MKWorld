@@ -206,6 +206,9 @@
     <string name="last_n_wars">Last %1$d wars</string>
     <string name="last_n_short">Last %1$d</string>
     <string name="all_time">All-time</string>
+    <!-- Season filter (#70) -->
+    <string name="season_label">Season %1$d</string>
+    <string name="all_seasons">All-time</string>
     <string name="form_winrate">Winrate</string>
     <string name="form_score">Average score</string>
     <string name="average_position_short">Avg position</string>
