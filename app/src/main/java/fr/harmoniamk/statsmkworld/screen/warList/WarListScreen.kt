@@ -29,6 +29,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
+import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKChip
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -61,7 +62,10 @@ fun WarListScreen(
     viewModel: WarListViewModel,
     onWarDetailsClick: (WarDetails) -> Unit,
     onAddWar: (Boolean) -> Unit,
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    // Ouvre l'écran « Voir par période » (#80) : aide à la composition des line-ups sur
+    // une plage de dates. Null = non proposé (ex. historique filtré sur un joueur, #65).
+    onPeriodView: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // Filtre de résultat : pur état UI, survit à la rotation (rule 11).
@@ -99,6 +103,18 @@ fun WarListScreen(
             // La war en cours n'apparaît PLUS sur l'historique (bannière « Reprendre »
             // retirée, #65) : l'écran ne liste que les wars terminées. Le bouton « Créer
             // une war » du header reste masqué tant qu'une war est en cours (voir plus haut).
+
+            // 0. « Voir par période » (#80) : ouvre l'aide à la composition des line-ups sur
+            // une plage de dates (seulement sur le pôle Wars, pas l'historique filtré joueur).
+            onPeriodView?.let { periodView ->
+                item {
+                    MKButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringResource(R.string.period_view),
+                        onClick = periodView
+                    )
+                }
+            }
 
             // 1. Chips filtre Tous / Victoires / Nuls / Défaites.
             item {

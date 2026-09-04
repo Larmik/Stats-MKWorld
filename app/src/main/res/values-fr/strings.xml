@@ -420,4 +420,18 @@
     <string name="currentwar_opponent_scores">Scores des équipes adverses</string>
     <string name="currentwar_opponent_scores_hint">Saisir le score de chaque équipe adverse avant de valider. Total à répartir : %1$d points (pénalités exclues).</string>
     <string name="currentwar_save_scores">Saisir &amp; valider</string>
+    <!-- Écran « Voir par période » (ticket #80) : aide à la composition des line-ups sur une plage de dates. -->
+    <string name="period_view">Voir par période</string>
+    <string name="period_title">Par période</string>
+    <string name="period_from">Du</string>
+    <string name="period_to">Au</string>
+    <string name="period_apply">Appliquer</string>
+    <string name="period_tab_wars">Wars</string>
+    <string name="period_tab_players">Joueurs</string>
+    <string name="period_wars_count">%1$d wars sur la période</string>
+    <string name="period_empty">Aucune war sur cette période</string>
+    <string name="period_players_wars_short">Wars</string>
+    <string name="period_players_average_short">Score moyen</string>
+    <string name="period_players_shocks_short">Shocks</string>
+    <string name="period_players_wars_value">%1$d (%2$d %%)</string>
 </resources>

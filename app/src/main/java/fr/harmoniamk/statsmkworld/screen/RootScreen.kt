@@ -56,6 +56,7 @@ import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warList.WarListScreen
 import fr.harmoniamk.statsmkworld.screen.warList.WarListViewModel
+import fr.harmoniamk.statsmkworld.screen.warList.period.PeriodScreen
 import fr.harmoniamk.statsmkworld.worker.MKWorkerBuilder
 import fr.harmoniamk.statsmkworld.worker.UpdateDataWorker
 
@@ -112,6 +113,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
                     navController.navigate("Home/WarDetails")
                 },
+                // « Voir par période » (#80) : écran de graphe racine poussé par-dessus le pôle Wars.
+                onPeriodView = { navController.navigate("Home/Period") },
                 onStats = { type ->
                     // Fiches dédiées Joueur (#65 : StatsFullScreen centré sur le joueur cliqué,
                     // sans sélecteur Indiv/Équipe), Adversaire (#27) et Circuit (#27) ; les autres
@@ -453,6 +456,19 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.navigate("Home/WarDetails")
                 },
                 onAddWar = { navController.navigate("Home/AddWar/$it") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // Écran « Voir par période » (#80), poussé sur le graphe racine (au-dessus du pôle
+        // Wars → pas de bottombar, rule 17). Aide à la composition des line-ups sur une plage.
+        composable(route = "Home/Period") {
+            PeriodScreen(
+                viewModel = hiltViewModel(),
+                onWarDetailsClick = { warDetails ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("war", warDetails)
+                    navController.navigate("Home/WarDetails")
+                },
                 onBack = { navController.popBackStack() }
             )
         }
