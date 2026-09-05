@@ -38,6 +38,10 @@ class WelcomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     data class State(
+        // Chargement de la zone de données du dashboard : true au 1er chargement ET remis à
+        // true au changement de saison (#73) pour un ressenti immédiat pendant le compute
+        // off-main ; le compute émet ensuite `loading = false`.
+        val loading: Boolean = true,
         val teamName: String? = null,
         val teamLogo: String? = null,
         // Couleur d'équipe (ARGB, source MKCentral) : fond de la pastille joueur.
@@ -122,6 +126,7 @@ class WelcomeViewModel @Inject constructor(
                 }
 
                 State(
+                    loading = false,
                     teamName = team.name,
                     teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     teamColor = team.color.takeIf { it != 0L },
@@ -140,8 +145,11 @@ class WelcomeViewModel @Inject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
-    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
+     * IMMÉDIATEMENT (via `_state`, mergé dans `state`) pour un ressenti instantané pendant le
+     * compute off-main (#73) ; la branche `combine` émet ensuite `loading = false`. */
     fun onSeasonSelected(number: Int?) {
+        _state.value = _state.value.copy(loading = true)
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 

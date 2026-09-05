@@ -160,53 +160,58 @@ fun StatsFullScreen(
         },
         modifier = Modifier.padding(bottom = if (viewModel.showTabs) 90.dp else 0.dp)
     ) {
+        // Le header (dropdown de saison + segmented indiv/équipe + période) reste TOUJOURS
+        // visible ; seule la zone de DONNÉES (LazyColumn) passe en chargement au recompute
+        // (changement de saison, #73). Ainsi le dropdown qu'on vient de sélectionner ne
+        // disparaît pas et le ressenti est immédiat.
+        // Le sélecteur 12 j / 24 j est retiré temporairement (ticket #37) :
+        // l'écran ne présente que le 12p (is24p figé à false côté VM).
+        if (viewModel.showTabs) {
+            MKSegmentedSelector(
+                items = listOf(
+                    stringResource(R.string.stats_scope_individual),
+                    stringResource(R.string.stats_scope_team)
+                ),
+                page = scopeIndex,
+                onClick = { scopeIndex = it }
+            )
+            Spacer(Modifier.height(11.dp))
+        }
+        // Sélecteur de période GLOBAL (#68), juste sous le sélecteur indiv/équipe et
+        // AU-DESSUS de toutes les sections. Reste visible même quand indiv/équipe est
+        // masqué (showTabs == false, stats d'un joueur donné). Sur le fond clair du
+        // dégradé de BaseScreen → onDark = false (défaut). Change l'état global ⇒
+        // toutes les sections se recomposent (rule 11), aucune re-navigation.
+        MKSegmentedSelector(
+            items = listOf(
+                stringResource(R.string.all_time),
+                stringResource(R.string.last_n_short, 5),
+                stringResource(R.string.last_n_short, 10)
+            ),
+            page = windowIndex,
+            onClick = { windowIndex = it }
+        )
+        Spacer(Modifier.height(11.dp))
         when {
-            state.value.loading -> CircularProgressIndicator()
-            else -> {
-                // Le sélecteur 12 j / 24 j est retiré temporairement (ticket #37) :
-                // l'écran ne présente que le 12p (is24p figé à false côté VM).
-                if (viewModel.showTabs) {
-                    MKSegmentedSelector(
-                        items = listOf(
-                            stringResource(R.string.stats_scope_individual),
-                            stringResource(R.string.stats_scope_team)
-                        ),
-                        page = scopeIndex,
-                        onClick = { scopeIndex = it }
+            // Chargement circonscrit à la zone de données ; le header ci-dessus reste affiché.
+            state.value.loading -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            else -> LazyColumn(
+                Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(11.dp)
+            ) {
+                when (scopeIndex) {
+                    1 -> teamSections(
+                        state.value, selectors,
+                        onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(true) } },
+                        onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(true) } }
                     )
-                    Spacer(Modifier.height(11.dp))
-                }
-                // Sélecteur de période GLOBAL (#68), juste sous le sélecteur indiv/équipe et
-                // AU-DESSUS de toutes les sections. Reste visible même quand indiv/équipe est
-                // masqué (showTabs == false, stats d'un joueur donné). Sur le fond clair du
-                // dégradé de BaseScreen → onDark = false (défaut). Change l'état global ⇒
-                // toutes les sections se recomposent (rule 11), aucune re-navigation.
-                MKSegmentedSelector(
-                    items = listOf(
-                        stringResource(R.string.all_time),
-                        stringResource(R.string.last_n_short, 5),
-                        stringResource(R.string.last_n_short, 10)
-                    ),
-                    page = windowIndex,
-                    onClick = { windowIndex = it }
-                )
-                Spacer(Modifier.height(11.dp))
-                LazyColumn(
-                    Modifier.fillMaxWidth().weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(11.dp)
-                ) {
-                    when (scopeIndex) {
-                        1 -> teamSections(
-                            state.value, selectors,
-                            onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(true) } },
-                            onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(true) } }
-                        )
-                        else -> individualSections(
-                            state.value, viewModel.showTabs, onResults, selectors,
-                            onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(false) } },
-                            onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(false) } }
-                        )
-                    }
+                    else -> individualSections(
+                        state.value, viewModel.showTabs, onResults, selectors,
+                        onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(false) } },
+                        onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(false) } }
+                    )
                 }
             }
         }

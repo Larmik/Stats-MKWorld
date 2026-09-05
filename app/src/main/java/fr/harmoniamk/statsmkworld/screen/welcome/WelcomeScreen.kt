@@ -89,8 +89,9 @@ fun WelcomeScreen(
         }
     ) {
 
-        when (state.value.playerName.isNullOrEmpty()) {
-            true -> CircularProgressIndicator()
+        when {
+            // 1er chargement (aucune métadonnée encore) : spinner plein écran.
+            state.value.playerName.isNullOrEmpty() -> CircularProgressIndicator()
             else -> {
                 // Vue sélectionnée : joueur (Moi) ou équipe. Deux jeux de Stats déjà
                 // calculés côté VM → le switch ne recalcule rien.
@@ -102,7 +103,9 @@ fun WelcomeScreen(
                     Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(11.dp)
                 ) {
-                    // 1. Carte de salutation (→ profil) + segmenté Moi/Équipe.
+                    // 1. Carte de salutation (→ profil) + segmenté Moi/Équipe. TOUJOURS visible
+                    // (métadonnées équipe/joueur invariantes au changement de saison) → le
+                    // segmented reste affiché pendant le recalcul (#73).
                     item {
                         GreetingCard(
                             greeting = stringResource(R.string.home_greeting, state.value.playerName.orEmpty().displayName),
@@ -116,59 +119,71 @@ fun WelcomeScreen(
                         )
                     }
 
-                    // 2. War en cours (→ CurrentWar) : bannière « En direct ».
-                    state.value.currentWar?.let { war ->
-                        item {
-                            Eyebrow(stringResource(R.string.war_en_cours))
-                            Spacer(Modifier.height(6.dp))
-                            CurrentWarBanner(war = war, onClick = onCurrentWar)
-                        }
-                    }
-
-                    // 3. Momentum (selon profil + fenêtre).
-                    selectedStats?.let { stats ->
-                        item {
-                            MomentumCard(
-                                stats = stats,
-                                windowIndex = windowIndex,
-                                onWindowChange = { windowIndex = it }
-                            )
-                        }
-                        // 4. Chiffres clés.
-                        item { KeyFiguresCard(stats = stats, isPlayer = profileIndex == 0) }
-                        // 5. Bandeau série en cours.
-                        stats.currentStreak.takeIf { it != 0 }?.let { item { StreakBanner(stats) } }
-                    }
-
-                    // 6. Derniers résultats (→ WarDetails) + « Voir tout » (→ historique).
-                    when (state.value.recentResults.isEmpty()) {
-                        true -> item {
-                            Column(Modifier.padding(top = 15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                MKText(text = stringResource(R.string.welcome_title), font = Fonts.NunitoBD, fontSize = 16)
-                                MKText(text = stringResource(R.string.welcome_text), fontSize = 16)
+                    when {
+                        // Recalcul en cours (changement de saison) : spinner sur la ZONE DE
+                        // DONNÉES seulement ; header (dropdown) + carte de salutation restent
+                        // affichés. Les agrégats de saison réapparaissent une fois le compute fini.
+                        state.value.loading -> item {
+                            Box(Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
                             }
                         }
                         else -> {
-                            item {
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Eyebrow(stringResource(R.string.last_results))
-                                    MKText(
-                                        text = stringResource(R.string.see_all),
-                                        font = Fonts.NunitoBD,
-                                        textColor = Colors.yellow,
-                                        fontSize = 13,
-                                        modifier = Modifier.clickable(onClick = onWarListClick)
-                                    )
+                            // 2. War en cours (→ CurrentWar) : bannière « En direct ».
+                            state.value.currentWar?.let { war ->
+                                item {
+                                    Eyebrow(stringResource(R.string.war_en_cours))
+                                    Spacer(Modifier.height(6.dp))
+                                    CurrentWarBanner(war = war, onClick = onCurrentWar)
                                 }
                             }
-                            items(state.value.recentResults, key = { it.war.id }) { war ->
-                                WarCell(
-                                    viewModel = hiltViewModel(
-                                        key = war.war.id.toString(),
-                                        creationCallback = { factory: WarCellViewModel.Factory -> factory.create(war) }
-                                    ),
-                                    onClick = onWarDetailsClick
-                                )
+
+                            // 3. Momentum (selon profil + fenêtre).
+                            selectedStats?.let { stats ->
+                                item {
+                                    MomentumCard(
+                                        stats = stats,
+                                        windowIndex = windowIndex,
+                                        onWindowChange = { windowIndex = it }
+                                    )
+                                }
+                                // 4. Chiffres clés.
+                                item { KeyFiguresCard(stats = stats, isPlayer = profileIndex == 0) }
+                                // 5. Bandeau série en cours.
+                                stats.currentStreak.takeIf { it != 0 }?.let { item { StreakBanner(stats) } }
+                            }
+
+                            // 6. Derniers résultats (→ WarDetails) + « Voir tout » (→ historique).
+                            when (state.value.recentResults.isEmpty()) {
+                                true -> item {
+                                    Column(Modifier.padding(top = 15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        MKText(text = stringResource(R.string.welcome_title), font = Fonts.NunitoBD, fontSize = 16)
+                                        MKText(text = stringResource(R.string.welcome_text), fontSize = 16)
+                                    }
+                                }
+                                else -> {
+                                    item {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                            Eyebrow(stringResource(R.string.last_results))
+                                            MKText(
+                                                text = stringResource(R.string.see_all),
+                                                font = Fonts.NunitoBD,
+                                                textColor = Colors.yellow,
+                                                fontSize = 13,
+                                                modifier = Modifier.clickable(onClick = onWarListClick)
+                                            )
+                                        }
+                                    }
+                                    items(state.value.recentResults, key = { it.war.id }) { war ->
+                                        WarCell(
+                                            viewModel = hiltViewModel(
+                                                key = war.war.id.toString(),
+                                                creationCallback = { factory: WarCellViewModel.Factory -> factory.create(war) }
+                                            ),
+                                            onClick = onWarDetailsClick
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

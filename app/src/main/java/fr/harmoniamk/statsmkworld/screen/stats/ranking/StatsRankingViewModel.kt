@@ -138,6 +138,11 @@ class StatsRankingViewModel @Inject constructor(
     data class PlayerSection(val titleRes: Int, val players: List<RankingItem.PlayerRanking>)
 
     data class State(
+        // Chargement de la zone de classements : true au 1er chargement ET remis à true au
+        // changement de saison (#73), le temps du recompute lourd off-main ; le compute émet
+        // ensuite `loading = false`. Les interactions légères (onglet/tri/recherche/curseur,
+        // via `recompute`) ne le touchent pas (elles préservent la valeur courante).
+        val loading: Boolean = true,
         val tab: RankingTab = RankingTab.PLAYERS,
         val sort: SortType = SortType.COUNT,
         val search: String = "",
@@ -208,6 +213,7 @@ class StatsRankingViewModel @Inject constructor(
             // adversaires, circuits). Filtres alignés sur le worker : host/roster + 12p/24p.
             computeRankings(warEntities.filterBySeason(activeSeason), is24p)
             _state.value.copy(
+                loading = false,
                 currentUserId = currentUser?.id.toString(),
                 is24PEnabled = is24p
             ).recompute(resetOccurrences = true)
@@ -277,8 +283,12 @@ class StatsRankingViewModel @Inject constructor(
             .map { RankingItem.OpponentRanking(it.first, it.second) }
     }
 
-    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
+     * IMMÉDIATEMENT (via `_state`) — via `recompute()` pour conserver seasons/listes cohérentes —
+     * pendant le recompute lourd off-main (#73) ; la branche `combine` émet ensuite
+     * `loading = false`. */
     fun onSeasonSelected(number: Int?) {
+        _state.value = _state.value.copy(loading = true).recompute()
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
