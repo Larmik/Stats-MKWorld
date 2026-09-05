@@ -456,4 +456,6 @@
     <string name="info_second_half_position">Ta position moyenne sur la seconde moitié de la war (dernières manches), en vue joueur. À comparer à la première moitié. Plus bas = mieux.</string>
     <string name="info_unbeaten_streak">Nombre de wars consécutives sans défaite (victoires et nuls) jusqu\'à aujourd\'hui.</string>
     <string name="info_penalty_points_lost">Total des points retirés à ton équipe par les pénalités sur tout l\'historique. Un repère du coût cumulé des pénalités ; ne compte que les pénalités de ton équipe.</string>
+    <string name="info_points_per_war">Points bruts que tu marques en moyenne par war (vue joueur), sur la fenêtre choisie. Plus haut = mieux.</string>
+    <string name="info_participation_rate">Part des wars de l\'équipe que tu as réellement jouées sur la fenêtre choisie. 100 % = tu es présent sur toutes les wars ; plus haut = mieux.</string>
 </resources>

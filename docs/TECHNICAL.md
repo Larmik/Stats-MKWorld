@@ -714,12 +714,16 @@ Le résultat est affiché par `ui/cells/WarPlayerRankingCard` (grille 2 colonnes
   stat ; au clic, **réutilise `MKDialog`** (aucun nouveau dialog) avec `title` =
   libellé, `message` = explication de la stat, bouton **Fermer** + `onDismiss`.
   État d'ouverture en `rememberSaveable` **local au bouton** (rule 11, pur état UI
-  éphémère, pas de re-navigation). Câblé sur les 4 sections d'indicateurs :
-  `MKStatRow` porte un paramètre optionnel `info: String? = null` (couvre
-  `MKRecordsCell` + `MKAdvancedStatsCell` d'un coup) ; `MKWarDetailsStatsCell`
-  (grille Détails équipe) et `MKRecentFormCell` (tableau Forme récente) l'intègrent
-  à leurs layouts propres, avec un message **contextuel** là où le libellé varie
-  (position moyenne joueur vs score moyen/manche équipe). Les 22 explications sont
+  éphémère, pas de re-navigation). **Chemin de rendu réel = `screen/stats/full/
+  StatsFullScreen.kt`** (l'écran Stats de l'epic) : la data class `MetricTile` porte
+  un champ optionnel `info: String? = null` et `MetricTileCell` émet le bouton à côté
+  du libellé quand il est renseigné → couvre `IndicatorsCard` (Détails équipe /
+  Indicateurs) **et** `RecordsTilesCard` (Records & séries) d'un seul câblage. ⚠️ Le
+  legacy `screen/stats/StatsScreen.kt` (→ `MKWarDetailsStatsView` de
+  `ui/stats/MKWarDetailsStatsCell.kt`, `MKStatRow.info`, `MKRecentFormCell`) conserve
+  son propre câblage mais **n'est plus l'écran affiché** ; le rendu visible passe
+  par `StatsFullScreen`. Message **contextuel** là où le libellé varie (position
+  moyenne joueur vs score moyen/manche équipe). Les 22 explications sont
   des string resources `info_*` (`res/values/` + `values-fr/`), reprises/adaptées
   de la section « Tableau récapitulatif — toutes les statistiques » de
   `docs/FUNCTIONAL.md` (nuances : position basse = mieux ; shocks/war neutre, aucune

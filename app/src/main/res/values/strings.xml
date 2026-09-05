@@ -456,4 +456,6 @@
     <string name="info_second_half_position">Your average position over the second half of the war (late races), in the player view. Compare with the first half. Lower = better.</string>
     <string name="info_unbeaten_streak">Number of consecutive wars without a loss (wins and ties) up to today.</string>
     <string name="info_penalty_points_lost">Total points removed from your team by penalties over the whole history. A marker of the cumulative cost of penalties; only counts your team’s penalties.</string>
+    <string name="info_points_per_war">Raw points you score on average per war (player view), over the selected window. Higher is better.</string>
+    <string name="info_participation_rate">Share of the team\'s wars you actually played over the selected window. 100% = you played every war; higher is better.</string>
 </resources>
