@@ -71,7 +71,7 @@ fun PlayerMapsRankingScreen(
             .map { track -> track.toPodiumEntry(userId) to track }
     }
 
-    BaseScreen(title = stringResource(R.string.best_maps_section), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.best_maps_section), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             rows.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)

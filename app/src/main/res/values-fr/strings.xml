@@ -243,6 +243,7 @@
     <string name="home_last_5">5 dernières</string>
     <string name="home_last_10">10 dernières</string>
     <string name="home_form_delta_cap">forme %1$d wars vs all-time</string>
+    <string name="home_score_evolution_cap">évolution du score sur %1$d wars</string>
     <string name="home_live_players">En direct · %1$d joueurs</string>
     <string name="home_vs">vs %1$s</string>
     <string name="home_key_figures">Chiffres clés</string>
@@ -277,8 +278,6 @@
     <string name="addwar_progress">%1$d / %2$d</string>
     <string name="addwar_progress_hint">Sélectionne les 6 joueurs de ton roster qui participent à la war.</string>
     <string name="addwar_your_roster">Ton roster</string>
-    <string name="addwar_opponent_roster">Roster adverse</string>
-    <string name="addwar_opponent_indicative">L\'adversaire est indicatif : seul ton roster est saisi côté app.</string>
     <string name="addwar_previous">Précédent</string>
     <string name="addwar_start_war">Démarrer la war</string>
     <!-- AddTrack wizard — écran Ajouter une course (ticket #44) -->
@@ -331,6 +330,7 @@
     <string name="stats_shocks_share">%1$d %% des shocks</string>
     <string name="stats_podium_top">Top 3</string>
     <string name="stats_podium_flop">Flop 3</string>
+    <string name="stats_podium_not_enough">Pas assez de données sur cette période pour un classement complet.</string>
     <string name="stats_sort_winrate">Winrate</string>
     <string name="stats_sort_score">Score</string>
     <string name="stats_amplitude_min">Score min</string>
@@ -437,7 +437,7 @@
     <string name="info_average_score">Points moyens marqués par war en vue joueur ; en vue équipe, l\'écart de score moyen face à l\'adversaire (« +X / -X »). Plus haut = mieux ; un écart d\'équipe positif signifie qu\'on domine, négatif qu\'on subit.</string>
     <string name="info_maps_won">Part des courses remportées par l\'équipe (son score de course dépasse la moitié du barème). Mesure la régularité course par course, indépendamment du résultat final de la war. Une course pile à la moitié n\'est pas comptée gagnée.</string>
     <string name="info_average_map">Place moyenne du joueur sur une course en vue joueur ; en vue équipe, les points moyens de l\'équipe par course, en différentiel. Pour la position, plus bas (proche de P1) = mieux ; pour le score de course d\'équipe, plus haut = mieux.</string>
-    <string name="info_shocks_per_war">Nombre moyen d\'éclairs obtenus par war (un éclair obtenu est compté même si l\'équipe choisit de ne pas le jouer). Mesure la qualité du bagging (farmer des éclairs), une activité aussi importante que jouer devant mais situationnelle. Aucune corrélation avec la position finale : plus/moins n\'est pas « mieux » ou « pire », l\'indicateur est neutre.</string>
+    <string name="info_shocks_per_war">Nombre moyen d\'éclairs obtenus par war. Mesure la qualité du bagging (farmer des éclairs), une activité aussi importante que jouer devant. Plus haut = mieux.</string>
     <string name="info_form_winrate">Pourcentage de wars gagnées. Mesure synthétique de la réussite ; plus haut = mieux (50 % = autant de victoires que de défaites). Les nuls comptent au dénominateur mais pas comme victoires.</string>
     <string name="info_form_score">Score moyen par war : points bruts du joueur en vue joueur, écart de score d\'équipe (« +X / -X ») en vue équipe. Plus haut = mieux.</string>
     <string name="info_average_position">Ta place moyenne sur une manche (vue joueur). Une position se lit de « proche de P1 » (meilleur) à « proche de P12 » (moins bon) : plus bas = mieux.</string>

@@ -40,14 +40,19 @@ sealed class StatsType(val title: Int, val is24PEnabled: Boolean): Serializable 
     class OpponentStats(
         val teamId: String,
         val userId: String? = null,
-        val is24p: Boolean
+        val is24p: Boolean,
+        // Saison sélectionnée à l'origine de la navigation (#91 pt.5) : null = tout l'historique.
+        // Propagée à la fiche détail pour la filtrer comme le classement d'origine.
+        val seasonNumber: Int? = null
     ) : StatsType(R.string.statistiques_de_l_adversaire, is24p)
 
     class MapStats(
         val userId: String? = null,
         val teamId: String? = null,
         val trackIndex: List<Int>? = null,
-        val is24p: Boolean
+        val is24p: Boolean,
+        // Saison sélectionnée à l'origine de la navigation (#91 pt.5) : null = tout l'historique.
+        val seasonNumber: Int? = null
     ) : StatsType(R.string.statistiques_du_circuit, is24p)
 }
 

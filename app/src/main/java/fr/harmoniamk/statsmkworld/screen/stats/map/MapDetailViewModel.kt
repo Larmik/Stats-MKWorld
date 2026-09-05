@@ -8,6 +8,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -43,6 +44,9 @@ import kotlinx.coroutines.withContext
 class MapDetailViewModel @AssistedInject constructor(
     @Assisted val trackIndex: List<Int>,
     @Assisted("initialUserId") val initialUserId: String?,
+    // Saison sélectionnée à l'origine (#91 pt.5) : null = tout l'historique. Filtre les wars
+    // AVANT tout calcul pour que la fiche soit filtrée comme le classement d'origine.
+    @Assisted val seasonNumber: Int?,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface
 ) : ViewModel() {
@@ -51,7 +55,8 @@ class MapDetailViewModel @AssistedInject constructor(
     interface Factory {
         fun create(
             trackIndex: List<Int>,
-            @Assisted("initialUserId") initialUserId: String?
+            @Assisted("initialUserId") initialUserId: String?,
+            seasonNumber: Int?
         ): MapDetailViewModel
     }
 
@@ -118,8 +123,11 @@ class MapDetailViewModel @AssistedInject constructor(
     private val trackKey = trackIndex.map { it.toString() }
 
     val state = databaseRepository.getWars()
-        .map { wars ->
-            wars
+        .combine(databaseRepository.getSeasons()) { wars, seasons ->
+            // Filtre saison (#91 pt.5) appliqué AVANT tout : la fiche est filtrée comme le
+            // classement d'origine. `seasonNumber` null → tout l'historique (aucun filtre).
+            val season = seasonNumber?.let { number -> seasons.firstOrNull { it.number == number } }
+            wars.filterBySeason(season)
                 // 12p uniquement (24p relève d'un ticket dédié).
                 .filter { it.teamOpponent.size == 1 }
                 .map { WarDetails(War(it)) }

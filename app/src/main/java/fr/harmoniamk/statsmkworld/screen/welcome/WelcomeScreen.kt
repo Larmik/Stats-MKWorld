@@ -330,6 +330,15 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                     )
                 }
             }
+            // Libellé descriptif du graphique (#91 pt.10) : indique que la sparkline retrace
+            // l'évolution du score sur la fenêtre, dans le même style que le hint de forme.
+            MKText(
+                text = stringResource(R.string.home_score_evolution_cap, count),
+                textColor = Colors.white66,
+                fontSize = 12,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 }

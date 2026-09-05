@@ -276,7 +276,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             item {
                 StatCard(title = stringResource(R.string.stats_contribution_title)) {
                     IconLine(
-                        icon = R.drawable.stats,
+                        // Icône champignon (#91 pt.11) : illustre la part de POINTS de l'équipe
+                        // (analogue à shock.png pour la part d'éclairs de la 2ᵉ ligne).
+                        icon = R.drawable.mushroom,
                         accent = Colors.yellow,
                         title = stringResource(R.string.stats_contribution_value, contributor.pointsShare),
                         subtitle = meContributorRank
@@ -425,7 +427,7 @@ private fun IndicatorsCard(
     val title = if (isPlayer) stringResource(R.string.stats_player_indicators) else stringResource(R.string.stats_team_details)
     StatCard(title = title) {
         val tiles = buildList {
-            add(MetricTile(stringResource(R.string.form_winrate), window?.winrate?.let { "$it%" } ?: "-", if (showDelta) window?.winrateDelta else null, "%", DeltaPolarity.HIGHER, stringResource(R.string.info_form_winrate)))
+            // Winrate NON répété ici (#91 pt.3) : déjà affiché en grand dans la carte « Bilan ».
             when (isPlayer) {
                 true -> {
                     // Vue JOUEUR : score = points/war (brut) + position moyenne.
@@ -604,7 +606,11 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
         2 -> stats.topMapsByScore to stats.flopMapsByScore
         else -> stats.topMapsByCount to stats.flopMapsByCount
     }
-    if (top.isEmpty() && flop.isEmpty()) return
+    // La carte disparaît seulement si AUCUN circuit n'est jouable, TOUS tris confondus (#91
+    // pt.1) — pas seulement pour le tri courant : un tri sans échantillon dégrade en message
+    // (cf. `PodiumOrMessage`) au lieu de faire disparaître toute la section au changement de tri.
+    val hasAnyMap = stats.topMapsByCount.isNotEmpty() || stats.topMapsByWinrate.isNotEmpty() || stats.topMapsByScore.isNotEmpty()
+    if (!hasAnyMap) return
     val scoreLabel = if (userId != null) R.string.average_position_short else R.string.form_score
     val toEntry: (fr.harmoniamk.statsmkworld.model.local.TrackStats) -> PodiumEntry = { track ->
         val map = track.map?.firstOrNull()
@@ -628,11 +634,9 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
     ) {
         SortSelector(selectors.trackSortIndex, selectors.onTrackSortChange)
         Spacer(Modifier.height(11.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_top))
-        PodiumRow(top.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_top), top.map(toEntry))
         Spacer(Modifier.height(8.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_flop))
-        PodiumRow(flop.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_flop), flop.map(toEntry))
     }
 }
 
@@ -654,7 +658,13 @@ private fun OpponentsPodiumCard(
         2 -> podiums.topByScore to podiums.flopByScore
         else -> podiums.topByCount to podiums.flopByCount
     }
-    if (top.isEmpty() && flop.isEmpty()) return
+    // La carte reste affichée dès qu'au moins un adversaire est classable, TOUS tris confondus
+    // (#91 pt.1) : sur une fenêtre réduite (5/10 dernières), le seuil MIN_RANKING_SAMPLE peut
+    // vider le tri winrate/score alors que le tri occurrences reste peuplé → on ne fait plus
+    // disparaître la section au changement de fenêtre/tri ; un tri sans données affiche un
+    // message (cf. `PodiumOrMessage`) plutôt qu'un podium tronqué (2 sur 3) incohérent.
+    val hasAnyOpponent = podiums.topByCount.isNotEmpty() || podiums.topByWinrate.isNotEmpty() || podiums.topByScore.isNotEmpty()
+    if (!hasAnyOpponent) return
     val toEntry: (RankingItem.OpponentRanking) -> PodiumEntry = { opponent ->
         val scoreValue = when (userId) {
             null -> opponent.stats.averagePointsLabel      // écart d'équipe
@@ -676,11 +686,34 @@ private fun OpponentsPodiumCard(
     ) {
         SortSelector(selectors.opponentSortIndex, selectors.onOpponentSortChange)
         Spacer(Modifier.height(11.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_top))
-        PodiumRow(top.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_top), top.map(toEntry))
         Spacer(Modifier.height(8.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_flop))
-        PodiumRow(flop.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_flop), flop.map(toEntry))
+    }
+}
+
+/**
+ * Podium sous label (#91 pt.1) : rend une ligne [PodiumRow] complète quand il y a **assez
+ * d'entrées** pour un podium cohérent (≥ 3), sinon un message de dégradation « pas assez de
+ * données sur cette période » — jamais un podium tronqué « 2 sur 3 » (artefact du seuil
+ * MIN_RANKING_SAMPLE sur une fenêtre réduite). Le label reste toujours affiché → la section
+ * ne disparaît plus au changement de période/tri.
+ */
+@Composable
+private fun ColumnScope.PodiumOrMessage(label: String, entries: List<PodiumEntry>) {
+    PodiumLabel(label)
+    when (entries.size) {
+        // Podium complet (3 cellules) : rendu normal, cohérent.
+        3 -> PodiumRow(entries)
+        // Aucun / trop peu d'entrées classables sur cette fenêtre → message, pas de podium
+        // tronqué (2 sur 3) qui donnerait un rendu incohérent.
+        else -> MKText(
+            text = stringResource(R.string.stats_podium_not_enough),
+            textColor = Colors.white55,
+            fontSize = 12,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+        )
     }
 }
 
