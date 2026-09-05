@@ -433,4 +433,27 @@
     <string name="period_players_wars_short">Wars</string>
     <string name="period_players_average_short">Avg score</string>
     <string name="period_players_shocks_short">Shocks</string>
+    <!-- Stat indicator explanations (info button ⓘ, dialog) -->
+    <string name="info_average_score">Average points scored per war in the player view; in the team view, the average score gap versus the opponent (“+X / -X”). Higher = better; a positive team gap means you dominate, a negative one that you are dominated.</string>
+    <string name="info_maps_won">Share of races won by the team (its race score exceeds half of the scale). Measures race-by-race consistency, regardless of the final war result. A race exactly at half is not counted as won.</string>
+    <string name="info_average_map">Player average finishing position on a race in the player view; in the team view, the team’s average points per race as a differential. For position, lower (closer to P1) = better; for the team race score, higher = better.</string>
+    <string name="info_shocks_per_war">Average number of lightning items played per war. Measures bagging quality (farming then placing lightnings), an activity as important as running up front but situational. No correlation with the final position: more/less is not “better” or “worse” — the indicator is neutral.</string>
+    <string name="info_form_winrate">Percentage of wars won. A synthetic measure of success; higher = better (50 % = as many wins as losses). Ties count in the denominator but not as wins.</string>
+    <string name="info_form_score">Average score per war: the player’s raw points in the player view, the team score gap (“+X / -X”) in the team view. Higher = better.</string>
+    <string name="info_average_position">Your average finishing position on a race (player view). A position reads from “close to P1” (best) to “close to P12” (worst): lower = better.</string>
+    <string name="info_average_map_score">The team’s average score per race, shown as a gap (“+X / -X”), in the team view. Higher = better.</string>
+    <string name="info_current_streak">Current win or loss streak. A tie or an opposite result breaks the streak; the calculation follows the real chronological order.</string>
+    <string name="info_best_win_streak">The longest run of consecutive wins. A marker of the best stretch; depends on the selected window.</string>
+    <string name="info_worst_loss_streak">The longest run of consecutive losses. A marker of the worst stretch; depends on the selected window.</string>
+    <string name="info_top6_count">Number of races where the team’s 6 players hold positions 1 to 6. Counts perfect races. Exact case: a race split high/low is neither Top6 nor Bot6.</string>
+    <string name="info_bot6_count">Number of races where the team’s 6 players hold positions 7 to 12. Counts fully lost races. Exact case (all 6 at the back).</string>
+    <string name="info_player_contribution">Average percentage of the team’s points you bring yourself, computed war by war then averaged. Example: 20 % = you score on average a fifth of the team’s points. Visible in the player view only.</string>
+    <string name="info_score_std_dev">Standard deviation of your scores, measuring your consistency. The lower it is, the more regular your scores from one war to the next; the higher it is, the more erratic. Shown as “± X”. Requires at least 2 wars.</string>
+    <string name="info_score_amplitude">Your worst and best score over the history (min – max), to visualise the gap between the two extremes. A single war can set the min or the max.</string>
+    <string name="info_avg_win_margin">The average score gap when you win (e.g. “+45”). A high margin = wide wins. Gap = your score − opponent score (penalties included); ties are not counted.</string>
+    <string name="info_avg_loss_margin">The average score gap when you lose (e.g. “-30”). A low margin = close losses. Separate from the win margin: losing heavily tells a different story than a plain winrate.</string>
+    <string name="info_first_half_position">Your average position over the first half of the war (early races), in the player view. Compare with the second half to see whether you start strong or ramp up. Lower = better.</string>
+    <string name="info_second_half_position">Your average position over the second half of the war (late races), in the player view. Compare with the first half. Lower = better.</string>
+    <string name="info_unbeaten_streak">Number of consecutive wars without a loss (wins and ties) up to today.</string>
+    <string name="info_penalty_points_lost">Total points removed from your team by penalties over the whole history. A marker of the cumulative cost of penalties; only counts your team’s penalties.</string>
 </resources>

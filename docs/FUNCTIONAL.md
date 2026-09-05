@@ -571,6 +571,19 @@ commences fort et faiblis, ou si tu montes en puissance en fin de match.
 Le **total des points retirés à l'équipe par des pénalités** sur tout
 l'historique. Un repère du « coût » cumulé des pénalités.
 
+#### Bouton info sur chaque indicateur (ⓘ)
+
+Chaque cellule d'indicateur des sections de l'écran Statistiques — **Détails
+équipe**, **Forme récente**, **Records & séries** et **Indicateurs avancés** — porte
+un petit **bouton rond d'information (ⓘ)** discret à côté de son libellé. Au clic, une
+**popup** (le dialog standard de l'app) s'ouvre avec le **libellé de la stat en titre**
+et son **explication en message**, puis se ferme via son bouton **Fermer** (ou par un
+clic à l'extérieur). Les explications reprennent fidèlement les définitions ci-dessus et
+du tableau récapitulatif (notamment : une position moyenne plus **basse** = meilleure ;
+les **shocks/war** sont un indicateur **neutre**, sans corrélation avec la position
+finale). L'objectif est de rendre chaque statistique compréhensible sans quitter
+l'écran.
+
 ### Tableau récapitulatif — toutes les statistiques
 
 Ce tableau reprend **chaque statistique de l'application**, **organisée par écran** et
