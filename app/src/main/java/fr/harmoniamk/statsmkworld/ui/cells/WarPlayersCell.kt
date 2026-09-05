@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -49,8 +50,8 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>, tr
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             val text = when (it.trackPlayed in 1 until trackCount) {
-                                true -> "${it.player?.name.orEmpty()} (${it.trackPlayed})"
-                                else -> it.player?.name.orEmpty()
+                                true -> "${it.player?.name.orEmpty().displayName} (${it.trackPlayed})"
+                                else -> it.player?.name.orEmpty().displayName
                             }
                             MKText(
                                 modifier = Modifier.padding(horizontal = 5.dp),
@@ -86,8 +87,8 @@ fun WarPlayersCell(modifier: Modifier = Modifier, players: List<PlayerScore>, tr
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             val text = when (it.trackPlayed in 1 until trackCount) {
-                                true -> "${it.player?.name.orEmpty()} (${it.trackPlayed})"
-                                else -> it.player?.name.orEmpty()
+                                true -> "${it.player?.name.orEmpty().displayName} (${it.trackPlayed})"
+                                else -> it.player?.name.orEmpty().displayName
                             }
                             MKText(
                                 modifier = Modifier.padding(horizontal = 5.dp),

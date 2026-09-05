@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -172,8 +173,8 @@ fun MapDetailScreen(
  */
 internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
-        name = player.name,
-        initials = initialsOf(player.name),
+        name = player.name.displayName,
+        initials = initialsOf(player.name.displayName),
         // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales sur pastille colorée.
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
@@ -191,8 +192,8 @@ internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
  */
 internal fun MapDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
-        name = player.name,
-        initials = initialsOf(player.name),
+        name = player.name.displayName,
+        initials = initialsOf(player.name.displayName),
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(

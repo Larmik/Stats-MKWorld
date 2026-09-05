@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -218,9 +219,9 @@ private fun ColumnScope.SubPanel(
 @Composable
 private fun PlayerSelectRow(selector: PlayerSelector, onClick: () -> Unit) {
     MKListRow(
-        initials = initialsOf(selector.player.name),
+        initials = initialsOf(selector.player.name.displayName),
         avatarColor = playerAvatarColor(selector.player.id),
-        name = selector.player.name,
+        name = selector.player.name.displayName,
         // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales.
         avatarUrl = selector.player.avatar,
         onClick = onClick,

@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -279,10 +280,10 @@ private fun ColumnScope.PlayersStep(
             items(list, key = { it.player.id }) { selector ->
                 MKListRow(
                     modifier = Modifier.fillMaxWidth(),
-                    initials = initialsOf(selector.player.name),
+                    initials = initialsOf(selector.player.name.displayName),
                     avatarColor = playerAvatarColor(selector.player.id),
                     avatarUrl = state.playerAvatars[selector.player.id],
-                    name = selector.player.name,
+                    name = selector.player.name.displayName,
                     onClick = { onPlayerSelected(selector.player) },
                     trailing = { MKListRowCheck(selected = selector.isSelected) }
                 )
@@ -296,7 +297,7 @@ private fun ColumnScope.PlayersStep(
                     Eyebrow("${stringResource(R.string.addwar_opponent_roster)} · ${preview.name}")
                 }
                 items(preview.players, key = { "${preview.tag}-${it.playerId}" }) { player ->
-                    OpponentPlayerRow(name = player.name, color = preview.color.toTeamColor())
+                    OpponentPlayerRow(name = player.name.displayName, color = preview.color.toTeamColor())
                 }
             }
         }
@@ -346,10 +347,10 @@ private fun ColumnScope.RecapStep(
         items(state.selectedPlayers, key = { it.id }) { player ->
             MKListRow(
                 modifier = Modifier.fillMaxWidth(),
-                initials = initialsOf(player.name),
+                initials = initialsOf(player.name.displayName),
                 avatarColor = playerAvatarColor(player.id),
                 avatarUrl = state.playerAvatars[player.id],
-                name = player.name,
+                name = player.name.displayName,
                 trailing = { MKListRowCheck(selected = true) }
             )
         }

@@ -29,6 +29,7 @@ import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.diffColor
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
@@ -310,7 +311,7 @@ fun WarPlayerRankingCard(title: String, players: List<PlayerScore>) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             MKText(
-                                text = score.player?.name.orEmpty().uppercase(),
+                                text = score.player?.name.orEmpty().displayName.uppercase(),
                                 font = Fonts.NunitoBD,
                                 textColor = Colors.white66,
                                 fontSize = 10,

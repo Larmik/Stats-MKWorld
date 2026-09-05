@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -176,8 +177,8 @@ private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
  */
 @Composable
 private fun PeriodViewModel.PlayerPeriodStats.toPodiumEntry(): PodiumEntry = PodiumEntry(
-    name = player.name,
-    initials = initialsOf(player.name),
+    name = player.name.displayName,
+    initials = initialsOf(player.name.displayName),
     avatar = player.avatar,
     stats = listOf(
         R.string.period_players_wars_short to warsPlayed.toString(),

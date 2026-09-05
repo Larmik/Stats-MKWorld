@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
@@ -182,8 +183,8 @@ private fun PlayersCard(players: List<PlayerScore>, trackCount: Int) {
 @Composable
 private fun PlayerRow(score: PlayerScore, trackCount: Int, modifier: Modifier = Modifier) {
     val name = when (score.trackPlayed in 1 until trackCount) {
-        true -> "${score.player?.name.orEmpty()} (${score.trackPlayed})"
-        else -> score.player?.name.orEmpty()
+        true -> "${score.player?.name.orEmpty().displayName} (${score.trackPlayed})"
+        else -> score.player?.name.orEmpty().displayName
     }
     Row(
         modifier

@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -211,7 +212,7 @@ private fun ColumnScope.PositionsTab(
                         pair.forEach { playerPosition ->
                             val playerId = playerPosition.player?.id
                             PlayerShockCell(
-                                name = playerPosition.player?.name.orEmpty(),
+                                name = playerPosition.player?.name.orEmpty().displayName,
                                 position = playerPosition.position.position,
                                 is24p = state.is24p,
                                 maxPosition = state.maxPosition,

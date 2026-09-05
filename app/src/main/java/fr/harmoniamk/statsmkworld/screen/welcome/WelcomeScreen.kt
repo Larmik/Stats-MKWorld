@@ -46,6 +46,7 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
@@ -104,10 +105,10 @@ fun WelcomeScreen(
                     // 1. Carte de salutation (→ profil) + segmenté Moi/Équipe.
                     item {
                         GreetingCard(
-                            greeting = stringResource(R.string.home_greeting, state.value.playerName.orEmpty()),
+                            greeting = stringResource(R.string.home_greeting, state.value.playerName.orEmpty().displayName),
                             subtitle = stringResource(R.string.home_profile_subtitle, state.value.teamName.orEmpty()),
                             image = state.value.playerLogo,
-                            initials = initialsOf(state.value.playerName),
+                            initials = initialsOf(state.value.playerName?.displayName),
                             crestColor = state.value.teamColor?.let { Color(it) } ?: Colors.blue,
                             profileIndex = profileIndex,
                             onProfileChange = { profileIndex = it },

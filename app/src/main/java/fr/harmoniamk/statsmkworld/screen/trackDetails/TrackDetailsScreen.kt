@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.diffColor
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
@@ -122,7 +123,7 @@ private fun PositionShockTile(
             .padding(11.dp)
     ) {
         MKText(
-            text = playerPosition.player?.name.orEmpty(),
+            text = playerPosition.player?.name.orEmpty().displayName,
             font = Fonts.NunitoBD,
             fontSize = 10,
             textColor = Colors.white66,
