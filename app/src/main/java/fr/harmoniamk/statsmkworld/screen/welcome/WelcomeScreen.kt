@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -309,12 +311,19 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
             // Couleur de tendance : delta ≥ 0 (ou indisponible) → vert, sinon rouge.
             val trendColor = if ((form?.winrateDelta ?: 0) < 0) Colors.red else Colors.green
             Spacer(Modifier.height(12.dp))
-            // Deux colonnes alignées, chacune graphe/valeur AU-DESSUS de son hint (#91 pt.10, retour
-            // utilisateur) : GAUCHE = sparkline + hint « évolution score » ; DROITE = delta de forme
-            // + hint « forme N wars vs all-time ». Row alignée en haut, hints au même style (white66).
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                // Colonne GAUCHE : graphe + son hint, alignés à gauche.
-                Column {
+            // Deux colonnes, chacune graphe/valeur AU-DESSUS de son hint (#91 pt.10) : GAUCHE =
+            // sparkline + hint « évolution score » ; DROITE = delta de forme + hint « forme N wars
+            // vs all-time ». Row en IntrinsicSize.Min + colonnes fillMaxHeight/SpaceBetween → les
+            // contenus hauts (sparkline 44dp vs texte delta) restent en haut, les DEUX hints sont
+            // poussés en bas et **alignés sur la même ligne basse** (retour utilisateur), même si un
+            // hint wrappe sur deux lignes (maxLines non forcé). Styles inchangés (white66, NunitoBD).
+            Row(
+                Modifier.height(IntrinsicSize.Min),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                // Colonne GAUCHE : graphe en haut, hint poussé en bas.
+                Column(Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
                     Sparkline(values, trendColor, Modifier.width(110.dp).height(44.dp))
                     MKText(
                         text = stringResource(R.string.home_score_evolution_cap, count),
@@ -324,8 +333,8 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                // Colonne DROITE : delta de forme + son hint.
-                Column(Modifier.weight(1f)) {
+                // Colonne DROITE : delta en haut, hint poussé en bas (aligné sur celui de gauche).
+                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
                     form?.winrateDelta?.let { delta ->
                         MKText(
                             text = if (delta >= 0) "↗ +$delta%" else "↘ $delta%",

@@ -276,10 +276,10 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             item {
                 StatCard(title = stringResource(R.string.stats_contribution_title)) {
                     IconLine(
-                        // Icône champignon vectorielle EN COULEUR (#91 pt.11, retour user : ic_mushroom
-                        // — chapeau rouge à taches, pied crème) illustrant la part de POINTS de l'équipe.
-                        // tinted = false → dessinée en Image (pas d'aplat par le tint accent).
-                        icon = R.drawable.ic_mushroom,
+                        // Icône champignon illustrant la part de POINTS de l'équipe (#91 pt.11).
+                        // tinted = false → dessinée en Image (couleurs d'origine, pas d'aplat par le tint).
+                        // TODO #91 : placeholder en attendant l'asset ic_mushroom fourni par l'utilisateur
+                        icon = R.drawable.mushroom,
                         accent = Colors.yellow,
                         tinted = false,
                         title = stringResource(R.string.stats_contribution_value, contributor.pointsShare),
@@ -807,7 +807,7 @@ private fun BalanceCard(stats: Stats, showResultsLink: Boolean, onResults: (() -
 /**
  * Ligne icône + gros titre + sous-titre (contribution). [tinted] = true : l'icône est
  * teintée par [accent] (`Icon`, cas monochrome comme le shock). false : icône dessinée en
- * couleurs d'origine (`Image`) — pour un vecteur multicolore comme `ic_mushroom` (#91), qu'un
+ * couleurs d'origine (`Image`) — pour une image multicolore comme le champignon (#91), qu'un
  * tint aplatirait. Taille de l'icône (22 dp) et médaillon accent identiques dans les deux cas.
  */
 @Composable
