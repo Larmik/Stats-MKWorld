@@ -22,12 +22,14 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -209,6 +211,11 @@ class StatsRankingViewModel @Inject constructor(
                 is24PEnabled = is24p
             ).recompute(resetOccurrences = true)
         }
+        // `computeRankings` (circuits, membres, alliés, adversaires) est lourd : le déporter
+        // hors du thread UI (#73). `flowOn` couvre CETTE branche compute uniquement (avant
+        // `mergeWith(_state)`), pas les recompute déclenchés par interaction via `_state`
+        // (tri/onglet/recherche/curseur) qui restent légers et sur le collecteur.
+        .flowOn(Dispatchers.Default)
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 

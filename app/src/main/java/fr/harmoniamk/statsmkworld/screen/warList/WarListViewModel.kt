@@ -15,12 +15,14 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import java.util.Calendar
@@ -144,6 +146,10 @@ class WarListViewModel @AssistedInject constructor(
                 )
             }
         }
+        // Filtrage saison/roster/joueur + groupage par mois des wars : déporté hors du thread
+        // UI (#73), y compris au changement de saison. `flowOn` couvre toute la branche compute
+        // avant `stateIn` (pas de `_state` interactif à préserver ici).
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
     /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */

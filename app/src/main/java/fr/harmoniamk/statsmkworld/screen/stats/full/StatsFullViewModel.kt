@@ -22,12 +22,14 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -179,6 +181,10 @@ class StatsFullViewModel @AssistedInject constructor(
             val seasonWars = warEntities.filterBySeason(activeSeason)
             computeState(seasonWars, seasons, activeSeason?.number)
         }
+        // Le calcul complet des agrégats (fenêtres, contributeurs, adversaires) est lourd :
+        // le déporter hors du thread UI (#73). `flowOn` s'applique à CETTE branche compute
+        // uniquement (avant `mergeWith(_state)` dans `state`), pas au flux d'état interactif.
+        .flowOn(Dispatchers.Default)
 
     private suspend fun computeState(
         warEntities: List<WarEntity>,

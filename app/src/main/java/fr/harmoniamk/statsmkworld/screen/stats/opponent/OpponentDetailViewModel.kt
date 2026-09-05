@@ -21,6 +21,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.SortType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -222,6 +224,11 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 history = chronological.reversed()
             )
         }
+        // Calcul des sections adversaire (stats, MapStats, circuits triés, pilotes, baggeurs,
+        // historique) déporté hors du thread UI (#73), y compris au basculement de mode et au
+        // changement de tri des circuits. `flowOn` couvre la branche compute uniquement (avant
+        // `mergeWith(_state)`).
+        .flowOn(Dispatchers.Default)
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
