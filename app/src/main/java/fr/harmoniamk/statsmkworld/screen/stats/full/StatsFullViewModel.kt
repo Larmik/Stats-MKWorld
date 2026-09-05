@@ -22,7 +22,6 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +30,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.withContext
 
 /**
  * ViewModel de l'écran Statistiques (pôle Stats, ticket #25) : porte À LA FOIS la
@@ -182,16 +180,11 @@ class StatsFullViewModel @AssistedInject constructor(
             computeState(seasonWars, seasons, activeSeason?.number)
         }
 
-    // Le calcul des agrégats (fenêtres, contributeurs, adversaires) est CPU-lourd : déporté sur
-    // `Dispatchers.Default` via `withContext` — et NON `flowOn` (#73), qui, sur une chaîne passant
-    // par `mergeWith`/`flattenMerge`, provoquait une course cross-thread laissant gagner l'état vide
-    // (dropdown de saison disparu). `seasons`/`activeSeasonNumber` sont résolus sur le collecteur et
-    // toujours reportés dans le State, quel que soit le résultat du calcul. Cf. rule 21.
     private suspend fun computeState(
         warEntities: List<WarEntity>,
         seasons: List<SeasonEntity>,
         activeSeasonNumber: Int?
-    ) = withContext(Dispatchers.Default) { warEntities
+    ) = warEntities
         .let { warEntities ->
             val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
             val targetUserId = userId ?: currentPlayer?.id?.toString()
@@ -297,7 +290,6 @@ class StatsFullViewModel @AssistedInject constructor(
                 selectedSeasonNumber = activeSeasonNumber
             )
         }
-    }
 
     /**
      * Top3/flop3 adversaires par **occurrences** (nb de confrontations), winrate ET

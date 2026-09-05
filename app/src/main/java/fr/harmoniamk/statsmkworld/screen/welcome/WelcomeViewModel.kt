@@ -14,7 +14,6 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +25,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -99,34 +97,21 @@ class WelcomeViewModel @Inject constructor(
                     ?.sortedByDescending { it.war.id }
                     .orEmpty()
 
-                // Firebase (potentiellement main-affine) résolu sur le collecteur, HORS du
-                // `withContext(Default)` — cf. rule 21 (#73).
-                val currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty())
-                // SEULE la partie CPU-lourde (agrégats `withFullStats` équipe + joueur) est
-                // déportée sur `Dispatchers.Default` via `withContext` (et NON `flowOn`, qui,
-                // sur une chaîne passant par `mergeWith`/`flattenMerge`, laissait gagner l'état
-                // vide → dropdown de saison disparu). `seasons` reste peuplé (calculé au-dessus).
-                val (teamStats, playerStats) = withContext(Dispatchers.Default) {
-                    val teamStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(databaseRepository, is24p = false)
-                        ?.firstOrNull()
-                    val playerStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
-                        ?.firstOrNull()
-                    teamStats to playerStats
-                }
-
                 State(
                     teamName = team.name,
                     teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     teamColor = team.color.takeIf { it != 0L },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
-                    currentWar = currentWar,
+                    currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty()),
                     // Vue équipe (userId = null) et vue joueur (userId = id MKCentral
                     // du joueur courant) calculées d'emblée, sur les wars de la saison.
-                    teamStats = teamStats,
-                    playerStats = playerStats,
+                    teamStats = wars.takeIf { it.isNotEmpty() }
+                        ?.withFullStats(databaseRepository, is24p = false)
+                        ?.firstOrNull(),
+                    playerStats = wars.takeIf { it.isNotEmpty() }
+                        ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
+                        ?.firstOrNull(),
                     recentResults = wars.safeSubList(0, 3),
                     seasons = seasons,
                     selectedSeasonNumber = activeSeason?.number
