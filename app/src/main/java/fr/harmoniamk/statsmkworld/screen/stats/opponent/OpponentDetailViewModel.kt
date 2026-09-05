@@ -21,6 +21,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.SortType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /**
  * Fiche détail d'un ADVERSAIRE (`opp` du prototype, pôle Classements #27). Deux modes
@@ -150,6 +152,10 @@ class OpponentDetailViewModel @AssistedInject constructor(
         }
         .combine(tracksSort) { data, sort -> data to sort }
         .map { (data, sort) ->
+            // Calcul CPU-lourd (MapStats, tri des circuits, classements pilotes/baggeurs,
+            // historique) déporté sur `Dispatchers.Default` via `withContext` — et NON `flowOn`
+            // (cf. rule 21, #73). `getTeam` (Room) n'est pas main-affine, sûr sur Default.
+            withContext(Dispatchers.Default) {
             val (wars, indiv, userIdAndStats) = data
             val (userId, stats) = userIdAndStats
             // teamId peut être un rosterId : avatar de l'équipe parente, nom/tag du roster.
@@ -221,6 +227,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 baggers = baggers,
                 history = chronological.reversed()
             )
+            }
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)

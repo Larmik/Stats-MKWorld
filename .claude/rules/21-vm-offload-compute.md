@@ -1,54 +1,69 @@
-# Déporter le calcul d'un ViewModel hors du thread UI : PROUVER sur device d'abord (le calcul de stats a une affinité main non résolue)
+# Déporter un calcul CPU lourd d'un ViewModel : `withContext(Dispatchers.Default)`, PAS `flowOn`
 
-**Portée** : tout `ViewModel` de stats/classements/dashboard (`StatsFullViewModel`,
-`StatsRankingViewModel`, `MapDetailViewModel`, `OpponentDetailViewModel`,
-`WelcomeViewModel`, `WarListViewModel`) dont on voudrait déporter le calcul lourd hors
-du collecteur (`viewModelScope` = `Main.immediate`).
+**Portée** : tout `ViewModel` qui exécute un **calcul CPU lourd** (agrégation de
+stats, tri/construction de gros modèles) dans la lambda d'un `combine`/`map`/
+`flatMapLatest` d'une chaîne `Flow` exposée en `StateFlow` (typiquement les VM
+stats/classements/dashboard : `StatsFullViewModel`, `StatsRankingViewModel`,
+`MapDetailViewModel`, `OpponentDetailViewModel`, `WelcomeViewModel`,
+`WarListViewModel`).
 
-## Fait établi (#73) : déporter ce calcul CASSE le dropdown de saison
+Le calcul lourd ne doit **jamais** bloquer le thread UI : le collecteur d'un
+`StateFlow` de VM est `viewModelScope` = `Main.immediate`, donc la lambda de
+`combine`/`map` s'exécute **sur le main thread** — même déclenchée par une `suspend
+fun` (suspendre ne change PAS de dispatcher). Symptômes : jank/freezes au changement
+de sélecteur, de saison, ou à la navigation (#73).
 
-Le ticket #73 (perf/fluidité) a tenté de sortir le calcul de stats du thread UI. **Deux
-approches ont été essayées et ont TOUTES DEUX régressé** l'affichage : le sélecteur de
-saison (`MKSeasonDropdown`) **disparaissait de tous les headers** (Accueil, Wars, Stats,
-Classements).
+## Exigé : `withContext(Dispatchers.Default)` autour de la SEULE portion de calcul
 
-1. `.flowOn(Dispatchers.Default)` sur la branche de calcul.
-2. `withContext(Dispatchers.Default)` autour de la **seule** portion de calcul CPU (en
-   laissant les lectures de sources et `seasons` sur le collecteur).
+Structurer la lambda en **deux temps** :
 
-Le fait que **même `withContext` ciblé** — qui préserve pourtant l'ordre d'émission et
-garde `seasons` peuplé dans le `State` — casse l'affichage prouve qu'il existe une
-**affinité au thread principal NON RÉSOLUE** quelque part dans la chaîne de calcul (une
-dépendance qui *throw* hors du main thread → la branche `combine`/`map` throw avant
-d'émettre → `stateIn` reste bloqué sur son seed vide → `seasons = []` → dropdown masqué,
-uniformément sur tous les headers). La source exacte de l'affinité **n'a pas été
-identifiée** (le calcul `withFullStats`/`computeState`/`computeRankings` paraît pur, mais
-un throw runtime survient off-main).
+1. **Lire les sources et calculer les données légères sur le collecteur** (HORS
+   `withContext`) : lectures Room/DataStore (`getSeasons`, `mkcPlayer`, `mkcTeam`…),
+   appels Firebase (`getCurrentWar`, `listenToCurrentWar`), résolution du filtre
+   saison, et **tout champ de `State` qui doit rester peuplé** (ex. `seasons`,
+   `selectedSeasonNumber`).
+2. **Envelopper UNIQUEMENT le calcul CPU lourd** dans `withContext(Dispatchers.Default) { … }` :
+   `withFullStats`, `computeState`/`computeRankings`, construction des podiums/agrégats,
+   gros `map`/`groupBy`/tris. Renvoyer le `State` construit avec les champs légers
+   **toujours renseignés**, même si la partie stats est nulle/vide.
 
-## Règle
+```kotlin
+// Sources + filtre saison sur le collecteur (seasons TOUJOURS peuplé)
+val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+val activeSeason = /* … */
+val currentWar = firebaseRepository.getCurrentWar(rosterId)   // Firebase : HORS withContext
+// SEULE la partie CPU-lourde sur Default
+val (teamStats, playerStats) = withContext(Dispatchers.Default) {
+    wars.withFullStats(...).firstOrNull() to wars.withFullStats(userId = …).firstOrNull()
+}
+State(seasons = seasons, currentWar = currentWar, teamStats = teamStats, …)
+```
 
-- **Ne pas déporter le calcul de ces VM hors du collecteur sans (a) avoir identifié et
-  corrigé l'affinité main-thread, ET (b) l'avoir VÉRIFIÉ SUR DEVICE** (dropdown présent +
-  fluidité). `./gradlew compileDebugKotlin` ne suffit pas : la régression est **runtime**,
-  invisible à la compilation. Ni `flowOn(Default)` ni `withContext(Default)` ne sont
-  sûrs tant que l'affinité n'est pas levée.
-- **Corollaire général `flowOn` vs `withContext`** (vrai indépendamment de #73) : si un jour
-  on déporte un calcul VM, préférer `withContext(Dispatchers.Default)` autour de la **seule**
-  portion CPU à un `flowOn` sur toute la chaîne. `flowOn` relocalise **tout l'upstream**
-  (lectures Room/Firebase/DataStore incluses) et, sur une chaîne passant par `mergeWith`
-  (`extension/FlowExtension.kt` = `flowOf(this, flow).flattenMerge()`, merge **non ordonné**),
-  transforme l'émission déterministe en course cross-thread où l'état vide peut survivre.
-  `withContext` cible le CPU sans toucher aux I/O ni à l'ordre d'émission. **Mais** #73 montre
-  que `withContext` seul ne suffit pas ici : l'affinité main sous-jacente doit être levée en
-  premier.
-- **Priorité correction runtime > gain perf** : un freeze est préférable à un écran cassé
-  (dropdown disparu). En cas de doute non vérifiable sur device, **laisser le calcul sur le
-  collecteur** (comportement d'origine).
+Appliqué en #73 sur les 6 VM ci-dessus. Aucune valeur affichée ne change (rule 13) :
+même code de calcul, seul le dispatcher de la portion CPU change.
 
-## Ce qui RESTE sûr (appliqué en #73)
+## À préférer à `flowOn(Dispatchers.Default)` sur la chaîne de calcul
 
-La mémoïsation en composition n'a **aucun** rapport avec le threading VM et reste acquise :
-les tris + conversions dérivés d'un `State` (ex. `sortedByDescending` + `toPodiumEntry` dans
-`PlayerMapsRankingScreen`/`PlayerOpponentsRankingScreen`) sont enveloppés dans
-`remember(sortIndex, source)` (rule 11) pour ne pas être recalculés à chaque recomposition.
-C'est la seule optimisation conservée de #73 ; le déport de calcul VM a été **reverté**.
+Éviter `.flowOn(Dispatchers.Default)` sur la branche de calcul d'un tel VM. `flowOn`
+relocalise **tout l'upstream** (change l'ordre ET le threading d'émission), ce qui a
+deux effets indésirables :
+
+- **Relocalise les lectures de sources** (Room/Firebase/DataStore) sur `Default`, au
+  lieu de ne cibler que le CPU.
+- **Course sur un merge non ordonné** : si la chaîne passe par `mergeWith`
+  (`extension/FlowExtension.kt` = `flowOf(this, flow).flattenMerge()`, merge NON
+  ordonné), `flowOn` peut réordonner les émissions entre la branche calcul et le
+  `_state` interactif.
+
+`withContext` cible le **CPU** sans toucher aux I/O, à l'ordre ni au threading
+d'émission du flow — c'est la voie recommandée ici. Un `flowOn` reste acceptable sur
+une chaîne **purement calcul, sans `mergeWith`/`flattenMerge` ni source en upstream**,
+mais dans le doute (VM stats de ce projet), utiliser `withContext`.
+
+## Corollaire UI (mémoïsation) — rule 11
+
+Le déport du calcul VM ne remplace pas la mémoïsation en composition : les tris et
+conversions dérivés d'un `State` (ex. `sortedByDescending` + `toPodiumEntry` dans
+`PlayerMapsRankingScreen`/`PlayerOpponentsRankingScreen`) restent enveloppés dans
+`remember(sortIndex, source)` (rule 11) pour ne pas être recalculés à chaque
+recomposition.
