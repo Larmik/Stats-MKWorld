@@ -497,45 +497,51 @@ private fun ColumnScope.MetricTiles(tiles: List<MetricTile>, columns: Int = 3) {
 
 @Composable
 private fun RowScope.MetricTileCell(tile: MetricTile) {
-    Column(Modifier.weight(1f).background(Colors.white30, CardRadius).padding(10.dp)) {
-        // Valeur : toujours BLANCHE (aucune couleur).
-        MKText(text = tile.value, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 18, textAlign = TextAlign.Start, maxLines = 1)
-        // Ligne de progression à hauteur RÉSERVÉE (même vide) : la place du delta est
-        // toujours occupée → hauteur de tuile figée sur la plus grande (avec delta).
-        Box(Modifier.height(DeltaSlotHeight).padding(top = 3.dp)) {
-            tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
-                val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
-                val arrow = if (delta > 0) "↗" else "↘"
-                MKText(
-                    text = "${if (delta > 0) "+" else ""}$delta${tile.deltaSuffix} $arrow",
-                    font = Fonts.NunitoBD,
-                    textColor = if (improved) Colors.green else Colors.red,
-                    fontSize = 10,
-                    textAlign = TextAlign.Start
-                )
-            }
-        }
-        // Libellé (+ bouton ⓘ facultatif) à hauteur RÉSERVÉE (2 lignes) : occupé même
-        // sur une seule ligne → aucune tuile n'est plus haute qu'une autre selon la
-        // longueur du libellé. Le bouton d'info n'est émis que si [tile.info] est fourni.
-        Box(Modifier.padding(top = 6.dp).height(LabelSlotHeight)) {
-            Row(verticalAlignment = Alignment.Top) {
-                MKText(
-                    text = tile.label,
-                    textColor = Colors.white70,
-                    fontSize = 10,
-                    textAlign = TextAlign.Start,
-                    maxLines = 2,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                tile.info?.let { info ->
-                    MKStatInfoButton(
-                        title = tile.label,
-                        message = info,
-                        modifier = Modifier.padding(start = 3.dp)
+    // Le contenu (valeur + delta + libellé) reste dans son flux normal en Column ; le
+    // bouton ⓘ (facultatif) est ancré dans le coin SUPÉRIEUR DROIT de la tuile via un Box
+    // englobant, avec une petite marge (rule 15/13). La valeur réserve une marge à droite
+    // (end) pour ne jamais chevaucher le bouton.
+    Box(Modifier.weight(1f).background(Colors.white30, CardRadius)) {
+        Column(Modifier.padding(10.dp)) {
+            // Valeur : toujours BLANCHE (aucune couleur). Marge droite réservée si un bouton
+            // ⓘ est ancré en haut-à-droite, pour éviter tout chevauchement.
+            MKText(
+                text = tile.value,
+                font = Fonts.Urbanist,
+                textColor = Colors.white,
+                fontSize = 18,
+                textAlign = TextAlign.Start,
+                maxLines = 1,
+                modifier = if (tile.info != null) Modifier.padding(end = 24.dp) else Modifier
+            )
+            // Ligne de progression à hauteur RÉSERVÉE (même vide) : la place du delta est
+            // toujours occupée → hauteur de tuile figée sur la plus grande (avec delta).
+            Box(Modifier.height(DeltaSlotHeight).padding(top = 3.dp)) {
+                tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
+                    val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
+                    val arrow = if (delta > 0) "↗" else "↘"
+                    MKText(
+                        text = "${if (delta > 0) "+" else ""}$delta${tile.deltaSuffix} $arrow",
+                        font = Fonts.NunitoBD,
+                        textColor = if (improved) Colors.green else Colors.red,
+                        fontSize = 10,
+                        textAlign = TextAlign.Start
                     )
                 }
             }
+            // Libellé à hauteur RÉSERVÉE (2 lignes) : occupé même sur une seule ligne →
+            // aucune tuile n'est plus haute qu'une autre selon la longueur du libellé.
+            Box(Modifier.padding(top = 6.dp).height(LabelSlotHeight)) {
+                MKText(text = tile.label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, maxLines = 2)
+            }
+        }
+        // Bouton ⓘ ancré en HAUT-À-DROITE, émis seulement si [tile.info] est fourni.
+        tile.info?.let { info ->
+            MKStatInfoButton(
+                title = tile.label,
+                message = info,
+                modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
+            )
         }
     }
 }

@@ -41,18 +41,19 @@ import fr.harmoniamk.statsmkworld.ui.MKDialog
 fun MKStatInfoButton(title: String, message: String, modifier: Modifier = Modifier) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
 
-    // Petite pastille ronde CONTRASTÉE (fond translucide `white30` + icône blanche nette) :
-    // discrète mais nettement visible et cliquable à côté du libellé (ticket #87). Le fond
-    // + le tint blanc plein la rendent lisible même sur carte sombre, contrairement à une
-    // icône `white70` seule (trop discrète, invisible en pratique).
+    // Pastille ronde CONTRASTÉE (fond translucide `white30` + icône blanche nette) :
+    // discrète mais nettement visible et cliquable (ticket #87). Le fond + le tint blanc
+    // plein la rendent lisible même sur carte sombre, contrairement à une icône `white70`
+    // seule (trop discrète, invisible en pratique). Taille 23 dp (agrandie pour la
+    // visibilité/cliquabilité), l'icône ⓘ occupe l'intérieur moins le padding.
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(18.dp)
+            .size(23.dp)
             .clip(CircleShape)
             .background(Colors.white30)
             .clickable { showDialog = true }
-            .padding(2.dp)
+            .padding(3.dp)
     ) {
         Image(
             painter = painterResource(id = R.drawable.ic_info),
