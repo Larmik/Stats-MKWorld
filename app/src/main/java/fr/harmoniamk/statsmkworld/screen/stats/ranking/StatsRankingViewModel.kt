@@ -292,25 +292,32 @@ class StatsRankingViewModel @Inject constructor(
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
+    // Les interactions LÉGÈRES (onglet/tri/recherche/curseur) ne font que re-filtrer/trier des
+    // listes DÉJÀ calculées → instantanées : elles posent explicitement `loading = false`.
+    // Indispensable car la branche `combine` émet `loading = false` dans le flux MERGÉ mais
+    // n'écrit jamais dans `_state` : `_state.value.loading` resterait sinon à `true` (défaut) et
+    // masquerait la liste après toute interaction (#73, régression classements). Seul
+    // `onSeasonSelected` pose `loading = true` (recompute lourd off-main via `combine`).
     fun onTabSelected(index: Int) {
         val tab = RankingTab.entries.getOrElse(index) { RankingTab.PLAYERS }
         // Nouvel onglet : tri par défaut (occurrences), recherche vide, curseur réinitialisé.
-        _state.value = _state.value.copy(tab = tab, sort = SortType.COUNT, search = "")
+        _state.value = _state.value.copy(loading = false, tab = tab, sort = SortType.COUNT, search = "")
             .recompute(resetOccurrences = true)
     }
 
     fun onSortSelected(index: Int) {
         val sort = SortType.entries.getOrElse(index) { SortType.COUNT }
-        _state.value = _state.value.copy(sort = sort).recompute()
+        _state.value = _state.value.copy(loading = false, sort = sort).recompute()
     }
 
     fun onSearch(search: String) {
-        _state.value = _state.value.copy(search = search).recompute()
+        _state.value = _state.value.copy(loading = false, search = search).recompute()
     }
 
     /** Valeur du curseur « occurrences minimum » (bornée [1, maxOccurrences]). */
     fun onMinOccurrencesChange(value: Int) {
         _state.value = _state.value.copy(
+            loading = false,
             minOccurrences = value.coerceIn(1, _state.value.maxOccurrences)
         ).recompute()
     }
