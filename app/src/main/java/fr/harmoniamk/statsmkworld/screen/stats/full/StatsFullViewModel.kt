@@ -8,6 +8,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
+import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
@@ -22,6 +23,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel de l'écran Statistiques (pôle Stats, ticket #25) : porte À LA FOIS la
@@ -160,15 +163,18 @@ class StatsFullViewModel @AssistedInject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
-    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
+     * IMMÉDIATEMENT (via `_state`, mergé dans `state`) pour un ressenti instantané pendant que
+     * le compute lourd tourne off-main (#73) ; `computeState` émet ensuite `loading = false`. */
     fun onSeasonSelected(number: Int?) {
+        _state.value = _state.value.copy(loading = true)
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
-    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter) { warEntities, seasonFilter ->
-            // Saisons (cache Room) : liste pour le sélecteur + résolution de la saison
-            // effective (défaut = saison en cours). `null` = tout l'historique (aucun filtre).
-            val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
+            // Saisons (cache Room) observées en Flow réactif (#73) : le sélecteur apparaît dès
+            // que l'hydratation eager écrit les saisons. Liste pour le sélecteur + résolution
+            // de la saison effective (défaut = saison en cours). `null` = tout l'historique.
             val currentSeason = seasons.lastOrNull { it.end == null }
             val activeSeason = when (seasonFilter) {
                 is SeasonFilter.AllTime -> null
@@ -180,11 +186,16 @@ class StatsFullViewModel @AssistedInject constructor(
             computeState(seasonWars, seasons, activeSeason?.number)
         }
 
+    // Le calcul des agrégats (fenêtres, contributeurs, adversaires) est CPU-lourd : déporté sur
+    // `Dispatchers.Default` via `withContext` — et NON `flowOn` (#73), qui, sur une chaîne passant
+    // par `mergeWith`/`flattenMerge`, provoquait une course cross-thread laissant gagner l'état vide
+    // (dropdown de saison disparu). `seasons`/`activeSeasonNumber` sont résolus sur le collecteur et
+    // toujours reportés dans le State, quel que soit le résultat du calcul. Cf. rule 21.
     private suspend fun computeState(
         warEntities: List<WarEntity>,
         seasons: List<SeasonEntity>,
         activeSeasonNumber: Int?
-    ) = warEntities
+    ) = withContext(Dispatchers.Default) { warEntities
         .let { warEntities ->
             val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
             val targetUserId = userId ?: currentPlayer?.id?.toString()
@@ -218,6 +229,14 @@ class StatsFullViewModel @AssistedInject constructor(
             // l'équipe, cohérente entre stats/contributeurs/adversaires/tops-bots.
             val chronologicalWars = teamWarsMode.sortedBy { it.war.id }
             val currentTeamId = team?.id?.toString()
+
+            // Liste des équipes adverses (cache Room) — INVARIANTE au fenêtrage/scope : lue UNE
+            // seule fois ici (perf #73), au lieu de 6× dans `computeOpponentRankings` (2 vues ×
+            // 3 fenêtres). Même filtrage (`filterNot { id == currentTeamId }`) → résultat
+            // identique (rule 13, simple déduplication de lecture).
+            val opponentTeams = databaseRepository.getTeams().firstOrNull()
+                .orEmpty()
+                .filterNot { it.id == currentTeamId }
 
             // Chaque section est déclinée sur les 3 fenêtres (0 = all-time, 1 = 5, 2 = 10)
             // et keyée par index. Le sélecteur de période GLOBAL de l'écran choisit l'index ;
@@ -254,12 +273,13 @@ class StatsFullViewModel @AssistedInject constructor(
                 // Classements top3/flop3 adversaires (occurrences/winrate/score), au périmètre
                 // de la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
                 // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
-                teamOpponentsByWindow[index] = computeOpponentRankings(windowWars, currentTeamId, userId = null)
-                playerOpponentsByWindow[index] = computeOpponentRankings(windowWars, currentTeamId, userId = targetUserId)
+                teamOpponentsByWindow[index] = computeOpponentRankings(windowWars, opponentTeams, userId = null)
+                playerOpponentsByWindow[index] = computeOpponentRankings(windowWars, opponentTeams, userId = targetUserId)
             }
 
-            // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10).
-            val contributorsByWindow = computeContributorsByWindow(teamWarsMode, targetUserId)
+            // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10). On passe
+            // `chronologicalWars` (déjà trié) pour éviter de re-trier la même liste 3× (perf #73).
+            val contributorsByWindow = computeContributorsByWindow(chronologicalWars, targetUserId)
             // Meilleurs baggeurs (#69) : MÊMES lignes triées par part de SHOCKS décroissante.
             val baggersByWindow = contributorsByWindow.mapValues { (_, contributors) ->
                 contributors.sortedByDescending { it.shockShare }
@@ -290,6 +310,7 @@ class StatsFullViewModel @AssistedInject constructor(
                 selectedSeasonNumber = activeSeasonNumber
             )
         }
+    }
 
     /**
      * Top3/flop3 adversaires par **occurrences** (nb de confrontations), winrate ET
@@ -300,15 +321,12 @@ class StatsFullViewModel @AssistedInject constructor(
      */
     private suspend fun computeOpponentRankings(
         wars: List<WarDetails>,
-        currentTeamId: String?,
+        opponentTeams: List<TeamEntity>,
         userId: String?
     ): OpponentPodiums {
         if (wars.isEmpty()) return OpponentPodiums()
-        val teams = databaseRepository.getTeams().firstOrNull()
-            .orEmpty()
-            .filterNot { it.id == currentTeamId }
         val warEntities = wars.map { WarEntity(it.war) }
-        val all = teams
+        val all = opponentTeams
             .withFullTeamStats(wars = warEntities, databaseRepository = databaseRepository, userId = userId, is24p = is24p)
             .firstOrNull()
             .orEmpty()
@@ -353,7 +371,8 @@ class StatsFullViewModel @AssistedInject constructor(
     }
 
     /** Contributeurs sur une fenêtre : [lastN] null = all-time, sinon N dernières wars
-     * de l'ÉQUIPE (fenêtre commune à tous les membres, triée chrono par war.id). */
+     * de l'ÉQUIPE (fenêtre commune à tous les membres). [wars] est déjà trié chrono par
+     * war.id en amont (`chronologicalWars`) → pas de re-tri par fenêtre (perf #73). */
     private suspend fun computeContributors(
         wars: List<WarDetails>,
         members: List<PlayerEntity>,
@@ -362,8 +381,7 @@ class StatsFullViewModel @AssistedInject constructor(
     ): List<Contributor> {
         // Fenêtre commune : N dernières wars de l'équipe (chrono), puis part de chaque
         // membre DANS cette fenêtre.
-        val windowWars = wars.sortedBy { it.war.id }
-            .let { list -> lastN?.let { list.takeLast(it) } ?: list }
+        val windowWars = lastN?.let { wars.takeLast(it) } ?: wars
         val perPlayer = members.mapNotNull { player ->
             windowWars.filter { it.war.hasPlayer(player.id) }
                 .withFullStats(databaseRepository, userId = player.id, is24p = is24p)

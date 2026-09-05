@@ -13,6 +13,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -52,18 +53,24 @@ fun PlayerOpponentsRankingScreen(
     // période (le filtre global de #68 ne concerne que le pôle Stats).
     val podiums = (if (isTeam) state.teamOpponentsByWindow[0] else state.playerOpponentsByWindow[0])
         ?: StatsFullViewModel.OpponentPodiums()
-    val opponents = podiums.all.let { list ->
-        when (sortIndex) {
-            1 -> list.sortedByDescending { it.winratePercent }
-            2 -> list.sortedByDescending { it.stats.averagePoints }
-            else -> list.sortedByDescending { it.stats.warStats.warsPlayed }
-        }
+    // Tri + conversion vers PodiumEntry mémoïsés (rule 11) : plus recalculés à chaque
+    // recomposition, seulement quand le tri, la source ou le périmètre change (#73).
+    val rows = remember(sortIndex, podiums, isTeam) {
+        podiums.all
+            .let { list ->
+                when (sortIndex) {
+                    1 -> list.sortedByDescending { it.winratePercent }
+                    2 -> list.sortedByDescending { it.stats.averagePoints }
+                    else -> list.sortedByDescending { it.stats.warStats.warsPlayed }
+                }
+            }
+            .map { opponent -> opponent.toPodiumEntry(isTeam) to opponent }
     }
 
     BaseScreen(title = stringResource(R.string.best_opponents_section), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
         when {
             state.loading -> CircularProgressIndicator()
-            opponents.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)
+            rows.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)
             else -> {
                 MKSegmentedSelector(
                     items = listOf(
@@ -86,7 +93,7 @@ fun PlayerOpponentsRankingScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     podiumRows(
-                        items = opponents.map { opponent -> opponent.toPodiumEntry(isTeam) to opponent },
+                        items = rows,
                         contentColor = Colors.white
                     )
                 }

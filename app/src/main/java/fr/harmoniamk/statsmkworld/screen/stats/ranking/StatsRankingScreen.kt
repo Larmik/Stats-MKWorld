@@ -3,6 +3,7 @@ package fr.harmoniamk.statsmkworld.screen.stats.ranking
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -10,11 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -130,38 +133,46 @@ fun StatsRankingScreen(
             onChange = viewModel::onMinOccurrencesChange
         )
 
-        // Liste par onglet — cellules PodiumCell (3 par ligne), texte en BLANC et
-        // placées dans un cadre transparent-noir (comme les sections Stats, #50 pt.7)
-        // pour harmoniser avec le reste de l'app.
-        LazyColumn(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .clip(StatCardRadius)
-                .background(Colors.blackAlphaed, StatCardRadius)
-                .border(1.dp, Colors.whiteBorder, StatCardRadius)
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            when (state.tab) {
-                RankingTab.PLAYERS -> state.playerSections.forEach { section ->
-                    item(key = "section-${section.titleRes}") { SectionHeader(stringResource(section.titleRes)) }
-                    podiumRows(section.players.map { it.toPodiumEntry() }, contentColor = Colors.white) { player ->
-                        onStats(StatsType.PlayerStats(player.player.id, is24p = is24p))
+        // Zone de DONNÉES : au changement de saison (#73), seul ce bloc passe en chargement ;
+        // le header (dropdown), les onglets, la recherche, les chips de tri et le curseur
+        // ci-dessus restent affichés. Les classements réapparaissent le compute terminé.
+        when {
+            state.loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            // Liste par onglet — cellules PodiumCell (3 par ligne), texte en BLANC et
+            // placées dans un cadre transparent-noir (comme les sections Stats, #50 pt.7)
+            // pour harmoniser avec le reste de l'app.
+            else -> LazyColumn(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(StatCardRadius)
+                    .background(Colors.blackAlphaed, StatCardRadius)
+                    .border(1.dp, Colors.whiteBorder, StatCardRadius)
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                when (state.tab) {
+                    RankingTab.PLAYERS -> state.playerSections.forEach { section ->
+                        item(key = "section-${section.titleRes}") { SectionHeader(stringResource(section.titleRes)) }
+                        podiumRows(section.players.map { it.toPodiumEntry() }, contentColor = Colors.white) { player ->
+                            onStats(StatsType.PlayerStats(player.player.id, is24p = is24p))
+                        }
                     }
-                }
 
-                RankingTab.OPPONENTS -> podiumRows(state.opponents.map { it.toPodiumEntry() }, contentColor = Colors.white) { opponent ->
-                    onStats(StatsType.OpponentStats(teamId = opponent.team.id, is24p = is24p))
-                }
+                    RankingTab.OPPONENTS -> podiumRows(state.opponents.map { it.toPodiumEntry() }, contentColor = Colors.white) { opponent ->
+                        onStats(StatsType.OpponentStats(teamId = opponent.team.id, is24p = is24p))
+                    }
 
-                RankingTab.TRACKS -> podiumRows(state.tracks.map { it.toPodiumEntry(is24p) }, contentColor = Colors.white) { track ->
-                    onStats(
-                        StatsType.MapStats(
-                            trackIndex = track.stats.map?.map { it.ordinal },
-                            is24p = is24p
+                    RankingTab.TRACKS -> podiumRows(state.tracks.map { it.toPodiumEntry(is24p) }, contentColor = Colors.white) { track ->
+                        onStats(
+                            StatsType.MapStats(
+                                trackIndex = track.stats.map?.map { it.ordinal },
+                                is24p = is24p
+                            )
                         )
-                    )
+                    }
                 }
             }
         }

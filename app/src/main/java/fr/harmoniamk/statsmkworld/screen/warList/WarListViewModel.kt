@@ -15,6 +15,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.Date
 
@@ -93,8 +95,9 @@ class WarListViewModel @AssistedInject constructor(
             combine(
                 databaseRepository.getWars(),
                 firebaseRepository.listenToCurrentWar(rosterId),
-                _seasonFilter
-            ) { wars, currentWar, seasonFilter ->
+                _seasonFilter,
+                databaseRepository.getSeasons()
+            ) { wars, currentWar, seasonFilter, seasons ->
                 val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
                 // "me"/null = joueur courant ; sinon le joueur passé. Filtre de participation
                 // uniquement pour un joueur donné (autre que la vue « toute l'équipe »).
@@ -104,9 +107,9 @@ class WarListViewModel @AssistedInject constructor(
                 val playerName = targetUserId
                     ?.takeIf { filterByPlayer }
                     ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
-                // Saisons (cache Room) : liste pour le dropdown + résolution de la saison
-                // effective (défaut = saison en cours ; null = tout l'historique).
-                val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+                // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît
+                // dès que l'hydratation eager écrit les saisons. Liste pour le dropdown +
+                // résolution de la saison effective (défaut = saison en cours ; null = tout).
                 val activeSeason = when (seasonFilter) {
                     is SeasonFilter.AllTime -> null
                     is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
@@ -115,25 +118,31 @@ class WarListViewModel @AssistedInject constructor(
                 // Aucun filtre par mode (12/24) : l'historique mélange tous les modes.
                 // Filtre par saison (#70) + roster hôte + par joueur si demandé. Pas de filtre
                 // sur la war en cours : elle n'est pas dans Room tant qu'elle n'est pas validée.
-                val details = wars
-                    .filterBySeason(activeSeason)
-                    .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-                    .filter { !filterByPlayer || it.hasPlayer(targetUserId) }
-                    .map { War(it) }
-                    .map { WarDetails(it) }
-                    .sortedByDescending { it.war.id }
-                val grouped = details
-                    .groupBy { war ->
-                        val date = Date(war.war.id)
-                        val month = date.get(Calendar.MONTH)
-                        val year = date.get(Calendar.YEAR)
-                        month.toString() + year.toString()
-                    }.mapNotNull {
-                        it.value.firstOrNull()?.war?.id?.let { id ->
-                            val date = Date(id)
-                            Pair(date.format("MMMM yyyy"), it.value)
+                // SEUL ce mapping/groupage CPU (construction WarDetails + tri + groupBy) est
+                // déporté sur `Dispatchers.Default` via `withContext` (et NON `flowOn` — cf.
+                // rule 21, #73) ; les lectures de sources et `seasons` restent sur le collecteur.
+                val (details, grouped) = withContext(Dispatchers.Default) {
+                    val details = wars
+                        .filterBySeason(activeSeason)
+                        .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+                        .filter { !filterByPlayer || it.hasPlayer(targetUserId) }
+                        .map { War(it) }
+                        .map { WarDetails(it) }
+                        .sortedByDescending { it.war.id }
+                    val grouped = details
+                        .groupBy { war ->
+                            val date = Date(war.war.id)
+                            val month = date.get(Calendar.MONTH)
+                            val year = date.get(Calendar.YEAR)
+                            month.toString() + year.toString()
+                        }.mapNotNull {
+                            it.value.firstOrNull()?.war?.id?.let { id ->
+                                val date = Date(id)
+                                Pair(date.format("MMMM yyyy"), it.value)
+                            }
                         }
-                    }
+                    details to grouped
+                }
                 State(
                     wars = grouped,
                     warCount = details.size,

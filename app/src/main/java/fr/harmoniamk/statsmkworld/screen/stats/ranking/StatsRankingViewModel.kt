@@ -22,6 +22,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -136,6 +138,11 @@ class StatsRankingViewModel @Inject constructor(
     data class PlayerSection(val titleRes: Int, val players: List<RankingItem.PlayerRanking>)
 
     data class State(
+        // Chargement de la zone de classements : true au 1er chargement ET remis à true au
+        // changement de saison (#73), le temps du recompute lourd off-main ; le compute émet
+        // ensuite `loading = false`. Les interactions légères (onglet/tri/recherche/curseur,
+        // via `recompute`) ne le touchent pas (elles préservent la valeur courante).
+        val loading: Boolean = true,
         val tab: RankingTab = RankingTab.PLAYERS,
         val sort: SortType = SortType.COUNT,
         val search: String = "",
@@ -187,10 +194,11 @@ class StatsRankingViewModel @Inject constructor(
     private var loadedSeasons: List<SeasonEntity> = listOf()
     private var loadedSelectedSeasonNumber: Int? = null
 
-    val state = combine(databaseRepository.getWars(), _seasonFilter) { warEntities, seasonFilter ->
+    val state = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
+            // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît dès
+            // que l'hydratation eager écrit les saisons, sans redémarrage.
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             val is24p = dataStoreRepository.is24PEnabled.firstOrNull() == true
-            val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
             val activeSeason = when (seasonFilter) {
                 is SeasonFilter.AllTime -> null
                 is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
@@ -205,6 +213,7 @@ class StatsRankingViewModel @Inject constructor(
             // adversaires, circuits). Filtres alignés sur le worker : host/roster + 12p/24p.
             computeRankings(warEntities.filterBySeason(activeSeason), is24p)
             _state.value.copy(
+                loading = false,
                 currentUserId = currentUser?.id.toString(),
                 is24PEnabled = is24p
             ).recompute(resetOccurrences = true)
@@ -218,7 +227,7 @@ class StatsRankingViewModel @Inject constructor(
      * (mono-consommateur ici → dans le VM, rule 32) : filtre host/roster + 12p/24p, puis
      * calcule joueurs (groupés membres/alliés), adversaires et circuits.
      */
-    private suspend fun computeRankings(warEntities: List<WarEntity>, is24p: Boolean) {
+    private suspend fun computeRankings(warEntities: List<WarEntity>, is24p: Boolean) = withContext(Dispatchers.Default) {
         val currentPlayer = currentUser
         val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
         val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
@@ -274,30 +283,41 @@ class StatsRankingViewModel @Inject constructor(
             .map { RankingItem.OpponentRanking(it.first, it.second) }
     }
 
-    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */
+    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
+     * IMMÉDIATEMENT (via `_state`) — via `recompute()` pour conserver seasons/listes cohérentes —
+     * pendant le recompute lourd off-main (#73) ; la branche `combine` émet ensuite
+     * `loading = false`. */
     fun onSeasonSelected(number: Int?) {
+        _state.value = _state.value.copy(loading = true).recompute()
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
+    // Les interactions LÉGÈRES (onglet/tri/recherche/curseur) ne font que re-filtrer/trier des
+    // listes DÉJÀ calculées → instantanées : elles posent explicitement `loading = false`.
+    // Indispensable car la branche `combine` émet `loading = false` dans le flux MERGÉ mais
+    // n'écrit jamais dans `_state` : `_state.value.loading` resterait sinon à `true` (défaut) et
+    // masquerait la liste après toute interaction (#73, régression classements). Seul
+    // `onSeasonSelected` pose `loading = true` (recompute lourd off-main via `combine`).
     fun onTabSelected(index: Int) {
         val tab = RankingTab.entries.getOrElse(index) { RankingTab.PLAYERS }
         // Nouvel onglet : tri par défaut (occurrences), recherche vide, curseur réinitialisé.
-        _state.value = _state.value.copy(tab = tab, sort = SortType.COUNT, search = "")
+        _state.value = _state.value.copy(loading = false, tab = tab, sort = SortType.COUNT, search = "")
             .recompute(resetOccurrences = true)
     }
 
     fun onSortSelected(index: Int) {
         val sort = SortType.entries.getOrElse(index) { SortType.COUNT }
-        _state.value = _state.value.copy(sort = sort).recompute()
+        _state.value = _state.value.copy(loading = false, sort = sort).recompute()
     }
 
     fun onSearch(search: String) {
-        _state.value = _state.value.copy(search = search).recompute()
+        _state.value = _state.value.copy(loading = false, search = search).recompute()
     }
 
     /** Valeur du curseur « occurrences minimum » (bornée [1, maxOccurrences]). */
     fun onMinOccurrencesChange(value: Int) {
         _state.value = _state.value.copy(
+            loading = false,
             minOccurrences = value.coerceIn(1, _state.value.maxOccurrences)
         ).recompute()
     }

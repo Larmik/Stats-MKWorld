@@ -13,6 +13,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -54,21 +55,26 @@ fun PlayerMapsRankingScreen(
     // sélecteur de période (le filtre global de #68 ne concerne que le pôle Stats).
     val stats = if (isTeam) state.teamStatsByWindow[0] else state.playerStatsByWindow[0]
     val userId = if (isTeam) null else state.targetUserId
-    val maps = stats?.maps.orEmpty()
-        // Seuls les circuits réellement joués figurent au classement.
-        .filter { it.totalPlayed > 0 }
-        .let { list ->
-            when (sortIndex) {
-                1 -> list.sortedByDescending { it.winRate ?: 0 }
-                2 -> list.sortedByDescending { (if (userId != null) it.playerScore else it.teamScore) ?: 0 }
-                else -> list.sortedByDescending { it.totalPlayed }
+    // Tri + conversion vers PodiumEntry mémoïsés (rule 11) : le corps composable ne les
+    // recalcule plus à chaque recomposition, seulement quand le tri ou la source change (#73).
+    val rows = remember(sortIndex, stats, userId) {
+        stats?.maps.orEmpty()
+            // Seuls les circuits réellement joués figurent au classement.
+            .filter { it.totalPlayed > 0 }
+            .let { list ->
+                when (sortIndex) {
+                    1 -> list.sortedByDescending { it.winRate ?: 0 }
+                    2 -> list.sortedByDescending { (if (userId != null) it.playerScore else it.teamScore) ?: 0 }
+                    else -> list.sortedByDescending { it.totalPlayed }
+                }
             }
-        }
+            .map { track -> track.toPodiumEntry(userId) to track }
+    }
 
     BaseScreen(title = stringResource(R.string.best_maps_section), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
         when {
             state.loading -> CircularProgressIndicator()
-            maps.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)
+            rows.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)
             else -> {
                 MKSegmentedSelector(
                     items = listOf(
@@ -91,7 +97,7 @@ fun PlayerMapsRankingScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     podiumRows(
-                        items = maps.map { track -> track.toPodiumEntry(userId) to track },
+                        items = rows,
                         contentColor = Colors.white
                     )
                 }
