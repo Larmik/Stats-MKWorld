@@ -17,6 +17,7 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.NotificationRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -45,7 +46,8 @@ class SignupViewModel @AssistedInject constructor(
     private val notificationRepository: NotificationRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
     private val fetchUseCase: FetchUseCaseInterface,
-    private val databaseRepository: DatabaseRepositoryInterface
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
@@ -113,6 +115,12 @@ class SignupViewModel @AssistedInject constructor(
             fetchUseCase.fetchTeam(teamId.toString())
             fetchUseCase.fetchAllies(teamId.toString())
             fetchUseCase.fetchTeams()
+            // Hydratation eager des saisons (#73) : au signup, InitStatsWorker a déjà tourné à
+            // l'onCreate AVANT que le player existe, donc les saisons doivent être écrites ici,
+            // dans la même séquence awaited que les autres fetch, pour être disponibles dès
+            // l'arrivée sur Home (sinon le filtre par saison resterait masqué jusqu'au worker
+            // périodique). `fetchSeasons` self-seed l'historique si le nœud RTDB est vide.
+            seasonRepository.fetchSeasons(teamId.toString())
             val team = dataStoreRepository.mkcTeam.firstOrNull()
             val rosters = team?.rosters?.filter { it.game == "mkworld" }
             val player = rosters?.flatMap { it.players }?.singleOrNull { it.playerId == user.id }

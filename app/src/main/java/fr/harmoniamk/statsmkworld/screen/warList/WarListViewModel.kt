@@ -95,8 +95,9 @@ class WarListViewModel @AssistedInject constructor(
             combine(
                 databaseRepository.getWars(),
                 firebaseRepository.listenToCurrentWar(rosterId),
-                _seasonFilter
-            ) { wars, currentWar, seasonFilter ->
+                _seasonFilter,
+                databaseRepository.getSeasons()
+            ) { wars, currentWar, seasonFilter, seasons ->
                 val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
                 // "me"/null = joueur courant ; sinon le joueur passé. Filtre de participation
                 // uniquement pour un joueur donné (autre que la vue « toute l'équipe »).
@@ -106,9 +107,9 @@ class WarListViewModel @AssistedInject constructor(
                 val playerName = targetUserId
                     ?.takeIf { filterByPlayer }
                     ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
-                // Saisons (cache Room) : liste pour le dropdown + résolution de la saison
-                // effective (défaut = saison en cours ; null = tout l'historique).
-                val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+                // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît
+                // dès que l'hydratation eager écrit les saisons. Liste pour le dropdown +
+                // résolution de la saison effective (défaut = saison en cours ; null = tout).
                 val activeSeason = when (seasonFilter) {
                     is SeasonFilter.AllTime -> null
                     is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }

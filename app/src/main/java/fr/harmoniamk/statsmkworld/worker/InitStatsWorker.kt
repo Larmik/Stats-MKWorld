@@ -15,6 +15,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.StatsRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import kotlinx.coroutines.CoroutineScope
@@ -35,7 +36,8 @@ class InitStatsWorker @AssistedInject constructor(
     @Assisted private val workerParams: WorkerParameters,
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val databaseRepository: DatabaseRepositoryInterface,
-    private val statsRepository: StatsRepositoryInterface
+    private val statsRepository: StatsRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface
 ) : CoroutineWorker(appContext = context, params = workerParams), CoroutineScope {
 
     companion object {
@@ -46,6 +48,13 @@ class InitStatsWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
+        // Hydratation eager des saisons (#73) : `fetchSeasons` synchronise RTDB → Room et
+        // self-seed l'historique si le nœud est vide. Ce worker tourne à chaque onCreate de
+        // MainActivity, donc les utilisateurs EXISTANTS voient leurs saisons peuplées sans
+        // attendre le worker périodique (délai initial 18-28h). Idempotent, indépendant du
+        // bloc stats (pas gardé par rosterId).
+        dataStoreRepository.mkcTeam.firstOrNull()?.id?.let { seasonRepository.fetchSeasons(it.toString()) }
+
         val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
         val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
         val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()

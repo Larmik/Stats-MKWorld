@@ -167,10 +167,10 @@ class StatsFullViewModel @AssistedInject constructor(
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
-    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter) { warEntities, seasonFilter ->
-            // Saisons (cache Room) : liste pour le sélecteur + résolution de la saison
-            // effective (défaut = saison en cours). `null` = tout l'historique (aucun filtre).
-            val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
+            // Saisons (cache Room) observées en Flow réactif (#73) : le sélecteur apparaît dès
+            // que l'hydratation eager écrit les saisons. Liste pour le sélecteur + résolution
+            // de la saison effective (défaut = saison en cours). `null` = tout l'historique.
             val currentSeason = seasons.lastOrNull { it.end == null }
             val activeSeason = when (seasonFilter) {
                 is SeasonFilter.AllTime -> null

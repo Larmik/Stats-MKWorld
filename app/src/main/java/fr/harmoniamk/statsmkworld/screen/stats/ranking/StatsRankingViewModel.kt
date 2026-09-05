@@ -189,10 +189,11 @@ class StatsRankingViewModel @Inject constructor(
     private var loadedSeasons: List<SeasonEntity> = listOf()
     private var loadedSelectedSeasonNumber: Int? = null
 
-    val state = combine(databaseRepository.getWars(), _seasonFilter) { warEntities, seasonFilter ->
+    val state = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
+            // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît dès
+            // que l'hydratation eager écrit les saisons, sans redémarrage.
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             val is24p = dataStoreRepository.is24PEnabled.firstOrNull() == true
-            val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
             val activeSeason = when (seasonFilter) {
                 is SeasonFilter.AllTime -> null
                 is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }

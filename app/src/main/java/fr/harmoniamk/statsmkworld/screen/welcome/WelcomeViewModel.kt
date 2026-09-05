@@ -73,13 +73,14 @@ class WelcomeViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(State())
 
-    val state = combine(dataStoreRepository.mkcPlayer, _seasonFilter) { player, seasonFilter ->
+    val state = combine(dataStoreRepository.mkcPlayer, _seasonFilter, databaseRepository.getSeasons()) { player, seasonFilter, seasons ->
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
-                // Saisons (cache Room) : liste pour le dropdown + résolution de la saison
-                // effective (défaut = saison en cours ; null = tout l'historique).
-                val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
+                // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît
+                // dès que l'hydratation eager (InitStatsWorker/Signup) écrit les saisons, sans
+                // redémarrage. Liste pour le dropdown + résolution de la saison effective
+                // (défaut = saison en cours ; null = tout l'historique).
                 val activeSeason = when (seasonFilter) {
                     is SeasonFilter.AllTime -> null
                     is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
