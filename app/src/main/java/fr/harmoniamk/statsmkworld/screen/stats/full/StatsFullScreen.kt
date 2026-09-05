@@ -278,8 +278,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
                     IconLine(
                         // Icône champignon illustrant la part de POINTS de l'équipe (#91 pt.11).
                         // tinted = false → dessinée en Image (couleurs d'origine, pas d'aplat par le tint).
-                        // TODO #91 : placeholder en attendant l'asset ic_mushroom fourni par l'utilisateur
-                        icon = R.drawable.mushroom,
+                        icon = R.drawable.ic_mushroom,
                         accent = Colors.yellow,
                         tinted = false,
                         title = stringResource(R.string.stats_contribution_value, contributor.pointsShare),
