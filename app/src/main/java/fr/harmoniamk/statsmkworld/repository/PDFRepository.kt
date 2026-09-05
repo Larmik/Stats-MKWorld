@@ -166,7 +166,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
     ) {
         entry?.let { (playerScore, rank) ->
             pdfView.findViewById<View>(layoutId).isVisible = true
-            pdfView.findViewById<TextView>(nameId).text = playerScore.player
+            pdfView.findViewById<TextView>(nameId).text = playerScore.displayedName
             pdfView.findViewById<TextView>(scoreId).text = playerScore.score.toString()
             val medal = when (rank) {
                 1 -> R.drawable.couronne

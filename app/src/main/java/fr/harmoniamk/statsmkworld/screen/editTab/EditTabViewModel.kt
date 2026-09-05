@@ -73,7 +73,7 @@ class EditTabViewModel @AssistedInject constructor(
                 if (scores.mapNotNull { it.toIntOrNull() }.sum() == details?.scoreOpponent) {
                     var teamWin: TeamEntity? = null
                     var teamLose: TeamEntity? = null
-                    val playerScores = war.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository).map { PlayerScoreForTab(it) }
+                    val playerScores = war.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository).map { PlayerScoreForTab(it, war.tracks.size) }
                     val opponentScores = players.mapIndexed { index, player -> PlayerScoreForTab(player.displayName, scores[index].toInt(), 0) }
                     val teamHost = dataStoreRepository.mkcTeam.firstOrNull()
                     // Résout chaque adversaire (rosterId → équipe parente pour nom/tag/logo)
