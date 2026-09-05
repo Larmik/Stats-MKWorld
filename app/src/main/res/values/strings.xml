@@ -374,7 +374,7 @@
     <string name="stats_distribution_title_generic">Position distribution</string>
     <string name="stats_top_bottom_team_title">Top / Bot team</string>
     <string name="stats_top_bottom_opponent_title">Top / Bot opponent</string>
-    <string name="stats_shocks_played">Shocks played</string>
+    <string name="stats_shocks_played">Shocks obtained</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
     <string name="stats_bag_share_short">Shocks</string>
     <string name="stats_bag_share_pct">Share</string>
@@ -437,7 +437,7 @@
     <string name="info_average_score">Average points scored per war in the player view; in the team view, the average score gap versus the opponent (“+X / -X”). Higher = better; a positive team gap means you dominate, a negative one that you are dominated.</string>
     <string name="info_maps_won">Share of races won by the team (its race score exceeds half of the scale). Measures race-by-race consistency, regardless of the final war result. A race exactly at half is not counted as won.</string>
     <string name="info_average_map">Player average finishing position on a race in the player view; in the team view, the team’s average points per race as a differential. For position, lower (closer to P1) = better; for the team race score, higher = better.</string>
-    <string name="info_shocks_per_war">Average number of lightning items played per war. Measures bagging quality (farming then placing lightnings), an activity as important as running up front but situational. No correlation with the final position: more/less is not “better” or “worse” — the indicator is neutral.</string>
+    <string name="info_shocks_per_war">Average number of lightning items obtained per war (an obtained lightning is counted even if the team chooses not to use it). Measures bagging quality (farming lightnings), an activity as important as running up front but situational. No correlation with the final position: more/less is not “better” or “worse” — the indicator is neutral.</string>
     <string name="info_form_winrate">Percentage of wars won. A synthetic measure of success; higher = better (50 % = as many wins as losses). Ties count in the denominator but not as wins.</string>
     <string name="info_form_score">Average score per war: the player’s raw points in the player view, the team score gap (“+X / -X”) in the team view. Higher = better.</string>
     <string name="info_average_position">Your average finishing position on a race (player view). A position reads from “close to P1” (best) to “close to P12” (worst): lower = better.</string>

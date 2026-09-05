@@ -97,7 +97,7 @@ class MapDetailViewModel @AssistedInject constructor(
         // score moyen de l'ÉQUIPE et position moyenne du JOUEUR courant sur ce circuit.
         val teamScore: Int = 0,
         val playerPositionLabel: String = "-",
-        // Nombre de shocks joués — DYNAMIQUE (suit le mode Indiv/Équipe).
+        // Nombre de shocks obtenus — DYNAMIQUE (suit le mode Indiv/Équipe).
         val shockCount: Int = 0,
         // Classement des pilotes sur ce circuit (du meilleur au pire score moyen), MEMBRES
         // uniquement (alliés exclus).

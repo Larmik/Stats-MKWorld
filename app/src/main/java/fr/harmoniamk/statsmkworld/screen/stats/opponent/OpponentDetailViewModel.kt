@@ -96,9 +96,9 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val averageScoreDiff: Int = 0,
         // Score moyen du JOUEUR courant contre cet adversaire (points) — mode Individuel.
         val playerAverageScore: Int = 0,
-        // Nombre de shocks joués (par le joueur en indiv, par l'équipe sinon).
+        // Nombre de shocks obtenus (par le joueur en indiv, par l'équipe sinon).
         val shockCount: Int = 0,
-        // Ratio shocks joués / war (affiché entre parenthèses).
+        // Ratio shocks obtenus / war (affiché entre parenthèses).
         val shocksPerWar: Float = 0f,
         // Tri courant des circuits (Occurrences / Winrate / Score moy. — comme Classements).
         val tracksSort: SortType = SortType.COUNT,
@@ -177,14 +177,14 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 .takeIf { it.isNotEmpty() }?.let { it.sum() / it.size } ?: 0
 
             // Stats de manche (équipe OU joueur selon le mode) sur toutes les manches face
-            // à eux : Top/Bot 2→6, distribution des positions, shocks joués.
+            // à eux : Top/Bot 2→6, distribution des positions, shocks obtenus.
             val mapDetails = chronological.flatMap { war ->
                 war.warTracks.map { track -> MapDetails(war = war, warTrack = track, position = null) }
             }
             val mapStats = mapDetails.takeIf { it.isNotEmpty() }
                 ?.let { MapStats(list = it, userId = userId, is24p = false) }
 
-            // Shocks joués (scopés au mode par MapStats) + ratio par war.
+            // Shocks obtenus (scopés au mode par MapStats) + ratio par war.
             val shockCount = mapStats?.shockCount ?: 0
             val warsPlayed = chronological.size.takeIf { it > 0 } ?: 1
             val shocksPerWar = shockCount.toFloat() / warsPlayed

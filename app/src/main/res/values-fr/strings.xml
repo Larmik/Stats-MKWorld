@@ -374,7 +374,7 @@
     <string name="stats_distribution_title_generic">Répartition des positions</string>
     <string name="stats_top_bottom_team_title">Top / Bot équipe</string>
     <string name="stats_top_bottom_opponent_title">Top / Bot adversaire</string>
-    <string name="stats_shocks_played">Shocks joués</string>
+    <string name="stats_shocks_played">Shocks obtenus</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
     <string name="stats_bag_share_short">Shocks</string>
     <string name="stats_bag_share_pct">Part</string>
@@ -437,7 +437,7 @@
     <string name="info_average_score">Points moyens marqués par war en vue joueur ; en vue équipe, l\'écart de score moyen face à l\'adversaire (« +X / -X »). Plus haut = mieux ; un écart d\'équipe positif signifie qu\'on domine, négatif qu\'on subit.</string>
     <string name="info_maps_won">Part des courses remportées par l\'équipe (son score de course dépasse la moitié du barème). Mesure la régularité course par course, indépendamment du résultat final de la war. Une course pile à la moitié n\'est pas comptée gagnée.</string>
     <string name="info_average_map">Place moyenne du joueur sur une course en vue joueur ; en vue équipe, les points moyens de l\'équipe par course, en différentiel. Pour la position, plus bas (proche de P1) = mieux ; pour le score de course d\'équipe, plus haut = mieux.</string>
-    <string name="info_shocks_per_war">Nombre moyen d\'éclairs joués par war. Mesure la qualité du bagging (farmer puis placer des éclairs), une activité aussi importante que jouer devant mais situationnelle. Aucune corrélation avec la position finale : plus/moins n\'est pas « mieux » ou « pire », l\'indicateur est neutre.</string>
+    <string name="info_shocks_per_war">Nombre moyen d\'éclairs obtenus par war (un éclair obtenu est compté même si l\'équipe choisit de ne pas le jouer). Mesure la qualité du bagging (farmer des éclairs), une activité aussi importante que jouer devant mais situationnelle. Aucune corrélation avec la position finale : plus/moins n\'est pas « mieux » ou « pire », l\'indicateur est neutre.</string>
     <string name="info_form_winrate">Pourcentage de wars gagnées. Mesure synthétique de la réussite ; plus haut = mieux (50 % = autant de victoires que de défaites). Les nuls comptent au dénominateur mais pas comme victoires.</string>
     <string name="info_form_score">Score moyen par war : points bruts du joueur en vue joueur, écart de score d\'équipe (« +X / -X ») en vue équipe. Plus haut = mieux.</string>
     <string name="info_average_position">Ta place moyenne sur une manche (vue joueur). Une position se lit de « proche de P1 » (meilleur) à « proche de P12 » (moins bon) : plus bas = mieux.</string>
