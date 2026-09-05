@@ -29,9 +29,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -211,11 +211,6 @@ class StatsRankingViewModel @Inject constructor(
                 is24PEnabled = is24p
             ).recompute(resetOccurrences = true)
         }
-        // `computeRankings` (circuits, membres, alliés, adversaires) est lourd : le déporter
-        // hors du thread UI (#73). `flowOn` couvre CETTE branche compute uniquement (avant
-        // `mergeWith(_state)`), pas les recompute déclenchés par interaction via `_state`
-        // (tri/onglet/recherche/curseur) qui restent légers et sur le collecteur.
-        .flowOn(Dispatchers.Default)
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
@@ -225,7 +220,7 @@ class StatsRankingViewModel @Inject constructor(
      * (mono-consommateur ici → dans le VM, rule 32) : filtre host/roster + 12p/24p, puis
      * calcule joueurs (groupés membres/alliés), adversaires et circuits.
      */
-    private suspend fun computeRankings(warEntities: List<WarEntity>, is24p: Boolean) {
+    private suspend fun computeRankings(warEntities: List<WarEntity>, is24p: Boolean) = withContext(Dispatchers.Default) {
         val currentPlayer = currentUser
         val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
         val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()

@@ -29,9 +29,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /**
  * Fiche détail d'un ADVERSAIRE (`opp` du prototype, pôle Classements #27). Deux modes
@@ -152,6 +152,10 @@ class OpponentDetailViewModel @AssistedInject constructor(
         }
         .combine(tracksSort) { data, sort -> data to sort }
         .map { (data, sort) ->
+            // Calcul CPU-lourd (MapStats, tri des circuits, classements pilotes/baggeurs,
+            // historique) déporté sur `Dispatchers.Default` via `withContext` — et NON `flowOn`
+            // (cf. rule 21, #73). `getTeam` (Room) n'est pas main-affine, sûr sur Default.
+            withContext(Dispatchers.Default) {
             val (wars, indiv, userIdAndStats) = data
             val (userId, stats) = userIdAndStats
             // teamId peut être un rosterId : avatar de l'équipe parente, nom/tag du roster.
@@ -223,12 +227,8 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 baggers = baggers,
                 history = chronological.reversed()
             )
+            }
         }
-        // Calcul des sections adversaire (stats, MapStats, circuits triés, pilotes, baggeurs,
-        // historique) déporté hors du thread UI (#73), y compris au basculement de mode et au
-        // changement de tri des circuits. `flowOn` couvre la branche compute uniquement (avant
-        // `mergeWith(_state)`).
-        .flowOn(Dispatchers.Default)
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 

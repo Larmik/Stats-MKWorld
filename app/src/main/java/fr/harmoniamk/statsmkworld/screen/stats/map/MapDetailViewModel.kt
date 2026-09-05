@@ -25,9 +25,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /**
  * Fiche détail d'un CIRCUIT (`map` du prototype, pôle Classements #27). Deux modes
@@ -130,6 +130,9 @@ class MapDetailViewModel @AssistedInject constructor(
             // JOUEUR affichée en permanence dans « Scores moyens », point 4). En mode
             // Équipe, il ne scope pas les sections (userId de scope = null).
             val currentUserId = dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
+            // Calcul CPU-lourd (MapStats, classements pilotes/baggeurs/adversaires) déporté sur
+            // `Dispatchers.Default` via `withContext` — et NON `flowOn` (cf. rule 21, #73).
+            withContext(Dispatchers.Default) {
             val scopeUserId = if (indiv) currentUserId else null
             // Manches jouées sur ce circuit (toutes les manches, pour le scope équipe et le
             // classement pilotes ; en indiv on ne garde que celles où le joueur a couru).
@@ -173,11 +176,8 @@ class MapDetailViewModel @AssistedInject constructor(
                     opponents = computeOpponents(allTrackDetails)
                 )
             }
+            }
         }
-        // Calcul des sections du circuit (MapStats, pilotes, baggeurs, adversaires) déporté
-        // hors du thread UI (#73), y compris au basculement de mode Indiv/Équipe. `flowOn`
-        // couvre la branche compute uniquement (avant `mergeWith(_state)`).
-        .flowOn(Dispatchers.Default)
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 

@@ -22,9 +22,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.Date
 
@@ -117,25 +117,31 @@ class WarListViewModel @AssistedInject constructor(
                 // Aucun filtre par mode (12/24) : l'historique mélange tous les modes.
                 // Filtre par saison (#70) + roster hôte + par joueur si demandé. Pas de filtre
                 // sur la war en cours : elle n'est pas dans Room tant qu'elle n'est pas validée.
-                val details = wars
-                    .filterBySeason(activeSeason)
-                    .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-                    .filter { !filterByPlayer || it.hasPlayer(targetUserId) }
-                    .map { War(it) }
-                    .map { WarDetails(it) }
-                    .sortedByDescending { it.war.id }
-                val grouped = details
-                    .groupBy { war ->
-                        val date = Date(war.war.id)
-                        val month = date.get(Calendar.MONTH)
-                        val year = date.get(Calendar.YEAR)
-                        month.toString() + year.toString()
-                    }.mapNotNull {
-                        it.value.firstOrNull()?.war?.id?.let { id ->
-                            val date = Date(id)
-                            Pair(date.format("MMMM yyyy"), it.value)
+                // SEUL ce mapping/groupage CPU (construction WarDetails + tri + groupBy) est
+                // déporté sur `Dispatchers.Default` via `withContext` (et NON `flowOn` — cf.
+                // rule 21, #73) ; les lectures de sources et `seasons` restent sur le collecteur.
+                val (details, grouped) = withContext(Dispatchers.Default) {
+                    val details = wars
+                        .filterBySeason(activeSeason)
+                        .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+                        .filter { !filterByPlayer || it.hasPlayer(targetUserId) }
+                        .map { War(it) }
+                        .map { WarDetails(it) }
+                        .sortedByDescending { it.war.id }
+                    val grouped = details
+                        .groupBy { war ->
+                            val date = Date(war.war.id)
+                            val month = date.get(Calendar.MONTH)
+                            val year = date.get(Calendar.YEAR)
+                            month.toString() + year.toString()
+                        }.mapNotNull {
+                            it.value.firstOrNull()?.war?.id?.let { id ->
+                                val date = Date(id)
+                                Pair(date.format("MMMM yyyy"), it.value)
+                            }
                         }
-                    }
+                    details to grouped
+                }
                 State(
                     wars = grouped,
                     warCount = details.size,
@@ -146,10 +152,6 @@ class WarListViewModel @AssistedInject constructor(
                 )
             }
         }
-        // Filtrage saison/roster/joueur + groupage par mois des wars : déporté hors du thread
-        // UI (#73), y compris au changement de saison. `flowOn` couvre toute la branche compute
-        // avant `stateIn` (pas de `_state` interactif à préserver ici).
-        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
     /** Sélection de saison depuis l'UI : `number` null = tout l'historique. */

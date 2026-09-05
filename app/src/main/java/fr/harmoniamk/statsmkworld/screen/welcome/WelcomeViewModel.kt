@@ -22,11 +22,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -99,21 +99,34 @@ class WelcomeViewModel @Inject constructor(
                     ?.sortedByDescending { it.war.id }
                     .orEmpty()
 
+                // Firebase (potentiellement main-affine) résolu sur le collecteur, HORS du
+                // `withContext(Default)` — cf. rule 21 (#73).
+                val currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty())
+                // SEULE la partie CPU-lourde (agrégats `withFullStats` équipe + joueur) est
+                // déportée sur `Dispatchers.Default` via `withContext` (et NON `flowOn`, qui,
+                // sur une chaîne passant par `mergeWith`/`flattenMerge`, laissait gagner l'état
+                // vide → dropdown de saison disparu). `seasons` reste peuplé (calculé au-dessus).
+                val (teamStats, playerStats) = withContext(Dispatchers.Default) {
+                    val teamStats = wars.takeIf { it.isNotEmpty() }
+                        ?.withFullStats(databaseRepository, is24p = false)
+                        ?.firstOrNull()
+                    val playerStats = wars.takeIf { it.isNotEmpty() }
+                        ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
+                        ?.firstOrNull()
+                    teamStats to playerStats
+                }
+
                 State(
                     teamName = team.name,
                     teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     teamColor = team.color.takeIf { it != 0L },
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
-                    currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty()),
+                    currentWar = currentWar,
                     // Vue équipe (userId = null) et vue joueur (userId = id MKCentral
                     // du joueur courant) calculées d'emblée, sur les wars de la saison.
-                    teamStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(databaseRepository, is24p = false)
-                        ?.firstOrNull(),
-                    playerStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
-                        ?.firstOrNull(),
+                    teamStats = teamStats,
+                    playerStats = playerStats,
                     recentResults = wars.safeSubList(0, 3),
                     seasons = seasons,
                     selectedSeasonNumber = activeSeason?.number
@@ -121,10 +134,6 @@ class WelcomeViewModel @Inject constructor(
             }
         }
         .mapNotNull { it }
-        // Le calcul des agrégats du dashboard (stats joueur/équipe, momentum, records) est
-        // lourd : le déporter hors du thread UI (#73), y compris au changement de saison.
-        // `flowOn` couvre cette branche compute uniquement (avant `mergeWith(_state)`).
-        .flowOn(Dispatchers.Default)
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 

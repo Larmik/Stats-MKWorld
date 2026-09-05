@@ -29,9 +29,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel de l'écran Statistiques (pôle Stats, ticket #25) : porte À LA FOIS la
@@ -181,16 +181,17 @@ class StatsFullViewModel @AssistedInject constructor(
             val seasonWars = warEntities.filterBySeason(activeSeason)
             computeState(seasonWars, seasons, activeSeason?.number)
         }
-        // Le calcul complet des agrégats (fenêtres, contributeurs, adversaires) est lourd :
-        // le déporter hors du thread UI (#73). `flowOn` s'applique à CETTE branche compute
-        // uniquement (avant `mergeWith(_state)` dans `state`), pas au flux d'état interactif.
-        .flowOn(Dispatchers.Default)
 
+    // Le calcul des agrégats (fenêtres, contributeurs, adversaires) est CPU-lourd : déporté sur
+    // `Dispatchers.Default` via `withContext` — et NON `flowOn` (#73), qui, sur une chaîne passant
+    // par `mergeWith`/`flattenMerge`, provoquait une course cross-thread laissant gagner l'état vide
+    // (dropdown de saison disparu). `seasons`/`activeSeasonNumber` sont résolus sur le collecteur et
+    // toujours reportés dans le State, quel que soit le résultat du calcul. Cf. rule 21.
     private suspend fun computeState(
         warEntities: List<WarEntity>,
         seasons: List<SeasonEntity>,
         activeSeasonNumber: Int?
-    ) = warEntities
+    ) = withContext(Dispatchers.Default) { warEntities
         .let { warEntities ->
             val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
             val targetUserId = userId ?: currentPlayer?.id?.toString()
@@ -296,6 +297,7 @@ class StatsFullViewModel @AssistedInject constructor(
                 selectedSeasonNumber = activeSeasonNumber
             )
         }
+    }
 
     /**
      * Top3/flop3 adversaires par **occurrences** (nb de confrontations), winrate ET
