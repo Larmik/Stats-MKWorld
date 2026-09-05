@@ -86,35 +86,39 @@ class WelcomeViewModel @Inject constructor(
                     is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
                     is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
                 }
-                // Dashboard 12p uniquement (le support 24p relève de tickets dédiés) : wars à un
-                // seul adversaire. Filtre par SAISON (#70) appliqué en premier ⇒ momentum, séries,
-                // records, chiffres clés et derniers résultats reflètent la saison choisie (ou
-                // tout l'historique en mode « Tout l'historique »).
-                val wars = databaseRepository.getWars()
-                    .firstOrNull()
-                    ?.filterBySeason(activeSeason)
-                    ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-                    ?.map { War(it) }
-                    ?.map { WarDetails(it) }
-                    ?.filter { it.war.teamOpponent.size == 1 }
-                    ?.sortedByDescending { it.war.id }
-                    .orEmpty()
-
                 // Firebase (potentiellement main-affine) résolu sur le collecteur, HORS du
                 // `withContext(Default)` — cf. rule 21 (#73).
                 val currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty())
-                // SEULE la partie CPU-lourde (agrégats `withFullStats` équipe + joueur) est
-                // déportée sur `Dispatchers.Default` via `withContext` (et NON `flowOn`, qui,
-                // sur une chaîne passant par `mergeWith`/`flattenMerge`, laissait gagner l'état
-                // vide → dropdown de saison disparu). `seasons` reste peuplé (calculé au-dessus).
-                val (teamStats, playerStats) = withContext(Dispatchers.Default) {
+                // TOUTE la partie CPU-lourde du dashboard est déportée sur `Dispatchers.Default`
+                // via `withContext` (et NON `flowOn`, qui, sur une chaîne à `mergeWith`/
+                // `flattenMerge`, laissait gagner l'état vide → dropdown disparu). Cela inclut
+                // la construction de `wars` — `map { WarDetails(War(it)) }` reparse toutes les
+                // manches/scores de chaque war, coûteux (#73) — en plus des agrégats
+                // `withFullStats` et de `recentResults`. `seasons`/`activeSeason` et les
+                // métadonnées équipe/joueur restent sur le collecteur (légers, `seasons` peuplé).
+                val (teamStats, playerStats, recentResults) = withContext(Dispatchers.Default) {
+                    // Dashboard 12p uniquement (le support 24p relève de tickets dédiés) : wars à
+                    // un seul adversaire. Filtre par SAISON (#70) appliqué en premier ⇒ momentum,
+                    // séries, records, chiffres clés et derniers résultats reflètent la saison
+                    // choisie (ou tout l'historique en mode « Tout l'historique »).
+                    val wars = databaseRepository.getWars()
+                        .firstOrNull()
+                        ?.filterBySeason(activeSeason)
+                        ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+                        ?.map { War(it) }
+                        ?.map { WarDetails(it) }
+                        ?.filter { it.war.teamOpponent.size == 1 }
+                        ?.sortedByDescending { it.war.id }
+                        .orEmpty()
+                    // Vue équipe (userId = null) et vue joueur (userId = id MKCentral du joueur
+                    // courant) calculées d'emblée, sur les wars de la saison.
                     val teamStats = wars.takeIf { it.isNotEmpty() }
                         ?.withFullStats(databaseRepository, is24p = false)
                         ?.firstOrNull()
                     val playerStats = wars.takeIf { it.isNotEmpty() }
                         ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
                         ?.firstOrNull()
-                    teamStats to playerStats
+                    Triple(teamStats, playerStats, wars.safeSubList(0, 3))
                 }
 
                 State(
@@ -124,11 +128,9 @@ class WelcomeViewModel @Inject constructor(
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     currentWar = currentWar,
-                    // Vue équipe (userId = null) et vue joueur (userId = id MKCentral
-                    // du joueur courant) calculées d'emblée, sur les wars de la saison.
                     teamStats = teamStats,
                     playerStats = playerStats,
-                    recentResults = wars.safeSubList(0, 3),
+                    recentResults = recentResults,
                     seasons = seasons,
                     selectedSeasonNumber = activeSeason?.number
                 )
