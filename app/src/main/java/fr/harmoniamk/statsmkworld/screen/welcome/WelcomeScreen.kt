@@ -309,8 +309,22 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
             // Couleur de tendance : delta ≥ 0 (ou indisponible) → vert, sinon rouge.
             val trendColor = if ((form?.winrateDelta ?: 0) < 0) Colors.red else Colors.green
             Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                Sparkline(values, trendColor, Modifier.width(110.dp).height(44.dp))
+            // Deux colonnes alignées, chacune graphe/valeur AU-DESSUS de son hint (#91 pt.10, retour
+            // utilisateur) : GAUCHE = sparkline + hint « évolution score » ; DROITE = delta de forme
+            // + hint « forme N wars vs all-time ». Row alignée en haut, hints au même style (white66).
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                // Colonne GAUCHE : graphe + son hint, alignés à gauche.
+                Column {
+                    Sparkline(values, trendColor, Modifier.width(110.dp).height(44.dp))
+                    MKText(
+                        text = stringResource(R.string.home_score_evolution_cap, count),
+                        textColor = Colors.white66,
+                        fontSize = 12,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                // Colonne DROITE : delta de forme + son hint.
                 Column(Modifier.weight(1f)) {
                     form?.winrateDelta?.let { delta ->
                         MKText(
@@ -330,15 +344,6 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                     )
                 }
             }
-            // Libellé descriptif du graphique (#91 pt.10) : indique que la sparkline retrace
-            // l'évolution du score sur la fenêtre, dans le même style que le hint de forme.
-            MKText(
-                text = stringResource(R.string.home_score_evolution_cap, count),
-                textColor = Colors.white66,
-                fontSize = 12,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.padding(top = 8.dp)
-            )
         }
     }
 }
