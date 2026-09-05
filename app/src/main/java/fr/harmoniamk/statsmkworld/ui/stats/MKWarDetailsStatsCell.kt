@@ -53,8 +53,15 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                     Modifier
                         .weight(1f), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    MKText(text = stringResource(R.string.average_score),
-                        textColor = Colors.white)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MKText(text = stringResource(R.string.average_score),
+                            textColor = Colors.white)
+                        MKStatInfoButton(
+                            title = stringResource(R.string.average_score),
+                            message = stringResource(R.string.info_average_score),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
                     MKText(
                         text = when (userId == null && type?.is24PEnabled != true) {
                             true -> stats?.averagePointsLabel.toString()
@@ -64,8 +71,15 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                 }
                 if (type?.is24PEnabled != true)
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        MKText(text = stringResource(R.string.maps_gagn_es),
-                            textColor = Colors.white)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MKText(text = stringResource(R.string.maps_gagn_es),
+                                textColor = Colors.white)
+                            MKStatInfoButton(
+                                title = stringResource(R.string.maps_gagn_es),
+                                message = stringResource(R.string.info_maps_won),
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
                         MKText(text = stats?.mapsWon.toString(), fontSize = 16, font = Fonts.NunitoBD,
                             textColor = Colors.white)
                     }
@@ -77,13 +91,21 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
             modifier = Modifier.padding(vertical = 10.dp)
         ) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                MKText(
-                    text =  when (userId) {
-                        null -> stringResource(R.string.moyenne_map)
-                        else -> stringResource(R.string.average_position)
-                    },
-                    textColor = Colors.white
-                )
+                val averageLabel = when (userId) {
+                    null -> stringResource(R.string.moyenne_map)
+                    else -> stringResource(R.string.average_position)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MKText(text = averageLabel, textColor = Colors.white)
+                    MKStatInfoButton(
+                        title = averageLabel,
+                        message = when (userId) {
+                            null -> stringResource(R.string.info_average_map)
+                            else -> stringResource(R.string.info_average_position)
+                        },
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
                 MKText(
                     text =  when (userId) {
                         null -> (stats?.averageMapPoints?.trackScoreToDiff(type?.is24PEnabled == true)?.takeIf { type?.is24PEnabled != true } ?: stats?.averageMapPoints?.toString()) ?: mapStats?.teamScore?.trackScoreToDiff(type?.is24PEnabled == true)?.takeIf { type?.is24PEnabled != true } ?: mapStats?.teamScore?.toString()
@@ -101,8 +123,14 @@ fun MKWarDetailsStatsView(stats: Stats?, mapStats: MapStats?, type: StatsType?) 
                     null ->  mapStats?.shockCount.toString()
                     else -> String.format(Locale.getDefault(), "%.2f", (stats.shockCount.toFloat() / stats.warStats.warsPlayed))
                 }
-                MKText(text = shockLabel,
-                    textColor = Colors.white)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MKText(text = shockLabel, textColor = Colors.white)
+                    MKStatInfoButton(
+                        title = shockLabel,
+                        message = stringResource(R.string.info_shocks_per_war),
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center

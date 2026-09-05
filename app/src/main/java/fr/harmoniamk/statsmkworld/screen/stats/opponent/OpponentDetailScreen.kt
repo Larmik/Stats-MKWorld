@@ -61,7 +61,7 @@ import kotlinx.coroutines.FlowPreview
  * 1. Sélecteur Indiv/Équipe + en-tête (logo/tag, nb de confrontations, dernière rencontre) ;
  * 2. Bilan face à eux (winrate + V/N/D + barre) ;
  * 3. 5 dernières face à eux (pastilles V/N/D) ;
- * 4. Séries & scores (série en cours, record, différence de score moyenne, shocks joués) ;
+ * 4. Séries & scores (série en cours, record, différence de score moyenne, shocks obtenus) ;
  * 5. Circuits contre eux (podium Top3/Flop3 par score moyen + « Voir le classement en entier ») ;
  * 6. Sections détaillées (répartition des positions, Top/Bot 2→6), scopées à l'adversaire
  *    et mutualisées avec l'écran Statistiques (rule 16) ;
@@ -242,7 +242,7 @@ private fun streakColor(streak: Int) = when {
  * Section « Séries & scores » — grille **3 lignes × 2 cellules** (points 3/4) :
  * - L1 : Score/diff (mode-aware) · Série en cours
  * - L2 : Record série de victoires · Record série de défaites
- * - L3 : Shocks joués · Shocks/War — chacune avec l'**illustration shock** à gauche,
+ * - L3 : Shocks obtenus · Shocks/War — chacune avec l'**illustration shock** à gauche,
  *   centrée verticalement (uniquement sur cette ligne).
  */
 @Composable

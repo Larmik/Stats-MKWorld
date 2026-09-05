@@ -374,7 +374,7 @@
     <string name="stats_distribution_title_generic">Répartition des positions</string>
     <string name="stats_top_bottom_team_title">Top / Bot équipe</string>
     <string name="stats_top_bottom_opponent_title">Top / Bot adversaire</string>
-    <string name="stats_shocks_played">Shocks joués</string>
+    <string name="stats_shocks_played">Shocks obtenus</string>
     <string name="stats_shocks_per_war">Shocks/War</string>
     <string name="stats_bag_share_short">Shocks</string>
     <string name="stats_bag_share_pct">Part</string>
@@ -433,4 +433,29 @@
     <string name="period_players_wars_short">Wars</string>
     <string name="period_players_average_short">Score moyen</string>
     <string name="period_players_shocks_short">Shocks</string>
+    <!-- Explications des indicateurs de stats (bouton info ⓘ, dialog) -->
+    <string name="info_average_score">Points moyens marqués par war en vue joueur ; en vue équipe, l\'écart de score moyen face à l\'adversaire (« +X / -X »). Plus haut = mieux ; un écart d\'équipe positif signifie qu\'on domine, négatif qu\'on subit.</string>
+    <string name="info_maps_won">Part des courses remportées par l\'équipe (son score de course dépasse la moitié du barème). Mesure la régularité course par course, indépendamment du résultat final de la war. Une course pile à la moitié n\'est pas comptée gagnée.</string>
+    <string name="info_average_map">Place moyenne du joueur sur une course en vue joueur ; en vue équipe, les points moyens de l\'équipe par course, en différentiel. Pour la position, plus bas (proche de P1) = mieux ; pour le score de course d\'équipe, plus haut = mieux.</string>
+    <string name="info_shocks_per_war">Nombre moyen d\'éclairs obtenus par war (un éclair obtenu est compté même si l\'équipe choisit de ne pas le jouer). Mesure la qualité du bagging (farmer des éclairs), une activité aussi importante que jouer devant mais situationnelle. Aucune corrélation avec la position finale : plus/moins n\'est pas « mieux » ou « pire », l\'indicateur est neutre.</string>
+    <string name="info_form_winrate">Pourcentage de wars gagnées. Mesure synthétique de la réussite ; plus haut = mieux (50 % = autant de victoires que de défaites). Les nuls comptent au dénominateur mais pas comme victoires.</string>
+    <string name="info_form_score">Score moyen par war : points bruts du joueur en vue joueur, écart de score d\'équipe (« +X / -X ») en vue équipe. Plus haut = mieux.</string>
+    <string name="info_average_position">Ta place moyenne sur une manche (vue joueur). Une position se lit de « proche de P1 » (meilleur) à « proche de P12 » (moins bon) : plus bas = mieux.</string>
+    <string name="info_average_map_score">Score moyen de l\'équipe par manche, affiché en écart (« +X / -X »), en vue équipe. Plus haut = mieux.</string>
+    <string name="info_current_streak">Série de victoires ou de défaites en cours. Une war nulle ou un résultat inverse casse la série ; le calcul suit l\'ordre chronologique réel.</string>
+    <string name="info_best_win_streak">La plus longue série de victoires consécutives. Repère du meilleur passage ; dépend de la fenêtre sélectionnée.</string>
+    <string name="info_worst_loss_streak">La plus longue série de défaites consécutives. Repère du pire passage ; dépend de la fenêtre sélectionnée.</string>
+    <string name="info_top6_count">Nombre de courses où les 6 joueurs de l\'équipe occupent les positions 1 à 6. Compte les courses parfaites. Cas exact : une course à cheval haut/bas n\'est ni Top6 ni Bot6.</string>
+    <string name="info_bot6_count">Nombre de courses où les 6 joueurs de l\'équipe occupent les positions 7 à 12. Compte les courses complètement ratées. Cas exact (les 6 derrière).</string>
+    <string name="info_player_contribution">Pourcentage moyen des points de l\'équipe que tu apportes toi-même, calculé war par war puis moyenné. Exemple : 20 % = tu marques en moyenne un cinquième des points de l\'équipe. Visible seulement en vue joueur.</string>
+    <string name="info_score_std_dev">Écart-type de tes scores, qui mesure ta constance. Plus il est bas, plus tes scores sont réguliers d\'une war à l\'autre ; plus il est haut, plus ils sont irréguliers. Affiché « ± X ». Nécessite au moins 2 wars.</string>
+    <string name="info_score_amplitude">Ton pire et ton meilleur score sur l\'historique (min – max), pour visualiser l\'écart entre les deux extrêmes. Une seule war peut fixer le min ou le max.</string>
+    <string name="info_avg_win_margin">L\'écart de score moyen quand on gagne (ex. « +45 »). Une marge élevée = victoires larges. Écart = ton score − score adverse (pénalités incluses) ; les égalités ne comptent pas.</string>
+    <string name="info_avg_loss_margin">L\'écart de score moyen quand on perd (ex. « -30 »). Une marge basse = défaites serrées. Séparée de la marge de victoire : perdre lourdement raconte une autre histoire qu\'un simple winrate.</string>
+    <string name="info_first_half_position">Ta position moyenne sur la première moitié de la war (premières manches), en vue joueur. À comparer à la seconde moitié pour voir si tu commences fort ou montes en puissance. Plus bas = mieux.</string>
+    <string name="info_second_half_position">Ta position moyenne sur la seconde moitié de la war (dernières manches), en vue joueur. À comparer à la première moitié. Plus bas = mieux.</string>
+    <string name="info_unbeaten_streak">Nombre de wars consécutives sans défaite (victoires et nuls) jusqu\'à aujourd\'hui.</string>
+    <string name="info_penalty_points_lost">Total des points retirés à ton équipe par les pénalités sur tout l\'historique. Un repère du coût cumulé des pénalités ; ne compte que les pénalités de ton équipe.</string>
+    <string name="info_points_per_war">Points bruts que tu marques en moyenne par war (vue joueur), sur la fenêtre choisie. Plus haut = mieux.</string>
+    <string name="info_participation_rate">Part des wars de l\'équipe que tu as réellement jouées sur la fenêtre choisie. 100 % = tu es présent sur toutes les wars ; plus haut = mieux.</string>
 </resources>

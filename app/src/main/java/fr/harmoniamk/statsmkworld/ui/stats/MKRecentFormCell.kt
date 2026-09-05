@@ -49,12 +49,14 @@ fun MKRecentFormCell(stats: Stats?) {
 
                 IndicatorRow(
                     label = stringResource(R.string.form_winrate),
+                    info = stringResource(R.string.info_form_winrate),
                     allTime = allTime.winrate.percentValue(),
                     form5 = s.recentForm5?.winrate.percentValue() to metricDelta(s.recentForm5?.winrateDelta, DeltaPolarity.HIGHER_BETTER, "%"),
                     form10 = s.recentForm10?.winrate.percentValue() to metricDelta(s.recentForm10?.winrateDelta, DeltaPolarity.HIGHER_BETTER, "%")
                 )
                 IndicatorRow(
                     label = stringResource(R.string.form_score),
+                    info = stringResource(R.string.info_form_score),
                     allTime = allTime.averageScore.scoreValue(isPlayer),
                     // Score : en vue équipe la valeur affichée est un écart (×2 vs points) → delta doublé.
                     form5 = s.recentForm5?.averageScore.scoreValue(isPlayer) to metricDelta(s.recentForm5?.scoreDelta?.scaleScore(isPlayer), DeltaPolarity.HIGHER_BETTER, ""),
@@ -63,6 +65,7 @@ fun MKRecentFormCell(stats: Stats?) {
                 when (isPlayer) {
                     true -> IndicatorRow(
                         label = stringResource(R.string.average_position_short),
+                        info = stringResource(R.string.info_average_position),
                         allTime = allTime.averagePosition.plainValue(),
                         // Position : plus BAS = mieux → polarité inversée.
                         form5 = s.recentForm5?.averagePosition.plainValue() to metricDelta(s.recentForm5?.positionDelta, DeltaPolarity.LOWER_BETTER, ""),
@@ -70,6 +73,7 @@ fun MKRecentFormCell(stats: Stats?) {
                     )
                     else -> IndicatorRow(
                         label = stringResource(R.string.average_map_score_short),
+                        info = stringResource(R.string.info_average_map_score),
                         allTime = allTime.averageMapScore.mapScoreValue(),
                         form5 = s.recentForm5?.averageMapScore.mapScoreValue() to metricDelta(s.recentForm5?.mapScoreDelta?.times(2), DeltaPolarity.HIGHER_BETTER, ""),
                         form10 = s.recentForm10?.averageMapScore.mapScoreValue() to metricDelta(s.recentForm10?.mapScoreDelta?.times(2), DeltaPolarity.HIGHER_BETTER, "")
@@ -77,6 +81,7 @@ fun MKRecentFormCell(stats: Stats?) {
                 }
                 IndicatorRow(
                     label = stringResource(R.string.maps_gagn_es),
+                    info = stringResource(R.string.info_maps_won),
                     allTime = allTime.mapsWonPercent.percentValue(),
                     form5 = s.recentForm5?.mapsWonPercent.percentValue() to metricDelta(s.recentForm5?.mapsWonDelta, DeltaPolarity.HIGHER_BETTER, "%"),
                     form10 = s.recentForm10?.mapsWonPercent.percentValue() to metricDelta(s.recentForm10?.mapsWonDelta, DeltaPolarity.HIGHER_BETTER, "%")
@@ -108,16 +113,20 @@ private fun androidx.compose.foundation.layout.RowScope.WindowTitle(title: Strin
     }
 }
 
-/** Une ligne = un indicateur (libellé) + 3 valeurs (all-time, 5, 10). */
+/** Une ligne = un indicateur (libellé + bouton info) + 3 valeurs (all-time, 5, 10). */
 @Composable
 private fun IndicatorRow(
     label: String,
+    info: String,
     allTime: String,
     form5: Pair<String, Delta?>,
     form10: Pair<String, Delta?>
 ) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        MKText(text = label, textColor = Colors.white, fontSize = 13, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Start)
+        Row(Modifier.weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
+            MKText(text = label, textColor = Colors.white, fontSize = 13, textAlign = TextAlign.Start)
+            MKStatInfoButton(title = label, message = info, modifier = Modifier.padding(start = 4.dp))
+        }
         ValueCell(allTime, null)
         ValueCell(form5.first, form5.second)
         ValueCell(form10.first, form10.second)
@@ -141,6 +150,11 @@ private fun ShockIndicatorRow(allTime: FormStats, form5: FormStats?, form10: For
         Row(Modifier.weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
             Image(painter = painterResource(R.drawable.shock), contentDescription = null, modifier = Modifier.size(20.dp))
             MKText(text = stringResource(R.string.shocks_per_war_short), textColor = Colors.white, fontSize = 13, textAlign = TextAlign.Start)
+            MKStatInfoButton(
+                title = stringResource(R.string.shocks_per_war_short),
+                message = stringResource(R.string.info_shocks_per_war),
+                modifier = Modifier.padding(start = 4.dp)
+            )
         }
         ShockValue(allTime.shocksPerWar)
         ShockValue(form5?.shocksPerWar)

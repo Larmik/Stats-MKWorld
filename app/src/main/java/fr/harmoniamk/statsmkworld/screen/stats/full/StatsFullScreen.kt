@@ -54,6 +54,7 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.stats.DistributionChart
 import fr.harmoniamk.statsmkworld.ui.stats.DistributionFooter
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
+import fr.harmoniamk.statsmkworld.ui.stats.MKStatInfoButton
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
@@ -419,34 +420,34 @@ private fun IndicatorsCard(
     val title = if (isPlayer) stringResource(R.string.stats_player_indicators) else stringResource(R.string.stats_team_details)
     StatCard(title = title) {
         val tiles = buildList {
-            add(MetricTile(stringResource(R.string.form_winrate), window?.winrate?.let { "$it%" } ?: "-", if (showDelta) window?.winrateDelta else null, "%", DeltaPolarity.HIGHER))
+            add(MetricTile(stringResource(R.string.form_winrate), window?.winrate?.let { "$it%" } ?: "-", if (showDelta) window?.winrateDelta else null, "%", DeltaPolarity.HIGHER, stringResource(R.string.info_form_winrate)))
             when (isPlayer) {
                 true -> {
                     // Vue JOUEUR : score = points/war (brut) + position moyenne.
-                    add(MetricTile(stringResource(R.string.stats_points_per_war), window?.averageScore?.toString() ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER))
-                    add(MetricTile(stringResource(R.string.average_position_short), window?.averagePosition?.toString() ?: "-", if (showDelta) window?.positionDelta else null, "", DeltaPolarity.LOWER))
+                    add(MetricTile(stringResource(R.string.stats_points_per_war), window?.averageScore?.toString() ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_points_per_war)))
+                    add(MetricTile(stringResource(R.string.average_position_short), window?.averagePosition?.toString() ?: "-", if (showDelta) window?.positionDelta else null, "", DeltaPolarity.LOWER, stringResource(R.string.info_average_position)))
                     // Taux de participation (#78) : % de wars de l'équipe jouées par le joueur sur
                     // la fenêtre. Delta vs all-time (polarité « plus haut = mieux »).
                     participationByWindow?.let { byWindow ->
                         val participation = byWindow[selectors.windowIndex]
                         val participationDelta = participation?.minus(byWindow[0] ?: 0)
-                        add(MetricTile(stringResource(R.string.participation_rate), participation?.let { "$it%" } ?: "-", if (showDelta) participationDelta else null, "%", DeltaPolarity.HIGHER))
+                        add(MetricTile(stringResource(R.string.participation_rate), participation?.let { "$it%" } ?: "-", if (showDelta) participationDelta else null, "%", DeltaPolarity.HIGHER, stringResource(R.string.info_participation_rate)))
                     }
                 }
                 else -> {
                     // Vue ÉQUIPE : « Score moyen » = ÉCART de points (warScoreToDiff), pas le total.
-                    add(MetricTile(stringResource(R.string.form_score), window?.averageScore?.warScoreToDiff(false) ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER))
+                    add(MetricTile(stringResource(R.string.form_score), window?.averageScore?.warScoreToDiff(false) ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_form_score)))
                     // « Score moyen/map » = ÉCART de points par MANCHE (trackScoreToDiff), pas le total (#67).
-                    add(MetricTile(stringResource(R.string.average_map_score_short), window?.averageMapScore?.trackScoreToDiff(false) ?: "-", if (showDelta) window?.mapScoreDelta else null, "", DeltaPolarity.HIGHER))
+                    add(MetricTile(stringResource(R.string.average_map_score_short), window?.averageMapScore?.trackScoreToDiff(false) ?: "-", if (showDelta) window?.mapScoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_average_map_score)))
                 }
             }
-            add(MetricTile(stringResource(R.string.maps_gagn_es), window?.mapsWonPercent?.let { "$it%" } ?: "-", if (showDelta) window?.mapsWonDelta else null, "%", DeltaPolarity.HIGHER))
-            add(MetricTile(stringResource(R.string.stats_regularity), window?.scoreStdDev?.let { "±$it" } ?: "-", null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.avg_win_margin), window?.winMargin?.let { "+$it" } ?: "-", null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.avg_loss_margin), window?.lossMargin?.let { "-$it" } ?: "-", null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.maps_gagn_es), window?.mapsWonPercent?.let { "$it%" } ?: "-", if (showDelta) window?.mapsWonDelta else null, "%", DeltaPolarity.HIGHER, stringResource(R.string.info_maps_won)))
+            add(MetricTile(stringResource(R.string.stats_regularity), window?.scoreStdDev?.let { "±$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_score_std_dev)))
+            add(MetricTile(stringResource(R.string.avg_win_margin), window?.winMargin?.let { "+$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_avg_win_margin)))
+            add(MetricTile(stringResource(R.string.avg_loss_margin), window?.lossMargin?.let { "-$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_avg_loss_margin)))
             // Pénalités (points perdus par l'équipe hôte) sur la FENÊTRE choisie.
-            add(MetricTile(stringResource(R.string.penalty_points_lost), (window?.penaltyPointsLost ?: 0).takeIf { it > 0 }?.let { "-$it" } ?: "-", null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.shocks_per_war_short), window?.shocksPerWar?.let { String.format(java.util.Locale.getDefault(), "%.1f", it) } ?: "-", null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.penalty_points_lost), (window?.penaltyPointsLost ?: 0).takeIf { it > 0 }?.let { "-$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_penalty_points_lost)))
+            add(MetricTile(stringResource(R.string.shocks_per_war_short), window?.shocksPerWar?.let { String.format(java.util.Locale.getDefault(), "%.1f", it) } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_shocks_per_war)))
         }
         MetricTiles(tiles)
     }
@@ -454,13 +455,18 @@ private fun IndicatorsCard(
 
 private enum class DeltaPolarity { HIGHER, LOWER, NONE }
 
-/** Donnée d'une tuile d'indicateur : valeur + delta signé optionnel. */
+/**
+ * Donnée d'une tuile d'indicateur : valeur + delta signé optionnel. [info] (facultatif)
+ * porte le texte d'explication de la stat : quand il est non-null, la tuile affiche un
+ * bouton ⓘ ([MKStatInfoButton]) à côté du libellé (ticket #87).
+ */
 private data class MetricTile(
     val label: String,
     val value: String,
     val delta: Int?,
     val deltaSuffix: String,
-    val polarity: DeltaPolarity
+    val polarity: DeltaPolarity,
+    val info: String? = null
 )
 
 // Hauteurs RÉSERVÉES pour figer la taille des tuiles quel que soit le contenu :
@@ -491,28 +497,51 @@ private fun ColumnScope.MetricTiles(tiles: List<MetricTile>, columns: Int = 3) {
 
 @Composable
 private fun RowScope.MetricTileCell(tile: MetricTile) {
-    Column(Modifier.weight(1f).background(Colors.white30, CardRadius).padding(10.dp)) {
-        // Valeur : toujours BLANCHE (aucune couleur).
-        MKText(text = tile.value, font = Fonts.Urbanist, textColor = Colors.white, fontSize = 18, textAlign = TextAlign.Start, maxLines = 1)
-        // Ligne de progression à hauteur RÉSERVÉE (même vide) : la place du delta est
-        // toujours occupée → hauteur de tuile figée sur la plus grande (avec delta).
-        Box(Modifier.height(DeltaSlotHeight).padding(top = 3.dp)) {
-            tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
-                val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
-                val arrow = if (delta > 0) "↗" else "↘"
-                MKText(
-                    text = "${if (delta > 0) "+" else ""}$delta${tile.deltaSuffix} $arrow",
-                    font = Fonts.NunitoBD,
-                    textColor = if (improved) Colors.green else Colors.red,
-                    fontSize = 10,
-                    textAlign = TextAlign.Start
-                )
+    // Le contenu (valeur + delta + libellé) reste dans son flux normal en Column ; le
+    // bouton ⓘ (facultatif) est ancré dans le coin SUPÉRIEUR DROIT de la tuile via un Box
+    // englobant, avec une petite marge (rule 15/13). La valeur réserve une marge à droite
+    // (end) pour ne jamais chevaucher le bouton.
+    Box(Modifier.weight(1f).background(Colors.white30, CardRadius)) {
+        Column(Modifier.padding(10.dp)) {
+            // Valeur : toujours BLANCHE (aucune couleur). Marge droite réservée si un bouton
+            // ⓘ est ancré en haut-à-droite, pour éviter tout chevauchement.
+            MKText(
+                text = tile.value,
+                font = Fonts.Urbanist,
+                textColor = Colors.white,
+                fontSize = 18,
+                textAlign = TextAlign.Start,
+                maxLines = 1,
+                modifier = if (tile.info != null) Modifier.padding(end = 24.dp) else Modifier
+            )
+            // Ligne de progression à hauteur RÉSERVÉE (même vide) : la place du delta est
+            // toujours occupée → hauteur de tuile figée sur la plus grande (avec delta).
+            Box(Modifier.height(DeltaSlotHeight).padding(top = 3.dp)) {
+                tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
+                    val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
+                    val arrow = if (delta > 0) "↗" else "↘"
+                    MKText(
+                        text = "${if (delta > 0) "+" else ""}$delta${tile.deltaSuffix} $arrow",
+                        font = Fonts.NunitoBD,
+                        textColor = if (improved) Colors.green else Colors.red,
+                        fontSize = 10,
+                        textAlign = TextAlign.Start
+                    )
+                }
+            }
+            // Libellé à hauteur RÉSERVÉE (2 lignes) : occupé même sur une seule ligne →
+            // aucune tuile n'est plus haute qu'une autre selon la longueur du libellé.
+            Box(Modifier.padding(top = 6.dp).height(LabelSlotHeight)) {
+                MKText(text = tile.label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, maxLines = 2)
             }
         }
-        // Libellé à hauteur RÉSERVÉE (2 lignes) : occupé même sur une seule ligne →
-        // aucune tuile n'est plus haute qu'une autre selon la longueur du libellé.
-        Box(Modifier.padding(top = 6.dp).height(LabelSlotHeight)) {
-            MKText(text = tile.label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, maxLines = 2)
+        // Bouton ⓘ ancré en HAUT-À-DROITE, émis seulement si [tile.info] est fourni.
+        tile.info?.let { info ->
+            MKStatInfoButton(
+                title = tile.label,
+                message = info,
+                modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
+            )
         }
     }
 }
@@ -540,14 +569,14 @@ private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors, isTeam: 
     StatCard(title = stringResource(R.string.records_series)) {
         val tiles = buildList {
             // Ligne 1 — Amplitude scindée en min | max (par fenêtre).
-            add(MetricTile(stringResource(R.string.stats_amplitude_min), formatScore(window?.scoreMin), null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.stats_amplitude_max), formatScore(window?.scoreMax), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.stats_amplitude_min), formatScore(window?.scoreMin), null, "", DeltaPolarity.NONE, stringResource(R.string.info_score_amplitude)))
+            add(MetricTile(stringResource(R.string.stats_amplitude_max), formatScore(window?.scoreMax), null, "", DeltaPolarity.NONE, stringResource(R.string.info_score_amplitude)))
             // Ligne 2 — records de série (par fenêtre).
-            add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_best_win_streak)))
+            add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_worst_loss_streak)))
             // Ligne 3 — Top6 / Bot6 (compte, par fenêtre).
-            add(MetricTile(stringResource(R.string.top6_count), (window?.top6Count ?: 0).toString(), null, "", DeltaPolarity.NONE))
-            add(MetricTile(stringResource(R.string.bot6_count), (window?.bot6Count ?: 0).toString(), null, "", DeltaPolarity.NONE))
+            add(MetricTile(stringResource(R.string.top6_count), (window?.top6Count ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_top6_count)))
+            add(MetricTile(stringResource(R.string.bot6_count), (window?.bot6Count ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_bot6_count)))
         }
         MetricTiles(tiles, columns = 2)
     }

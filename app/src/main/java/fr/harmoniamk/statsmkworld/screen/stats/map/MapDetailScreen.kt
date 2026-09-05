@@ -39,7 +39,7 @@ import kotlinx.coroutines.FlowPreview
  * 1. Sélecteur Indiv/Équipe + en-tête (nom, nb de fois joué) ;
  * 2. Performance (winrate de manche coloré selon seuil + V/N/D + barre) ;
  * 3. Scores moyens — score moyen ÉQUIPE + position moyenne JOUEUR (fixes, indépendants du
- *    mode) + shocks joués (dynamique) ;
+ *    mode) + shocks obtenus (dynamique) ;
  * 4. Répartition des positions + Top/Bot 2→6 (sections détaillées mutualisées, mode-scopées) ;
  * 5. Pilotes sur ce circuit (podium Top3/Flop3 par score moyen, MEMBRES uniquement +
  *    « Voir le classement en entier ») — **mode Équipe uniquement**.
@@ -105,7 +105,7 @@ fun MapDetailScreen(
                         )
                     }
                     // 3. Scores moyens : score ÉQUIPE + position JOUEUR (FIXES, indépendants
-                    //    du mode) + shocks joués (DYNAMIQUE, suit le mode).
+                    //    du mode) + shocks obtenus (DYNAMIQUE, suit le mode).
                     item {
                         StatCard(title = stringResource(R.string.map_detail_avg_scores)) {
                             StatTiles(

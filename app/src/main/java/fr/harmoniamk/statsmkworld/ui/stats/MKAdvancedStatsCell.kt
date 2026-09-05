@@ -26,43 +26,70 @@ fun MKAdvancedStatsCell(stats: Stats?, type: StatsType?) {
                 // Contribution joueur — vue joueur uniquement (n'a de sens que là).
                 if (isPlayer) {
                     s.playerContribution?.let {
-                        MKStatRow(stringResource(R.string.player_contribution), "$it%")
+                        MKStatRow(
+                            stringResource(R.string.player_contribution),
+                            "$it%",
+                            info = stringResource(R.string.info_player_contribution)
+                        )
                     }
                 }
                 s.scoreStdDev?.let {
-                    MKStatRow(stringResource(R.string.score_std_dev), "±$it")
+                    MKStatRow(
+                        stringResource(R.string.score_std_dev),
+                        "±$it",
+                        info = stringResource(R.string.info_score_std_dev)
+                    )
                 }
                 if (s.scoreMin != null && s.scoreMax != null) {
                     MKStatRow(
                         stringResource(R.string.score_amplitude),
-                        "${s.scoreMin} – ${s.scoreMax}"
+                        "${s.scoreMin} – ${s.scoreMax}",
+                        info = stringResource(R.string.info_score_amplitude)
                     )
                 }
                 s.averageWinMargin?.let {
-                    MKStatRow(stringResource(R.string.avg_win_margin), "+$it")
+                    MKStatRow(
+                        stringResource(R.string.avg_win_margin),
+                        "+$it",
+                        info = stringResource(R.string.info_avg_win_margin)
+                    )
                 }
                 s.averageLossMargin?.let {
-                    MKStatRow(stringResource(R.string.avg_loss_margin), "-$it")
+                    MKStatRow(
+                        stringResource(R.string.avg_loss_margin),
+                        "-$it",
+                        info = stringResource(R.string.info_avg_loss_margin)
+                    )
                 }
                 // Perf par moitié de war — vue joueur (position moyenne du joueur).
                 if (isPlayer) {
                     s.firstHalfAvgPosition?.let {
-                        MKStatRow(stringResource(R.string.first_half_position), it.toString())
+                        MKStatRow(
+                            stringResource(R.string.first_half_position),
+                            it.toString(),
+                            info = stringResource(R.string.info_first_half_position)
+                        )
                     }
                     s.secondHalfAvgPosition?.let {
-                        MKStatRow(stringResource(R.string.second_half_position), it.toString())
+                        MKStatRow(
+                            stringResource(R.string.second_half_position),
+                            it.toString(),
+                            info = stringResource(R.string.info_second_half_position)
+                        )
                     }
                 }
                 if (s.unbeatenStreak > 0) {
                     MKStatRow(
                         stringResource(R.string.unbeaten_streak),
-                        stringResource(R.string.unbeaten_value, s.unbeatenStreak)
+                        stringResource(R.string.unbeaten_value, s.unbeatenStreak),
+                        info = stringResource(R.string.info_unbeaten_streak)
                     )
                 }
                 if (s.penaltyPointsLost > 0) {
                     MKStatRow(
                         stringResource(R.string.penalty_points_lost),
-                        s.penaltyPointsLost.toString()
+                        s.penaltyPointsLost.toString(),
+                        info = stringResource(R.string.info_penalty_points_lost)
                     )
                 }
             }
