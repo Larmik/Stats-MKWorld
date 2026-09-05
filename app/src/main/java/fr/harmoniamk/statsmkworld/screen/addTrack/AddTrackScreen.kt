@@ -49,6 +49,7 @@ import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.extension.diffColor
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerShockCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
@@ -353,7 +354,7 @@ private fun ColumnScope.SummaryStep(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     pair.forEach { playerPosition ->
                         PlayerShockCell(
-                            name = playerPosition.player?.name.orEmpty(),
+                            name = playerPosition.player?.name.orEmpty().displayName,
                             position = playerPosition.position.position,
                             is24p = state.is24p,
                             shockCount = state.shocks[playerPosition.player?.id] ?: 0,

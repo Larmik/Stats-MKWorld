@@ -46,6 +46,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.PodiumSectionCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
@@ -373,8 +374,8 @@ internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
  */
 internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
-        name = player.name,
-        initials = initialsOf(player.name),
+        name = player.name.displayName,
+        initials = initialsOf(player.name.displayName),
         // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales sur pastille colorée.
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
@@ -392,8 +393,8 @@ internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
  */
 internal fun OpponentDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
-        name = player.name,
-        initials = initialsOf(player.name),
+        name = player.name.displayName,
+        initials = initialsOf(player.name.displayName),
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(

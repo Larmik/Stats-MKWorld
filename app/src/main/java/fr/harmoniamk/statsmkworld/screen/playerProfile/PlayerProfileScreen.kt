@@ -39,6 +39,7 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.activity.MainActivity
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.countryFlag
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.getActivity
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
@@ -207,10 +208,10 @@ fun ColumnScope.PlayerProfileContent(
                 // Carte identité (pcard) : avatar, nom, pays + rôle, bio, badge MKCentral.
                 item {
                     ProfilePersonCard(
-                        name = player.name,
+                        name = player.name.displayName,
                         avatarUrl = avatar,
                         avatarColor = roster?.teamColor?.toInt().toTeamColor(),
-                        avatarFallback = initialsOf(player.name),
+                        avatarFallback = initialsOf(player.name.displayName),
                         badgeRes = R.string.profile_badge_player,
                         bio = player.userSettings?.aboutMe
                     ) {

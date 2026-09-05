@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
@@ -852,7 +853,7 @@ private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributo
         MKText(text = rank.toString(), font = Fonts.Urbanist, textColor = rankColor, fontSize = 14, modifier = Modifier.width(18.dp))
         // Médaillon joueur mutualisé (#50 pt.4) : photo si dispo, initiales sinon/pendant le chargement.
         PlayerMedallion(
-            initials = initialsOf(contributor.player.name),
+            initials = initialsOf(contributor.player.name.displayName),
             avatarColor = playerAvatarColor(contributor.player.id),
             avatarPath = contributor.player.avatar,
             size = 34.dp,
@@ -860,7 +861,7 @@ private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributo
         )
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                MKText(text = contributor.player.name, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 14, textAlign = TextAlign.Start, maxLines = 1)
+                MKText(text = contributor.player.name.displayName, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 14, textAlign = TextAlign.Start, maxLines = 1)
                 if (contributor.isMe) {
                     Box(Modifier.clip(RoundedCornerShape(4.dp)).background(Colors.yellow).padding(horizontal = 5.dp, vertical = 1.dp)) {
                         MKText(text = stringResource(R.string.stats_me_tag), font = Fonts.NunitoBD, textColor = Colors.black, fontSize = 8)

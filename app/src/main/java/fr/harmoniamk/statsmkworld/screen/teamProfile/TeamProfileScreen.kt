@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -239,9 +240,9 @@ fun ColumnScope.TeamProfileContent(
                                 }
                                 items(allies, key = { it.id }) { ally ->
                                     ProfileMemberRow(
-                                        initials = initialsOf(ally.name),
+                                        initials = initialsOf(ally.name.displayName),
                                         color = Colors.grey50,
-                                        name = ally.name,
+                                        name = ally.name.displayName,
                                         role = ProfileRole.ALLY,
                                         // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales.
                                         avatarUrl = ally.avatar?.let { "https://mkcentral.com$it" },
@@ -302,9 +303,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.memberItems(
     members.forEach { member ->
         item(key = member.playerId) {
             ProfileMemberRow(
-                initials = initialsOf(member.name),
+                initials = initialsOf(member.name.displayName),
                 color = member.rosterColor.toInt().toTeamColor(),
-                name = member.name,
+                name = member.name.displayName,
                 role = ProfileRole.fromFirebaseRole(member.role),
                 avatarUrl = member.avatarUrl,
                 onClick = { onPlayerClick(member.playerId) }
