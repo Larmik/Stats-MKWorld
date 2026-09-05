@@ -334,21 +334,27 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                     )
                 }
                 // Colonne DROITE : delta en haut, hint poussé en bas (aligné sur celui de gauche).
-                Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
+                // Contenu aligné à DROITE (#91, retour user) → vrai « space between » avec le graphe :
+                // sparkline collée à gauche, delta+hint collés à droite, espace au milieu.
+                Column(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
                     form?.winrateDelta?.let { delta ->
                         MKText(
                             text = if (delta >= 0) "↗ +$delta%" else "↘ $delta%",
                             font = Fonts.NunitoBD,
                             textColor = if (delta >= 0) Colors.green else Colors.red,
                             fontSize = 20,
-                            textAlign = TextAlign.Start
+                            textAlign = TextAlign.End
                         )
                     }
                     MKText(
                         text = stringResource(R.string.home_form_delta_cap, count),
                         textColor = Colors.white66,
                         fontSize = 12,
-                        textAlign = TextAlign.Start,
+                        textAlign = TextAlign.End,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
