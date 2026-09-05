@@ -708,6 +708,24 @@ Le résultat est affiché par `ui/cells/WarPlayerRankingCard` (grille 2 colonnes
   régularité (`scoreStdDev` + amplitude), marges moyennes victoire/défaite, perf
   1ʳᵉ/2ᵉ moitié (vue joueur), invaincu depuis (`unbeatenStreak`), points perdus en
   pénalités. Lignes via le composant partagé `MKStatRow`.
+- **Bouton info sur chaque indicateur (#87)** — composant partagé unique
+  `ui/stats/MKStatInfoButton.kt` (rule 16) : petite icône ronde `ic_info.xml`
+  (ⓘ, 16 dp, tint `white70`, `CircleShape` cliquable) posée à côté du libellé d'une
+  stat ; au clic, **réutilise `MKDialog`** (aucun nouveau dialog) avec `title` =
+  libellé, `message` = explication de la stat, bouton **Fermer** + `onDismiss`.
+  État d'ouverture en `rememberSaveable` **local au bouton** (rule 11, pur état UI
+  éphémère, pas de re-navigation). Câblé sur les 4 sections d'indicateurs :
+  `MKStatRow` porte un paramètre optionnel `info: String? = null` (couvre
+  `MKRecordsCell` + `MKAdvancedStatsCell` d'un coup) ; `MKWarDetailsStatsCell`
+  (grille Détails équipe) et `MKRecentFormCell` (tableau Forme récente) l'intègrent
+  à leurs layouts propres, avec un message **contextuel** là où le libellé varie
+  (position moyenne joueur vs score moyen/manche équipe). Les 22 explications sont
+  des string resources `info_*` (`res/values/` + `values-fr/`), reprises/adaptées
+  de la section « Tableau récapitulatif — toutes les statistiques » de
+  `docs/FUNCTIONAL.md` (nuances : position basse = mieux ; shocks/war neutre, aucune
+  corrélation avec la position finale). **Écart maquette assumé (rules 13/15)** : le
+  prototype ne prévoit pas de bouton info sur les cellules de stats → ⓘ discret
+  approximé.
 - **`MKPositionDistributionCell`** (bis, Vague 2, **vue joueur**) — mini-histogramme
   P1→P12 de la distribution des positions du joueur.
 - **`MKMapsRankingCell`** (Lot B/C) — top3/flop3 des circuits par **winrate ET
