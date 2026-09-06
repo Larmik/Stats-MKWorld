@@ -1,7 +1,6 @@
 package fr.harmoniamk.statsmkworld.database.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -17,9 +16,6 @@ interface WarDao {
     @Query("SELECT * FROM WarEntity ORDER BY CAST(id AS INTEGER) ASC")
     fun getAll(): Flow<List<WarEntity>>
 
-    @Query("SELECT * FROM WarEntity WHERE id=(:id) LIMIT 1")
-    fun getById(id: String?): Flow<WarEntity?>
-
     @Query("DELETE FROM WarEntity")
     suspend fun clear()
 
@@ -28,7 +24,4 @@ interface WarDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(war: WarEntity)
-
-    @Delete
-    suspend fun delete(war: WarEntity)
 }

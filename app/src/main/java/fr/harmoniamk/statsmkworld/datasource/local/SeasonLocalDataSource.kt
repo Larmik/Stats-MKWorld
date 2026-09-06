@@ -16,9 +16,7 @@ import javax.inject.Singleton
 
 interface SeasonLocalDataSourceInterface {
     fun getAll(): Flow<List<SeasonEntity>>
-    suspend fun getCurrent(): SeasonEntity?
     suspend fun insert(seasons: List<SeasonEntity>)
-    suspend fun insert(season: SeasonEntity)
     suspend fun clear()
 }
 
@@ -40,11 +38,7 @@ class SeasonLocalDataSource @Inject constructor(@ApplicationContext private val 
 
     override fun getAll(): Flow<List<SeasonEntity>> = dao.getAll()
 
-    override suspend fun getCurrent(): SeasonEntity? = dao.getCurrent()
-
     override suspend fun insert(seasons: List<SeasonEntity>) = dao.bulkInsert(seasons)
-
-    override suspend fun insert(season: SeasonEntity) = dao.insert(season)
 
     override suspend fun clear() = dao.clear()
 

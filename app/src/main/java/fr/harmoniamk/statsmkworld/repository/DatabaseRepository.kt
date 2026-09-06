@@ -17,7 +17,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -41,15 +40,12 @@ interface DatabaseRepositoryInterface {
     suspend fun clearTeams()
 
     fun getWars(): Flow<List<WarEntity>>
-    fun getWar(id: String?): Flow<WarEntity?>
     suspend fun writeWars(list: List<WarEntity>)
     suspend fun writeWar(war: WarEntity)
     suspend fun clearWars()
 
     fun getSeasons(): Flow<List<SeasonEntity>>
-    suspend fun getCurrentSeason(): SeasonEntity?
     suspend fun writeSeasons(list: List<SeasonEntity>)
-    suspend fun writeSeason(season: SeasonEntity)
     suspend fun clearSeasons()
 }
 
@@ -95,15 +91,12 @@ class DatabaseRepository @Inject constructor(
     override suspend fun clearTeams() = withContext(Dispatchers.IO) { teamLocalDataSource.clear() }
 
     override fun getWars(): Flow<List<WarEntity>> = warLocalDataSource.getAll().flowOn(Dispatchers.IO)
-    override fun getWar(id: String?): Flow<WarEntity?> = id?.let { warLocalDataSource.getById(it).flowOn(Dispatchers.IO) } ?: flowOf(null)
     override suspend fun writeWars(list: List<WarEntity>) = withContext(Dispatchers.IO) { warLocalDataSource.insert(list) }
     override suspend fun writeWar(war: WarEntity) = withContext(Dispatchers.IO) { warLocalDataSource.insert(war) }
     override suspend fun clearWars() = withContext(Dispatchers.IO) { warLocalDataSource.clear() }
 
     override fun getSeasons(): Flow<List<SeasonEntity>> = seasonLocalDataSource.getAll().flowOn(Dispatchers.IO)
-    override suspend fun getCurrentSeason(): SeasonEntity? = withContext(Dispatchers.IO) { seasonLocalDataSource.getCurrent() }
     override suspend fun writeSeasons(list: List<SeasonEntity>) = withContext(Dispatchers.IO) { seasonLocalDataSource.insert(list) }
-    override suspend fun writeSeason(season: SeasonEntity) = withContext(Dispatchers.IO) { seasonLocalDataSource.insert(season) }
     override suspend fun clearSeasons() = withContext(Dispatchers.IO) { seasonLocalDataSource.clear() }
 
 }

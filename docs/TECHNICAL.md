@@ -96,7 +96,7 @@ flowchart TD
 Règles transverses :
 
 - **Distinction réactif vs one-shot** (depuis la migration Flow→suspend) :
-  - Restent en `Flow` les flux réellement **réactifs** : lectures Room streaming (`getPlayers/getPlayer/getTeams/getTeam/getWars/getWar`), le listener temps réel `FirebaseRepository.listenToCurrentWar`, et les `Flow` DataStore.
+  - Restent en `Flow` les flux réellement **réactifs** : lectures Room streaming (`getPlayers/getPlayer/getTeams/getTeam/getWars`), le listener temps réel `FirebaseRepository.listenToCurrentWar`, et les `Flow` DataStore.
   - Sont des **`suspend fun`** les opérations **one-shot** : data sources réseau (MKCentral/Discord → `NetworkResponse<T>`, cf. §12), écritures/mutations de `DatabaseRepository` (sous `withContext(Dispatchers.IO)`) et lectures `.get()` + écritures de `FirebaseRepository`.
 - Un écran = un dossier `screen/<feature>/` avec `<Feature>Screen.kt` (Composable) + `<Feature>ViewModel.kt`.
 - Composants UI maison préfixés `MK` (`ui/MKButton.kt`, `MKText`, `MKDialog`, `MKTextField`, `MKSegmentedSelector`, `MKLoaderDialog`, `MKBottomSheet`…). Cellules de liste dans `ui/cells/`, widgets de stats dans `ui/stats/`. **`MKButton`** est le bouton **unique** de l'app (#50) : fond **blanc translucide** (`Colors.white30`), **SANS bordure**, libellé **et icône blancs** en majuscules (Urbanist), coins 10 dp. Sur demande utilisateur : garder le fond blanc transparent du `.btn2` mais **retirer la bordure** `whiteBorderSoft` (jugée disgracieuse — seul vrai souci). **Il n'y a plus de variante** (`MKButtonStyle` `Gradient`/`.cta` **et** `Minor`/`.btn2` supprimés ; l'ancien `WarActionButton` **fusionné** dans `MKButton`, rule 16 — plus aucun second composant bouton). Params variables (non des variantes de style) : `textColor` (blanc par défaut sur le dégradé/cartes sombres ; **`Colors.black` sur surface claire** — les 2 boutons de `MKDialog`, fond blanc, où le blanc serait illisible) et **`icon: Int?`** (drawable de tête optionnel 16 dp ; avec icône, métriques de l'ancien `WarActionButton` : hauteur 46 dp, padding horizontal 12 dp, libellé fontSize 12 + espace 8 dp ; sans icône, libellé centré fontSize 14). État désactivé : fond `whiteAlphaed` + texte atténué (`textColor.copy(alpha = 0.4f)`). **Divergence assumée vs maquette (rules 13/15)** : le prototype propose un CTA dégradé (`.cta`) et un secondaire translucide bordé (`.btn2`) ; sur demande utilisateur, l'app retient **un unique bouton translucide sans bordure** (ni dégradé, ni bordé) — hiérarchie primaire/secondaire aplatie. **`MKSegmentedSelector`** est le **segmented unique** de l'app (style « pill » de la maquette) : composant **stateless** (`page` = index sélectionné, `onClick` remonte l'index) avec un paramètre **`onDark`** adaptant les couleurs au fond hôte (`true` = carte sombre `blackAlphaed` → texte inactif blanc ; `false` défaut = fond clair du dégradé `BaseScreen` → texte inactif sombre, lisible). Consommé par Accueil (segmentés Moi/Équipe et 5/10 dans les cartes sombres, `onDark = true`), AddWar (12/24), Annuaire (joueurs/équipes), Stats (individuel/équipe, tri des podiums) et Classements (sous-onglets Joueurs/Adversaires/Circuits **et** chips de tri Winrate/Score/compteur). Ne pas recréer de segmented local (cf. rule `.claude/rules/15-ui-prototype-reference.md`).
@@ -620,7 +620,6 @@ moyenne par war des points du joueur. Les podiums adversaires de `StatsFullScree
 |---|---|---|---|
 | `averagePoints` | `warScores.sumOf { it.score } / warScores.sizeOrOne()` — `WarScore.score` = points **du joueur** si `userId != null` (score joueur), sinon total équipe | `warScores` | `MKWarDetailsStatsView` « Score moyen » (vue circuit + détail adversaire ; player-based en vue individuelle) ; base du score moyen des classements adversaires |
 | `averagePointsLabel` | `averagePoints.warScoreToDiff(warStats.is24p)` (milieu 492/864 selon mode) | `averagePoints`, `is24p` | Classements adversaires (vue équipe) ; `MKWarDetailsStatsView` « Score moyen » en vue équipe (label écart) |
-| `averageMapPoints` | `Σ averageForMaps.teamScore / averageForMaps.sizeOrOne()` | `averageForMaps` | `MKWarDetailsStatsView` « Moyenne map » (vue **équipe** — circuit/détail adversaire) |
 | `averagePlayerPosition` | `(Σ averageForMaps.playerScore / sizeOrOne()).pointsToPosition(is24p)` (inverse du barème ; plusieurs positions possibles en 24p) | `averageForMaps`, `pointsToPosition` | Alimente `averagePlayerPosLabel` |
 | `averagePlayerPosLabel` | position unique → `"N"` ; sinon `"first - last"` | `averagePlayerPosition` | `MKWarDetailsStatsView` « Position moyenne » (vue **joueur** — circuit/détail adversaire en vue individuelle) |
 | `mapsWon` | `averageForMaps.filter { (teamScore ?: 0) > 41 }.size × 100 / size` (ou `null` si vide) | `averageForMaps` | `MKWarDetailsStatsView` « Maps gagnées » (vue circuit + détail adversaire) |
@@ -866,7 +865,7 @@ DELETE FROM PlayerEntity
 -- + @Insert(REPLACE), @Upsert, @Delete
 ```
 
-`TeamDao` et `WarDao` : `getAll()`/`getById()` (Flow), `@Insert(REPLACE)` simple + `bulkInsert`, `@Delete`, `clear()`. Les requêtes `SELECT` renvoient des `Flow` (réactives) ; les mutations sont `suspend`.
+`TeamDao` : `getAll()` (Flow) + `bulkInsert` + `clear()`. `WarDao` : `getAll()` (Flow, trié `CAST(id AS INTEGER) ASC`) + `bulkInsert`/`insert` + `clear()`. Les requêtes `SELECT` renvoient des `Flow` (réactives) ; les mutations sont `suspend`. *(Les `getById`/`insert` unitaire/`@Delete` non consommés ont été retirés comme code mort #51 — seul `PlayerDao` conserve `getById`, lu par `getPlayer`.)*
 
 **TypeConverters** (Moshi) : chacun construit un `adapter<List<T>>(Types.newParameterizedType(List::class.java, T::class.java))` avec `KotlinJsonAdapterFactory`. `toJson` pour écrire, `fromJson` pour lire (try/catch → `arrayListOf()` en cas d'échec). `WarTrackConverter` ajoute un **`NumberToIntAdapterFactory`** custom (force tous les nombres JSON en `Int`, robustesse vis-à-vis des types Firebase).
 
@@ -1004,7 +1003,7 @@ DTO (`model/network/mkcentral/`, Moshi `@JsonClass(generateAdapter=true)`, mappi
 Sealed : `Success(response)` / `Error(message)`, avec accesseurs `successResponse: T?` et `errorResponse: String?`.
 
 ### Data sources locales
-`PlayerLocalDataSource` / `TeamLocalDataSource` / `WarLocalDataSource` : wrappers fins des DAO. `getAll/getById` délèguent le `Flow` du DAO ; les **mutations sont des `suspend fun`** déléguant directement aux DAO suspend (plus de wrapper `flow { emit(dao.…) }` — cf. audit D3).
+`PlayerLocalDataSource` / `TeamLocalDataSource` / `WarLocalDataSource` : wrappers fins des DAO. `getAll` (et `getById` pour `PlayerLocalDataSource` seul, consommé par `getPlayer`) délèguent le `Flow` du DAO ; les **mutations sont des `suspend fun`** déléguant directement aux DAO suspend (plus de wrapper `flow { emit(dao.…) }` — cf. audit D3).
 
 ---
 

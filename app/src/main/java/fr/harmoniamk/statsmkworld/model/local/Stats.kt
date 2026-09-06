@@ -22,8 +22,6 @@ data class Stats(
     val averagePoints: Int =
         warScores.sumOf { it.score } / warScores.sizeOrOne()
     val averagePointsLabel: String = averagePoints.warScoreToDiff(warStats.is24p)
-    val averageMapPoints: Int =
-        (averageForMaps.map { it.teamScore }.sum() / averageForMaps.sizeOrOne())
     val averagePlayerPosition: List<Int> =
         (averageForMaps.map { it.playerScore }.sum() / averageForMaps.sizeOrOne())
             .pointsToPosition(warStats.is24p)
@@ -214,7 +212,7 @@ data class Stats(
                 .takeIf { it.isNotEmpty() }
                 ?.let { it.sum() / it.size }
         }
-        // Score moyen par manche (équipe) — même base que averageMapPoints historique.
+        // Score moyen par manche (équipe).
         val avgMapScore = tracks
             .takeIf { it.isNotEmpty() && userId == null }
             ?.let { list -> list.sumOf { it.teamScore } / list.size }
