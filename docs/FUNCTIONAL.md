@@ -20,7 +20,7 @@
 11. [Enregistrer une war, pas à pas](#11-enregistrer-une-war-pas-à-pas)
 12. [Comprendre tes statistiques](#12-comprendre-tes-statistiques)
 13. [Les fiches détaillées (adversaire, circuit, joueur)](#13-les-fiches-détaillées-adversaire-circuit-joueur)
-14. [Le tableau de résultats à partager (image)](#14-le-tableau-de-résultats-à-partager-image)
+14. [Le Tab (PDF) — le tableau de résultats à partager](#14-le-tab-pdf--le-tableau-de-résultats-à-partager)
 15. [Rôles, saisons et réglages](#15-rôles-saisons-et-réglages)
 16. [Questions fréquentes](#16-questions-fréquentes)
 
@@ -36,7 +36,7 @@ Quand ton équipe affronte une autre équipe dans un match organisé (une **war*
 - **Retrouver l'historique** de tous tes matchs, avec le détail de chaque course ;
 - **Analyser tes performances** et celles de ton équipe grâce à des statistiques claires ;
 - **Comparer** les joueurs de ton équipe, les adversaires que tu rencontres et les circuits que tu joues ;
-- **Générer une image de résultats** à partager avec ton équipe ou tes adversaires.
+- **Générer un Tab (PDF)**, un tableau de résultats à partager avec ton équipe ou tes adversaires.
 
 L'application ne suit **pas** ton classement solo ni tes parties classées : elle est entièrement centrée sur les **wars de ton équipe**.
 
@@ -187,7 +187,7 @@ Depuis l'historique, appuie sur une war pour ouvrir son détail :
 
 - **La carte de score** : ton équipe face à l'adversaire, avec la **différence de score** au centre (verte si tu gagnes, rouge sinon), les **pénalités** éventuelles de chaque camp et le **total d'éclairs** de la war.
 - **Le classement des joueurs** : chaque joueur avec ses points, **classés du meilleur au moins bon**, et son nombre d'éclairs le cas échéant.
-- **Deux boutons** : **« Générer le Tab (PDF) »** (uniquement en 12 joueurs) pour créer une image de résultats à partager, et **« Voir l'adversaire »** pour ouvrir sa fiche détaillée.
+- **Deux boutons** : **« Générer le Tab (PDF) »** (uniquement en 12 joueurs) pour créer un tableau de résultats à partager, et **« Voir l'adversaire »** pour ouvrir sa fiche détaillée.
 - **Les courses jouées** : la liste des courses de la war, chacune cliquable pour voir le détail (circuit, positions, éclairs).
 
 ### Le détail d'une course
@@ -342,6 +342,16 @@ Appuie sur **« Course suivante »**. Un assistant t'accompagne :
 
 > En 24 joueurs, une étape **Intermission** s'ajoute (un second circuit enchaîné, optionnel).
 
+### Corriger une course déjà saisie
+
+Tu t'es trompé·e sur une place ou sur un nombre d'éclairs ? Tant que la war **n'est pas encore validée**, tu peux revenir sur n'importe quelle course enregistrée pour la corriger. Depuis la war en cours (ou depuis le détail d'une course), ouvre la course concernée puis appuie sur **« Éditer la course »**. Tu peux alors ajuster :
+
+- le **circuit** joué ;
+- les **positions** d'arrivée de chaque joueur (les places doivent rester toutes différentes) ;
+- le **nombre d'éclairs** de chaque joueur.
+
+Appuie sur **« Confirmer »** pour enregistrer tes corrections : le score de la war est recalculé automatiquement. Une fois la war validée, les courses ne sont plus modifiables.
+
 ### Plus d'actions : pénalités, remplacement, annulation
 
 Le bouton **« Plus d'actions »** ouvre trois onglets :
@@ -458,15 +468,15 @@ Elle affiche les **mêmes statistiques que l'onglet « Individuelles » du pôle
 
 ---
 
-## 14. Le tableau de résultats à partager (image)
+## 14. Le Tab (PDF) — le tableau de résultats à partager
 
-À la fin d'une war en **12 joueurs**, tu peux générer une **image récapitulative** à partager (par exemple sur Discord).
+À la fin d'une war en **12 joueurs**, tu peux générer le **Tab (PDF)**, un tableau récapitulatif de résultats à partager (par exemple sur Discord).
 
 **Comment y accéder :** depuis le détail d'une war 12 joueurs, appuie sur **« Générer le Tab (PDF) »**. (Ce bouton n'existe pas en 24 joueurs.)
 
 - Tu peux ajuster le **nombre de lignes adverses** (de 6 à 9) avec les boutons « − ligne » et « + ligne », utile s'il y a eu des remplaçants côté adverse.
 - Renseigne le **nom et le score** de chaque joueur adverse.
-- Appuie sur **« Tab classique & partager »** : l'app vérifie que les scores sont cohérents, génère l'image (logos, tags, scores de chaque camp — pénalités comprises, meilleurs joueurs avec médailles) et ouvre le menu de partage.
+- Appuie sur **« Tab classique & partager »** : l'app vérifie que les scores sont cohérents, génère le Tab (logos, tags, scores de chaque camp — pénalités comprises, meilleurs joueurs avec médailles) et ouvre le menu de partage.
 
 Un joueur qui a été **remplacé** (il n'a pas joué toutes les courses) voit son nombre de courses jouées indiqué entre parenthèses à côté de son nom (ex. « Pseudo (7) »).
 
