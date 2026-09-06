@@ -9,13 +9,8 @@ import fr.harmoniamk.statsmkworld.R
 object Colors{
     val white = Color(0xFFFFFFFF)
     val whiteAlphaed = Color(0x55FFFFFF)
-    // Rouge / vert « défaite / victoire ». Teintes légèrement assombries et
-    // saturées par rapport aux pastels de la maquette (--loss #F28B82 / --win
-    // #81C995) : la maquette les pose sur cartes sombres, mais dans l'app ces
-    // couleurs servent aussi de TEXTE sur le fond clair du dégradé (BaseScreen)
-    // où les pastels d'origine manquaient de contraste (#50 pt.6). Ces valeurs
-    // restent lisibles sur fond clair comme sur carte sombre, et améliorent aussi
-    // le contraste du texte blanc sur les pastilles V/D.
+    // Rouge/vert défaite/victoire, assombris vs les pastels maquette (--loss/--win) : servent
+    // aussi de TEXTE sur le fond clair du dégradé, où les pastels manquaient de contraste (#50 pt.6).
     val red = Color(0xFFE05D51)
     val blue = Color(0xFFAECBFA)
     val yellow = Color(0xFFFFF176)
@@ -26,10 +21,9 @@ object Colors{
     val black = Color(0xFF3C4043)
     val blackAlphaed = Color(0x773C4043)
     val transparent = Color(0x00FFFFFF)
-    // Bande d'appbar de la maquette : `.appbar` background rgba(48,51,54,.5) (#50 pt.2).
+    // Bande d'appbar (`.appbar` rgba(48,51,54,.5), #50 pt.2).
     val appbar = Color(0x80303336)
-    // Blancs translucides (repris de la maquette prototype UX : bordures /
-    // libellés secondaires des cartes sombres du dashboard Accueil).
+    // Blancs translucides (bordures / libellés secondaires des cartes sombres du dashboard).
     val whiteBorder = Color(0xEBFFFFFF) // rgba(255,255,255,.92) — bordure de carte
     val whiteBorderSoft = Color(0x73FFFFFF) // rgba(255,255,255,.45) — bordure douce (segmented)
     val white30 = Color(0x4DFFFFFF) // rgba(255,255,255,.30) — fond translucide (tuiles/segmented)

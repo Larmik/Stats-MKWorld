@@ -11,11 +11,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface WarDao {
 
-    // id = timestamp de création (war.id, epoch millis) stocké en TEXT : tri
-    // chronologique croissant garanti EN AMONT de tous les calculs de stats
-    // (séries, forme récente…). CAST en INTEGER pour un tri numérique et non
-    // lexicographique. Source de vérité de l'ordre pour worker + ViewModels ;
-    // Stats.kt re-trie par sécurité mais s'appuie sur cette garantie.
+    // id = timestamp epoch millis stocké en TEXT ; CAST INTEGER pour un tri numérique
+    // (et non lexicographique). Ordre chronologique croissant = source de vérité pour
+    // tous les calculs de stats (séries, forme récente…).
     @Query("SELECT * FROM WarEntity ORDER BY CAST(id AS INTEGER) ASC")
     fun getAll(): Flow<List<WarEntity>>
 

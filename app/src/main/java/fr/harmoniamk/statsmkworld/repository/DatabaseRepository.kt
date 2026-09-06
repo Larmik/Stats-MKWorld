@@ -85,10 +85,8 @@ class DatabaseRepository @Inject constructor(
 
     override fun getTeams(): Flow<List<TeamEntity>> = teamLocalDataSource.getAll().flowOn(Dispatchers.IO)
 
-    // Résout un identifiant d'équipe adverse : d'abord par teamId (clé primaire),
-    // à défaut par le rosterId (War.teamOpponent contient un rosterId depuis le
-    // passage à la granularité roster) en cherchant l'équipe dont l'un des rosters
-    // porte cet id → on remonte à l'équipe parente pour l'affichage/regroupement.
+    // Résout un id adverse par teamId (clé primaire), à défaut par rosterId (équipe dont
+    // l'un des rosters porte cet id) → remonte à l'équipe parente.
     override suspend fun getTeam(id: String): TeamEntity? = withContext(Dispatchers.IO) {
         val teams = teamLocalDataSource.getAll().firstOrNull().orEmpty()
         teams.firstOrNull { it.id == id } ?: teams.firstOrNull { team -> team.rosters.any { it.id == id } }

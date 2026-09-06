@@ -76,7 +76,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES) // Dossier "Pictures/"
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
                 }
                 val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
                 imageUri?.let { uri ->
@@ -212,11 +212,10 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         val doc = PdfDocument()
         val pageWidthPx = scale(1630)
         val pdfView: View = View.inflate(context, R.layout.tab_pdf, null)
-        // Peupler les données AVANT de mesurer : la hauteur dépend des lignes réellement
-        // visibles (remplaçants jusqu'à 9/équipe + lignes de pénalité par équipe).
+        // Peupler AVANT de mesurer : la hauteur dépend des lignes visibles (jusqu'à
+        // 9 joueurs/équipe + pénalités).
         setPdfData(pdfView, details, teamWin, teamLose, allScores)
-        // Largeur figée, hauteur laissée libre (UNSPECIFIED) pour que la vue s'étende au
-        // contenu, quelle que soit la répartition des marqueurs entre les deux équipes.
+        // Largeur figée, hauteur libre (UNSPECIFIED) → la vue s'étend au contenu.
         val widthSpec = View.MeasureSpec.makeMeasureSpec(pageWidthPx, View.MeasureSpec.EXACTLY)
         val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         pdfView.measure(widthSpec, heightSpec)

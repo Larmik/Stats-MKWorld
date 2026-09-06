@@ -35,19 +35,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
 /**
- * ViewModel de l'écran Statistiques (pôle Stats, ticket #25) : porte À LA FOIS la
- * vue **Individuelles** (perf du joueur [userId]) et la vue **Équipe** (perf
- * collective). Réutilise `withFullStats` (calculs dans [Stats]) — rien n'est
- * recalculé côté UI.
+ * ViewModel de l'écran Statistiques (#25) : porte les vues Individuelles (joueur [userId])
+ * et Équipe. Réutilise `withFullStats` — rien de recalculé côté UI.
  *
- * - [userId] non-null (ex. `statsfull` pour un membre du roster) ⇒ écran centré sur
- *   ce joueur ; [showTabs] = false ⇒ seul le rendu Individuelles est montré (variante
- *   « pour un joueur donné » de la vue Individuelles, mutualisée).
- * - [userId] null ⇒ le joueur courant (« mes stats ») ; [showTabs] = true ⇒ onglets
- *   Individuelles / Équipe.
+ * - [userId] non-null (`statsfull` d'un membre) ⇒ écran centré sur ce joueur, [showTabs] false
+ *   (rendu Individuelles seul).
+ * - [userId] null ⇒ joueur courant, [showTabs] true ⇒ onglets Individuelles / Équipe.
  *
- * Le support 24 j est **temporairement retiré** (ticket #37) : l'écran ne présente
- * que le 12p (`is24p` figé à `false`). Pas de toggle, pas de comparatif 12/24.
+ * 24p temporairement retiré (#37) : `is24p` figé à `false`.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel(assistedFactory = StatsFullViewModel.Factory::class)
@@ -64,11 +59,9 @@ class StatsFullViewModel @AssistedInject constructor(
     }
 
     /**
-     * Une ligne de classement du roster (vue Équipe) : joueur, part de points
-     * (« Contributeurs »), part de shocks (« Meilleurs baggeurs », #69) et winrate.
-     * Le MÊME modèle alimente les deux classements ; seul le critère de tri diffère
-     * (pointsShare vs shockShare). part de shocks = total shocks joueur / total shocks
-     * équipe (ratio TOTAL/TOTAL, jamais une moyenne).
+     * Ligne de classement du roster : joueur, part de points, part de shocks (#69) et winrate.
+     * Même modèle pour « Contributeurs » et « Meilleurs baggeurs » (tri pointsShare vs shockShare).
+     * shockShare = total shocks joueur / total shocks équipe (ratio total/total).
      */
     data class Contributor(
         val player: PlayerEntity,
@@ -83,44 +76,34 @@ class StatsFullViewModel @AssistedInject constructor(
         // Nom/pastille pour l'en-tête (joueur ou équipe selon l'onglet).
         val playerName: String? = null,
         val teamName: String? = null,
-        // Vignettes d'en-tête : avatar MKCentral du joueur (Individuelles) et logo de
-        // l'équipe (Équipe), déjà préfixés par l'hôte MKCentral. Fallback à l'affichage.
+        // Vignettes d'en-tête : avatar joueur (Individuelles) et logo équipe (Équipe), déjà préfixés.
         val playerLogo: String? = null,
         val teamLogo: String? = null,
-        // Id du joueur affiché (résolu : soit userId, soit joueur courant) — sert à
-        // reconstruire un StatsType pour les cellules ui/stats/* réutilisées.
+        // Id du joueur affiché (userId ou joueur courant) — pour les cellules ui/stats/* réutilisées.
         val targetUserId: String? = null,
-        // Stats (12p uniquement — 24p retiré, ticket #37), déclinées par FENÊTRE de période
-        // (#68) : 0 = all-time, 1 = 5 dernières, 2 = 10 dernières. Le sélecteur de période
-        // GLOBAL de l'écran choisit l'index ; toutes les sections lisent la même fenêtre.
+        // Stats (12p) par fenêtre de période (#68) : 0 = all-time, 1 = 5, 2 = 10. Le sélecteur
+        // global choisit l'index ; toutes les sections lisent la même fenêtre.
         val playerStatsByWindow: Map<Int, Stats> = mapOf(),
         val teamStatsByWindow: Map<Int, Stats> = mapOf(),
-        // Taux de participation du joueur (#78) PAR FENÊTRE (0 = all-time, 1 = 5, 2 = 10) :
-        // % de wars de l'équipe (dénominateur = wars de la fenêtre) où le joueur est présent.
-        // Numérateur et dénominateur sur la MÊME fenêtre filtrée (saison + all-time/5/10).
+        // Participation du joueur (#78) par fenêtre : % de wars de l'équipe où il est présent.
+        // Numérateur et dénominateur sur la même fenêtre filtrée (saison + all-time/5/10).
         val participationRateByWindow: Map<Int, Int> = mapOf(),
-        // Tables Top/Bot 2→6 (toutes manches, vue équipe) : équipe ET adversaire (complément
-        // des positions), alimentées par un MapStats par fenêtre (userId null, 12p).
-        // Réutilisées par les StatCard « Top/Bot équipe » / « Top/Bot adversaire ».
+        // Tables Top/Bot 2→6 par fenêtre (vue équipe, userId null) : équipe ET adversaire.
         val teamMapStatsByWindow: Map<Int, MapStats> = mapOf(),
-        // Vue Équipe : contributeurs du roster par fenêtre (0 = all-time, 1 = 5, 2 = 10).
+        // Contributeurs du roster par fenêtre.
         val contributorsByWindow: Map<Int, List<Contributor>> = mapOf(),
-        // Vue Équipe : MÊMES lignes que les contributeurs, mais triées par part de SHOCKS
-        // (« Meilleurs baggeurs », #69). Part de shocks = total shocks joueur / total équipe.
+        // Mêmes lignes triées par part de SHOCKS (« Meilleurs baggeurs », #69).
         val baggersByWindow: Map<Int, List<Contributor>> = mapOf(),
-        // Classements adversaires top3/flop3 (occurrences, winrate ET score) PAR FENÊTRE, au
-        // périmètre de la vue (équipe = tous ; individuelles = du point de vue du joueur).
+        // Classements adversaires top3/flop3 par fenêtre, au périmètre de la vue (équipe / joueur).
         val teamOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
         val playerOpponentsByWindow: Map<Int, OpponentPodiums> = mapOf(),
-        // Filtre par saison (#70) : liste des saisons (ordre chrono) + saison sélectionnée
-        // (`selectedSeasonNumber` null = tout l'historique, défaut = saison en cours). Les
-        // wars sont filtrées sur l'intervalle [start, end] AVANT tout calcul d'agrégat.
+        // Filtre saison (#70) : `selectedSeasonNumber` null = tout l'historique, défaut = saison
+        // en cours. Wars filtrées sur [start, end] avant tout calcul.
         val seasons: List<SeasonEntity> = listOf(),
         val selectedSeasonNumber: Int? = null
     )
 
-    /** Les 6 classements adversaires d'un podium (top/flop × occurrences/winrate/score) +
-     * la **liste complète** ([all]) pour le classement entier scopé (#67 round 3). */
+    /** Les 6 podiums adversaires (top/flop × occurrences/winrate/score) + la liste complète ([all], #67). */
     data class OpponentPodiums(
         val topByCount: List<RankingItem.OpponentRanking> = listOf(),
         val flopByCount: List<RankingItem.OpponentRanking> = listOf(),
@@ -128,16 +111,14 @@ class StatsFullViewModel @AssistedInject constructor(
         val flopByWinrate: List<RankingItem.OpponentRanking> = listOf(),
         val topByScore: List<RankingItem.OpponentRanking> = listOf(),
         val flopByScore: List<RankingItem.OpponentRanking> = listOf(),
-        // Liste complète des adversaires (non tronquée) au périmètre de la vue — triée par
-        // le classement entier selon son propre sélecteur. `rankable` = ≥ MIN_RANKING_SAMPLE.
+        // Liste complète (non tronquée) au périmètre de la vue, pour le classement entier.
         val all: List<RankingItem.OpponentRanking> = listOf()
     )
 
     /**
-     * Sélection de saison (#70) hissée dans le VM (rule 11 : état, pas de re-nav).
-     * [Default] = première ouverture → la saison EN COURS ; [AllTime] = tout l'historique ;
-     * [Specific] = une saison passée précise. Distinct de « saison courante » car le
-     * défaut doit se résoudre APRÈS chargement des saisons (numéro pas connu d'avance).
+     * Sélection de saison (#70) hissée dans le VM (rule 11). [Default] → saison en cours ;
+     * [AllTime] → tout l'historique ; [Specific] → saison précise. Le défaut se résout après
+     * chargement des saisons (numéro pas connu d'avance).
      */
     sealed interface SeasonFilter {
         data object Default : SeasonFilter
@@ -148,21 +129,17 @@ class StatsFullViewModel @AssistedInject constructor(
     // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
     private val is24p = false
 
-    // Fenêtres de période du sélecteur GLOBAL (#68) : (indexUI, N dernières wars) — 0 =
-    // all-time (null), 1 = 5, 2 = 10. Source unique partagée par tout le fenêtrage du VM
-    // (stats/tops-bots/adversaires/contributeurs) pour rester cohérent entre sections.
+    // Fenêtres du sélecteur global (#68) : (indexUI, N dernières wars) — 0 = all-time, 1 = 5,
+    // 2 = 10. Source unique partagée par tout le fenêtrage du VM (cohérence entre sections).
     private val windowSizes = listOf(0 to null, 1 to 5, 2 to 10)
 
-    // Sélection de saison courante (#70). Recompute déclenché à chaque changement via
-    // `combine` avec le flux de wars → recalcul à la volée (stratégie recommandée du ticket).
+    // Sélection de saison (#70) : `combine` avec les wars → recompute à la volée.
     private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
 
     private val _state = MutableStateFlow(State())
 
-    // Dernier State COMPLET calculé par la branche `compute` (mémorisé comme StatsRanking
-    // mémorise `loadedSeasons`, #73/#91 pt.4) : `onSeasonSelected` pose `loading = true` sur
-    // CE state (et non sur le `_state` par défaut, vide) pour que le loader s'affiche SANS
-    // faire disparaître le header (dropdown de saison) ni les données déjà calculées.
+    // Dernier State complet calculé (#73/#91 pt.4) : `onSeasonSelected` pose `loading = true`
+    // dessus (pas sur le `_state` vide) pour ne pas faire disparaître le header ni les données.
     @Volatile
     private var lastComputedState: State = State()
 
@@ -170,39 +147,31 @@ class StatsFullViewModel @AssistedInject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
-    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
-     * IMMÉDIATEMENT sur le DERNIER state complet (via `_state`, mergé dans `state`) pour que
-     * le loader s'affiche visiblement (comme les Classements, #91 pt.4) sans vider le header,
-     * pendant que le compute lourd tourne off-main (#73) ; `computeState` émet ensuite
-     * `loading = false`. */
+    /** Sélection de saison (`number` null = tout l'historique). Pose `loading` sur le dernier
+     * state complet (via `_state`) pour afficher le loader sans vider le header (#91 pt.4)
+     * pendant le compute off-main (#73). */
     fun onSeasonSelected(number: Int?) {
         _state.value = lastComputedState.copy(loading = true)
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
     private fun compute() = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
-            // Saisons (cache Room) observées en Flow réactif (#73) : le sélecteur apparaît dès
-            // que l'hydratation eager écrit les saisons. Liste pour le sélecteur + résolution
-            // de la saison effective (défaut = saison en cours). `null` = tout l'historique.
+            // Saisons observées en Flow (#73). Résolution de la saison effective (défaut = en cours).
             val currentSeason = seasons.lastOrNull { it.end == null }
             val activeSeason = when (seasonFilter) {
                 is SeasonFilter.AllTime -> null
                 is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
                 is SeasonFilter.Default -> currentSeason
             }
-            // Filtre saison appliqué AVANT tout autre filtre/calcul (calculé sur war.id).
+            // Filtre saison appliqué avant tout calcul (sur war.id).
             val seasonWars = warEntities.filterBySeason(activeSeason)
             computeState(seasonWars, seasons, activeSeason?.number)
-                // Mémorise le dernier state complet pour que `onSeasonSelected` puisse poser
-                // `loading = true` dessus sans vider l'écran (#91 pt.4).
-                .also { lastComputedState = it }
+                .also { lastComputedState = it }  // dernier state complet pour `onSeasonSelected` (#91 pt.4)
         }
 
-    // Le calcul des agrégats (fenêtres, contributeurs, adversaires) est CPU-lourd : déporté sur
-    // `Dispatchers.Default` via `withContext` — et NON `flowOn` (#73), qui, sur une chaîne passant
-    // par `mergeWith`/`flattenMerge`, provoquait une course cross-thread laissant gagner l'état vide
-    // (dropdown de saison disparu). `seasons`/`activeSeasonNumber` sont résolus sur le collecteur et
-    // toujours reportés dans le State, quel que soit le résultat du calcul. Cf. rule 21.
+    // Agrégats CPU-lourds déportés sur `Dispatchers.Default` via `withContext` — pas `flowOn`
+    // (#73) qui, sur la chaîne `mergeWith`/`flattenMerge`, faisait gagner l'état vide. `seasons`/
+    // `activeSeasonNumber` résolus sur le collecteur, toujours reportés dans le State. Cf. rule 21.
     private suspend fun computeState(
         warEntities: List<WarEntity>,
         seasons: List<SeasonEntity>,
@@ -225,9 +194,8 @@ class StatsFullViewModel @AssistedInject constructor(
             val playerName = targetUserId
                 ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
             val teamName = team?.name
-            // Avatar joueur (comme WelcomeViewModel) : seulement résoluble pour le
-            // joueur COURANT (userSettings.avatar en DataStore). Pour un autre joueur
-            // (statsfull via userId), fallback initiales (avatar non caché localement).
+            // Avatar joueur résoluble seulement pour le joueur courant (userSettings.avatar en
+            // DataStore) ; pour un autre joueur (statsfull), fallback initiales.
             val isCurrentPlayer = userId == null || userId == currentPlayer?.id?.toString()
             val playerLogo = currentPlayer?.userSettings?.avatar
                 ?.takeIf { it.isNotEmpty() && isCurrentPlayer }
@@ -236,32 +204,26 @@ class StatsFullViewModel @AssistedInject constructor(
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { "https://mkcentral.com$it" }
 
-            // Wars de l'équipe triées chronologiquement (war.id = timestamp) : base commune
-            // du fenêtrage de TOUTES les sections (#68). La fenêtre N = N dernières wars de
-            // l'équipe, cohérente entre stats/contributeurs/adversaires/tops-bots.
+            // Wars de l'équipe triées chrono (war.id = timestamp) : base commune du fenêtrage
+            // de toutes les sections (#68). Fenêtre N = N dernières wars.
             val chronologicalWars = teamWarsMode.sortedBy { it.war.id }
             val currentTeamId = team?.id?.toString()
 
-            // Liste des équipes adverses (cache Room) — INVARIANTE au fenêtrage/scope : lue UNE
-            // seule fois ici (perf #73), au lieu de 6× dans `computeOpponentRankings` (2 vues ×
-            // 3 fenêtres). Même filtrage (`filterNot { id == currentTeamId }`) → résultat
-            // identique (rule 13, simple déduplication de lecture).
+            // Équipes adverses invariantes au fenêtrage : lues une seule fois ici (perf #73) au
+            // lieu de 6× dans `computeOpponentRankings` (2 vues × 3 fenêtres).
             val opponentTeams = databaseRepository.getTeams().firstOrNull()
                 .orEmpty()
                 .filterNot { it.id == currentTeamId }
 
-            // Chaque section est déclinée sur les 3 fenêtres (0 = all-time, 1 = 5, 2 = 10)
-            // et keyée par index. Le sélecteur de période GLOBAL de l'écran choisit l'index ;
-            // toutes les sections lisent alors la même fenêtre. Fenêtrage à la demande sur
-            // `takeLast(n)` des wars chrono (rule 13 : justesse ; pas de valeur en dur).
+            // Chaque section déclinée sur les 3 fenêtres (0/1/2), keyée par index. Fenêtrage à la
+            // demande via `takeLast(n)` des wars chrono.
             val playerStatsByWindow = mutableMapOf<Int, Stats>()
             val teamStatsByWindow = mutableMapOf<Int, Stats>()
             val teamMapStatsByWindow = mutableMapOf<Int, MapStats>()
             val teamOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
             val playerOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
-            // Taux de participation (#78) par fenêtre : wars du joueur / wars de l'équipe (même
-            // fenêtre). Garde-fou dénominateur nul → 0 %. Calculé dans le VM (mono-consommateur,
-            // rule 32) sur `windowWars`, la même base filtrée que les autres agrégats.
+            // Participation (#78) par fenêtre : wars du joueur / wars de l'équipe. Garde-fou
+            // dénominateur nul → 0 %. Calcul dans le VM (mono-consommateur, rule 32).
             val participationRateByWindow = mutableMapOf<Int, Int>()
             windowSizes.forEach { (index, lastN) ->
                 val windowWars = lastN?.let { chronologicalWars.takeLast(it) } ?: chronologicalWars
@@ -273,8 +235,7 @@ class StatsFullViewModel @AssistedInject constructor(
                     .firstOrNull()?.let { playerStatsByWindow[index] = it }
                 windowWars.withFullStats(databaseRepository, is24p = is24p)
                     .firstOrNull()?.let { teamStatsByWindow[index] = it }
-                // MapStats (toutes manches, vue équipe = userId null) : tables Top/Bot 2→6
-                // d'équipe ET adversaire (détail 2→6 que RecordsTilesCard n'a pas).
+                // MapStats (vue équipe, userId null) : tables Top/Bot 2→6 équipe ET adversaire.
                 teamMapStatsByWindow[index] = MapStats(
                     list = windowWars.flatMap { war ->
                         war.warTracks.map { track -> MapDetails(war = war, warTrack = track, position = null) }
@@ -282,26 +243,20 @@ class StatsFullViewModel @AssistedInject constructor(
                     userId = null,
                     is24p = is24p
                 )
-                // Classements top3/flop3 adversaires (occurrences/winrate/score), au périmètre
-                // de la vue : équipe (tous adversaires) ET joueur (adversaires affrontés du
-                // point de vue du joueur). Calcul dans le VM (mono-consommateur, rule 32).
+                // Podiums adversaires (occurrences/winrate/score) : équipe ET joueur (rule 32).
                 teamOpponentsByWindow[index] = computeOpponentRankings(windowWars, opponentTeams, userId = null)
                 playerOpponentsByWindow[index] = computeOpponentRankings(windowWars, opponentTeams, userId = targetUserId)
             }
 
-            // Contributeurs du roster (vue Équipe) par fenêtre (all-time / 5 / 10). On passe
-            // `chronologicalWars` (déjà trié) pour éviter de re-trier la même liste 3× (perf #73).
+            // Contributeurs du roster par fenêtre. `chronologicalWars` déjà trié → pas de re-tri (perf #73).
             val contributorsByWindow = computeContributorsByWindow(chronologicalWars, targetUserId)
-            // Meilleurs baggeurs (#69) : MÊMES lignes triées par part de SHOCKS décroissante.
+            // Meilleurs baggeurs (#69) : mêmes lignes triées par part de SHOCKS.
             val baggersByWindow = contributorsByWindow.mapValues { (_, contributors) ->
                 contributors.sortedByDescending { it.shockShare }
             }
-            // NB (#69, retour PR #75) : la section indiv « Ta contribution » NE recalcule
-            // PLUS sa part de points/shocks. Elle LIT la ligne du joueur (`isMe`) dans
-            // `contributorsByWindow` (source de vérité UNIQUE), garantissant un % IDENTIQUE
-            // à celui du classement équipe pour un même joueur/fenêtre. L'ancien calcul indiv
-            // (`playerShockShareByWindow`, `Stats.playerContribution`) divergeait car il
-            // agrégeait sur un SOUS-ENSEMBLE de wars (celles du joueur) → dénominateur ≠.
+            // #69 : la section indiv « Ta contribution » LIT la ligne `isMe` de `contributorsByWindow`
+            // (source unique) → % identique au classement équipe (recalculer sur le sous-ensemble
+            // du joueur donnerait un dénominateur différent).
 
             State(
                 loading = false,
@@ -325,11 +280,10 @@ class StatsFullViewModel @AssistedInject constructor(
     }
 
     /**
-     * Top3/flop3 adversaires par **occurrences** (nb de confrontations), winrate ET
-     * score moyen, au périmètre des [wars] déjà filtrées. `userId` non-null ⇒ point de
-     * vue du joueur. winrate/score filtrent à ≥ [Stats.MIN_RANKING_SAMPLE] ; les
-     * occurrences classent TOUS les adversaires (« le moins joué » a du sens sous le
-     * seuil). Réutilise `withFullTeamStats` (comme StatsViewModel, rule 32).
+     * Top3/flop3 adversaires par occurrences, winrate ET score sur les [wars] filtrées.
+     * `userId` non-null ⇒ point de vue du joueur. winrate/score filtrent à ≥
+     * [Stats.MIN_RANKING_SAMPLE] ; les occurrences classent tous les adversaires. Réutilise
+     * `withFullTeamStats` (rule 32).
      */
     private suspend fun computeOpponentRankings(
         wars: List<WarDetails>,
@@ -351,22 +305,16 @@ class StatsFullViewModel @AssistedInject constructor(
             flopByWinrate = rankable.sortedBy { it.winrate }.take(3),
             topByScore = rankable.sortedByDescending { it.stats.averagePoints }.take(3),
             flopByScore = rankable.sortedBy { it.stats.averagePoints }.take(3),
-            // Liste complète des adversaires réellement affrontés (au périmètre de la vue),
-            // pour le classement entier scopé (#67 round 3). Tri par défaut = occurrences.
+            // Liste complète des adversaires affrontés, pour le classement entier (#67).
             all = all.filter { it.stats.warStats.warsPlayed > 0 }
                 .sortedByDescending { it.stats.warStats.warsPlayed }
         )
     }
 
     /**
-     * Contributeurs du roster pour les **3 fenêtres** (all-time / 5 / 10 dernières wars),
-     * keyées par index (0/1/2) pour le sélecteur de la section. Chaque membre : part de
-     * ses points (÷ total cumulé des membres), part de ses shocks (÷ total shocks équipe)
-     * et winrate, sur la fenêtre. Trié décroissant.
-     *
-     * **Source de vérité UNIQUE** (retour PR #75) : la section indiv « Ta contribution »
-     * lit la ligne du joueur (`isMe`) ici même — mêmes wars, même dénominateur — au lieu
-     * de recalculer sur un sous-ensemble, ce qui garantit des % identiques indiv ↔ équipe.
+     * Contributeurs du roster pour les 3 fenêtres (keyées 0/1/2). Chaque membre : part de points
+     * (÷ total membres), part de shocks (÷ total équipe) et winrate. Source unique lue aussi par
+     * la section indiv « Ta contribution » (#75) → % identiques indiv ↔ équipe.
      */
     private suspend fun computeContributorsByWindow(
         wars: List<WarDetails>,
@@ -382,17 +330,14 @@ class StatsFullViewModel @AssistedInject constructor(
         }
     }
 
-    /** Contributeurs sur une fenêtre : [lastN] null = all-time, sinon N dernières wars
-     * de l'ÉQUIPE (fenêtre commune à tous les membres). [wars] est déjà trié chrono par
-     * war.id en amont (`chronologicalWars`) → pas de re-tri par fenêtre (perf #73). */
+    /** Contributeurs sur une fenêtre : [lastN] null = all-time, sinon N dernières wars de l'équipe.
+     * [wars] déjà trié chrono en amont → pas de re-tri (perf #73). */
     private suspend fun computeContributors(
         wars: List<WarDetails>,
         members: List<PlayerEntity>,
         meId: String?,
         lastN: Int?
     ): List<Contributor> {
-        // Fenêtre commune : N dernières wars de l'équipe (chrono), puis part de chaque
-        // membre DANS cette fenêtre.
         val windowWars = lastN?.let { wars.takeLast(it) } ?: wars
         val perPlayer = members.mapNotNull { player ->
             windowWars.filter { it.war.hasPlayer(player.id) }
@@ -403,8 +348,7 @@ class StatsFullViewModel @AssistedInject constructor(
         }
         val totalPoints = perPlayer.sumOf { it.second.warScores.sumOf { score -> score.score } }
             .takeIf { it > 0 } ?: return listOf()
-        // Dénominateur SHOCKS (#69) : total des shocks de l'ÉQUIPE sur la fenêtre (tous
-        // joueurs). Part de chaque membre = ses shocks / ce total (ratio TOTAL/TOTAL).
+        // Dénominateur shocks (#69) : total shocks de l'équipe sur la fenêtre (part membre = ses shocks / ce total).
         val totalTeamShocks = windowWars.totalShocks()
         return perPlayer
             .map { (player, stats) ->

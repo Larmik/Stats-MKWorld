@@ -48,11 +48,8 @@ class InitStatsWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
-        // Hydratation eager des saisons (#73) : `fetchSeasons` synchronise RTDB → Room et
-        // self-seed l'historique si le nœud est vide. Ce worker tourne à chaque onCreate de
-        // MainActivity, donc les utilisateurs EXISTANTS voient leurs saisons peuplées sans
-        // attendre le worker périodique (délai initial 18-28h). Idempotent, indépendant du
-        // bloc stats (pas gardé par rosterId).
+        // Hydratation eager des saisons (#73) : synchro RTDB → Room à chaque onCreate de
+        // MainActivity, sans attendre le worker périodique. Idempotent, indépendant du bloc stats.
         dataStoreRepository.mkcTeam.firstOrNull()?.id?.let { seasonRepository.fetchSeasons(it.toString()) }
 
         val currentPlayer = dataStoreRepository.mkcPlayer.firstOrNull()
@@ -60,9 +57,8 @@ class InitStatsWorker @AssistedInject constructor(
         val rosterId = currentPlayer?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
         val is24PEnabled = dataStoreRepository.is24PEnabled.firstOrNull() == true
 
-        // Pas de normalisation ici : withFullTeamStats rapproche les wars de chaque
-        // équipe adverse par teamId OU rosterId (via TeamEntity.rosters), et le
-        // regroupement mostPlayed/etc. résout le rosterId → équipe dans withFullStats.
+        // Pas de normalisation ici : withFullTeamStats rapproche les wars par teamId OU
+        // rosterId (via TeamEntity.rosters), résolu ensuite dans withFullStats.
         databaseRepository.getWars().firstOrNull()
             ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
             ?.filter { (is24PEnabled && it.teamOpponent.size > 1 || (!is24PEnabled && it.teamOpponent.size == 1)) }
@@ -73,12 +69,9 @@ class InitStatsWorker @AssistedInject constructor(
             statsRepository.trackRankList = warList.withTrackStats().map { RankingItem.TrackRanking(it) }
             statsRepository.playerTrackRankList = warList.withTrackStats(currentPlayer?.id.toString()).map { RankingItem.TrackRanking(it) }
 
-            // Perf : les tables croisées (joueur × …) multiplient les parcours de la
-            // liste de wars. WarDetails(War(WarEntity)) reparse toutes les manches et
-            // recalcule plusieurs scores dérivés — on le fait UNE fois ici puis on
-            // réutilise la liste (filtrée par joueur) au lieu de reconstruire un
-            // WarDetails par (joueur × war). Ordre chronologique préservé (getWars
-            // trie déjà, cf. WarDao).
+            // Perf : construit les WarDetails UNE fois (WarDetails(War(WarEntity)) reparse
+            // toutes les manches) puis réutilisés par (joueur × war). Ordre chronologique
+            // préservé (getWars trie déjà, cf. WarDao).
             val warDetailsList = warList.map { WarDetails(War(it)) }
 
             //Fetch players stats

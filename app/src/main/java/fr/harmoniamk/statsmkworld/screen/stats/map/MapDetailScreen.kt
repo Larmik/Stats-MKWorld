@@ -34,17 +34,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Fiche détail CIRCUIT (`map` du prototype, pôle Classements #27). Sélecteur Indiv/Équipe
- * (rule 11 : bascule un état réactif du VM, l'écran reste monté). Sections :
- * 1. Sélecteur Indiv/Équipe + en-tête (nom, nb de fois joué) ;
- * 2. Performance (winrate de manche coloré selon seuil + V/N/D + barre) ;
- * 3. Scores moyens — score moyen ÉQUIPE + position moyenne JOUEUR (fixes, indépendants du
- *    mode) + shocks obtenus (dynamique) ;
- * 4. Répartition des positions + Top/Bot 2→6 (sections détaillées mutualisées, mode-scopées) ;
- * 5. Pilotes sur ce circuit (podium Top3/Flop3 par score moyen, MEMBRES uniquement +
- *    « Voir le classement en entier ») — **mode Équipe uniquement**.
- *
- * Rendu pixel-perfect maquette (rules 13/15), cartes/podiums partagés (rule 16), données réelles.
+ * Fiche détail circuit (#27). Sélecteur Indiv/Équipe (rule 11 : état réactif du VM). Sections :
+ * en-tête, Performance (winrate de manche + V/N/D), Scores moyens (équipe + position joueur +
+ * shocks), Répartition + Top/Bot 2→6 (mutualisées), et Pilotes/Baggeurs/Adversaires du circuit
+ * (podiums, mode Équipe uniquement). Rules 13/15/16.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -104,8 +97,7 @@ fun MapDetailScreen(
                             subtitle = stringResource(R.string.map_detail_winrate_sub, mapStats.trackPlayed)
                         )
                     }
-                    // 3. Scores moyens : score ÉQUIPE + position JOUEUR (FIXES, indépendants
-                    //    du mode) + shocks obtenus (DYNAMIQUE, suit le mode).
+                    // 3. Scores moyens : score équipe + position joueur (fixes) + shocks (suit le mode).
                     item {
                         StatCard(title = stringResource(R.string.map_detail_avg_scores)) {
                             StatTiles(
@@ -129,7 +121,7 @@ fun MapDetailScreen(
                     }
                     // 4. Sections détaillées mutualisées : répartition des positions, Top/Bot 2→6.
                     mapStatsDetailSections(mapStats)
-                    // 5. Classement des pilotes (MEMBRES) — mode ÉQUIPE uniquement (point 8).
+                    // 5. Pilotes (membres) — mode Équipe uniquement.
                     if (!state.isIndiv && state.pilots.isNotEmpty()) item {
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_pilots),
@@ -138,8 +130,7 @@ fun MapDetailScreen(
                             onSeeAll = onPilotsRanking
                         )
                     }
-                    // 5bis. Classement des baggeurs sur ce circuit (#69) — mode ÉQUIPE
-                    //       uniquement (même dispositif que « Pilotes sur ce circuit »).
+                    // 5bis. Baggeurs sur ce circuit (#69) — mode Équipe uniquement.
                     if (!state.isIndiv && state.baggers.isNotEmpty()) item {
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_baggers),
@@ -148,8 +139,7 @@ fun MapDetailScreen(
                             onSeeAll = onBaggersRanking
                         )
                     }
-                    // 6. Classement des adversaires rencontrés sur ce circuit — **mode ÉQUIPE
-                    //    uniquement** (#67 round 3, comme la section pilotes ; masqué en Indiv).
+                    // 6. Adversaires rencontrés sur ce circuit — mode Équipe uniquement (#67).
                     if (!state.isIndiv && state.opponents.isNotEmpty()) item {
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_opponents),
@@ -166,16 +156,14 @@ fun MapDetailScreen(
 }
 
 /**
- * Pilote → entrée de podium : cellules **Nb joué / Winrate / Position moy.** (#67 round 3 —
- * le score moyen est remplacé par le winrate, aligné sur « Pilotes contre eux » de la fiche
- * adversaire). Le tri du classement reste le score perso moyen (`averageScore`). Partagé entre
- * la fiche (podium Top3/Flop3) et le classement complet [MapPilotsRankingScreen].
+ * Pilote → entrée de podium : Nb joué / Winrate / Position moy. (#67). Le tri du classement
+ * reste `averageScore`. Partagé fiche ↔ [MapPilotsRankingScreen].
  */
 internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
         name = player.name.displayName,
         initials = initialsOf(player.name.displayName),
-        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales sur pastille colorée.
+        // Photo si dispo (#50 pt.4), sinon initiales.
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
@@ -186,9 +174,8 @@ internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     )
 
 /**
- * Baggeur → entrée de podium (#69) : photo/initiales + **Nb joué / Shocks / % shocks**. Part
- * de shocks = ses shocks sur ce circuit / total shocks de l'équipe (total/total). Partagé entre
- * la fiche (podium Top3/Flop3) et le classement complet [MapBaggersRankingScreen].
+ * Baggeur → entrée de podium (#69) : Nb joué / Shocks / % shocks (ses shocks sur ce circuit /
+ * total équipe). Partagé fiche ↔ [MapBaggersRankingScreen].
  */
 internal fun MapDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
@@ -204,14 +191,12 @@ internal fun MapDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
     )
 
 /**
- * Adversaire → entrée de podium (logo équipe + nb joué + winrate + écart d'équipe). Score
- * d'équipe affiché en ÉCART de points par manche (`trackScoreToDiff`) — même convention que
- * les circuits/adversaires ailleurs (#67). Partagé entre la fiche (podium Top3/Flop3) et le
- * classement complet [MapOpponentsRankingScreen].
+ * Adversaire → entrée de podium : nb joué / winrate / écart d'équipe (`trackScoreToDiff`, #67).
+ * Partagé fiche ↔ [MapOpponentsRankingScreen].
  */
 internal fun MapDetailViewModel.OpponentRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
-        // Rule 12 : nom du roster + logo de l'équipe parente (adversaire non résolu déjà dégradé).
+        // Rule 12 : nom du roster + logo de l'équipe parente.
         name = team.name,
         logo = team.logo,
         stats = listOf(

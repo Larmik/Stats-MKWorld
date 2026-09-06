@@ -34,16 +34,10 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 private val BannerRadius = RoundedCornerShape(6.dp)
 
 /**
- * Bannière « War en cours », partagée par l'Accueil (pôle Accueil) et l'historique
- * (pôle Wars). Rendu maquette : dégradé vert→sombre translucide (`.cbanner`),
- * bordure verte, pastille « En direct » (point vert + libellé vert). Le corps
- * (roster hôte vs adversaire, score, courses jouées) provient de la vraie war via
- * [CurrentWarCell].
+ * Bannière « War en cours », partagée par l'Accueil et l'historique Wars (rule 16). Dégradé
+ * vert→sombre (`.cbanner`), pastille « En direct » ; corps issu de [CurrentWarCell].
  *
- * @param eyebrow libellé de la pastille : « En direct · N joueurs » (Accueil) ou
- *   « En direct » (Wars, `withPlayers = false`).
- * @param callToAction texte d'appel à l'action affiché au pied (« Reprendre —
- *   N courses jouées » côté Wars) ; masqué si `null`.
+ * @param callToAction texte d'appel à l'action au pied ; masqué si `null`.
  */
 @Composable
 fun CurrentWarBanner(

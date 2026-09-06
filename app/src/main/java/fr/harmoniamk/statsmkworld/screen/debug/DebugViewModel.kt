@@ -171,8 +171,7 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Réattribution (paquet A) : réécrit teamOpponent vers newId (résolvable
-    // localement). Action manuelle, déclenchée après décision humaine.
+    // Réattribution manuelle : réécrit teamOpponent vers newId (résolvable localement).
     fun onReattributeOpponent(hostRosterId: String, warId: Long, rawId: String, newId: String) {
         viewModelScope.launch {
             _sharedLoading.emit("Réattribution en cours...")
@@ -183,8 +182,7 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Suppression (paquet B) : retire la war irrécupérable de Firebase. Action
-    // destructive, déclenchée après confirmation dans l'écran.
+    // Suppression destructive : retire la war irrécupérable de Firebase (après confirmation).
     fun onDeleteWar(hostRosterId: String, warId: Long) {
         viewModelScope.launch {
             _sharedLoading.emit("Suppression de la war...")
@@ -204,8 +202,7 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Ajoute le joueur manquant en allié (local + Firebase newAllies) puis
-    // re-diagnostique pour qu'il disparaisse de la liste.
+    // Ajoute le joueur manquant en allié (local + Firebase newAllies) puis re-diagnostique.
     fun onAddMissingPlayerAsAlly(playerId: String) {
         viewModelScope.launch {
             _sharedLoading.emit("Ajout de l'allié...")
@@ -222,9 +219,8 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Inscrit rétroactivement l'historique réel des 3 saisons dans RTDB seasons/{teamId}
-    // + Room (#30). Réinitialise l'index (écriture inconditionnelle) — outil de
-    // maintenance. La logique (et les 6 dates) vit dans SeasonRepository (rule 32).
+    // Inscrit rétroactivement les 3 saisons dans RTDB + Room (#30) ; réinitialise l'index
+    // (écriture inconditionnelle). Logique dans SeasonRepository (rule 32).
     fun onSeedSeasons() {
         viewModelScope.launch {
             _sharedLoading.emit("Inscription des saisons...")

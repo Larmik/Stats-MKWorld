@@ -15,16 +15,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 /**
- * Pastille cliquable de header (« chip » d'app bar), composant **partagé unique** (rule 16) :
- * fond blanc translucide (`white30`), bordure douce, coins 10 dp, texte blanc.
+ * Pastille cliquable de header, composant **partagé unique** (rule 16) : fond blanc translucide,
+ * coins 10 dp. Utilisée par le dropdown de saison ([MKSeasonDropdown]) et « Voir par période »
+ * (#80) pour un rendu identique ; `trailing` optionnel (chevron) distingue le dropdown.
  *
- * Utilisé par le déclencheur du sélecteur de saison ([MKSeasonDropdown]) ET par le
- * déclencheur « Voir par période » (#80) placé à sa gauche, pour un rendu **identique** dans
- * le header (retour utilisateur). Un `trailing` optionnel (ex. chevron « ▾ ») distingue le
- * dropdown ; sans lui la pastille est un simple bouton.
- *
- * ⚠️ **Écart assumé vs maquette (rules 13/15)** : le prototype ne prévoit pas ces pastilles
- * de header — style aligné au plus proche des boutons d'app bar de `BaseScreen`.
+ * ⚠️ Écart assumé vs maquette (rules 13/15) : le prototype ne prévoit pas ces pastilles de header.
  */
 @Composable
 fun MKHeaderChip(

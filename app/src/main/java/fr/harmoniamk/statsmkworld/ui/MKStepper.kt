@@ -15,19 +15,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 
 /**
- * Stepper de wizard (style `.stepper`/`.stp` de la maquette prototype UX) : une rangée
- * d'étapes de poids égal, l'étape **active** = pastille blanche pleine / texte sombre,
- * les autres = texte atténué sur fond translucide. C'est LE composant stepper du projet
- * — ne pas recréer de stepper local (cf. rules 15/16). Utilisé par le wizard de création
- * de war (AddWar : `1 · Adversaire` → `2 · Joueurs`) et prévu pour le wizard de course.
- *
- * Composant **stateless** : l'étape courante est pilotée par [step] ; [onStepClick]
- * remonte l'index cliqué à l'appelant, qui détient l'état. Une étape n'est cliquable que
- * si [enabled] la rend accessible (par défaut toutes).
- *
- * Valeurs de style extraites de `docs/prototype/stats-mkworld-5poles.html` (`.stepper`
- * gap 6px ; `.stp` fond `--whiteA`, radius 6px, texte 62 % atténué ; `.stp.on` fond blanc,
- * texte `--ink`).
+ * Stepper de wizard (`.stepper`/`.stp` maquette) : rangée d'étapes de poids égal, étape active =
+ * pastille blanche/texte sombre, autres = texte atténué. LE composant stepper du projet, ne pas
+ * recréer (rules 15/16). Utilisé par le wizard AddWar. Stateless : étape courante pilotée par
+ * [step], index cliqué remonté via [onStepClick] ; cliquable seulement si [enabled] l'autorise.
  */
 @Composable
 fun MKStepper(

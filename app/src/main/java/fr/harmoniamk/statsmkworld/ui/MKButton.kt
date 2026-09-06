@@ -27,20 +27,12 @@ import androidx.compose.ui.unit.dp
 private val ButtonRadius = RoundedCornerShape(10.dp)
 
 /**
- * Bouton **unique** de l'app (#50) : fond **blanc translucide** (`Colors.white30`),
- * **SANS bordure** (l'ancienne bordure `whiteBorderSoft` du `.btn2`, jugée disgracieuse,
- * a été retirée — c'était le seul vrai souci), libellé **et icône blancs** en majuscules
- * (Urbanist), coins 10 dp. **Tous** les boutons passent par ici (l'ancien `WarActionButton`
- * fusionné ; les variantes `Gradient`/`.cta` et le bouton plein sombre supprimés — rule 16).
+ * Bouton **unique** de l'app (#50, rule 16) : fond blanc translucide (`Colors.white30`), sans
+ * bordure, libellé + icône majuscules (Urbanist), coins 10 dp. Tous les boutons passent par ici.
  *
- * [icon] optionnel : drawable d'icône **de tête** (16 dp, blanche). Sans icône, le libellé
- * est centré (fontSize 14) ; avec icône, le rendu reprend les métriques de l'ancien
- * `WarActionButton` (hauteur 46 dp, icône 16 dp + espace 8 dp + libellé fontSize 12).
- *
- * [textColor] n'est PAS une variante de style : juste l'ajustement de contraste du libellé
- * selon le fond (blanc par défaut sur le dégradé/cartes sombres ; `Colors.black` sur une
- * surface claire type `MKDialog` où le blanc serait illisible). L'état désactivé atténue
- * fond + texte.
+ * [icon] optionnel : icône de tête (métriques de l'ancien `WarActionButton` : hauteur 46 dp).
+ * [textColor] ajuste le contraste du libellé selon le fond (blanc sur sombre, `Colors.black` sur
+ * surface claire type `MKDialog`), pas une variante de style. Désactivé = fond + texte atténués.
  */
 @Composable
 fun MKButton(
@@ -51,23 +43,19 @@ fun MKButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    // Désactivé : on atténue la couleur de libellé demandée (blanc sur fond sombre, noir
-    // sur surface claire type MKDialog) plutôt qu'une couleur fixe, pour rester lisible partout.
+    // Désactivé : atténuer la couleur demandée plutôt qu'une couleur fixe, lisible partout.
     val resolvedTextColor = if (enabled) textColor else textColor.copy(alpha = 0.4f)
-    // Fond blanc translucide, SANS bordure : enabled = white30, disabled = whiteAlphaed.
     val backgroundColor = if (enabled) Colors.white30 else Colors.whiteAlphaed
 
     Button(
         modifier = modifier,
         onClick = onClick,
-        // Aucune élévation/halo, ni à l'état actif ni désactivé (le fond du bouton est
-        // porté par le Row interne, pas par le container Material).
+        // Aucune élévation : le fond est porté par le Row interne, pas par le container Material.
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, disabledElevation = 0.dp),
         contentPadding = PaddingValues(),
         enabled = enabled,
-        // Container Material TOUJOURS transparent (actif ET désactivé) : sinon le
-        // disabledContainerColor par défaut (gris onSurface .12) réafficherait une
-        // boîte/halo derrière notre Row à l'état désactivé (#50).
+        // Container Material toujours transparent : sinon le disabledContainerColor par défaut
+        // (gris onSurface .12) réafficherait une boîte derrière notre Row désactivé (#50).
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent,
@@ -80,8 +68,7 @@ fun MKButton(
             modifier = Modifier
                 .background(color = backgroundColor, shape = ButtonRadius)
                 .clip(ButtonRadius)
-                // Bouton à icône : hauteur fixe 46 dp + padding horizontal 12 dp (rendu exact
-                // de l'ancien WarActionButton). Sans icône : padding vertical 8 dp / horizontal 16 dp.
+                // Avec icône : hauteur 46 dp / padding 12 dp (rendu ancien WarActionButton).
                 .let { if (icon != null) it.height(46.dp) else it }
                 .padding(horizontal = if (icon != null) 12.dp else 16.dp, vertical = if (icon != null) 0.dp else 8.dp),
             verticalAlignment = Alignment.CenterVertically,

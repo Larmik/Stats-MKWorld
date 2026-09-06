@@ -33,19 +33,12 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 private val TrackCellRadius = RoundedCornerShape(6.dp)
 
 /**
- * Cellule de course/circuit partagée (extraite du `TrackCard` privé de `CurrentWarScreen`,
- * rule 16 : mutualisée dès un 2ᵉ écran consommateur — ici `AddTrackScreen`, ticket #44).
+ * Cellule de course/circuit partagée (rule 16). Horizontal : bande colorée (accent) · image + nom ·
+ * zone shocks réservée · score + diff. Deux modes :
+ * - **course jouée** (`track != null`) : score + diff colorisée, accent selon la diff. → détail.
+ * - **sélection** (`map != null`, sans `track`) : image + nom seuls, accent blanc. → sélection.
  *
- * Ordre horizontal : **bande colorée verticale** (accent) · **image du circuit + nom**
- * (`Maps.label`) · **zone shocks réservée** · **score + diff** (à droite). Deux modes selon
- * les données fournies :
- *
- * - **course jouée** (`track != null`) : score `hôte-adverse` (ou score de manche en 24 j)
- *   + diff colorisée ; accent = vert/rouge/blanc selon la diff. Cliquable → détail.
- * - **sélection de circuit** (`map != null`, sans `track`) : image + nom seuls, accent blanc,
- *   pas de score ni de shock. Cliquable → sélection.
- *
- * Hauteur uniforme (84 dp) calée sur le cas « nom sur 2 lignes » → cellules alignées.
+ * Hauteur uniforme (84 dp) calée sur « nom sur 2 lignes » → cellules alignées.
  */
 @Composable
 fun MKTrackCell(
@@ -56,8 +49,7 @@ fun MKTrackCell(
     selected: Boolean = false,
     onClick: () -> Unit
 ) {
-    // Circuit affiché : dernier segment (arrivée) d'une éventuelle intermission pour une
-    // course jouée, sinon le circuit fourni pour la sélection.
+    // Course jouée : dernier segment (arrivée) d'une éventuelle intermission ; sinon le circuit fourni.
     val displayedMap = map ?: track?.index?.lastOrNull()?.toInt()?.let { Maps.entries.getOrNull(it) }
     // Accent (liseré + diff) : vert manche gagnée, rouge perdue (blanc = nul / 24 j / sélection).
     val accent: Color = when {

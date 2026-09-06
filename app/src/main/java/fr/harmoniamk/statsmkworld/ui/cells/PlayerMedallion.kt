@@ -22,20 +22,11 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 private const val MKCENTRAL_BASE = "https://mkcentral.com"
 
 /**
- * Médaillon joueur **unique et partagé** (#50 pt.4, rule 16) : pastille circulaire
- * colorée portant les [initials], sur laquelle se superpose la **photo de profil** si
- * [avatarPath] est disponible.
+ * Médaillon joueur **unique et partagé** (rule 16) : pastille colorée [initials] surmontée de la
+ * photo de profil [avatarPath] si dispo. Fallback naturel : les initiales restent visibles dessous
+ * tant que Coil n'a rien chargé (chargement ou échec → initiales conservées).
  *
- * - Photo disponible → l'`AsyncImage` (Coil) recouvre la pastille.
- * - Chargement asynchrone → tant que l'image n'est pas prête, la pastille d'initiales
- *   reste visible dessous (fallback naturel : Coil ne dessine rien avant d'avoir chargé).
- * - Photo indisponible (null) ou échec de chargement → initiales conservées (Coil ne
- *   dessine rien en erreur → la couche d'initiales transparaît).
- *
- * [avatarPath] est le chemin RELATIF MKCentral (préfixé ici) ; passer déjà une URL
- * absolue fonctionne aussi (le préfixe n'est ajouté que si l'entrée ne commence pas par
- * http). Remplace les pastilles d'initiales dupliquées (MKPodiumCell, MKListRow, cellules
- * d'écran) par un composant unique.
+ * [avatarPath] est un chemin RELATIF MKCentral (préfixé ici) ; une URL absolue passe telle quelle.
  */
 @Composable
 fun PlayerMedallion(

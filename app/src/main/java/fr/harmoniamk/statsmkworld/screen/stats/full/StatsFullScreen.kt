@@ -71,15 +71,14 @@ import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 private val CardRadius = StatCardRadius
 
 /**
- * États hissés des sélecteurs de l'écran (#68). La **période** est désormais GLOBALE à
- * l'écran (un seul index [windowIndex], sélecteur unique en haut) et toutes les sections
- * la lisent. Restent PROPRES aux sections : le **tri** des podiums circuits/adversaires
- * (occurrences/winrate/score) — axe indépendant de la période, conservé (#68).
+ * États hissés des sélecteurs (#68). Période GLOBALE à l'écran ([windowIndex], lue par
+ * toutes les sections) ; tri des podiums circuits/adversaires propre aux sections (axe
+ * indépendant de la période).
  */
 private class SectionSelectors(
-    // Fenêtre de période GLOBALE : 0 = all-time, 1 = 5 dernières, 2 = 10 dernières.
+    // Période globale : 0 = all-time, 1 = 5 dernières, 2 = 10 dernières.
     val windowIndex: Int,
-    // Tri des podiums : 0 = occurrences (défaut), 1 = winrate, 2 = score.
+    // Tri podiums : 0 = occurrences (défaut), 1 = winrate, 2 = score.
     val trackSortIndex: Int,
     val onTrackSortChange: (Int) -> Unit,
     val opponentSortIndex: Int,
@@ -87,10 +86,8 @@ private class SectionSelectors(
 )
 
 /**
- * FormStats de la fenêtre sélectionnée pour les Indicateurs/Records (0 = all-time, 1 = 5,
- * 2 = 10). Note : les `stats` reçues sont déjà filtrées sur la fenêtre globale (VM #68) ;
- * on sélectionne ici la `FormStats` correspondante pour conserver l'affichage des **deltas
- * vs all-time** (index 0 → allTimeForm = pas de delta, cf. `showDelta`).
+ * FormStats de la fenêtre (0 = all-time, 1 = 5, 2 = 10) pour Indicateurs/Records — sélectionne
+ * la `FormStats` correspondante afin de conserver les deltas vs all-time (index 0 → pas de delta).
  */
 private fun Stats.windowForm(index: Int) = when (index) {
     1 -> recentForm5
@@ -113,22 +110,18 @@ fun StatsFullScreen(
     viewModel: StatsFullViewModel,
     onBack: (() -> Unit)? = null,
     onResults: (() -> Unit)? = null,
-    // « Classement entier » des sections Circuits / Adversaires → classement complet **scopé
-    // au périmètre actif** (#67 round 3) : le booléen `isTeam` remonte la portée courante
-    // (Individuelles = false → données du joueur ; Équipe = true → données d'équipe), pour que
-    // l'appelant navigue vers le bon classement. Optionnels (masqués si null).
+    // « Classement entier » Circuits / Adversaires (#67) : `isTeam` remonte la portée courante
+    // (false = joueur, true = équipe) pour naviguer vers le bon classement. Masqués si null.
     onMapsSeeAll: ((isTeam: Boolean) -> Unit)? = null,
     onOpponentsSeeAll: ((isTeam: Boolean) -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // 0 = Individuelles, 1 = Équipe. Sur statsfull (pas d'onglets) → toujours 0.
     var scopeIndex by rememberSaveable { mutableIntStateOf(0) }
-    // Période GLOBALE de l'écran (#68) : 0 = all-time, 1 = 5 dernières, 2 = 10 dernières.
-    // UN SEUL état, un sélecteur unique en haut ; TOUTES les sections lisent cette fenêtre
-    // et se recomposent au changement (rule 11 : State, pas de re-nav). Survit à la rotation.
+    // Période globale (#68) : 0 = all-time, 1 = 5, 2 = 10. Un seul état lu par toutes les
+    // sections (rule 11 : State, pas de re-nav). Survit à la rotation.
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
-    // Critère des podiums circuits / adversaires : 0 = occurrences (défaut), 1 = winrate, 2 = score.
-    // Axe INDÉPENDANT de la période (#68) : tri conservé en plus du filtre de période.
+    // Tri podiums : 0 = occurrences (défaut), 1 = winrate, 2 = score. Axe indépendant de la période.
     var trackSortIndex by rememberSaveable { mutableIntStateOf(0) }
     var opponentSortIndex by rememberSaveable { mutableIntStateOf(0) }
 
@@ -146,12 +139,10 @@ fun StatsFullScreen(
     BaseScreen(
         title = stringResource(R.string.statistiques),
         subtitle = subtitle,
-        // Bouton retour uniquement en fiche poussée (showTabs=false) ; en onglet du pôle
-        // Stats (showTabs=true), pas de retour d'appbar (rule 14, comportement onglet).
+        // Retour d'appbar seulement en fiche poussée (showTabs=false) ; pas en onglet (rule 14).
         onBack = onBack?.takeIf { !viewModel.showTabs },
-        // Sélecteur de SAISON (#70) : menu déroulant aligné à droite dans le header (composant
-        // partagé MKSeasonDropdown, rule 16). Défaut = saison en cours. Change l'état VM ⇒
-        // recalcul à la volée des agrégats sur l'intervalle [start, end] (rule 11, pas de re-nav).
+        // Sélecteur de saison (#70, MKSeasonDropdown partagé rule 16). Change l'état VM ⇒
+        // recalcul à la volée des agrégats (rule 11, pas de re-nav).
         headerTrailing = {
             MKSeasonDropdown(
                 seasons = state.value.seasons,
@@ -161,12 +152,8 @@ fun StatsFullScreen(
         },
         modifier = Modifier.padding(bottom = if (viewModel.showTabs) 90.dp else 0.dp)
     ) {
-        // Le header (dropdown de saison + segmented indiv/équipe + période) reste TOUJOURS
-        // visible ; seule la zone de DONNÉES (LazyColumn) passe en chargement au recompute
-        // (changement de saison, #73). Ainsi le dropdown qu'on vient de sélectionner ne
-        // disparaît pas et le ressenti est immédiat.
-        // Le sélecteur 12 j / 24 j est retiré temporairement (ticket #37) :
-        // l'écran ne présente que le 12p (is24p figé à false côté VM).
+        // Le header reste toujours visible ; seule la zone de données passe en chargement au
+        // recompute (#73). Sélecteur 12j/24j retiré temporairement (#37, is24p figé false côté VM).
         if (viewModel.showTabs) {
             MKSegmentedSelector(
                 items = listOf(
@@ -178,11 +165,8 @@ fun StatsFullScreen(
             )
             Spacer(Modifier.height(11.dp))
         }
-        // Sélecteur de période GLOBAL (#68), juste sous le sélecteur indiv/équipe et
-        // AU-DESSUS de toutes les sections. Reste visible même quand indiv/équipe est
-        // masqué (showTabs == false, stats d'un joueur donné). Sur le fond clair du
-        // dégradé de BaseScreen → onDark = false (défaut). Change l'état global ⇒
-        // toutes les sections se recomposent (rule 11), aucune re-navigation.
+        // Sélecteur de période global (#68), au-dessus de toutes les sections. onDark = false
+        // (fond clair de BaseScreen). Change l'état ⇒ recompose les sections (rule 11).
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.all_time),
@@ -219,10 +203,7 @@ fun StatsFullScreen(
     }
 }
 
-// =====================================================================
 // Onglet Individuelles (et statsfull)
-// =====================================================================
-
 private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     state: StatsFullViewModel.State,
     showTabs: Boolean,
@@ -231,15 +212,13 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     onMapsSeeAll: (() -> Unit)?,
     onOpponentsSeeAll: (() -> Unit)?
 ) {
-    // Stats ALL-TIME (index 0) : source des sections « FormStats » (Indicateurs, Records,
-    // Forme & séries) qui affichent la valeur de la fenêtre choisie ET son delta vs all-time.
-    // Ces objets pré-calculent déjà allTimeForm/recentForm5/recentForm10 (deltas corrects) ;
-    // les fenêtrer casserait les deltas. Écran vide si aucune stat.
+    // Stats all-time (index 0) : source des sections FormStats (deltas vs all-time). Les
+    // fenêtrer casserait les deltas déjà pré-calculés. Écran vide si aucune stat.
     val allTimeStats = state.playerStatsByWindow[0] ?: return
-    // Stats de la FENÊTRE de période globale (#68), pour les sections recalculées sur la
-    // fenêtre (Bilan, Contribution, Distribution, Podiums…). Fallback all-time si vide.
+    // Stats de la fenêtre globale (#68) pour les sections recalculées (Bilan, Contribution,
+    // Distribution, Podiums…). Fallback all-time si vide.
     val stats = state.playerStatsByWindow[selectors.windowIndex] ?: allTimeStats
-    // 1. En-tête (seulement dans l'onglet, pas sur statsfull qui a déjà le sous-titre).
+    // 1. En-tête (onglet seulement, statsfull a déjà le sous-titre).
     if (showTabs) item {
         HeaderCard(
             name = state.playerName.orEmpty(),
@@ -249,11 +228,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             isTeam = false
         )
     }
-    // 2. Bilan (#65 : lien « Résultats → » TOUJOURS visible, dans les deux contextes —
-    //    pôle Stats comme fiche joueur — vers l'historique filtré sur le joueur). Fenêtré.
+    // 2. Bilan (#65 : lien « Résultats → » toujours visible → historique filtré sur le joueur).
     item { BalanceCard(stats, showResultsLink = true, onResults = onResults) }
-    // 3. Indicateurs (grille régulière) — vue JOUEUR : points/war, position, régularité,
-    //    marges V/D, pénalités, maps gagnées, shocks… (fenêtre globale + deltas vs all-time).
+    // 3. Indicateurs — vue joueur (points/war, position, marges, pénalités, maps, shocks…).
     item {
         IndicatorsCard(
             stats = allTimeStats,
@@ -262,11 +239,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             participationByWindow = state.participationRateByWindow
         )
     }
-    // 4. Contribution (#69, retour PR #75) : deux lignes (part de POINTS + part de SHOCKS),
-    //    LUES depuis le classement Contributeurs/Baggeurs de la MÊME fenêtre (source de vérité
-    //    UNIQUE), pour que le % du joueur soit IDENTIQUE ici et dans le classement équipe.
-    //    Les DEUX parts sont désormais des ratios TOTAL/TOTAL (la ligne points n'est plus une
-    //    moyenne par war). Rang = position de la ligne `isMe` dans le classement correspondant.
+    // 4. Contribution (#69) : part de POINTS + part de SHOCKS, lues depuis le classement
+    //    Contributeurs/Baggeurs de la même fenêtre (source unique → % identique au classement
+    //    équipe). Ratios total/total. Rang = position de la ligne `isMe`.
     run {
         val contributors = state.contributorsByWindow[selectors.windowIndex].orEmpty()
         val baggers = state.baggersByWindow[selectors.windowIndex].orEmpty()
@@ -277,10 +252,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             item {
                 StatCard(title = stringResource(R.string.stats_contribution_title)) {
                     IconLine(
-                        // Icône champignon illustrant la part de POINTS de l'équipe (#91 pt.11).
-                        // tinted = false → dessinée en Image (couleurs d'origine, pas d'aplat par le tint).
-                        // iconSize = 34dp : compense le padding interne transparent du PNG pour un rendu
-                        // visuellement proche du shock (reste sous les 44dp du médaillon).
+                        // Champignon = part de POINTS (#91 pt.11). tinted = false → Image (couleurs
+                        // d'origine). iconSize 34dp compense le padding transparent du PNG (< 44dp médaillon).
                         icon = R.drawable.ic_mushroom,
                         accent = Colors.yellow,
                         tinted = false,
@@ -290,8 +263,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
                             ?.let { stringResource(R.string.stats_contribution_rank, it + 1) }
                             ?: ""
                     )
-                    // 2ᵉ ligne : part de shocks du joueur (même valeur que dans « Baggeurs »).
-                    // Masquée si le joueur n'a aucun shock sur la fenêtre.
+                    // Part de shocks (comme « Baggeurs »), masquée si aucun shock sur la fenêtre.
                     if (contributor.shockShare > 0) {
                         Spacer(Modifier.height(11.dp))
                         IconLine(
@@ -307,16 +279,15 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             }
         }
     }
-    // 5. Forme & séries (série en cours = all-time par nature) + Records (grille 3×2 :
-    //    FormStats de la fenêtre + deltas vs all-time → all-time stats).
+    // 5. Forme & séries (série = all-time) + Records (grille 3×2, deltas vs all-time).
     item { FormStreakCard(allTimeStats, stringResource(R.string.stats_player_form_title)) }
-    // Vue JOUEUR : min/max = score PERSO brut (pas de diff — #67 vise la seule vue Équipe).
+    // Vue joueur : min/max = score perso brut (pas de diff — #67 ne concerne que l'équipe).
     item { RecordsTilesCard(allTimeStats, selectors, isTeam = false) }
-    // 6. Distribution des positions (barres ancrées en bas, sur la fenêtre globale).
+    // 6. Distribution des positions (fenêtre globale).
     item { DistributionCard(stats, selectors) }
-    // 7. Podium circuits (Top3 / Flop3 sur une ligne + sélecteur occ./winrate/score).
+    // 7. Podium circuits (Top3 / Flop3 + tri).
     item { MapsPodiumCard(stats = stats, selectors = selectors, userId = state.targetUserId, onSeeAll = onMapsSeeAll) }
-    // 8. Podium adversaires (perspective joueur), sur la fenêtre globale.
+    // 8. Podium adversaires (perspective joueur).
     item {
         OpponentsPodiumCard(
             selectors = selectors,
@@ -327,10 +298,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
     }
 }
 
-// =====================================================================
 // Onglet Équipe
-// =====================================================================
-
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     state: StatsFullViewModel.State,
@@ -338,11 +306,11 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     onMapsSeeAll: (() -> Unit)?,
     onOpponentsSeeAll: (() -> Unit)?
 ) {
-    // Stats d'équipe ALL-TIME (index 0) : source des sections FormStats (Indicateurs,
-    // Records, Forme & séries — deltas vs all-time). Écran vide si aucune stat.
+    // Stats d'équipe all-time (index 0) : source des sections FormStats (deltas vs all-time).
+    // Écran vide si aucune stat.
     val allTimeStats = state.teamStatsByWindow[0] ?: return
-    // Stats d'équipe de la FENÊTRE de période globale (#68) pour les sections recalculées
-    // sur la fenêtre (Bilan, Tops/Bots, Contributeurs, Podiums…). Fallback all-time si vide.
+    // Stats de la fenêtre globale (#68) pour les sections recalculées (Bilan, Tops/Bots,
+    // Contributeurs, Podiums…). Fallback all-time si vide.
     val stats = state.teamStatsByWindow[selectors.windowIndex] ?: allTimeStats
     // 1. En-tête.
     item {
@@ -356,17 +324,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     }
     // 2. Bilan équipe.
     item { BalanceCard(stats, showResultsLink = false, onResults = null) }
-    // 3. Détails équipe (grille régulière) — vue ÉQUIPE : score = ÉCART de points
-    //    (warScoreToDiff), score moyen/manche, maps gagnées, marges d'équipe, pénalités…
-    //    (fenêtre globale + deltas vs all-time → all-time stats).
+    // 3. Détails équipe — score = écart de points (warScoreToDiff), score/manche, marges, pénalités…
     item { IndicatorsCard(stats = allTimeStats, isPlayer = false, selectors = selectors) }
-    // 4. Forme & séries équipe (série en cours = all-time) + Records (FormStats fenêtre).
+    // 4. Forme & séries équipe (série = all-time) + Records.
     item { FormStreakCard(allTimeStats, stringResource(R.string.stats_team_form_title)) }
-    // Vue ÉQUIPE : min/max = ÉCART de points de war (warScoreToDiff), pas le total (#67).
+    // Vue équipe : min/max = écart de points de war (warScoreToDiff), pas le total (#67).
     item { RecordsTilesCard(allTimeStats, selectors, isTeam = true) }
-    // 4bis. Top/Bot 5→2 sur la FENÊTRE globale (détail que RecordsTilesCard n'affiche pas ;
-    //       ligne N=6 retirée car redondante avec « Records & séries », #64) : équipe ET
-    //       adversaire (complément des positions). Masqués si aucune ligne affichable.
+    // 4bis. Top/Bot 5→2 sur la fenêtre (N=6 retiré, redondant avec Records & séries, #64) :
+    //       équipe ET adversaire. Masqués si aucune ligne affichable.
     (state.teamMapStatsByWindow[selectors.windowIndex] ?: state.teamMapStatsByWindow[0])?.let { mapStats ->
         if (hasDisplayableTopBottom(mapStats.topsTable, mapStats.bottomsTable)) item {
             StatCard(title = stringResource(R.string.stats_top_bottom_team_title)) {
@@ -379,10 +344,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
             }
         }
     }
-    // 5. Contributeurs (classement recalculé sur la fenêtre globale).
+    // 5. Contributeurs (recalculés sur la fenêtre globale).
     item { ContributorsCard(state.contributorsByWindow, selectors) }
-    // 5bis. Meilleurs baggeurs (#69) : MÊME carte, part de SHOCKS (total/total). Masquée
-    //       si aucun baggeur avec shock sur la fenêtre.
+    // 5bis. Meilleurs baggeurs (#69) : même carte, part de SHOCKS. Masquée si aucun baggeur.
     if (state.baggersByWindow[selectors.windowIndex].orEmpty().any { it.shockShare > 0 }) {
         item {
             ContributorsCard(
@@ -393,9 +357,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
             )
         }
     }
-    // 6. Podium circuits équipe (Top3 / Flop3 sur une ligne + sélecteur occ./winrate/score).
+    // 6. Podium circuits équipe (Top3 / Flop3 + tri).
     item { MapsPodiumCard(stats = stats, selectors = selectors, userId = null, onSeeAll = onMapsSeeAll) }
-    // 7. Podium adversaires équipe, sur la fenêtre globale.
+    // 7. Podium adversaires équipe.
     item {
         OpponentsPodiumCard(
             selectors = selectors,
@@ -406,24 +370,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     }
 }
 
-// =====================================================================
-// Section Indicateurs (fenêtre all-time / 5 / 10 + deltas) — ticket #36
-// =====================================================================
-
+// Section Indicateurs (#36)
 /**
- * Section « Indicateurs » avec sélecteur de fenêtre (all-time / 5 dernières / 10
- * dernières). Chaque tuile affiche la valeur de la fenêtre choisie + une **progression
- * en %** (delta vs all-time, flèche ↗/↘ colorée) quand pertinent — comme le Momentum
- * de l'Accueil. Distingue strictement vue **joueur** (points/war, position) et
- * **équipe** (points d'équipe/war, score moyen/manche).
+ * Section « Indicateurs » : chaque tuile affiche la valeur de la fenêtre + une progression en %
+ * (delta vs all-time) quand pertinent. Distingue vue joueur (points/war, position) et équipe
+ * (points d'équipe/war, score/manche).
  */
 @Composable
 private fun IndicatorsCard(
     stats: Stats,
     isPlayer: Boolean,
     selectors: SectionSelectors,
-    // Taux de participation (#78) par fenêtre — vue JOUEUR uniquement (l'équipe est
-    // à 100 % par définition). Delta vs all-time (index 0) affiché comme les autres tuiles.
+    // Taux de participation (#78) par fenêtre — vue joueur uniquement (équipe = 100 %).
     participationByWindow: Map<Int, Int>? = null
 ) {
     val window = stats.windowForm(selectors.windowIndex)
@@ -435,11 +393,10 @@ private fun IndicatorsCard(
             // Winrate NON répété ici (#91 pt.3) : déjà affiché en grand dans la carte « Bilan ».
             when (isPlayer) {
                 true -> {
-                    // Vue JOUEUR : score = points/war (brut) + position moyenne.
+                    // Vue joueur : points/war (brut) + position moyenne.
                     add(MetricTile(stringResource(R.string.stats_points_per_war), window?.averageScore?.toString() ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_points_per_war)))
                     add(MetricTile(stringResource(R.string.average_position_short), window?.averagePosition?.toString() ?: "-", if (showDelta) window?.positionDelta else null, "", DeltaPolarity.LOWER, stringResource(R.string.info_average_position)))
-                    // Taux de participation (#78) : % de wars de l'équipe jouées par le joueur sur
-                    // la fenêtre. Delta vs all-time (polarité « plus haut = mieux »).
+                    // Participation (#78) : % de wars de l'équipe jouées par le joueur sur la fenêtre.
                     participationByWindow?.let { byWindow ->
                         val participation = byWindow[selectors.windowIndex]
                         val participationDelta = participation?.minus(byWindow[0] ?: 0)
@@ -447,9 +404,9 @@ private fun IndicatorsCard(
                     }
                 }
                 else -> {
-                    // Vue ÉQUIPE : « Score moyen » = ÉCART de points (warScoreToDiff), pas le total.
+                    // Vue équipe : « Score moyen » = écart de points (warScoreToDiff), pas le total.
                     add(MetricTile(stringResource(R.string.form_score), window?.averageScore?.warScoreToDiff(false) ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_form_score)))
-                    // « Score moyen/map » = ÉCART de points par MANCHE (trackScoreToDiff), pas le total (#67).
+                    // Score/map = écart de points par manche (trackScoreToDiff), pas le total (#67).
                     add(MetricTile(stringResource(R.string.average_map_score_short), window?.averageMapScore?.trackScoreToDiff(false) ?: "-", if (showDelta) window?.mapScoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_average_map_score)))
                 }
             }
@@ -468,9 +425,8 @@ private fun IndicatorsCard(
 private enum class DeltaPolarity { HIGHER, LOWER, NONE }
 
 /**
- * Donnée d'une tuile d'indicateur : valeur + delta signé optionnel. [info] (facultatif)
- * porte le texte d'explication de la stat : quand il est non-null, la tuile affiche un
- * bouton ⓘ ([MKStatInfoButton]) à côté du libellé (ticket #87).
+ * Tuile d'indicateur : valeur + delta signé optionnel. [info] non-null ⇒ bouton ⓘ
+ * ([MKStatInfoButton]) affiché (ticket #87).
  */
 private data class MetricTile(
     val label: String,
@@ -481,19 +437,12 @@ private data class MetricTile(
     val info: String? = null
 )
 
-// Hauteurs RÉSERVÉES pour figer la taille des tuiles quel que soit le contenu :
-// - [DeltaSlotHeight] : la ligne de progression (delta %), occupée même absente ;
-// - [LabelSlotHeight] : le libellé, calé sur DEUX lignes (occupé même si le libellé
-//   tient sur une ligne) → toutes les tuiles ont exactement la même hauteur, qu'un
-//   libellé passe sur 1 ou 2 lignes et qu'un delta soit présent ou non (ticket #36).
+// Hauteurs réservées pour figer la taille des tuiles quel que soit le contenu (#36) :
+// delta (occupé même absent) et libellé (calé sur 2 lignes) → toutes de même hauteur.
 private val DeltaSlotHeight = 15.dp
 private val LabelSlotHeight = 26.dp
 
-/**
- * Grille RÉGULIÈRE de tuiles : [columns] colonnes à poids égal, toutes les tuiles de
- * même taille. Chaque tuile réserve la place du delta ([DeltaSlotHeight]) qu'il soit
- * présent ou non → aucun redimensionnement au changement de fenêtre.
- */
+/** Grille régulière : [columns] colonnes à poids égal, delta réservé → pas de redim au changement de fenêtre. */
 @Composable
 private fun ColumnScope.MetricTiles(tiles: List<MetricTile>, columns: Int = 3) {
     tiles.chunked(columns).forEach { rowTiles ->
@@ -509,14 +458,10 @@ private fun ColumnScope.MetricTiles(tiles: List<MetricTile>, columns: Int = 3) {
 
 @Composable
 private fun RowScope.MetricTileCell(tile: MetricTile) {
-    // Le contenu (valeur + delta + libellé) reste dans son flux normal en Column ; le
-    // bouton ⓘ (facultatif) est ancré dans le coin SUPÉRIEUR DROIT de la tuile via un Box
-    // englobant, avec une petite marge (rule 15/13). La valeur réserve une marge à droite
-    // (end) pour ne jamais chevaucher le bouton.
+    // Contenu en Column ; bouton ⓘ optionnel ancré en haut-à-droite (Box). La valeur réserve
+    // une marge à droite pour ne pas chevaucher le bouton.
     Box(Modifier.weight(1f).background(Colors.white30, CardRadius)) {
         Column(Modifier.padding(10.dp)) {
-            // Valeur : toujours BLANCHE (aucune couleur). Marge droite réservée si un bouton
-            // ⓘ est ancré en haut-à-droite, pour éviter tout chevauchement.
             MKText(
                 text = tile.value,
                 font = Fonts.Urbanist,
@@ -526,8 +471,7 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
                 maxLines = 1,
                 modifier = if (tile.info != null) Modifier.padding(end = 24.dp) else Modifier
             )
-            // Ligne de progression à hauteur RÉSERVÉE (même vide) : la place du delta est
-            // toujours occupée → hauteur de tuile figée sur la plus grande (avec delta).
+            // Ligne de progression à hauteur réservée (même vide) → hauteur de tuile figée.
             Box(Modifier.height(DeltaSlotHeight).padding(top = 3.dp)) {
                 tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
                     val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
@@ -541,13 +485,11 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
                     )
                 }
             }
-            // Libellé à hauteur RÉSERVÉE (2 lignes) : occupé même sur une seule ligne →
-            // aucune tuile n'est plus haute qu'une autre selon la longueur du libellé.
+            // Libellé à hauteur réservée (2 lignes) → tuiles de même hauteur.
             Box(Modifier.padding(top = 6.dp).height(LabelSlotHeight)) {
                 MKText(text = tile.label, textColor = Colors.white70, fontSize = 10, textAlign = TextAlign.Start, maxLines = 2)
             }
         }
-        // Bouton ⓘ ancré en HAUT-À-DROITE, émis seulement si [tile.info] est fourni.
         tile.info?.let { info ->
             MKStatInfoButton(
                 title = tile.label,
@@ -558,23 +500,15 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
     }
 }
 
-// =====================================================================
-// Section Records & séries — grille 3×2 + sélecteur de fenêtre (ticket #36)
-// =====================================================================
-
+// Section Records & séries (#36)
 /**
- * Records & séries : sélecteur de fenêtre (all-time / 5 / 10) + grille **3 lignes ×
- * 2 colonnes**, calculée sur la fenêtre choisie (`FormStats`). La « série en cours »
- * n'est PAS ici (elle est dans « Forme & séries »).
- * - Ligne 1 : Amplitude → deux cellules (min | max).
- * - Ligne 2 : record de victoires | record de défaites.
- * - Ligne 3 : Top 6 | Bot 6 (compte).
+ * Records & séries : grille 3×2 sur la fenêtre (`FormStats`). Amplitude (min | max), records
+ * de séries V | D, Top6 | Bot6. La série en cours est dans « Forme & séries ».
  */
 @Composable
 private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors, isTeam: Boolean) {
     val window = stats.windowForm(selectors.windowIndex)
-    // Vue ÉQUIPE : min/max de war affichés en ÉCART de points (warScoreToDiff) ; vue JOUEUR :
-    // score perso brut (#67). Formatage local selon le mode.
+    // Vue équipe : min/max en écart de points (warScoreToDiff) ; vue joueur : score perso brut (#67).
     val formatScore: (Int?) -> String = { value ->
         value?.let { if (isTeam) it.warScoreToDiff(false) else it.toString() } ?: "-"
     }
@@ -594,15 +528,10 @@ private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors, isTeam: 
     }
 }
 
-// =====================================================================
-// Podiums circuits & adversaires (Top3/Flop3 + sélecteur) — ticket #36
-// =====================================================================
-
+// Podiums circuits & adversaires (#36)
 /**
- * Podium circuits : sélecteur **occurrences / winrate / score**, Top 3 / Flop 3 chacun
- * sur **une ligne** de 3 `PodiumCell`. Chaque cellule reprend les infos de `MapCell`
- * (nb de fois joué, winrate, score équipe / position joueur). [userId] non-null ⇒
- * score/position du joueur ; null ⇒ score d'équipe.
+ * Podium circuits : tri occurrences / winrate / score, Top3 / Flop3 (3 `PodiumCell` chacun).
+ * [userId] non-null ⇒ score/position du joueur ; null ⇒ score d'équipe.
  */
 @Composable
 private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: String?, onSeeAll: (() -> Unit)? = null) {
@@ -611,9 +540,8 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
         2 -> stats.topMapsByScore to stats.flopMapsByScore
         else -> stats.topMapsByCount to stats.flopMapsByCount
     }
-    // La carte disparaît seulement si AUCUN circuit n'est jouable, TOUS tris confondus (#91
-    // pt.1) — pas seulement pour le tri courant : un tri sans échantillon dégrade en message
-    // (cf. `PodiumOrMessage`) au lieu de faire disparaître toute la section au changement de tri.
+    // Carte masquée seulement si aucun circuit jouable, tous tris confondus (#91 pt.1) : un tri
+    // sans échantillon dégrade en message (`PodiumOrMessage`) plutôt que de masquer la section.
     val hasAnyMap = stats.topMapsByCount.isNotEmpty() || stats.topMapsByWinrate.isNotEmpty() || stats.topMapsByScore.isNotEmpty()
     if (!hasAnyMap) return
     val scoreLabel = if (userId != null) R.string.average_position_short else R.string.form_score
@@ -646,10 +574,8 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
 }
 
 /**
- * Podium adversaires : sélecteur **occurrences / winrate / score**, Top 3 / Flop 3
- * chacun sur **une ligne** de 3 `PodiumCell`. Chaque cellule reprend les infos de
- * `TeamCell` (nb de confrontations, winrate, score). [userId] non-null ⇒ score du
- * joueur (Individuelles) ; null ⇒ écart d'équipe (Équipe).
+ * Podium adversaires : tri occurrences / winrate / score, Top3 / Flop3. [userId] non-null ⇒
+ * score du joueur (Individuelles) ; null ⇒ écart d'équipe (Équipe).
  */
 @Composable
 private fun OpponentsPodiumCard(
@@ -663,11 +589,9 @@ private fun OpponentsPodiumCard(
         2 -> podiums.topByScore to podiums.flopByScore
         else -> podiums.topByCount to podiums.flopByCount
     }
-    // La carte reste affichée dès qu'au moins un adversaire est classable, TOUS tris confondus
-    // (#91 pt.1) : sur une fenêtre réduite (5/10 dernières), le seuil MIN_RANKING_SAMPLE peut
-    // vider le tri winrate/score alors que le tri occurrences reste peuplé → on ne fait plus
-    // disparaître la section au changement de fenêtre/tri ; un tri sans données affiche un
-    // message (cf. `PodiumOrMessage`) plutôt qu'un podium tronqué (2 sur 3) incohérent.
+    // Carte affichée dès qu'un adversaire est classable, tous tris confondus (#91 pt.1) : sur
+    // une fenêtre réduite, MIN_RANKING_SAMPLE peut vider un tri alors qu'un autre reste peuplé →
+    // un tri sans données affiche un message (`PodiumOrMessage`), pas un podium tronqué.
     val hasAnyOpponent = podiums.topByCount.isNotEmpty() || podiums.topByWinrate.isNotEmpty() || podiums.topByScore.isNotEmpty()
     if (!hasAnyOpponent) return
     val toEntry: (RankingItem.OpponentRanking) -> PodiumEntry = { opponent ->
@@ -698,20 +622,15 @@ private fun OpponentsPodiumCard(
 }
 
 /**
- * Podium sous label (#91 pt.1) : rend une ligne [PodiumRow] complète quand il y a **assez
- * d'entrées** pour un podium cohérent (≥ 3), sinon un message de dégradation « pas assez de
- * données sur cette période » — jamais un podium tronqué « 2 sur 3 » (artefact du seuil
- * MIN_RANKING_SAMPLE sur une fenêtre réduite). Le label reste toujours affiché → la section
- * ne disparaît plus au changement de période/tri.
+ * Podium sous label (#91 pt.1) : [PodiumRow] complète si ≥ 3 entrées, sinon message de
+ * dégradation — jamais un podium tronqué (2 sur 3, artefact de MIN_RANKING_SAMPLE). Le label
+ * reste toujours affiché → la section ne disparaît pas au changement de période/tri.
  */
 @Composable
 private fun ColumnScope.PodiumOrMessage(label: String, entries: List<PodiumEntry>) {
     PodiumLabel(label)
     when (entries.size) {
-        // Podium complet (3 cellules) : rendu normal, cohérent.
         3 -> PodiumRow(entries)
-        // Aucun / trop peu d'entrées classables sur cette fenêtre → message, pas de podium
-        // tronqué (2 sur 3) qui donnerait un rendu incohérent.
         else -> MKText(
             text = stringResource(R.string.stats_podium_not_enough),
             textColor = Colors.white55,
@@ -754,15 +673,10 @@ private fun SeeAllLink(onClick: () -> Unit) {
     )
 }
 
-// =====================================================================
-// Composants de carte (style maquette, réutilisés par les deux onglets)
-// =====================================================================
-
+// Composants de carte (réutilisés par les deux onglets)
 /**
- * En-tête : vignette (photo joueur / logo équipe) + nom (Bungee) + sous-titre.
- * [logo] = URL MKCentral déjà préfixée (avatar joueur en Individuelles, logo équipe
- * en Équipe) ; fallback = pastille d'initiales (joueur) ou default_logo (équipe).
- * Délègue à [StatHeaderCard] partagé (rule 16).
+ * En-tête : vignette (photo joueur / logo équipe) + nom + sous-titre. [logo] = URL MKCentral
+ * préfixée ; fallback = initiales (joueur) ou default_logo (équipe). Délègue à [StatHeaderCard] (rule 16).
  */
 @Composable
 private fun HeaderCard(name: String, subtitle: String, color: Color, logo: String?, isTeam: Boolean) {
@@ -808,12 +722,9 @@ private fun BalanceCard(stats: Stats, showResultsLink: Boolean, onResults: (() -
 }
 
 /**
- * Ligne icône + gros titre + sous-titre (contribution). [tinted] = true : l'icône est
- * teintée par [accent] (`Icon`, cas monochrome comme le shock). false : icône dessinée en
- * couleurs d'origine (`Image`) — pour une image multicolore comme le champignon (#91), qu'un
- * tint aplatirait. [iconSize] = taille de rendu de l'icône (défaut 22 dp, comme le shock ;
- * augmentée pour un asset à padding interne transparent, ex. champignon 34 dp) — bornée par le
- * médaillon accent de 44 dp, identique dans les deux cas.
+ * Ligne icône + titre + sous-titre. [tinted] true ⇒ icône teintée par [accent] (`Icon`,
+ * monochrome comme le shock) ; false ⇒ `Image` couleurs d'origine (multicolore, ex. champignon #91).
+ * [iconSize] défaut 22 dp (34 dp pour un asset à padding transparent), borné par le médaillon 44 dp.
  */
 @Composable
 private fun IconLine(icon: Int, accent: Color, title: String, subtitle: String, tinted: Boolean = true, iconSize: Dp = 22.dp) {
@@ -856,7 +767,7 @@ private fun FormStreakCard(stats: Stats, title: String) {
                 Icon(painter = painterResource(R.drawable.ic_flame), contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f)) {
-                // Texte de la série en blanc (#50 pt.3) — l'accent (flamme) garde sa couleur V/D.
+                // Texte de la série en blanc (#50 pt.3) ; la flamme garde sa couleur V/D.
                 MKText(text = streakText, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start)
                 val deltaText = delta?.let { stringResource(R.string.stats_form_delta, if (it >= 0) "+$it" else "$it") } ?: ""
                 MKText(
@@ -872,17 +783,11 @@ private fun FormStreakCard(stats: Stats, title: String) {
 }
 
 
-// --- Distribution des positions (`.dist`) ------------------------------------
-
-/**
- * Carte « Répartition des positions » : sélecteur de fenêtre (all-time / 5 / 10) +
- * histogramme P1→P12 recalculé sur la fenêtre + pied Top6/Bot6 (sur la même fenêtre).
- */
+/** Carte « Répartition des positions » : histogramme P1→P12 sur la fenêtre + pied Top6/Bot6. */
 @Composable
 private fun DistributionCard(stats: Stats, selectors: SectionSelectors) {
-    // La fenêtre globale filtre déjà les wars de `stats` (VM #68). La distribution est donc
-    // calculée sur TOUTES les wars de `stats` (lastN = null) : appliquer un second takeLast
-    // ici doublerait le filtrage. On garde le calcul all-time DE CETTE FENÊTRE.
+    // La fenêtre filtre déjà `stats` (VM #68) → calcul sur toutes ses wars (lastN = null) ;
+    // un second takeLast doublerait le filtrage.
     val distribution = stats.positionDistributionFor(lastN = null)
     if (distribution.none { it.second > 0 }) return
     StatCard(title = stringResource(R.string.stats_distribution_title)) {
@@ -892,16 +797,12 @@ private fun DistributionCard(stats: Stats, selectors: SectionSelectors) {
     }
 }
 
-// --- Contributeurs / Baggeurs (`.lrow`) --------------------------------------
-
-/** Axe de contribution affiché par [ContributorsCard] : part de POINTS ou de SHOCKS (#69). */
+/** Axe de [ContributorsCard] : part de POINTS ou de SHOCKS (#69). */
 private enum class ContributionAxis { POINTS, SHOCKS }
 
 /**
- * Carte de classement du roster par fenêtre (all-time / 5 / 10), MUTUALISÉE (#69) entre
- * « Contributeurs » (part de points) et « Meilleurs baggeurs » (part de shocks, total/total).
- * [axis] pilote la valeur affichée sous chaque nom ; les lignes reçues sont déjà triées
- * selon l'axe (VM). Rien à afficher si la fenêtre est vide.
+ * Classement du roster par fenêtre, mutualisé (#69) entre « Contributeurs » (part de points) et
+ * « Meilleurs baggeurs » (part de shocks). [axis] pilote la valeur affichée ; lignes déjà triées (VM).
  */
 @Composable
 private fun ContributorsCard(
@@ -933,7 +834,7 @@ private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributo
             else -> Colors.white55
         }
         MKText(text = rank.toString(), font = Fonts.Urbanist, textColor = rankColor, fontSize = 14, modifier = Modifier.width(18.dp))
-        // Médaillon joueur mutualisé (#50 pt.4) : photo si dispo, initiales sinon/pendant le chargement.
+        // Médaillon mutualisé (#50 pt.4) : photo si dispo, initiales sinon.
         PlayerMedallion(
             initials = initialsOf(contributor.player.name.displayName),
             avatarColor = playerAvatarColor(contributor.player.id),

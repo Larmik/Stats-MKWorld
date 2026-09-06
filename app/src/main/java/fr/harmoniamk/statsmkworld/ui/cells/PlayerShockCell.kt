@@ -27,24 +27,14 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 /**
- * Cellule joueur avec **compteur de shocks** (et, optionnellement, **édition de la position**),
- * partagée (extraite du `SummaryPlayerCell` privé d'`AddTrackScreen`, rule 16 : mutualisée dès
- * un 2ᵉ écran consommateur — le Résumé d'AddTrack et la section Positions d'`EditTrackScreen`,
- * ticket #46).
+ * Cellule joueur avec compteur de shocks et édition optionnelle de la position, partagée (rule 16).
  *
- * Carte translucide (`white30`, radius 6, padding 11) en **colonne verticale centrée**
- * (rules 13/15) :
- * - **en haut** : le **nom** du joueur (Nunito bold) ;
- * - **au milieu** : une **petite grille alignée en 3 colonnes centrée** — colonne des `−` |
- *   colonne centrale (**position** en haut : numéro `MKPosition` + couleur `positionColor`,
- *   **sans fond blanc** ; **[icône shock + compteur]** en bas) | colonne des `+`. Les rangées
- *   ont une hauteur fixe → tous les `−` alignés sur une colonne, tous les `+` sur une autre.
- *   Si [onDecreasePosition] / [onIncreasePosition] sont fournis, la ligne de position porte des
- *   boutons − / + (bornés : − désactivé à 1, + désactivé à [maxPosition]) ; sinon la place est
- *   réservée mais vide (position en lecture seule — cas du Résumé d'AddTrack).
+ * Carte translucide, nom en haut puis grille 3 colonnes centrée : `−` | (position en haut, icône
+ * shock + compteur en bas) | `+`, rangées à hauteur fixe pour aligner les steppers. Si
+ * [onDecreasePosition]/[onIncreasePosition] sont fournis, la position porte des boutons ± bornés
+ * (1..[maxPosition]) ; sinon lecture seule.
  *
- * Le compteur [shockCount] et la [position] reflètent l'état courant. Shocks **hors calcul du
- * score** ; la position, elle, alimente le recalcul du score à la validation.
+ * Shocks **hors calcul du score** ; la position alimente le recalcul du score à la validation.
  */
 @Composable
 fun PlayerShockCell(
@@ -55,8 +45,7 @@ fun PlayerShockCell(
     onAddShock: () -> Unit,
     onRemoveShock: () -> Unit,
     modifier: Modifier = Modifier,
-    // Édition de position (optionnelle) : quand les deux callbacks sont fournis, le carré de
-    // position est encadré de boutons − / + bornés à 1..[maxPosition].
+    // Édition de position : quand les deux callbacks sont fournis, boutons ± bornés à 1..[maxPosition].
     onDecreasePosition: (() -> Unit)? = null,
     onIncreasePosition: (() -> Unit)? = null,
     maxPosition: Int = if (is24p) 24 else 12
@@ -69,7 +58,6 @@ fun PlayerShockCell(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
-        // Haut : nom du joueur.
         MKText(
             text = name,
             font = Fonts.NunitoBD,
@@ -77,11 +65,7 @@ fun PlayerShockCell(
             fontSize = 13,
             maxLines = 1
         )
-        // Milieu : petite GRILLE alignée en 3 colonnes, centrée —
-        //   colonne des −  |  colonne centrale (position en haut, [icône shock + compteur] en bas)  |  colonne des +
-        // Les 2 rangées ont une hauteur fixe : ainsi tous les « − » sont alignés sur une même
-        // colonne, tous les « + » sur une autre, et position/shock partagent la colonne centrale.
-        // Plus de fond blanc autour de la position (retour utilisateur) : numéro coloré seul.
+        // Grille 3 colonnes à rangées de hauteur fixe (steppers alignés) ; position = numéro coloré seul.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -155,10 +139,7 @@ private val PositionRowHeight = 34.dp
 /** Hauteur de rangée « shock » (aligne l'icône+compteur et les boutons ± de shock). */
 private val ShockRowHeight = 22.dp
 
-/**
- * Emplacement d'une cellule de la grille d'alignement : hauteur fixe, contenu centré (ou vide,
- * pour réserver la place quand un contrôle est absent — ex. steppers de position non fournis).
- */
+/** Emplacement de grille à hauteur fixe : contenu centré, ou vide pour réserver la place. */
 @Composable
 private fun StepperSlot(height: Dp, content: @Composable () -> Unit) {
     Box(
@@ -169,11 +150,7 @@ private fun StepperSlot(height: Dp, content: @Composable () -> Unit) {
     }
 }
 
-/**
- * Bouton carré `−`/`+` du contrôle de shocks / de position (`.shk button` de la maquette :
- * 22 dp, radius 6). [enabled] borne le bouton aux extrémités (position min/max) : désactivé, il
- * est grisé et non cliquable.
- */
+/** Bouton carré `−`/`+` (`.shk button` maquette) ; [enabled] false = grisé et non cliquable (butée). */
 @Composable
 private fun StepperButton(symbol: String, onClick: () -> Unit, enabled: Boolean = true) {
     Box(

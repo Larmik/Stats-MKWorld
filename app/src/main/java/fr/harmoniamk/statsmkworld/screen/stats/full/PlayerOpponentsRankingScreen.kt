@@ -32,12 +32,9 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 import fr.harmoniamk.statsmkworld.ui.stats.podiumRows
 
 /**
- * Classement COMPLET des adversaires (« Classement entier » des podiums Adversaires de
- * `StatsFullScreen`, #67 round 3) — **scopé au périmètre de l'écran d'origine** : [isTeam]
- * = false → adversaires DU JOUEUR (score du joueur), true → adversaires d'ÉQUIPE (écart
- * d'équipe). Réutilise le **même `StatsFullViewModel`** (même userId → mêmes données scopées,
- * rules 16/32) et la grille `podiumRows` mutualisée. Sélecteur de tri Occurrences / Winrate /
- * Score moy. (état local `rememberSaveable`, rule 11).
+ * Classement complet des adversaires (#67). [isTeam] false → adversaires du joueur (score
+ * joueur), true → adversaires d'équipe (écart). Réutilise le même `StatsFullViewModel`
+ * (rules 16/32) et la grille `podiumRows`. Tri Occurrences / Winrate / Score moy.
  */
 @Composable
 fun PlayerOpponentsRankingScreen(
@@ -49,12 +46,10 @@ fun PlayerOpponentsRankingScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sortIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    // Classement ENTIER = all-time (index 0) : destination autonome sans sélecteur de
-    // période (le filtre global de #68 ne concerne que le pôle Stats).
+    // All-time (index 0) : destination autonome sans sélecteur de période (#68).
     val podiums = (if (isTeam) state.teamOpponentsByWindow[0] else state.playerOpponentsByWindow[0])
         ?: StatsFullViewModel.OpponentPodiums()
-    // Tri + conversion vers PodiumEntry mémoïsés (rule 11) : plus recalculés à chaque
-    // recomposition, seulement quand le tri, la source ou le périmètre change (#73).
+    // Tri + conversion mémoïsés (rule 11, #73).
     val rows = remember(sortIndex, podiums, isTeam) {
         podiums.all
             .let { list ->
@@ -103,9 +98,8 @@ fun PlayerOpponentsRankingScreen(
 }
 
 /**
- * Adversaire → entrée de podium (logo équipe + Nb joué + Winrate + score). [isTeam] = true ⇒
- * écart d'équipe (`averagePointsLabel`) ; false ⇒ score du joueur (`averagePoints`). Rule 12 :
- * nom/tag du roster (porté par TeamEntity), logo de l'équipe parente.
+ * Adversaire → entrée de podium. [isTeam] true ⇒ écart d'équipe ; false ⇒ score du joueur.
+ * Rule 12 : nom/tag du roster, logo de l'équipe parente.
  */
 private fun RankingItem.OpponentRanking.toPodiumEntry(isTeam: Boolean): PodiumEntry =
     PodiumEntry(

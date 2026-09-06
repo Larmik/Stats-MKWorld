@@ -49,17 +49,9 @@ import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 import kotlinx.coroutines.launch
 
 /**
- * Écran « ACTIONS » de la war en cours (pôle Wars). Trois onglets (segmenté partagé
- * [MKSegmentedSelector], rules 15/16) basculés **dynamiquement** par un état local
- * (`rememberSaveable`, rule 11 — pas de re-navigation ni de pager animé) :
- *
- * - **Pénalités** : grille par équipe/montant (−10/−15/−20), sélection unique, CTA Valider ;
- * - **Remplacement** : joueur sortant / joueur entrant ([MKListRow]), CTA Remplacer ;
- * - **Annuler** : carte de confirmation + bouton danger (supprime la war en cours).
- *
- * Style repris de `docs/prototype/stats-mkworld-5poles.html` (écran `waractions`) :
- * hints, cartes translucides, grille `.penb` (fond translucide → `--loss` rouge quand
- * sélectionné), bouton danger `.btn2.danger` (bordure/texte rouge).
+ * Écran « ACTIONS » de la war en cours. Trois onglets (segmenté partagé, état local
+ * `rememberSaveable`, rule 11) : Pénalités (grille équipe/montant, sélection unique),
+ * Remplacement (sortant/entrant), Annuler (confirmation + suppression de la war).
  */
 @Composable
 fun CurrentWarActionsScreen(
@@ -117,15 +109,11 @@ private fun ColumnScope.PenaltiesPanel(
         textAlign = TextAlign.Start,
         modifier = Modifier.fillMaxWidth()
     )
-    // Une colonne par équipe (hôte + adverse(s)) : chaque colonne empile les montants
-    // −10/−15/−20 de son équipe. En 12p → 2 colonnes (hôte / adverse) ; en 24p, une
-    // colonne par équipe adverse s'ajoute (comportement des données inchangé : sélection
-    // unique toutes équipes confondues). L'ordre des pénalités du VM préserve le
-    // regroupement par équipe (`groupBy` conserve l'ordre de première apparition).
+    // Une colonne par équipe (hôte + adverse(s)) empilant ses montants −10/−15/−20. Sélection
+    // unique toutes équipes confondues ; `groupBy` conserve l'ordre de première apparition.
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         state.penalties.orEmpty().groupBy { it.penalty.teamId }.forEach { (teamId, teamPenalties) ->
-            // Nom du roster hôte / de l'équipe adverse (rule 12), résolu depuis le teamId ;
-            // retombe sur l'hôte si non résolu.
+            // Nom du roster/équipe (rule 12) ; retombe sur l'hôte si non résolu.
             val teamName = teams.singleOrNull { it.id == teamId }?.name ?: hostName
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MKText(
@@ -162,10 +150,7 @@ private fun ColumnScope.PenaltiesPanel(
     )
 }
 
-/**
- * Tuile de pénalité (`.penb`) : fond translucide clair par défaut, **`blackAlphaed`**
- * quand sélectionnée (choix produit — texte gardé en **blanc** dans les deux états).
- */
+/** Tuile de pénalité : fond translucide clair, `blackAlphaed` quand sélectionnée (texte blanc). */
 @Composable
 private fun PenaltyTile(
     modifier: Modifier,
@@ -247,9 +232,8 @@ private fun ColumnScope.CancelPanel(
         )
     }
     Spacer(Modifier.height(2.dp))
-    // Deux actions sur UNE seule ligne, largeurs égales (weight 1f chacune, rules 16 / #67) :
-    // « Supprimer la war » + « Annuler ». Le bouton danger est aplati sur le style UNIQUE
-    // de MKButton (fond blanc translucide, plus de fond rouge ad hoc — rule 16 / #67).
+    // Deux actions sur une ligne, largeurs égales (weight 1f, rule 16). Bouton danger aplati
+    // sur le style unique de MKButton (plus de fond rouge ad hoc, #67).
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         MKButton(
             modifier = Modifier.weight(1f),

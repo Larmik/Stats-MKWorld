@@ -28,29 +28,15 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
-/**
- * Couleur stable de la pastille d'avatar d'un joueur, dérivée de son id (palette
- * équipe). Partagée (rule 16) entre le wizard de création de war (`AddWarScreen`) et
- * l'écran d'actions de war (`CurrentWarActionsScreen`) qui affichent tous deux des
- * lignes joueur [MKListRow].
- */
+/** Couleur stable de la pastille d'un joueur, dérivée de son id (palette équipe). */
 fun playerAvatarColor(id: String): Color = ((id.hashCode() and 0x7fffffff) % 32 + 1).toTeamColor()
 
 /**
- * Ligne de liste générique (`.lrow` de la maquette prototype UX) : carte sombre
- * translucide, pastille ronde (avatar MKCentral [avatarUrl] si présent, sinon
- * [initials]/[fallback] sur fond [avatarColor]), titre + slot [titleTrailing]
- * optionnel, sous-texte [subtitle], puis un slot de fin [trailing] (chevron, pastille
- * de sélection…).
+ * Ligne de liste générique (`.lrow` maquette) : carte sombre, pastille ronde (avatar [avatarUrl]
+ * sinon [initials] sur [avatarColor]), titre + [titleTrailing], [subtitle], slot [trailing].
  *
- * Composant **partagé unique** (rule 16) : mutualisé entre le pôle Profil
- * (`ProfileMemberRow` → chevron de navigation) et le wizard de création de war
- * (`AddWarScreen` → chevron pour l'adversaire, pastille ✓ pour les joueurs). Généralisé
- * par paramètres (avatar, trailing, taille de pastille), pas par duplication.
- *
- * Valeurs de style extraites de `docs/prototype/stats-mkworld-5poles.html` (`.lrow`
- * fond `--card`, bordure `--bord`, radius 6px, padding 10/12 ; `.lc` pastille ronde 34px
- * bordure blanche ; `.ln`/`.ls` titre 14/sous-texte 11).
+ * Composant **partagé unique** (rule 16) entre le pôle Profil et le wizard AddWar, généralisé
+ * par paramètres.
  */
 @Composable
 fun MKListRow(
@@ -75,7 +61,7 @@ fun MKListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp)
     ) {
-        // Médaillon joueur mutualisé (#50 pt.4, rule 16) : photo si dispo, initiales sinon/pendant le chargement.
+        // Médaillon joueur mutualisé (rule 16) : photo si dispo, initiales sinon.
         PlayerMedallion(
             initials = initials,
             avatarColor = avatarColor,

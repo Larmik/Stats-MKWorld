@@ -76,9 +76,8 @@ class EditTabViewModel @AssistedInject constructor(
                     val playerScores = war.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository).map { PlayerScoreForTab(it, war.tracks.size) }
                     val opponentScores = players.mapIndexed { index, player -> PlayerScoreForTab(player.displayName, scores[index].toInt(), 0) }
                     val teamHost = dataStoreRepository.mkcTeam.firstOrNull()
-                    // Résout chaque adversaire (rosterId → équipe parente pour nom/tag/logo)
-                    // en conservant le rosterId comme id, afin que les comparaisons de score
-                    // du PDF (war.teamOpponent.contains(team.id)) matchent, à l'image de l'hôte.
+                    // Résout chaque adversaire en conservant le rosterId comme id, pour que les
+                    // comparaisons de score du PDF (war.teamOpponent.contains(team.id)) matchent.
                     val teamOpponents = war.teamOpponent.mapNotNull { opponentId ->
                         databaseRepository.getTeam(opponentId)?.copy(id = opponentId)
                     }

@@ -4,14 +4,10 @@ import com.squareup.moshi.JsonClass
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 
 /**
- * Métadonnées locales d'un roster mkworld d'une équipe, stockées sur
- * [fr.harmoniamk.statsmkworld.database.entities.TeamEntity.rosters].
- *
- * Permet de résoudre un `rosterId` (contenu de `War.teamOpponent`/`teamHost`
- * depuis le passage à la granularité roster) vers le **nom et le tag du roster**
- * pour l'affichage, tout en conservant l'avatar de l'équipe parente. Alimenté au
- * fetch / à la sélection (données déjà présentes dans [MKCTeamRoster]), sans
- * appel réseau supplémentaire.
+ * Métadonnées locales d'un roster mkworld, stockées sur
+ * [fr.harmoniamk.statsmkworld.database.entities.TeamEntity.rosters]. Résout un `rosterId`
+ * (`War.teamOpponent`/`teamHost`) → nom/tag du roster pour l'affichage (avatar hérité de
+ * l'équipe parente). Alimenté au fetch depuis [MKCTeamRoster], sans appel réseau.
  */
 @JsonClass(generateAdapter = true)
 data class RosterInfo(

@@ -32,12 +32,9 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 private val CellRadius = RoundedCornerShape(6.dp)
 
 /**
- * Cellule d'un résultat de war, partagée par l'Accueil, l'historique (Wars) et les
- * stats. Deux rendus :
- * - **12p** (un seul adversaire) : rendu stylé « ligne de résultat » (pastille
- *   V/N/D, pastille adversaire, « vs … » + date, score + écart + maps gagnées) ;
- * - **24p** (3 équipes) : podium des 3 scores (repris de l'implémentation
- *   historique, style minimal).
+ * Cellule de résultat de war, partagée par l'Accueil, les Wars et les stats. Deux rendus :
+ * - **12p** : ligne de résultat (pastille V/N/D, adversaire, « vs … » + date, score + écart + maps) ;
+ * - **24p** : podium des 3 scores.
  */
 @Composable
 fun WarCell(modifier: Modifier = Modifier, viewModel: WarCellViewModel, onClick: (WarDetails) -> Unit) {

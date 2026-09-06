@@ -25,10 +25,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Classement COMPLET des baggeurs sur un circuit (« Voir le classement en entier » de la
- * section « Baggeurs sur ce circuit » #69), de la plus grande à la plus petite part de
- * shocks (total/total). Réutilise le même [MapDetailViewModel] (même clé de nav → mêmes
- * données) et la grille `podiumRows` mutualisée (rule 16).
+ * Classement complet des baggeurs sur un circuit (#69), par part de shocks décroissante.
+ * Réutilise le même [MapDetailViewModel] et la grille `podiumRows` (rule 16).
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable

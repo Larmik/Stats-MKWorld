@@ -34,12 +34,9 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 import fr.harmoniamk.statsmkworld.ui.stats.podiumRows
 
 /**
- * Classement COMPLET des circuits (« Classement entier » des podiums Circuits de
- * `StatsFullScreen`, #67 round 3) — **scopé au périmètre de l'écran d'origine** : [isTeam]
- * = false → circuits DU JOUEUR (position moyenne), true → circuits d'ÉQUIPE (écart d'équipe).
- * Réutilise le **même `StatsFullViewModel`** (même userId → mêmes données scopées, rules 16/32)
- * et la grille `podiumRows` mutualisée. Sélecteur de tri Occurrences / Winrate / Score moy.
- * (état local `rememberSaveable`, rule 11).
+ * Classement complet des circuits (#67). [isTeam] false → circuits du joueur (position
+ * moyenne), true → circuits d'équipe (écart). Réutilise le même `StatsFullViewModel`
+ * (rules 16/32) et la grille `podiumRows`. Tri Occurrences / Winrate / Score moy.
  */
 @Composable
 fun PlayerMapsRankingScreen(
@@ -51,15 +48,12 @@ fun PlayerMapsRankingScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sortIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    // Classement ENTIER = all-time (index 0) : cet écran est une destination autonome sans
-    // sélecteur de période (le filtre global de #68 ne concerne que le pôle Stats).
+    // All-time (index 0) : destination autonome sans sélecteur de période (#68).
     val stats = if (isTeam) state.teamStatsByWindow[0] else state.playerStatsByWindow[0]
     val userId = if (isTeam) null else state.targetUserId
-    // Tri + conversion vers PodiumEntry mémoïsés (rule 11) : le corps composable ne les
-    // recalcule plus à chaque recomposition, seulement quand le tri ou la source change (#73).
+    // Tri + conversion mémoïsés (rule 11, #73).
     val rows = remember(sortIndex, stats, userId) {
         stats?.maps.orEmpty()
-            // Seuls les circuits réellement joués figurent au classement.
             .filter { it.totalPlayed > 0 }
             .let { list ->
                 when (sortIndex) {
@@ -106,11 +100,7 @@ fun PlayerMapsRankingScreen(
     }
 }
 
-/**
- * Circuit → entrée de podium (illustration + Nb joué + Winrate + position joueur / écart
- * équipe) — même convention que les podiums Circuits de `StatsFullScreen`. [userId] non-null
- * ⇒ position moyenne du joueur ; null ⇒ écart d'équipe (`trackScoreToDiff`).
- */
+/** Circuit → entrée de podium. [userId] non-null ⇒ position moyenne du joueur ; null ⇒ écart d'équipe. */
 private fun TrackStats.toPodiumEntry(userId: String?): PodiumEntry {
     val map = map?.firstOrNull()
     val scoreLabel = if (userId != null) R.string.average_position_short else R.string.form_score

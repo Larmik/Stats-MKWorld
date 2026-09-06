@@ -51,8 +51,7 @@ class EditTrackViewModel @AssistedInject constructor(
         val mapList: List<Maps> = Maps.entries,
         val mapSelected: List<Maps>? = null,
         val players: List<PlayerEntity> = listOf(),
-        // Line-up éditable de la course : une position par joueur, modifiable via ± (source de
-        // vérité VM). Pré-remplie avec les positions actuelles de la course.
+        // Line-up éditable : une position par joueur, modifiable via ±, pré-remplie avec les positions actuelles.
         val selectedPositions: List<PlayerPosition> = listOf(),
         val buttonEnabled: Boolean = false,
         val shocks: Map<String, Int> = mutableMapOf(),
@@ -61,17 +60,13 @@ class EditTrackViewModel @AssistedInject constructor(
         /** Nombre max de positions selon le mode (12p → 12, 24p → 24). */
         val maxPosition: Int get() = if (is24p) 24 else 12
 
-        /**
-         * Toutes les positions de la line-up sont **distinctes** (aucun doublon). Prérequis
-         * pour activer « Confirmer » : deux joueurs ne peuvent partager la même position.
-         */
+        /** Positions toutes distinctes (aucun doublon) — prérequis pour activer « Confirmer ». */
         val positionsAllDistinct: Boolean
             get() = selectedPositions.map { it.position.position }.let { it.size == it.toSet().size }
     }
 
     private val _state = MutableStateFlow(State())
-    // Vrai dès qu'une édition (circuit / position / shock) a eu lieu : « Confirmer » n'a de sens
-    // qu'après une modification.
+    // Vrai dès qu'une édition a eu lieu : « Confirmer » n'a de sens qu'après une modification.
     private var edited = false
 
     private val _backToCurrent = MutableSharedFlow<Unit>()
@@ -83,10 +78,8 @@ class EditTrackViewModel @AssistedInject constructor(
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == war.id.toString() }?.sortedBy { it.name }.orEmpty()
 
-            // Line-up initiale triée par POSITION de départ — tri appliqué UNE SEULE FOIS à
-            // l'initialisation. Ensuite l'ordre est figé : `onPositionChange` ne re-trie jamais
-            // (les cellules ne bougent pas pendant l'édition). Le recalcul du score reste correct
-            // (somme indépendante de l'ordre, les WarPosition portent le playerId).
+            // Line-up triée par position de départ UNE SEULE FOIS ; ensuite l'ordre est figé
+            // (`onPositionChange` ne re-trie pas → les cellules ne bougent pas pendant l'édition).
             val positions = players.mapNotNull { player ->
                 details?.track?.positions.orEmpty().singleOrNull { it.playerId == player.id }?.let {
                     PlayerPosition(player = player, position = it)
@@ -95,8 +88,7 @@ class EditTrackViewModel @AssistedInject constructor(
             State(
                 players = players,
                 selectedPositions = positions,
-                // Pré-remplir le circuit courant (liseré dans l'onglet Circuit) et les shocks
-                // existants (affichés dans la section Positions), pour partir de l'état réel.
+                // Pré-remplir circuit courant et shocks existants, pour partir de l'état réel.
                 mapSelected = details?.track?.index.orEmpty().mapNotNull { it.toIntOrNull()?.let(Maps.entries::getOrNull) },
                 shocks = details?.track?.shocks.orEmpty().associate { it.playerId to it.count },
                 is24p = is24p
@@ -120,10 +112,8 @@ class EditTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Édite la position d'un joueur par pas de [delta] (−1 / +1), bornée à 1..[State.maxPosition]
-     * (12p : 1..12, 24p : 1..24). La position se met à jour en direct ; « Confirmer » se réactive
-     * si toutes les positions restent distinctes. Le recalcul du score s'appuie sur cette line-up
-     * (à la validation, via [updateWar]).
+     * Édite la position d'un joueur par pas de [delta], bornée à 1..[State.maxPosition].
+     * « Confirmer » se réactive si les positions restent distinctes (score recalculé via [updateWar]).
      */
     fun onPositionChange(playerId: String, delta: Int) {
         val updated = state.value.selectedPositions.map { playerPosition ->
@@ -181,19 +171,10 @@ class EditTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Réécrit la war en cours avec les [tracks] édités et **recalcule le score hôte**
-     * (justesse prioritaire, rule 13). Le score de war hôte est la somme des points
-     * (barème `positionToPoints`) de **toutes** les positions de **toutes** les manches :
-     * il reflète donc immédiatement l'édition d'un circuit (barème 12p/24p) ou d'une position
-     * (les shocks restent hors score).
-     *
-     * - **12p** : seul le score hôte est stocké ; le score adverse est dérivé (complément
-     *   au barème) à l'affichage. On ne conserve donc qu'un [WarScore] hôte.
-     * - **24p** : les scores adverses sont saisis ailleurs et stockés explicitement dans
-     *   `war.scores` — on les **préserve** (on ne remplace que l'entrée hôte).
-     *
-     * Les **pénalités** (`war.penalties`) sont conservées telles quelles (champ distinct,
-     * inchangé par `war.copy`).
+     * Réécrit la war et recalcule le score hôte (justesse, rule 13) = somme des points
+     * (`positionToPoints`) de toutes les positions de toutes les manches. En 12p seul le score
+     * hôte est stocké (adverse dérivé) ; en 24p les scores adverses saisis sont préservés. Les
+     * pénalités sont conservées.
      */
     private fun updateWar(war: War, tracks: List<WarTrack>) {
         val is24p = war.teamOpponent.size > 1

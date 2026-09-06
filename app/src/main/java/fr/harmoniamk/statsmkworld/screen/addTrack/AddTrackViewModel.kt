@@ -51,11 +51,8 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     data class State(
-        // Étape courante du wizard, pilotée dans le VM (aucune re-navigation, rule 11).
-        // Le nombre d'étapes dépend du mode : en 12p, wizard à 3 étapes
-        // (Circuit → Positions → Résumé) ; en 24p, à 4 étapes (l'Intermission s'intercale
-        // après le Circuit). Utiliser les index sémantiques [stepCircuit]/[stepIntermission]
-        // /[stepPositions]/[stepSummary] plutôt que des littéraux.
+        // Étape courante (pilotée dans le VM, rule 11) : 3 étapes en 12p, 4 en 24p (Intermission
+        // intercalée). Indexer via [stepCircuit]/[stepIntermission]/[stepPositions]/[stepSummary].
         val step: Int = 0,
         // Mode courant (déterminé par le nombre d'adversaires). Pilote l'indexation des étapes.
         val is24p: Boolean = false,
@@ -87,9 +84,7 @@ class AddTrackViewModel @AssistedInject constructor(
         /** Line-up complète (tous les joueurs ont une position) → le Résumé est accessible. */
         val positionsComplete: Boolean get() = players.isNotEmpty() && selectedPositions.size == players.size
 
-        // Index sémantiques des étapes selon le mode. L'Intermission n'existe qu'en 24p ;
-        // en 12p, Positions vient directement après Circuit (index -1 pour l'Intermission,
-        // jamais atteint).
+        // Index sémantiques des étapes. Intermission en 24p seulement (-1 en 12p, jamais atteint).
         val stepCircuit: Int get() = 0
         val stepIntermission: Int get() = if (is24p) 1 else -1
         val stepPositions: Int get() = if (is24p) 2 else 1
@@ -148,9 +143,8 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Choix du circuit (étape Circuit). **Réinitialise la sélection de positions** (le circuit
-     * change → on repart d'une line-up vierge, cf. maquette) et **avance à l'étape suivante** :
-     * l'Intermission en 24p, directement les Positions en 12p (pas d'Intermission en 12p).
+     * Choix du circuit : réinitialise la line-up (circuit changé → saisie vierge) et avance à
+     * l'étape suivante (Intermission en 24p, Positions en 12p).
      */
     fun onMapSelected(map: Maps) {
         positions.clear()
@@ -176,11 +170,9 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Navigation entre étapes du wizard (index sémantiques dépendant du mode, cf. State) sans
-     * re-navigation. **Un retour en arrière annule la sélection de l'étape rejointe** (rule 11) :
-     * revenir au **Circuit** = remise à zéro complète (circuit, intermission, positions, score) ;
-     * revenir à l'**Intermission** (24p) réinitialise le 2ᵉ circuit + les positions ; revenir aux
-     * **Positions** vide la line-up. Aller **en avant** (ou rester) ne réinitialise rien.
+     * Navigation entre étapes (rule 11) : un retour en arrière annule la sélection de l'étape
+     * rejointe (Circuit = reset complet, Intermission = 2ᵉ circuit + positions, Positions =
+     * line-up) ; aller en avant (ou rester) ne réinitialise rien.
      */
     fun onStepChange(step: Int) {
         val current = state.value.step
@@ -193,9 +185,8 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Retour arrière vers l'étape Intermission (24p) : réinitialise le choix d'intermission
-     * (on revient pour le refaire) **ET** la saisie de positions faite ensuite (elle dépend
-     * du circuit enchaîné). Le circuit principal (étape Circuit) est conservé.
+     * Retour à l'Intermission (24p) : réinitialise le 2ᵉ circuit ET les positions qui en
+     * dépendent. Le circuit principal est conservé.
      */
     private fun resetIntermission() {
         positions.clear()
@@ -259,11 +250,10 @@ class AddTrackViewModel @AssistedInject constructor(
         positions.add(pos)
         _state.value = _state.value.copy(selectedPositions = positions.sortedBy { it.position.position })
         when {
-            // Line-up complète : calcul du score de la manche (barème MKWorld) et passage au Résumé.
+            // Line-up complète : calcul du score de manche et passage au Résumé.
             positions.size == _state.value.players.size -> {
-                // Score de manche de l'hôte = somme des points (barème positionToPoints) ;
-                // score adverse = complément au max de la manche (82 en 12p). Justesse
-                // prioritaire (rule 13) : on réutilise le barème existant, sans recoder de formule.
+                // Score hôte = somme des points (positionToPoints) ; adverse = complément au
+                // max de manche. Barème existant réutilisé (justesse, rule 13).
                 val scoreHost = _state.value.selectedPositions.map { it.position }.sumOf { it.position.positionToPoints(is24p) }
                 val maxPointsPerTrack = when (is24p) {
                     true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
@@ -317,9 +307,8 @@ class AddTrackViewModel @AssistedInject constructor(
             val tracks = mutableListOf<WarTrack>()
             tracks.addAll(it.tracks)
             tracks.add(track)
-            // Score de war de l'hôte = score de war courant + score de manche calculé.
-            // Calculé au moment de la validation (et non accumulé au fil des positions) :
-            // insensible aux retours arrière/reprises de saisie (justesse, rule 13).
+            // Score de war hôte = score courant + score de manche. Recalculé à la validation
+            // (non accumulé) → insensible aux retours arrière (justesse, rule 13).
             val newHostWarScore = (state.value.teamHostWarScore ?: 0) + (state.value.teamHostTrackScore ?: 0)
             val newWar = when (state.value.teamOpponent.orEmpty().size > 1) {
                 true -> it.copy(tracks = tracks, scores = listOf(WarScore(teamId = it.teamHost, score = newHostWarScore)))
