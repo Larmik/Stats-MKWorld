@@ -39,33 +39,19 @@ data class Stats(
 
     val shockCount = averageForMaps.map { it.shockCount }.sum()
 
-    // ---------------------------------------------------------------------
-    // Lot A — Séries (streaks) & records
-    //
-    // Les séries se calculent sur les wars triées CHRONOLOGIQUEMENT. war.id est
-    // un timestamp (cf. WarDetails.date = Date(war.id)) : on trie donc les
-    // warScores par war.war.id croissant avant tout parcours de série.
-    // ---------------------------------------------------------------------
-    // Wars triées chronologiquement (war.id = timestamp). Source UNIQUE de tri
-    // pour toutes les stats temporelles : séries (ticket principal) ET forme
-    // récente (ce ticket, N dernières wars). Ne pas réintroduire de tri parallèle.
+    // Wars triées chronologiquement (war.id = timestamp). Source UNIQUE de tri pour toutes
+    // les stats temporelles (séries, forme récente) — ne pas réintroduire de tri parallèle.
     val chronologicalWars: List<WarDetails> =
         warScores.sortedBy { it.war.war.id }.map { it.war }
 
-    // Mode de la war courante (12p vs 24p), propagé depuis WarStats. Détermine la
-    // base de calcul des marges/outcomes et l'étendue de la distribution des
-    // positions (P1→P12 ou P1→P24).
+    // Mode 12p/24p (propagé depuis WarStats) : base des marges/outcomes et étendue de la
+    // distribution des positions (P1→P12 ou P1→P24).
     private val is24p: Boolean = warStats.is24p
 
     /**
-     * Résultat d'une war du point de vue de l'équipe hôte : +1 victoire, -1
-     * défaite, 0 égalité.
-     *
-     * - 12p : dérivé de l'écart de score ([WarDetails.displayedDiff]).
-     * - 24p : dérivé du podium ([War.scores] à 3 équipes) — même règle que
-     *   [WarStats] : hôte dans le top 2 des scores = victoire, dans le bottom 2
-     *   = défaite. Une position médiane possible (2ᵉ sur 3) compte donc à la fois
-     *   comme "non-défaite" côté séries d'invincibilité selon la marge.
+     * Résultat d'une war côté hôte : +1 victoire / -1 défaite / 0 égalité.
+     * - 12p : signe de l'écart de score ([WarDetails.displayedDiff]).
+     * - 24p : signe de `scoreMargin` (hôte − meilleur adverse, même règle que [WarStats]).
      */
     private fun WarDetails.outcome(): Int = when (is24p) {
         false -> when {
@@ -85,19 +71,10 @@ data class Stats(
     /** Série en cours (la plus récente), signée : >0 victoires, <0 défaites, 0 aucune. */
     val currentStreak: Int = currentStreakOf(chronologicalWars)
 
-    /**
-     * Issues (+1 victoire / 0 nul / -1 défaite) de TOUTES les wars, en ordre
-     * chronologique (plus ancienne → plus récente). Alimente les pastilles V/N/D
-     * du « Momentum » de l'écran Accueil (dashboard) : l'UI prend `takeLast(n)`
-     * pour la fenêtre choisie (5 ou 10 dernières), sans dupliquer [outcome].
-     */
+    /** Issues V/N/D de toutes les wars (chronologique) — pastilles « Momentum » du dashboard (`takeLast(n)`). */
     val chronologicalOutcomes: List<Int> = chronologicalWars.map { it.outcome() }
 
-    /**
-     * Score par war (playerScore en vue joueur, total équipe sinon), en ordre
-     * chronologique. Alimente la sparkline « Momentum » du dashboard : l'UI prend
-     * `takeLast(n)` pour la fenêtre choisie.
-     */
+    /** Score par war (joueur ou équipe) en ordre chronologique — sparkline « Momentum » (`takeLast(n)`). */
     val scoreTimeline: List<Int> = warScores.sortedBy { it.war.war.id }.map { it.score }
 
     /** Record de série de victoires (max historique). */
