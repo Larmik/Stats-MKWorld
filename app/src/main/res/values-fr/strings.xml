@@ -53,9 +53,10 @@
     <string name="course_suivante">Course suivante</string>
     <string name="more_actions">Plus d\'actions</string>
     <string name="player_courses">Courses jouées (%1$s/12):</string>
-    <string name="edition_circuit">Edition circuit</string>
+    <string name="edition_circuit">Éditer la course</string>
     <string name="circuit">Circuit</string>
     <string name="positions">Positions</string>
+    <string name="edittrack_tab_positions_shocks">Positions/Shocks</string>
     <string name="shocks">Shocks</string>
     <string name="logout">Se déconnecter</string>
     <string name="logout_btn">Déconnection</string>
@@ -102,6 +103,10 @@
     <string name="details_war">Details war</string>
     <string name="courses_jouees">Courses jouées :</string>
     <string name="accueil">Accueil</string>
+    <string name="wars">Wars</string>
+    <string name="classements">Classements</string>
+    <string name="profil">Profil</string>
+    <string name="rechercher">Rechercher</string>
     <string name="nouvelle_war">Nouvelle war</string>
     <string name="last_results">Derniers résultats :</string>
     <string name="welcome_text">Ton équipe n\'a pas encore enregistré de résultats sur cette application. Pour créer une nouvelle war, tu peux cliquer sur le bouton ci-dessous si tu as le rôle approprié. \n \n Si tu ne peux pas saisir de résultats, rapproche-toi d\'un leader de ton équipe pour qu\'il t\'accorde le bon rôle.</string>
@@ -109,10 +114,12 @@
     <string name="commencer">Commencer</string>
     <string name="cancel">Annuler</string>
     <string name="valider">Valider</string>
-    <string name="penalties">Pénalité</string>
+    <string name="penalties">Pénalités</string>
+    <string name="penalties_hint">Appliquer une pénalité de points à une équipe.</string>
     <string name="remplacement">Remplacement</string>
     <string name="cancel_war">Annuler la war</string>
-    <string name="delete_war">Effacer la war</string>
+    <string name="cancel_war_hint">Cette action supprime définitivement la war en cours et toutes ses courses. Êtes-vous sûr ?</string>
+    <string name="delete_war">Supprimer la war</string>
     <string name="force_update_title">Mise à jour nécessaire</string>
     <string name="force_update_message">L\'application a besoin d\'une mise à jour pour continuer à fonctionner correctement.</string>
     <string name="force_update_button">Mettre à jour</string>
@@ -134,27 +141,11 @@
     <string name="winrate">"Winrate : "</string>
     <string name="average_score">"Score moyen : "</string>
     <string name="average_position">"Position moyenne : "</string>
-    <string name="most_played_map">Circuit le plus joué</string>
-    <string name="best_map">Meilleur circuit</string>
-    <string name="worst_map">Pire circuit</string>
-    <string name="plus_large_victoire">Plus large victoire</string>
-    <string name="pire_score">Pire score</string>
-    <string name="aucune">Aucune</string>
-    <string name="plus_lourde_d_faite">Plus lourde défaite</string>
-    <string name="meilleur_score">Meilleur score</string>
-    <string name="adversaire_le_plus_joue">Adversaire le plus joué</string>
-    <string name="le_plus_vaincu">Le plus vaincu</string>
-    <string name="victoires">%1$s victoires</string>
-    <string name="le_moins_vaincu">Le moins vaincu</string>
-    <string name="d_faites">%1$s défaites</string>
     <string name="maps_gagn_es">Maps gagnées</string>
     <string name="moyenne_map">Moyenne map</string>
     <string name="wars_played">Wars jouées</string>
     <string name="maps_played">Maps jouées</string>
     <string name="statistiques">Statistiques</string>
-    <string name="statistiques_individuelles">Statistiques individuelles</string>
-    <string name="statistiques_de_l_quipe">Statistiques de l\'équipe</string>
-    <string name="statistiques_des_joueurs">Statistiques des joueurs</string>
     <string name="statistiques_des_adversaires">Statistiques des adversaires</string>
     <string name="statistiques_des_circuits">Statistiques des circuits</string>
     <string name="individuel">Individuel</string>
@@ -163,10 +154,73 @@
     <string name="statistiques_de_l_adversaire">Statistiques de l\'adversaire</string>
     <string name="statistiques_du_circuit">Statistiques du circuit</string>
     <string name="winrate_placeholder">Winrate : %s</string>
-    <string name="opponent_times_played">Joué %1$s fois</string>
     <string name="v">V</string>
     <string name="n">N</string>
     <string name="d">D</string>
+    <!-- Stats enrichies : records/séries, maps & adversaires par winrate/score -->
+    <string name="records_series">Records &amp; séries</string>
+    <string name="current_streak">Série en cours</string>
+    <string name="best_win_streak">Record de victoires</string>
+    <string name="worst_loss_streak">Record de défaites</string>
+    <string name="win_streak_value">%1$d victoires</string>
+    <string name="loss_streak_value">%1$d défaites</string>
+    <string name="no_streak">Aucune</string>
+    <string name="top6_count">Nombre de Top6</string>
+    <string name="bot6_count">Nombre de Bot6</string>
+    <string name="best_maps_section">Meilleurs / pires circuits</string>
+    <string name="best_opponents_section">Meilleurs / pires adversaires</string>
+    <string name="best_winrate_maps">Meilleur winrate</string>
+    <string name="worst_winrate_maps">Pire winrate</string>
+    <string name="best_score_maps">Meilleur score moyen</string>
+    <string name="worst_score_maps">Pire score moyen</string>
+    <string name="best_winrate_vs">Meilleur winrate face à</string>
+    <string name="worst_winrate_vs">Pire winrate face à</string>
+    <string name="best_score_vs">Meilleur score moyen face à</string>
+    <string name="worst_score_vs">Pire score moyen face à</string>
+    <!-- Pôle Classements (#26) -->
+    <string name="rankings_hint">Palmarès triable. Touche une ligne pour ouvrir sa fiche statistique.</string>
+    <string name="rankings_tab_players">Joueurs</string>
+    <string name="rankings_tab_opponents">Adversaires</string>
+    <string name="rankings_tab_tracks">Circuits</string>
+    <string name="rankings_sort_winrate">Winrate</string>
+    <string name="rankings_sort_score">Score moy.</string>
+    <string name="rankings_sort_occurrences">Occurrences</string>
+    <string name="rankings_sort_frequency">Fréquence</string>
+    <string name="rankings_search_player">Rechercher un joueur</string>
+    <string name="rankings_search_opponent">Rechercher une équipe</string>
+    <string name="rankings_search_track">Rechercher un circuit</string>
+    <string name="rankings_section_members">Membres</string>
+    <string name="rankings_section_allies">Alliés</string>
+    <string name="rankings_min_occurrences">Minimum : %1$d</string>
+    <string name="rankings_wars_count">%1$s wars</string>
+    <string name="rankings_confrontations_count">%1$s confrontations</string>
+    <string name="rankings_played_count">Joué %1$s fois</string>
+    <!-- Stats supplémentaires (bis) : forme récente, contribution, régularité… -->
+    <string name="recent_form_section">Forme récente</string>
+    <string name="advanced_stats_section">Indicateurs avancés</string>
+    <string name="position_distribution_section">Distribution des positions</string>
+    <string name="last_n_wars">%1$d dernières wars</string>
+    <string name="last_n_short">%1$d dern.</string>
+    <string name="all_time">All-time</string>
+    <!-- Filtre par saison (#70) -->
+    <string name="season_label">Saison %1$d</string>
+    <string name="all_seasons">Tout l\'historique</string>
+    <string name="form_winrate">Winrate</string>
+    <string name="form_score">Score moyen</string>
+    <string name="average_position_short">Position moy.</string>
+    <string name="average_map_score_short">Score moy./map</string>
+    <string name="shocks_per_war_short">Shocks/war</string>
+    <string name="small_sample">%1$d wars</string>
+    <string name="player_contribution">Contribution aux points de l\'équipe</string>
+    <string name="score_std_dev">Régularité du score (écart-type)</string>
+    <string name="score_amplitude">Amplitude du score (min–max)</string>
+    <string name="avg_win_margin">Marge moyenne de victoire</string>
+    <string name="avg_loss_margin">Marge moyenne de défaite</string>
+    <string name="first_half_position">Position moy. (1ʳᵉ moitié)</string>
+    <string name="second_half_position">Position moy. (2ᵉ moitié)</string>
+    <string name="unbeaten_streak">Invaincu depuis</string>
+    <string name="unbeaten_value">%1$d wars</string>
+    <string name="penalty_points_lost">Points perdus en pénalités</string>
     <string name="joueur_sortant">Joueur sortant</string>
     <string name="remplacer">Remplacer</string>
     <string name="joueur_entrant">Joueur entrant</string>
@@ -177,4 +231,228 @@
     <string name="notif_disabled">Notifications désactivées</string>
     <string name="multi_roster_enabled">Multi-roster activé</string>
     <string name="multi_roster_disabled">Multi-roster désactivé</string>
+    <!-- Écran Accueil / dashboard -->
+    <string name="home_greeting">Salut, %1$s</string>
+    <string name="home_profile_subtitle">%1$s · voir mon profil →</string>
+    <string name="home_scope_me">Moi</string>
+    <string name="home_scope_team">Équipe</string>
+    <string name="home_momentum">Momentum</string>
+    <string name="home_last_5">5 dernières</string>
+    <string name="home_last_10">10 dernières</string>
+    <string name="home_form_delta_cap">forme %1$d wars vs all-time</string>
+    <string name="home_score_evolution_cap">évolution du score sur %1$d wars</string>
+    <string name="home_live_players">En direct · %1$d joueurs</string>
+    <string name="home_vs">vs %1$s</string>
+    <string name="home_key_figures">Chiffres clés</string>
+    <string name="home_win_streak">Série de %1$d victoires</string>
+    <string name="home_loss_streak">Série de %1$d défaites</string>
+    <string name="home_streak_record">En cours — record : %1$d</string>
+    <string name="see_all">Voir tout →</string>
+    <!-- Pôle Wars -->
+    <string name="wars_count">%1$d wars</string>
+    <string name="wars_of_player">Wars de %1$s · %2$d</string>
+    <string name="war_live">En direct</string>
+    <string name="war_resume">Reprendre — %1$d courses jouées</string>
+    <string name="wars_filter_all">Tous</string>
+    <string name="wars_filter_wins">Victoires</string>
+    <string name="wars_filter_ties">Nuls</string>
+    <string name="wars_filter_losses">Défaites</string>
+    <string name="mode_12_players">12 joueurs</string>
+    <string name="mode_24_players">24 joueurs</string>
+    <!-- AddWar wizard — écran Nouvelle war (ticket #42) -->
+    <string name="addwar_title">NOUVELLE WAR</string>
+    <string name="addwar_step_opponent">1 · Adversaire</string>
+    <string name="addwar_step_players">2 · Joueurs</string>
+    <string name="addwar_step_recap">3 · Récap</string>
+    <string name="addwar_recap_opponent">Adversaire</string>
+    <string name="addwar_recap_players">Ta line-up</string>
+    <string name="addwar_search_team">Rechercher une équipe / un tag</string>
+    <string name="addwar_select_opponent">Sélectionner l\'adversaire</string>
+    <string name="addwar_roster_hint">Logo = équipe, nom + tag = roster : dès qu\'une équipe a plusieurs rosters mkworld, on choisit le roster.</string>
+    <string name="addwar_pick_roster">Choisir le roster</string>
+    <string name="addwar_roster_unique">roster unique</string>
+    <string name="addwar_rosters_count">%1$d rosters mkworld</string>
+    <string name="addwar_progress">%1$d / %2$d</string>
+    <string name="addwar_progress_hint">Sélectionne les 6 joueurs de ton roster qui participent à la war.</string>
+    <string name="addwar_your_roster">Ton roster</string>
+    <string name="addwar_previous">Précédent</string>
+    <string name="addwar_start_war">Démarrer la war</string>
+    <!-- AddTrack wizard — écran Ajouter une course (ticket #44) -->
+    <string name="addtrack_title">AJOUTER UNE COURSE</string>
+    <string name="addtrack_step_circuit">Circuit</string>
+    <string name="addtrack_step_intermission">Intermission</string>
+    <string name="addtrack_step_positions">Positions</string>
+    <string name="addtrack_step_summary">Résumé</string>
+    <string name="addtrack_intermission_none">Aucune</string>
+    <string name="addtrack_next_positions">Suivant · Positions</string>
+    <string name="addtrack_progress">Joueur %1$d / %2$d</string>
+    <string name="addtrack_summary_score">Score de la manche</string>
+    <!-- Écran détails de course (ticket #47) -->
+    <string name="trackdetails_title">COURSE</string>
+    <string name="trackdetails_course_prefix">Course %1$d</string>
+    <string name="trackdetails_positions_shocks">Positions &amp; shocks</string>
+    <string name="trackdetails_edit">Éditer la course</string>
+    <!-- Écran détails de la war (ticket #48) -->
+    <string name="wardetails_title">DÉTAILS DE LA WAR</string>
+    <string name="wardetails_player_ranking">Classement joueurs</string>
+    <string name="wardetails_generate_tab">Générer le Tab (PDF)</string>
+    <string name="tab_share_cta">Tab classique &amp; partager</string>
+    <string name="wardetails_see_opponent">Voir l\'adversaire</string>
+    <string name="wardetails_points_suffix">pts</string>
+    <!-- Pôle Stats — écran Statistiques (ticket #25) -->
+    <string name="stats_scope_individual">Individuelles</string>
+    <string name="stats_scope_team">Équipe</string>
+    <string name="stats_me_tag">toi</string>
+    <string name="stats_player_subtitle">Performances · %1$d wars</string>
+    <string name="stats_team_subtitle">Performances collectives · %1$d wars</string>
+    <string name="stats_balance_title">Bilan</string>
+    <string name="stats_results_link">Résultats →</string>
+    <string name="stats_player_indicators">Indicateurs</string>
+    <string name="stats_team_details">Détails équipe</string>
+    <string name="stats_points_per_war">Points / war</string>
+    <string name="stats_regularity">Régularité</string>
+    <string name="stats_contribution_title">Contribution</string>
+    <string name="stats_contribution_value">%1$d %% des points de l\'équipe</string>
+    <string name="stats_contribution_rank">%1$dᵉ contributeur du roster</string>
+    <string name="stats_bag_contribution_value">%1$d %% des shocks de l\'équipe</string>
+    <string name="stats_bag_contribution_rank">%1$dᵉ baggeur du roster</string>
+    <string name="stats_player_form_title">Forme &amp; séries</string>
+    <string name="stats_team_form_title">Forme &amp; séries équipe</string>
+    <string name="stats_form_delta">Forme %1$s %% sur 10 wars</string>
+    <string name="stats_form_record">%1$s · record %2$d</string>
+    <string name="stats_distribution_title">Distribution des positions</string>
+    <string name="stats_contributors_title">Contributeurs</string>
+    <string name="stats_points_share">%1$d %% des points</string>
+    <string name="stats_baggers_title">Meilleurs baggeurs</string>
+    <string name="stats_shocks_share">%1$d %% des shocks</string>
+    <string name="stats_podium_top">Top 3</string>
+    <string name="stats_podium_flop">Flop 3</string>
+    <string name="stats_podium_not_enough">Pas assez de données sur cette période pour un classement complet.</string>
+    <string name="stats_sort_winrate">Winrate</string>
+    <string name="stats_sort_score">Score</string>
+    <string name="stats_amplitude_min">Score min</string>
+    <string name="stats_amplitude_max">Score max</string>
+    <string name="stats_sort_occurrences">Occurrences</string>
+    <string name="times_played_short">Joué</string>
+    <!-- Taux de participation (#78) : présence du joueur aux wars de l'équipe sur la période. -->
+    <string name="participation_rate">Taux de participation</string>
+    <string name="participation_rate_short">Participation</string>
+    <string name="stats_no_data">Aucune donnée sur cette période</string>
+    <!-- Fiches détail Adversaire & Circuit (ticket #27) -->
+    <string name="opponent_detail_title">Adversaire</string>
+    <string name="opponent_detail_header">%1$d confrontations · dernier : %2$s</string>
+    <string name="opponent_detail_scope_indiv">Joueur</string>
+    <string name="opponent_detail_scope_team">Équipe</string>
+    <string name="opponent_detail_balance">Bilan face à eux</string>
+    <string name="opponent_detail_winrate_sub">de winrate\nsur %1$d wars</string>
+    <string name="opponent_detail_recent">5 dernières face à eux</string>
+    <string name="opponent_detail_streaks_scores">Séries &amp; scores</string>
+    <string name="opponent_detail_current_streak">Série en cours</string>
+    <string name="opponent_detail_record_wins">Record série de victoires</string>
+    <string name="opponent_detail_record_losses">Record série de défaites</string>
+    <string name="opponent_detail_avg_diff">Différence moy.</string>
+    <string name="opponent_detail_player_score">Score moyen</string>
+    <string name="opponent_detail_best_tracks">Circuits contre eux</string>
+    <string name="opponent_detail_pilots">Pilotes contre eux</string>
+    <string name="opponent_detail_baggers">Baggeurs contre eux</string>
+    <string name="opponent_detail_history">Historique des wars</string>
+    <string name="map_detail_title">Circuit</string>
+    <string name="map_detail_header">joué %1$d fois</string>
+    <string name="map_detail_performance">Performance</string>
+    <string name="map_detail_winrate_sub">de winrate\nsur %1$d passages</string>
+    <string name="map_detail_scope_indiv">Joueur</string>
+    <string name="map_detail_scope_team">Équipe</string>
+    <string name="map_detail_avg_scores">Scores moyens</string>
+    <string name="map_detail_team_score">Score équipe</string>
+    <string name="map_detail_player_position">Position moy.</string>
+    <string name="map_detail_pilots">Pilotes sur ce circuit</string>
+    <string name="map_detail_baggers">Baggeurs sur ce circuit</string>
+    <string name="map_detail_opponents">Adversaires sur ce circuit</string>
+    <string name="stats_distribution_title_generic">Répartition des positions</string>
+    <string name="stats_top_bottom_team_title">Top / Bot équipe</string>
+    <string name="stats_top_bottom_opponent_title">Top / Bot adversaire</string>
+    <string name="stats_shocks_played">Shocks obtenus</string>
+    <string name="stats_shocks_per_war">Shocks/War</string>
+    <string name="stats_bag_share_short">Shocks</string>
+    <string name="stats_bag_share_pct">Part</string>
+    <string name="stats_see_full_ranking">Classement entier →</string>
+    <string name="profile_tab_player">Joueur</string>
+    <string name="profile_tab_team">Équipe</string>
+    <string name="profile_information">Informations</string>
+    <string name="profile_badge_player">Profil MKCentral</string>
+    <string name="profile_badge_team">Équipe MKCentral</string>
+    <string name="profile_info_team">Équipe</string>
+    <string name="profile_info_member_since">Membre depuis</string>
+    <string name="profile_info_friend_code">Code ami</string>
+    <string name="profile_info_discord">Discord</string>
+    <string name="profile_info_join">Inscription</string>
+    <string name="profile_info_role">Rôle</string>
+    <string name="profile_info_created">Créée le</string>
+    <string name="profile_info_members">Membres</string>
+    <string name="profile_info_allies">Alliés</string>
+    <string name="profile_members">Membres</string>
+    <string name="profile_allies">Alliés</string>
+    <string name="ajouter_un_ally">Ajouter un ally</string>
+    <string name="profile_setting_refresh_sub">Joueur · équipe · alliés · adversaires · wars</string>
+    <string name="reglages">Réglages</string>
+    <string name="notifications">Notifications</string>
+    <string name="multi_roster">Multi-roster</string>
+    <string name="profile_setting_notif_sub">Alertes push</string>
+    <string name="profile_setting_multiroster_sub">Stats sur tous les rosters (redémarrage requis)</string>
+    <string name="profile_setting_debug">Debug / Matrice</string>
+    <string name="profile_setting_debug_sub">Réservé staff</string>
+    <!-- Saisons (ticket #30) -->
+    <string name="profile_setting_new_season">Démarrer une nouvelle saison</string>
+    <string name="new_season_dialog_title">Nouvelle saison</string>
+    <string name="new_season_dialog_message">Tu es sur le point de clore la saison en cours et d\'en démarrer une nouvelle. Cette action est importante et irréversible : la saison en cours sera définitivement verrouillée. Es-tu sûr ?</string>
+    <string name="new_season_confirm">Démarrer la saison</string>
+    <string name="profile_ally_role">Ally</string>
+    <string name="profile_ally_external">roster externe</string>
+    <!-- Écran War en cours (ticket #43) -->
+    <string name="currentwar_title">WAR EN COURS</string>
+    <string name="currentwar_tracks_remaining">%1$d courses restantes</string>
+    <string name="currentwar_total_shocks">%1$d shocks</string>
+    <string name="currentwar_points_short">pts</string>
+    <string name="currentwar_tracks_count">Courses jouées · %1$d</string>
+    <string name="currentwar_opponent_scores">Scores des équipes adverses</string>
+    <string name="currentwar_opponent_scores_hint">Saisir le score de chaque équipe adverse avant de valider. Total à répartir : %1$d points (pénalités exclues).</string>
+    <string name="currentwar_save_scores">Saisir &amp; valider</string>
+    <!-- Écran « Voir par période » (ticket #80) : aide à la composition des line-ups sur une plage de dates. -->
+    <string name="period_view">Voir par période</string>
+    <string name="period_title">Par période</string>
+    <string name="period_from">Du</string>
+    <string name="period_to">Au</string>
+    <string name="period_apply">Appliquer</string>
+    <string name="period_tab_wars">Wars</string>
+    <string name="period_tab_players">Joueurs</string>
+    <string name="period_wars_count">%1$d wars sur la période</string>
+    <string name="period_empty">Aucune war sur cette période</string>
+    <string name="period_players_wars_short">Wars</string>
+    <string name="period_players_average_short">Score moyen</string>
+    <string name="period_players_shocks_short">Shocks</string>
+    <!-- Explications des indicateurs de stats (bouton info ⓘ, dialog) -->
+    <string name="info_average_score">Points moyens marqués par war en vue joueur ; en vue équipe, l\'écart de score moyen face à l\'adversaire (« +X / -X »). Plus haut = mieux ; un écart d\'équipe positif signifie qu\'on domine, négatif qu\'on subit.</string>
+    <string name="info_maps_won">Part des courses remportées par l\'équipe (son score de course dépasse la moitié du barème). Mesure la régularité course par course, indépendamment du résultat final de la war. Une course pile à la moitié n\'est pas comptée gagnée.</string>
+    <string name="info_average_map">Place moyenne du joueur sur une course en vue joueur ; en vue équipe, les points moyens de l\'équipe par course, en différentiel. Pour la position, plus bas (proche de P1) = mieux ; pour le score de course d\'équipe, plus haut = mieux.</string>
+    <string name="info_shocks_per_war">Nombre moyen d\'éclairs obtenus par war. Mesure la qualité du bagging (farmer des éclairs), une activité aussi importante que jouer devant. Plus haut = mieux.</string>
+    <string name="info_form_winrate">Pourcentage de wars gagnées. Mesure synthétique de la réussite ; plus haut = mieux (50 % = autant de victoires que de défaites). Les nuls comptent au dénominateur mais pas comme victoires.</string>
+    <string name="info_form_score">Score moyen par war : points bruts du joueur en vue joueur, écart de score d\'équipe (« +X / -X ») en vue équipe. Plus haut = mieux.</string>
+    <string name="info_average_position">Ta place moyenne sur une manche (vue joueur). Une position se lit de « proche de P1 » (meilleur) à « proche de P12 » (moins bon) : plus bas = mieux.</string>
+    <string name="info_average_map_score">Score moyen de l\'équipe par manche, affiché en écart (« +X / -X »), en vue équipe. Plus haut = mieux.</string>
+    <string name="info_current_streak">Série de victoires ou de défaites en cours. Une war nulle ou un résultat inverse casse la série ; le calcul suit l\'ordre chronologique réel.</string>
+    <string name="info_best_win_streak">La plus longue série de victoires consécutives. Repère du meilleur passage ; dépend de la fenêtre sélectionnée.</string>
+    <string name="info_worst_loss_streak">La plus longue série de défaites consécutives. Repère du pire passage ; dépend de la fenêtre sélectionnée.</string>
+    <string name="info_top6_count">Nombre de courses où les 6 joueurs de l\'équipe occupent les positions 1 à 6. Compte les courses parfaites. Cas exact : une course à cheval haut/bas n\'est ni Top6 ni Bot6.</string>
+    <string name="info_bot6_count">Nombre de courses où les 6 joueurs de l\'équipe occupent les positions 7 à 12. Compte les courses complètement ratées. Cas exact (les 6 derrière).</string>
+    <string name="info_player_contribution">Pourcentage moyen des points de l\'équipe que tu apportes toi-même, calculé war par war puis moyenné. Exemple : 20 % = tu marques en moyenne un cinquième des points de l\'équipe. Visible seulement en vue joueur.</string>
+    <string name="info_score_std_dev">Écart-type de tes scores, qui mesure ta constance. Plus il est bas, plus tes scores sont réguliers d\'une war à l\'autre ; plus il est haut, plus ils sont irréguliers. Affiché « ± X ». Nécessite au moins 2 wars.</string>
+    <string name="info_score_amplitude">Ton pire et ton meilleur score sur l\'historique (min – max), pour visualiser l\'écart entre les deux extrêmes. Une seule war peut fixer le min ou le max.</string>
+    <string name="info_avg_win_margin">L\'écart de score moyen quand on gagne (ex. « +45 »). Une marge élevée = victoires larges. Écart = ton score − score adverse (pénalités incluses) ; les égalités ne comptent pas.</string>
+    <string name="info_avg_loss_margin">L\'écart de score moyen quand on perd (ex. « -30 »). Une marge basse = défaites serrées. Séparée de la marge de victoire : perdre lourdement raconte une autre histoire qu\'un simple winrate.</string>
+    <string name="info_first_half_position">Ta position moyenne sur la première moitié de la war (premières manches), en vue joueur. À comparer à la seconde moitié pour voir si tu commences fort ou montes en puissance. Plus bas = mieux.</string>
+    <string name="info_second_half_position">Ta position moyenne sur la seconde moitié de la war (dernières manches), en vue joueur. À comparer à la première moitié. Plus bas = mieux.</string>
+    <string name="info_unbeaten_streak">Nombre de wars consécutives sans défaite (victoires et nuls) jusqu\'à aujourd\'hui.</string>
+    <string name="info_penalty_points_lost">Total des points retirés à ton équipe par les pénalités sur tout l\'historique. Un repère du coût cumulé des pénalités ; ne compte que les pénalités de ton équipe.</string>
+    <string name="info_points_per_war">Points bruts que tu marques en moyenne par war (vue joueur), sur la fenêtre choisie. Plus haut = mieux.</string>
+    <string name="info_participation_rate">Part des wars de l\'équipe que tu as réellement jouées sur la fenêtre choisie. 100 % = tu es présent sur toutes les wars ; plus haut = mieux.</string>
 </resources>

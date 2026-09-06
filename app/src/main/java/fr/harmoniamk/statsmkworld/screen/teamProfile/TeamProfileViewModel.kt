@@ -16,7 +16,11 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
@@ -26,7 +30,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -37,18 +40,39 @@ class TeamProfileViewModel @AssistedInject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val mkCentralDataSource: MKCentralDataSourceInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface) : ViewModel() {
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
         fun create(id: String): TeamProfileViewModel
     }
 
+    /**
+     * Membre pour l'affichage : identité, rattachement roster ([rosterId]/[rosterName]),
+     * couleur du roster, [role] réel (nœud Firebase `users` : 2=Leader, 1=Admin, 0=Membre),
+     * [avatarUrl] (photo MKCentral préfixée, ou `null` → initiales).
+     */
+    data class MemberInfo(
+        val playerId: String,
+        val name: String,
+        val rosterId: String,
+        val rosterName: String,
+        val rosterColor: Long,
+        val role: Int,
+        val avatarUrl: String?
+    )
+
     data class State(
         val team: MKCTeam? = null,
+        val members: List<MemberInfo> = listOf(),
         val allyList: List<PlayerEntity> = listOf(),
         val playerList: List<MKCPlayer> = listOf(),
-        val addAllyVisible: Boolean = false
+        val addAllyVisible: Boolean = false,
+        // Leader strict (role == 2) de mon équipe : conditionne l'action « nouvelle saison » (#30).
+        val newSeasonVisible: Boolean = false,
+        // Affiche le dialog de confirmation « nouvelle saison » (irréversible).
+        val newSeasonDialog: Boolean = false
     )
 
     private val _state = MutableSharedFlow<State>()
@@ -88,18 +112,60 @@ class TeamProfileViewModel @AssistedInject constructor(
                 else -> mkCentralDataSource.getTeam(id).successResponse
             }
         }
-        .map {
+        .map { team ->
             val allyList = when (id) {
                 "me" -> databaseRepository.getPlayers().firstOrNull()?.filter { it.rosterId == "-1" }.orEmpty()
                 else -> listOf()
             }
-            val buttonVisible = (firebaseRepository
-                .getUser(it.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
-                ?.role ?: 0) > 0
-            State(team = it, addAllyVisible = buttonVisible, allyList = allyList)
+            val role = firebaseRepository
+                .getUser(team.id.toString(), dataStoreRepository.mkcPlayer.firstOrNull()?.id.toString())
+                ?.role ?: 0
+            State(
+                team = team,
+                members = resolveMembers(team),
+                addAllyVisible = role > 0,
+                // Action saison réservée au leader STRICT (role == 2) de MON équipe.
+                newSeasonVisible = role == 2 && id == "me",
+                allyList = allyList
+            )
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
+
+    /**
+     * Membres des rosters mkworld : rôle réel (nœud Firebase `users` pour mon équipe, sinon
+     * indicateurs MKCentral leader/manager) + avatar MKCentral résolu en parallèle (rule 30).
+     */
+    private suspend fun resolveMembers(team: MKCTeam): List<MemberInfo> = coroutineScope {
+        val rosters = team.rosters.filter { it.game == "mkworld" }
+        val firebaseRoles = when (id) {
+            "me" -> firebaseRepository.getUsers(team.id.toString()).associate { it.id to it.role }
+            else -> emptyMap()
+        }
+        rosters.flatMap { roster -> roster.players.map { roster to it } }
+            .map { (roster, player) ->
+                async {
+                    val role = firebaseRoles[player.playerId]
+                        ?: when {
+                            player.leader -> 2
+                            player.manager -> 1
+                            else -> 0
+                        }
+                    val avatar = mkCentralDataSource.getPlayer(player.playerId).successResponse
+                        ?.userSettings?.avatar?.let { "https://mkcentral.com$it" }
+                    MemberInfo(
+                        playerId = player.playerId,
+                        name = player.name,
+                        rosterId = roster.id.toString(),
+                        rosterName = roster.name,
+                        rosterColor = roster.color,
+                        role = role,
+                        avatarUrl = avatar
+                    )
+                }
+            }
+            .awaitAll()
+    }
 
     fun addAlly(player: MKCPlayer) {
         dataStoreRepository.mkcTeam
@@ -119,5 +185,23 @@ class TeamProfileViewModel @AssistedInject constructor(
             }
             .launchIn(viewModelScope)
 
+    }
+
+    fun onNewSeasonClick() {
+        viewModelScope.launch { _state.emit(state.value.copy(newSeasonDialog = true)) }
+    }
+
+    fun dismissNewSeason() {
+        viewModelScope.launch { _state.emit(state.value.copy(newSeasonDialog = false)) }
+    }
+
+    // Clôt la saison en cours et en démarre une nouvelle (RTDB + Room). Leader strict.
+    fun onConfirmNewSeason() {
+        viewModelScope.launch {
+            dataStoreRepository.mkcTeam.firstOrNull()?.id?.let {
+                seasonRepository.startNewSeason(it.toString())
+            }
+            _state.emit(state.value.copy(newSeasonDialog = false))
+        }
     }
 }

@@ -15,11 +15,9 @@ data class TeamEntity(
     @ColumnInfo(name = "tag") val tag: String,
     @ColumnInfo(name = "color") val color: Int?,
     @ColumnInfo(name = "logo") val logo: String?,
-    // Métadonnées {id, nom, tag} des rosters mkworld de cette équipe. La clé
-    // primaire reste le teamId ; cette liste permet de résoudre un rosterId
-    // (contenu de War.teamOpponent/teamHost depuis le passage à la granularité
-    // roster) vers le nom/tag du roster (avatar hérité de l'équipe parente) pour
-    // l'affichage, et vers l'équipe parente pour le regroupement des stats.
+    // Métadonnées {id, nom, tag} des rosters mkworld (clé primaire = teamId). Résout un
+    // rosterId (War.teamOpponent/teamHost) → nom/tag du roster pour l'affichage (avatar
+    // hérité de l'équipe parente) et → équipe parente pour le regroupement des stats.
     @ColumnInfo(name = "rosters") val rosters: List<RosterInfo> = listOf(),
 ) {
     constructor(team: MKCTeam): this(

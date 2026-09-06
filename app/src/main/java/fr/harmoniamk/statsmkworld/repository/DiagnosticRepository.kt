@@ -21,15 +21,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Orchestration des outils de **diagnostic debug** (écran `DebugScreen` /
- * `DebugViewModel`) : arbitrage des adversaires « Équipe inconnue » et des
- * joueurs manquants, sur les wars historiques Firebase.
- *
- * Vit dans un repository dédié (et non dans `FetchUseCase`) car cette logique
- * n'est consommée que par **un seul** appelant (`DebugViewModel`) — cf. rule
- * `.claude/rules/32-usecase-vs-repository.md`. Il agrège plusieurs sources
- * (Firebase, MKCentral, Room, DataStore), d'où un repository dédié plutôt qu'un
- * repository mono-source.
+ * Outils de diagnostic debug (`DebugViewModel`) : arbitrage des adversaires « Équipe
+ * inconnue » et des joueurs manquants, sur les wars historiques Firebase. Repository
+ * dédié (agrège Firebase/MKCentral/Room/DataStore, un seul consommateur — rule 32).
  */
 interface DiagnosticRepositoryInterface {
     suspend fun diagnoseUnknownOpponents(): List<UnknownOpponentDiagnostic>
@@ -54,12 +48,9 @@ class DiagnosticRepository @Inject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface
 ) : DiagnosticRepositoryInterface {
 
-    // Override manuel EXPERT pour le diagnostic des adversaires « Équipe inconnue ».
-    // Correspondances `rawId (War.teamOpponent) → teamId mkworld cible` établies à
-    // la main par l'équipe à partir de ses données historiques, quand l'heuristique
-    // nom/tag ne suffit pas. Cette table PREND LE PAS sur la recherche heuristique :
-    // les candidats sont alors construits depuis l'équipe cible (tous ses rosters
-    // mkworld). Aucune réattribution automatique — l'humain confirme via l'écran.
+    // Override manuel `rawId (War.teamOpponent) → teamId mkworld cible`, établi à la main
+    // quand l'heuristique nom/tag ne suffit pas. Prioritaire sur l'heuristique (candidats
+    // = tous les rosters de l'équipe cible). Aucune réattribution auto : l'humain confirme.
     private val opponentOverrides: Map<String, String> = mapOf(
         "3149" to "27",
         "3168" to "903",
@@ -71,23 +62,9 @@ class DiagnosticRepository @Inject constructor(
         "3996" to "1783", // Nakama Clan
     )
 
-    // Diagnostic NON destructif (Étape 0 du ticket adversaires « Équipe inconnue »).
-    // 1. Balaye les wars de chaque roster hôte (wars/{hostRosterId}) et retient
-    //    celles dont un id de teamOpponent ne se résout à AUCUNE TeamEntity locale
-    //    (même échec que War.opponentTeams → « Équipe inconnue »).
-    // 2. Charge UNE SEULE FOIS la liste des équipes mkworld actives, non
-    //    historiques et à effectif ≥ 6 (toutes pages via le MÊME endpoint que la
-    //    synchro registre, getTeams — miroir du filtre par défaut du site
-    //    MKCentral), puis résout chaque id distinct en mémoire — évite N appels
-    //    réseau. Domaine exclusivement mkworld (cf. rule 31-mkworld-only) : aucun
-    //    accès mk8dx.
-    // 3. Pour chaque id : retrouve l'équipe « source » mkworld (rawId == roster.id
-    //    ou == teamId), puis rebondit sur son nom/tag pour proposer des candidats
-    //    mkworld (l'adversaire a souvent recréé une équipe avec un nom/tag proche).
-    //    Un id introuvable dans cette liste (équipe < 6 joueurs, dissoute, ou
-    //    d'origine mk8dx pure) non couvert par l'override manuel tombe en NotFound
-    //    (voulu : ces cas sont dans la table d'override ou supprimés).
-    // Aucune écriture : sert uniquement à produire le rapport d'arbitrage.
+    // Diagnostic NON destructif (aucune écriture) : retient les wars dont un teamOpponent
+    // ne résout AUCUNE TeamEntity locale, charge une seule fois les équipes mkworld
+    // (rule 31), puis résout chaque id distinct en mémoire (évite N appels réseau).
     override suspend fun diagnoseUnknownOpponents(): List<UnknownOpponentDiagnostic> {
         val hostRosterIds = dataStoreRepository.mkcTeam.firstOrNull()
             ?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
@@ -131,9 +108,7 @@ class DiagnosticRepository @Inject constructor(
         }
     }
 
-    // Charge toutes les pages de getTeams (équipes mkworld actives, non
-    // historiques, ≥ 6 joueurs — même endpoint et même filtre que la synchro
-    // registre, miroir du filtre par défaut du site MKCentral).
+    // Toutes les pages de getTeams (équipes mkworld, même filtre que la synchro registre).
     // Renvoie null si un appel échoue → l'appelant en déduit une résolution Error.
     private suspend fun fetchAllMkworldTeams(): List<MKCTeam>? {
         val first = mkCentralDataSource.getTeams(1).successResponse ?: return null
@@ -147,21 +122,12 @@ class DiagnosticRepository @Inject constructor(
         return teams
     }
 
-    // Résout un id source (rawId) dans la liste mkworld déjà chargée (équipes
-    // actives 6+ joueurs), puis propose des candidats mkworld. Domaine exclusivement
-    // mkworld (cf. rule 31-mkworld-only).
-    //  - OVERRIDE MANUEL prioritaire : si rawId est dans opponentOverrides, on
-    //    cible directement le teamId mappé (recherché dans mkworldTeams) et on
-    //    liste TOUS ses rosters mkworld comme candidats. Si ce teamId cible est
-    //    absent de la liste (équipe hors périmètre actives 6+), on retombe sur
-    //    l'heuristique.
-    //  - HEURISTIQUE nom/tag : match source rawId == roster.id OU teamId (mkworld
-    //    uniquement), puis depuis son name/tag on retient les équipes mkworld dont
-    //    le tag OU le nom matche (sous-chaîne insensible à la casse, deux sens —
-    //    cf. AddWarViewModel.onSearchTeam) et possédant un roster mkworld.
-    // Un id absent de cette liste (adversaire dissous/historique/à faible effectif,
-    // ou d'origine mk8dx pure) tombe en NotFound sauf s'il est couvert par l'override
-    // manuel. Le rosterId d'un roster mkworld candidat est l'id à réécrire.
+    // Résout rawId dans la liste mkworld chargée, puis propose des candidats mkworld :
+    //  - override manuel prioritaire (teamId mappé → tous ses rosters ; retombe sur
+    //    l'heuristique si le teamId cible est absent de la liste) ;
+    //  - heuristique nom/tag : source (rawId == roster.id ou teamId), puis équipes dont
+    //    le tag OU le nom matche (sous-chaîne insensible à la casse, deux sens).
+    // Id absent tombe en NotFound sauf override. Le rosterId candidat est l'id à réécrire.
     private fun resolveOpponentId(
         rawId: String,
         mkworldTeams: List<MKCTeam>?
@@ -206,8 +172,7 @@ class DiagnosticRepository @Inject constructor(
         )
     }
 
-    // Une équipe mkworld candidate + ses rosters mkworld (rosterId = id à réécrire).
-    // Partagé par la branche override manuelle et la branche heuristique nom/tag.
+    // Équipe candidate + ses rosters mkworld (rosterId = id à réécrire).
     private fun mkworldCandidate(team: MKCTeam) = MkworldCandidate(
         teamId = team.id.toString(),
         teamName = team.name,
@@ -217,9 +182,8 @@ class DiagnosticRepository @Inject constructor(
             .map { CandidateRoster(rosterId = it.id.toString(), name = it.name, tag = it.tag) }
     )
 
-    // Réattribution (paquet A) : réécrit teamOpponent en remplaçant rawId par
-    // newId, UNIQUEMENT si newId se résout localement (rule 12 — ne jamais
-    // écrire un id non résolvable). La war est réécrite sous son nœud hôte.
+    // Réécrit teamOpponent (rawId → newId), UNIQUEMENT si newId se résout localement
+    // (rule 12 — ne jamais écrire un id non résolvable).
     override suspend fun reattributeOpponent(hostRosterId: String, warId: Long, rawId: String, newId: String) {
         if (databaseRepository.getTeam(newId) != null) {
             firebaseRepository.getWars(hostRosterId).firstOrNull { it.id == warId }?.let { war ->
@@ -230,18 +194,14 @@ class DiagnosticRepository @Inject constructor(
         }
     }
 
-    // Suppression (paquet B) : retire une war irrécupérable du nœud hôte Firebase.
-    // La réhydratation des stats se fait au prochain fetch/InitStatsWorker.
+    // Retire une war irrécupérable du nœud hôte Firebase (stats réhydratées au prochain fetch).
     override suspend fun deleteWar(hostRosterId: String, warId: Long) {
         firebaseRepository.deleteWar(hostRosterId, warId.toString())
     }
 
-    // Diagnostic NON destructif des JOUEURS manquants (miroir de
-    // diagnoseUnknownOpponents). Collecte les playerId de toutes les wars des
-    // rosters hôtes, retient ceux absents du cache local (membres + alliés),
-    // dédoublonne, compte les wars par joueur, puis résout name/country via
-    // MKCentral (un getPlayer par id distinct). Id non résolu → valeur dégradée
-    // (« Joueur inconnu », pays vide) sans faire disparaître l'entrée. Lecture seule.
+    // Diagnostic NON destructif des joueurs manquants : playerId des wars absents du cache
+    // local (membres + alliés), comptés par joueur, résolus via MKCentral. Id non résolu
+    // → dégradé (« Joueur inconnu ») sans faire disparaître l'entrée.
     override suspend fun diagnoseMissingPlayers(): List<MissingPlayer> {
         val hostRosterIds = dataStoreRepository.mkcTeam.firstOrNull()
             ?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
@@ -273,9 +233,8 @@ class DiagnosticRepository @Inject constructor(
         }
     }
 
-    // Ajoute un joueur manquant comme ALLIÉ, en local ET sur Firebase newAllies —
-    // les deux, sinon la resynchro (fetchAllies) effacerait l'allié local. Un allié
-    // a toujours role=0 (rosterId "-1" via PlayerEntity(isAlly = true)).
+    // Ajoute un allié en local ET sur Firebase newAllies (les deux, sinon la resynchro
+    // fetchAllies effacerait l'allié local). Un allié a toujours role=0 (rosterId "-1").
     override suspend fun addMissingPlayerAsAlly(playerId: String) {
         mkCentralDataSource.getPlayer(playerId).successResponse?.let { player ->
             databaseRepository.addAlly(PlayerEntity(player = player, isAlly = true))

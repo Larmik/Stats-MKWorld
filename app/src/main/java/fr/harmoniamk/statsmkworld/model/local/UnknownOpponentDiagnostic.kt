@@ -1,17 +1,11 @@
 package fr.harmoniamk.statsmkworld.model.local
 
 /**
- * Résultat de diagnostic d'une war dont un adversaire (`War.teamOpponent`) ne se
- * résout à aucune [fr.harmoniamk.statsmkworld.database.entities.TeamEntity] du
- * cache local (affichée « Équipe inconnue » / tag « ??? » par
- * [fr.harmoniamk.statsmkworld.extension.opponentTeams]).
- *
- * Produit par `FetchUseCase.diagnoseUnknownOpponents` : outil de debug **non
- * destructif** (lecture seule) listant les wars concernées et, pour chaque id
- * d'adversaire non résolu, une tentative de résolution MKCentral parmi les
- * **équipes mkworld actives, non historiques et à effectif ≥ 6** (miroir du
- * filtre par défaut du site MKCentral). Sert à arbitrer war par war entre
- * réattribution (paquet A) et suppression (paquet B) — décision humaine.
+ * Diagnostic (debug, lecture seule) d'une war dont un adversaire (`War.teamOpponent`) ne se
+ * résout à aucune `TeamEntity` locale (affichée « Équipe inconnue »). Produit par
+ * `DiagnosticRepository` : pour chaque id non résolu, tente une résolution MKCentral parmi
+ * les équipes mkworld actives/non historiques/≥ 6 joueurs. Aide à arbitrer réattribution vs
+ * suppression, war par war (décision humaine).
  */
 data class UnknownOpponentDiagnostic(
     /** Nœud hôte Firebase (`wars/{hostRosterId}`) sous lequel la war est stockée. */
@@ -37,27 +31,15 @@ data class UnresolvedOpponent(
     val rawId: String,
     /** Issue de la résolution. */
     val resolution: OpponentResolution,
-) {
-    /**
-     * Réattribuable (paquet A) si l'équipe source a été retrouvée en ligne **et**
-     * qu'au moins un candidat mkworld a été proposé (par override manuel ou par
-     * nom/tag) : c'est un roster mkworld candidat qui fournit l'id à réécrire.
-     */
-    val isReattributable: Boolean
-        get() = resolution is OpponentResolution.Found && resolution.mkworldCandidates.isNotEmpty()
-}
+)
 
 sealed class OpponentResolution {
 
     /**
-     * Équipe « source » mkworld retrouvée via le balayage des équipes mkworld
-     * actives 6+ joueurs (domaine exclusivement mkworld — cf. rule
-     * 31-mkworld-only). Son id ne sert PAS
-     * directement à la réattribution : on rebondit sur son [teamName] / [teamTag]
-     * pour proposer des [mkworldCandidates] — les équipes **mkworld** dont le nom
-     * ou le tag matche (l'adversaire a souvent recréé une équipe avec un nom/tag
-     * proche), ou l'équipe cible d'un override manuel. La réattribution écrit
-     * alors le **rosterId d'un roster mkworld candidat** choisi par l'humain.
+     * Équipe source mkworld retrouvée (rule 31). Son id ne sert PAS à réattribuer : on
+     * rebondit sur [teamName]/[teamTag] pour proposer des [mkworldCandidates] (équipes
+     * mkworld au nom/tag proche, ou override manuel). La réattribution écrit le rosterId
+     * d'un candidat choisi par l'humain.
      */
     data class Found(
         val teamId: String,
@@ -75,10 +57,8 @@ sealed class OpponentResolution {
 }
 
 /**
- * Une équipe **mkworld** candidate à la réattribution, retrouvée par
- * correspondance de nom/tag avec l'équipe source. Chaque roster mkworld de
- * l'équipe est une cible potentielle : son [CandidateRoster.rosterId] est l'id à
- * écrire dans `War.teamOpponent`.
+ * Équipe mkworld candidate à la réattribution (retrouvée par nom/tag). Chaque roster est une
+ * cible : son [CandidateRoster.rosterId] est l'id à écrire dans `War.teamOpponent`.
  */
 data class MkworldCandidate(
     val teamId: String,

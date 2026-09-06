@@ -1,5 +1,6 @@
 package fr.harmoniamk.statsmkworld.extension
 
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
@@ -9,7 +10,6 @@ import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.Stats
-import fr.harmoniamk.statsmkworld.model.local.TeamStats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarScore
@@ -132,65 +132,39 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
     }
 
-    // Comptage O(n) des adversaires (top 1 par catégorie).
-    // 12p : victoire/défaite dérivée du diff de score ; 24p : selon le rang de
-    // l'équipe hôte parmi les 3 équipes (top 2 = gagné, bottom 2 = perdu).
-    val warsWon = when (is24p) {
-        false -> warList.filterNot { it.displayedDiff.contains('-') }
-        true -> warList.filter { it.war.scores.sortedByDescending { s -> s.score }.safeSubList(0, 2).map { s -> s.teamId }.contains(it.war.teamHost) }
-    }
-    val warsLost = when (is24p) {
-        false -> warList.filter { it.displayedDiff.contains('-') }
-        true -> warList.filter { it.war.scores.sortedBy { s -> s.score }.safeSubList(0, 2).map { s -> s.teamId }.contains(it.war.teamHost) }
-    }
-
-    val mostPlayedTeams = warList.topOpponentByCount()
-    val mostDefeatedTeams = warsWon.topOpponentByCount()
-    val lessDefeatedTeams = warsLost.topOpponentByCount()
-
     return flowOf(
         Stats(
-            warStats = WarStats(this, is24p = is24p),
+            // WarStats sur la liste FILTRÉE (warList) : V/N/D & nb de wars ne comptent que
+            // les wars pertinentes (jouées par le joueur / face à l'adversaire). En vue
+            // équipe (userId/teamId null), warList == this → comportement inchangé.
+            warStats = WarStats(warList, is24p = is24p),
             warScores = warScores,
             maps = maps,
             averageForMaps = averageForMaps,
-            mostPlayedTeam = null,
-            mostDefeatedTeam = null,
-            lessDefeatedTeam = null
+            userId = userId
         )
-    ).map { stats ->
-        // Une seule lecture de la table des équipes, puis indexation en mémoire.
-        // On résout un id d'adversaire aussi bien par teamId (wars legacy /
-        // normalisées) que par rosterId (granularité roster) → équipe parente.
-        val teams = databaseRepository.getTeams().firstOrNull().orEmpty()
-        val teamsById = teams.associateBy { it.id }
-        val teamByRosterId = teams.flatMap { team -> team.rosters.map { it.id to team } }.toMap()
+    )
+}
 
-        fun List<Pair<String, Int>>.toTeamStats() = map { (id, count) ->
-            TeamStats(teamsById[id] ?: teamByRosterId[id], count)
-        }
-
-        stats.copy(
-            mostPlayedTeam = mostPlayedTeams.toTeamStats(),
-            mostDefeatedTeam = mostDefeatedTeams.toTeamStats(),
-            lessDefeatedTeam = lessDefeatedTeams.toTeamStats()
-        )
+/**
+ * Total de shocks (éclairs obtenus) sur ces wars : somme des `count` de tous les `Shock`
+ * des manches, filtrée sur [playerId] si non-null, sinon toute l'équipe hôte. Base des
+ * classements « baggeurs » (#69) — ratio TOTAL/TOTAL, jamais une moyenne par war.
+ */
+fun List<WarDetails>.totalShocks(playerId: String? = null): Int = sumOf { war ->
+    war.war.tracks.sumOf { track ->
+        track.shocks
+            ?.filter { playerId == null || it.playerId == playerId }
+            ?.sumOf { it.count } ?: 0
     }
 }
 
 /**
- * Compte le nombre de wars par adversaire et renvoie le plus fréquent (top 1),
- * sous forme de liste de [Pair] (id adversaire, nombre de wars). O(n) au lieu du
- * O(n²) d'un `filter` réévalué par adversaire.
+ * Part de shocks d'un joueur en % (ses shocks / total équipe). `null` si l'équipe n'a aucun
+ * shock (pas de dénominateur). Règle unique des 4 classements « baggeurs » (#69).
  */
-private fun List<WarDetails>.topOpponentByCount(): List<Pair<String, Int>> =
-    this.flatMap { it.war.teamOpponent }
-        .groupingBy { it }
-        .eachCount()
-        .entries
-        .sortedByDescending { it.value }
-        .safeSubList(0, 1)
-        .map { it.key to it.value }
+fun List<WarDetails>.shockShare(playerId: String): Int? =
+    totalShocks().takeIf { it > 0 }?.let { totalShocks(playerId) * 100 / it }
 
 fun List<TeamEntity>.withFullTeamStats(
     wars: List<WarEntity>,
@@ -200,9 +174,8 @@ fun List<TeamEntity>.withFullTeamStats(
 ) = flow {
     val temp = mutableListOf<Pair<TeamEntity, Stats>>()
 
-    // Calcule les stats d'un adversaire pour un identifiant d'opposant donné
-    // (rosterId ou teamId legacy). `display` porte la vue affichée dans le
-    // classement (id = identifiant d'opposant, nom/tag du roster, avatar équipe).
+    // Stats d'un adversaire pour un id d'opposant (rosterId ou teamId legacy). `display` =
+    // vue affichée (id d'opposant, nom/tag roster, avatar équipe).
     suspend fun addRankingItem(display: TeamEntity, opponentId: String) {
         wars
             .filter { it.hasTeam(opponentId) }
@@ -217,18 +190,15 @@ fun List<TeamEntity>.withFullTeamStats(
     }
 
     this@withFullTeamStats.forEach { team ->
-        // Un item par ROSTER : chaque roster produit son propre classement (ses
-        // wars où l'opposant = ce rosterId), affiché avec le nom/tag du roster et
-        // l'avatar de l'équipe parente. On ne fusionne plus les rosters d'une même
-        // équipe sous l'équipe.
+        // Un item par ROSTER (ses wars où l'opposant = ce rosterId) : rosters d'une même
+        // équipe non fusionnés, affichés avec nom/tag du roster + avatar de l'équipe.
         team.rosters.forEach { roster ->
             addRankingItem(
                 display = team.copy(id = roster.id, name = roster.name, tag = roster.tag),
                 opponentId = roster.id
             )
         }
-        // Item de niveau ÉQUIPE pour les wars legacy (opposant = teamId, avant la
-        // granularité roster) : elles n'ont pas de rosterId → conservées à part.
+        // Item ÉQUIPE pour les wars legacy (opposant = teamId, sans rosterId) → à part.
         addRankingItem(display = team, opponentId = team.id)
     }
     emit(temp)
@@ -289,4 +259,16 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
 
 }
 
+/**
+ * Filtre les wars sur l'intervalle d'une saison (#70). Rattachement calculé (pas de
+ * `seasonId` sur la war) : `war.id` = timestamp epoch ms, une war est dans la saison dont
+ * `[start, end]` le contient. [season] `null` = tout l'historique ; `end == null` (saison
+ * en cours) → borne haute = maintenant.
+ */
+fun List<WarEntity>.filterBySeason(season: SeasonEntity?): List<WarEntity> {
+    season ?: return this
+    val upperBound = season.end ?: System.currentTimeMillis()
+    // WarEntity.id est le timestamp (epoch ms) stocké en String → conversion pour comparer.
+    return filter { war -> war.id.toLongOrNull()?.let { it in season.start..upperBound } == true }
+}
 

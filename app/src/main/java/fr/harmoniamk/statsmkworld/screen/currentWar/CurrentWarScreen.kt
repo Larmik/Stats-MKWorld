@@ -2,10 +2,13 @@ package fr.harmoniamk.statsmkworld.screen.currentWar
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,37 +16,45 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.displayName
+import fr.harmoniamk.statsmkworld.model.ScoringConstants
+import fr.harmoniamk.statsmkworld.model.local.Maps
+import fr.harmoniamk.statsmkworld.model.local.PlayerScore
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
-import fr.harmoniamk.statsmkworld.ui.WarScoreView
-import fr.harmoniamk.statsmkworld.ui.cells.MapCell
-import fr.harmoniamk.statsmkworld.ui.cells.TeamCell
-import fr.harmoniamk.statsmkworld.model.ScoringConstants
-import fr.harmoniamk.statsmkworld.ui.cells.WarPlayersCell
-import kotlinx.coroutines.launch
+import fr.harmoniamk.statsmkworld.ui.cells.WarDashboardCard
+import fr.harmoniamk.statsmkworld.ui.cells.WarEyebrow
+import fr.harmoniamk.statsmkworld.ui.cells.WarScoreCard
+import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
+
+// Rayon uniforme des cartes (maquette : radius 6px), aligné sur WelcomeScreen.
+private val CardRadius = RoundedCornerShape(6.dp)
 
 @Composable
 fun CurrentWarScreen(
@@ -51,200 +62,278 @@ fun CurrentWarScreen(
     onBack: () -> Unit,
     onAddTrack: (Boolean) -> Unit,
     onActions: () -> Unit,
-    onTrackDetails: (WarTrackDetails) -> Unit,
+    onTrackDetails: (WarTrackDetails, Int) -> Unit,
     onWarValidated: () -> Unit,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState(pageCount = {
-        when (state.value.teamOpponent.orEmpty().size > 1) {
-            true -> 2
-            else -> 1
-        }
-    })
     val context = LocalContext.current
 
-
     LaunchedEffect(viewModel) {
-        launch {
-            viewModel.backToHome.collect {
-                onWarValidated()
-            }
-        }
-        launch {
-            viewModel.onPage.collect {
-                pagerState.animateScrollToPage(it)
-            }
-        }
-        launch {
-            viewModel.onToast.collect {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            }
-        }
+        viewModel.backToHome.collect { onWarValidated() }
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.onToast.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
 
     BackHandler { onBack() }
-    HorizontalPager(
-        modifier = Modifier.fillMaxWidth(),
-        state = pagerState,
-        userScrollEnabled = false
+
+    BaseScreen(
+        title = stringResource(R.string.currentwar_title),
+        onBack = onBack
     ) {
-        when (it) {
-         0 -> BaseScreen(title = stringResource(R.string.war_en_cours)) {
+        when (val details = state.value.details) {
+            null -> CircularProgressIndicator()
+            else -> {
+                val is24p = state.value.teamOpponent.orEmpty().size > 1
+                LazyColumn(
+                    Modifier.fillMaxWidth().weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(11.dp)
+                ) {
+                    // 1. Carte score : hôte VS adversaire(s), diff + courses restantes.
+                    item {
+                        WarScoreCard(
+                            teamHost = state.value.teamHost,
+                            teamOpponent = state.value.teamOpponent,
+                            details = details,
+                            is24p = is24p,
+                            subtitle = stringResource(
+                                R.string.currentwar_tracks_remaining,
+                                12 - details.warTracks.size
+                            )
+                        )
+                    }
 
-             when (val details = state.value.details) {
-                 null -> CircularProgressIndicator()
-                 else -> {
-                     val is24p = state.value.teamOpponent.orEmpty().size > 1
-                     WarScoreView(
-                         teamHost = state.value.teamHost,
-                         teamOpponent = state.value.teamOpponent,
-                         details = state.value.details,
-                         rosterName = state.value.roster?.name,
-                         rosterId = state.value.roster?.id.toString(),
-                     )
-                     Spacer(Modifier.height(20.dp))
-                     WarPlayersCell(players = state.value.players, trackCount = details.warTracks.size)
-                     CurrentWarActionButtons(
-                         buttonsVisible = state.value.buttonsVisible,
-                         isOver = state.value.isOver,
-                         is24p = is24p,
-                         onNext = { viewModel.onPageChange(1) },
-                         onValidateWar = viewModel::onValidateWar,
-                         onAddTrack = { onAddTrack(is24p) },
-                         onActions = onActions
-                     )
-                     Spacer(
-                         (Modifier
-                             .fillMaxWidth()
-                             .height(1.dp)
-                             .background(Colors.blackAlphaed))
-                     )
+                    // 2. Carte joueurs : nom + points.
+                    item {
+                        PlayersCard(
+                            players = state.value.players,
+                            trackCount = details.warTracks.size
+                        )
+                    }
 
-                     CurrentWarTracksGrid(
-                         tracks = details.warTracks,
-                         is24p = is24p,
-                         onTrackDetails = onTrackDetails
-                     )
-                 }
-             }
+                    // 3. Actions : CTA « Course suivante », puis « Valider la war » en 12p terminée
+                    //    (en 24p terminée, validation via la saisie des scores adverses ci-dessous).
+                    if (state.value.buttonsVisible) {
+                        item {
+                            ActionsBlock(
+                                isOver = state.value.isOver,
+                                is24p = is24p,
+                                onAddTrack = { onAddTrack(is24p) },
+                                onActions = onActions,
+                                onValidateWar = viewModel::onValidateWar
+                            )
+                        }
+                        if (is24p && state.value.isOver) {
+                            item {
+                                OpponentScoresBlock(
+                                    teamOpponent = state.value.teamOpponent,
+                                    opponentsScores = state.value.opponentsScores,
+                                    trackCount = details.warTracks.size,
+                                    onValueChange = viewModel::onValueChange,
+                                    onValidateScore = viewModel::onValidateScore
+                                )
+                            }
+                        }
+                    }
 
-         }
-            else -> BaseScreen(title = "Scores adversaires") {
-                OpponentScoresPage(
-                    teamOpponent = state.value.teamOpponent,
-                    opponentsScores = state.value.opponentsScores,
-                    onValueChange = viewModel::onValueChange,
-                    onValidateScore = viewModel::onValidateScore
-                )
+                    // 5. Section « Courses jouées » (carte englobante + grille, chacune → détail).
+                    val tracks = details.warTracks
+                    if (tracks.isNotEmpty()) {
+                        item {
+                            WarTracksSection(
+                                tracks = tracks,
+                                is24p = is24p,
+                                onTrackDetails = onTrackDetails
+                            )
+                        }
+                    }
+                }
             }
         }
     }
-
 }
 
+/** Carte « Scores des joueurs » : lignes compactes (nom / score) sur deux colonnes, + pastille shock. */
 @Composable
-private fun CurrentWarActionButtons(
-    buttonsVisible: Boolean,
-    isOver: Boolean,
-    is24p: Boolean,
-    onNext: () -> Unit,
-    onValidateWar: () -> Unit,
-    onAddTrack: () -> Unit,
-    onActions: () -> Unit
-) {
+private fun PlayersCard(players: List<PlayerScore>, trackCount: Int) {
+    WarDashboardCard {
+        WarEyebrow(stringResource(R.string.joueurs))
+        Spacer(Modifier.height(11.dp))
+        players.chunked(2).forEachIndexed { rowIndex, pair ->
+            if (rowIndex > 0) Spacer(Modifier.height(6.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                pair.forEach { score ->
+                    PlayerRow(score = score, trackCount = trackCount, modifier = Modifier.weight(1f))
+                }
+                // Comble la 2ᵉ colonne si nombre impair de joueurs.
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Ligne joueur compacte : nom (+ nb de courses jouées + shocks) à gauche, « N pts » à droite. */
+@Composable
+private fun PlayerRow(score: PlayerScore, trackCount: Int, modifier: Modifier = Modifier) {
+    val name = when (score.trackPlayed in 1 until trackCount) {
+        true -> "${score.player?.name.orEmpty().displayName} (${score.trackPlayed})"
+        else -> score.player?.name.orEmpty().displayName
+    }
     Row(
-        Modifier.padding(vertical = 5.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
+        modifier
+            .background(Colors.white30, CardRadius)
+            .padding(horizontal = 11.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        if (buttonsVisible) {
-            MKButton(
-                style = MKButtonStyle.Gradient, text = when (isOver) {
-                    true -> if (is24p)
-                        "Scores adversaires"
-                    else
-                        stringResource(R.string.valider_la_war)
-
-                    else -> stringResource(R.string.course_suivante)
-                }, onClick = {
-                    when (isOver) {
-                        true -> if (is24p)
-                            onNext()
-                        else
-                            onValidateWar()
-
-                        else -> onAddTrack()
-                    }
-                })
-            MKButton(
-                modifier = Modifier.weight(1f),
-                style = MKButtonStyle.Minor(Colors.black),
-                text = stringResource(R.string.more_actions),
-                onClick = onActions
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
+            MKText(
+                text = name,
+                font = Fonts.NunitoBD,
+                textColor = Colors.white,
+                fontSize = 13,
+                maxLines = 1,
+                textAlign = TextAlign.Start
+            )
+            score.shockCount.takeIf { it > 0 }?.let {
+                Spacer(Modifier.width(6.dp))
+                Image(
+                    painter = painterResource(R.drawable.shock),
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp)
+                )
+                if (it > 1) MKText(text = "x$it", fontSize = 11, textColor = Colors.white66)
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            MKText(text = score.score.toString(), font = Fonts.Urbanist, textColor = Colors.white, fontSize = 16)
+            MKText(
+                text = stringResource(R.string.currentwar_points_short),
+                textColor = Colors.white55,
+                fontSize = 11,
+                modifier = Modifier.padding(start = 4.dp)
             )
         }
     }
 }
 
+/**
+ * Bloc d'actions : CTA principal + « Plus d'actions » côte à côte. Le CTA vaut « Course suivante »
+ * en cours, « Valider la war » en 12p terminée. En 24p terminée, pas de CTA ici (validation via
+ * [OpponentScoresBlock]).
+ */
 @Composable
-private fun CurrentWarTracksGrid(
-    tracks: List<WarTrackDetails>,
+private fun ActionsBlock(
+    isOver: Boolean,
     is24p: Boolean,
-    onTrackDetails: (WarTrackDetails) -> Unit
+    onAddTrack: () -> Unit,
+    onActions: () -> Unit,
+    onValidateWar: () -> Unit
 ) {
-    tracks.takeIf { it.isNotEmpty() }?.let {
-        MKText(
-            text = stringResource(R.string.player_courses, it.size),
-            font = Fonts.NunitoBD,
-            modifier = Modifier.padding(top = 10.dp)
-        )
-        LazyVerticalGrid(columns = GridCells.Adaptive(150.dp)) {
-            items(it, key = { it.track.id }) {
-                val borderColor = when {
-                    is24p -> Colors.transparent
-                    it.displayedDiff.contains("+") -> Colors.green
-                    it.displayedDiff.contains("-") -> Colors.red
-                    else -> Colors.transparent
-                }
-                MapCell(
-                    modifier = Modifier.padding(5.dp),
-                    track = it,
-                    onClick = {},
-                    onTrackDetails = onTrackDetails,
-                    is24p = is24p,
-                    backgroundColor = Colors.whiteAlphaed,
-                    textColor = Colors.black,
-                    borderColor = borderColor
-                )
-            }
+    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        // CTA principal selon l'état, absent en 24p terminée (validation via les scores adverses).
+        when {
+            !isOver -> MKButton(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.course_suivante),
+                onClick = onAddTrack
+            )
+            !is24p -> MKButton(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.valider_la_war),
+                onClick = onValidateWar
+            )
         }
+        MKButton(
+            modifier = Modifier.weight(1f),
+            text = stringResource(R.string.more_actions),
+            onClick = onActions
+        )
     }
 }
 
+/**
+ * Variante 24p : saisie des scores des équipes adverses + CTA « Saisir & valider ».
+ * Le contrôle du total et l'écriture restent côté ViewModel (justesse prioritaire).
+ */
 @Composable
-private fun ColumnScope.OpponentScoresPage(
+private fun OpponentScoresBlock(
     teamOpponent: List<TeamEntity>?,
     opponentsScores: Map<String, Int>,
+    trackCount: Int,
     onValueChange: (String, String) -> Unit,
     onValidateScore: () -> Unit
 ) {
-    MKText(text = "Veuillez renseigner les scores adverses dans les champs correspondants. \n Il faut inscrire les scores tels qu'ils ont été calculés par le jeu, le total des points étant de ${ScoringConstants.TOTAL_24P_SCORE}. \n \n Ne tenez pas compte des pénalités.")
-    teamOpponent?.forEach { team ->
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-            TeamCell(team = team, modifier = Modifier.size(120.dp), tagVisible = false) { }
-            MKTextField(
-                textColor = Colors.black,
-                borderColor = Colors.black,
-                backgroundColor = Colors.white,
-                value = opponentsScores[team.id]?.toString().orEmpty(),
-                onValueChange = { value -> onValueChange(team.id, value) }, modifier = Modifier.width(100.dp))
-            Spacer(Modifier.weight(1f))
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        WarDashboardCard {
+            WarEyebrow(stringResource(R.string.currentwar_opponent_scores))
+            teamOpponent.orEmpty().forEachIndexed { index, team ->
+                if (index > 0) Spacer(Modifier.height(8.dp))
+                ScoreSetRow(
+                    team = team,
+                    value = opponentsScores[team.id]?.toString().orEmpty(),
+                    onValueChange = { onValueChange(team.id, it) }
+                )
+            }
+            Spacer(Modifier.height(9.dp))
+            MKText(
+                text = stringResource(R.string.currentwar_opponent_scores_hint, trackCount * ScoringConstants.MAX_POINTS_PER_TRACK_24P),
+                textColor = Colors.white55,
+                fontSize = 12,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
+        MKButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(R.string.currentwar_save_scores),
+            onClick = onValidateScore
+        )
     }
-    MKButton(
-        style = MKButtonStyle.Gradient,
-        text = "Valider la war",
-        onClick = onValidateScore
-    )
-    Spacer(Modifier.height(1.dp))
+}
+
+/** Ligne de saisie d'un score adverse (`.scoreset`) : pastille + nom + champ centré. */
+@Composable
+private fun ScoreSetRow(team: TeamEntity, value: String, onValueChange: (String) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+        TeamCrestSmall(team = team)
+        MKText(
+            text = team.name,
+            font = Fonts.NunitoBD,
+            textColor = Colors.white,
+            fontSize = 13,
+            maxLines = 1,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.weight(1f)
+        )
+        MKTextField(
+            value = value,
+            onValueChange = onValueChange,
+            keyboardType = KeyboardType.Number,
+            textColor = Colors.white,
+            borderColor = Colors.whiteBorderSoft,
+            backgroundColor = Colors.white30,
+            modifier = Modifier.width(80.dp)
+        )
+    }
+}
+
+/** Petite pastille d'équipe (30 dp) pour les lignes de saisie de score. */
+@Composable
+private fun TeamCrestSmall(team: TeamEntity) {
+    val color = team.color?.let { Color(it) } ?: Colors.blue
+    when (val logo = team.logo) {
+        null -> Box(
+            modifier = Modifier.size(30.dp).clip(CircleShape).background(color).border(2.dp, Colors.white85, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            MKText(text = team.tag.take(2).uppercase(), font = Fonts.Urbanist, textColor = Colors.white, fontSize = 11)
+        }
+        else -> AsyncImage(
+            model = "https://mkcentral.com$logo",
+            contentDescription = null,
+            modifier = Modifier.size(30.dp).clip(CircleShape).border(2.dp, Colors.white85, CircleShape)
+        )
+    }
 }
 

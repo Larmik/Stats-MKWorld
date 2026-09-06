@@ -51,6 +51,11 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     data class State(
+        // Étape courante (pilotée dans le VM, rule 11) : 3 étapes en 12p, 4 en 24p (Intermission
+        // intercalée). Indexer via [stepCircuit]/[stepIntermission]/[stepPositions]/[stepSummary].
+        val step: Int = 0,
+        // Mode courant (déterminé par le nombre d'adversaires). Pilote l'indexation des étapes.
+        val is24p: Boolean = false,
         val mapList: List<Maps> = Maps.entries,
         val mapSelected: Maps? = null,
         val intermissionList: List<Maps>? = null,
@@ -62,7 +67,6 @@ class AddTrackViewModel @AssistedInject constructor(
         val selectedPositions: List<PlayerPosition> = listOf(),
         val teamHostWarScore: Int? = null,
         val teamHostTrackScore: Int? = null,
-        val trackOrder: Int? = null,
         val shocks: Map<String, Int> = mutableMapOf(),
         val rosterName: String? = null,
         val rosterId: String? = null,
@@ -72,17 +76,25 @@ class AddTrackViewModel @AssistedInject constructor(
         val teamOpponentScore: Int? = null,
         val trackScore: String? = null,
         val trackDiff: String? = null,
-    )
+    ) {
+        /** Le circuit est choisi → l'étape Intermission/Positions devient accessible. */
+        val mapPicked: Boolean get() = mapSelected != null
+
+        /** Line-up complète (tous les joueurs ont une position) → le Résumé est accessible. */
+        val positionsComplete: Boolean get() = players.isNotEmpty() && selectedPositions.size == players.size
+
+        // Index sémantiques des étapes. Intermission en 24p seulement (-1 en 12p, jamais atteint).
+        val stepCircuit: Int get() = 0
+        val stepIntermission: Int get() = if (is24p) 1 else -1
+        val stepPositions: Int get() = if (is24p) 2 else 1
+        val stepSummary: Int get() = if (is24p) 3 else 2
+    }
 
     private val _state = MutableStateFlow(State())
 
-    private val _onBack = MutableSharedFlow<Unit>()
-    private val _onNext = MutableSharedFlow<Int>()
     private val _backToWar = MutableSharedFlow<Unit>()
 
     private val positions = mutableListOf<PlayerPosition>()
-    val onBack = _onBack.asSharedFlow()
-    val onNext = _onNext.asSharedFlow()
     val backToWar = _backToWar.asSharedFlow()
     private var details: WarDetails? = null
 
@@ -98,13 +110,14 @@ class AddTrackViewModel @AssistedInject constructor(
             val players = databaseRepository.getPlayers().firstOrNull()
                 ?.filter { it.currentWar == details.war.id.toString() }?.sortedBy { it.name }.orEmpty()
             _state.value.copy(
+                // Mode dérivé du nombre d'adversaires (source de vérité, aligné sur totalPositions).
+                is24p = teamOpponents.size > 1,
                 // Avatar de l'équipe, nom/tag du roster hôte.
                 teamHost = TeamEntity(teamHost).copy(name = rosterName, tag = hostRoster?.tag ?: teamHost.tag),
                 teamOpponent = teamOpponents,
                 players = players,
                 teamHostWarScore = details.war.scores.firstOrNull { it.teamId == rosterId.toString() }?.score,
                 currentPlayer = players.firstOrNull(),
-                trackOrder = details.warTracks.size + 1,
                 rosterName = rosterName,
                 rosterId = rosterId.toString(),
                 totalPositions = when (teamOpponents.size > 1) {
@@ -127,56 +140,99 @@ class AddTrackViewModel @AssistedInject constructor(
         })
     }
 
+    /**
+     * Choix du circuit : réinitialise la line-up (circuit changé → saisie vierge) et avance à
+     * l'étape suivante (Intermission en 24p, Positions en 12p).
+     */
     fun onMapSelected(map: Maps) {
-        when (is24p) {
-            true -> {
-                val intermissions = Maps.intermissionsTo(map)
-                _state.value = state.value.copy(mapSelected = map, intermissionList = intermissions)
-            } else -> {
-                _state.value = state.value.copy(mapSelected = map)
-                viewModelScope.launch {
-                    _onNext.emit(2)
-                }
-            }
-        }
-
-
+        positions.clear()
+        _state.value = state.value.copy(
+            // 24p → Intermission ; 12p → Positions (l'Intermission n'existe pas en 12p).
+            step = if (state.value.is24p) state.value.stepIntermission else state.value.stepPositions,
+            mapSelected = map,
+            intermissionList = Maps.intermissionsTo(map),
+            intermissionSelected = null,
+            selectedPositions = listOf(),
+            currentPlayer = state.value.players.firstOrNull(),
+            trackScore = null,
+            trackDiff = null,
+            teamHostTrackScore = null,
+            teamOpponentScore = null
+        )
     }
 
-    fun onIntermissionSelected(map: Maps) {
+    /** Choix (optionnel) de l'intermission — un 2ᵉ circuit enchaîné (24p uniquement). `null` = aucune. */
+    fun onIntermissionSelected(map: Maps?) {
         val mapSelected = state.value.mapSelected
-        _state.value = state.value.copy(intermissionSelected = map.takeIf { it != mapSelected })
-        viewModelScope.launch {
-            _onNext.emit(2)
+        _state.value = state.value.copy(intermissionSelected = map?.takeIf { it != mapSelected })
+    }
+
+    /**
+     * Navigation entre étapes (rule 11) : un retour en arrière annule la sélection de l'étape
+     * rejointe (Circuit = reset complet, Intermission = 2ᵉ circuit + positions, Positions =
+     * line-up) ; aller en avant (ou rester) ne réinitialise rien.
+     */
+    fun onStepChange(step: Int) {
+        val current = state.value.step
+        when {
+            step >= current -> _state.value = state.value.copy(step = step)
+            step == state.value.stepCircuit -> resetTrack()
+            step == state.value.stepIntermission -> resetIntermission()
+            else -> resetPositions()
         }
     }
 
-    fun onBack() {
-        when {
-            _state.value.selectedPositions.isNotEmpty() && _state.value.trackScore == null -> {
-                positions.remove(positions.last())
-                _state.value = _state.value.copy(
-                    selectedPositions = positions.sortedBy { it.position.position },
-                    currentPlayer = _state.value.players.getOrNull(positions.size)
-                )
-            }
-            _state.value.trackScore != "0 - 0" -> {
-                positions.clear()
-                _state.value = _state.value.copy(
-                    selectedPositions = listOf(),
-                    currentPlayer = _state.value.players.first(),
-                    trackScore = null
-                )
-                viewModelScope.launch {
-                    _onBack.emit(Unit)
-                }
-            }
+    /**
+     * Retour à l'Intermission (24p) : réinitialise le 2ᵉ circuit ET les positions qui en
+     * dépendent. Le circuit principal est conservé.
+     */
+    private fun resetIntermission() {
+        positions.clear()
+        _state.value = state.value.copy(
+            step = state.value.stepIntermission,
+            intermissionSelected = null,
+            selectedPositions = listOf(),
+            currentPlayer = state.value.players.firstOrNull(),
+            shocks = mapOf(),
+            trackScore = null,
+            trackDiff = null,
+            teamHostTrackScore = null,
+            teamOpponentScore = null
+        )
+    }
 
-            else -> viewModelScope.launch {
-                _onBack.emit(Unit)
-            }
-        }
+    /** Remise à zéro complète (retour à la 1ʳᵉ étape Circuit) : on repart d'un choix vierge. */
+    private fun resetTrack() {
+        positions.clear()
+        _state.value = state.value.copy(
+            step = state.value.stepCircuit,
+            mapList = Maps.entries,
+            mapSelected = null,
+            intermissionList = null,
+            intermissionSelected = null,
+            selectedPositions = listOf(),
+            currentPlayer = state.value.players.firstOrNull(),
+            shocks = mapOf(),
+            trackScore = null,
+            trackDiff = null,
+            teamHostTrackScore = null,
+            teamOpponentScore = null
+        )
+    }
 
+    /** Vide la line-up de positions (retour arrière vers l'étape Positions). */
+    private fun resetPositions() {
+        positions.clear()
+        _state.value = state.value.copy(
+            step = state.value.stepPositions,
+            selectedPositions = listOf(),
+            currentPlayer = state.value.players.firstOrNull(),
+            shocks = mapOf(),
+            trackScore = null,
+            trackDiff = null,
+            teamHostTrackScore = null,
+            teamOpponentScore = null
+        )
     }
 
     fun onPositionClick(position: Int) {
@@ -192,7 +248,10 @@ class AddTrackViewModel @AssistedInject constructor(
         positions.add(pos)
         _state.value = _state.value.copy(selectedPositions = positions.sortedBy { it.position.position })
         when {
+            // Line-up complète : calcul du score de manche et passage au Résumé.
             positions.size == _state.value.players.size -> {
+                // Score hôte = somme des points (positionToPoints) ; adverse = complément au
+                // max de manche. Barème existant réutilisé (justesse, rule 13).
                 val scoreHost = _state.value.selectedPositions.map { it.position }.sumOf { it.position.positionToPoints(is24p) }
                 val maxPointsPerTrack = when (is24p) {
                     true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
@@ -200,19 +259,15 @@ class AddTrackViewModel @AssistedInject constructor(
                 }
                 val scoreOpponent = maxPointsPerTrack - scoreHost
                 _state.value = _state.value.copy(
+                    step = _state.value.stepSummary,
                     trackScore = "$scoreHost - $scoreOpponent",
                     teamHostTrackScore = scoreHost,
-                    teamHostWarScore = (state.value.teamHostWarScore ?: 0) + scoreHost,
                     teamOpponentScore = scoreOpponent,
                     trackDiff = when {
                         (scoreHost - scoreOpponent) > 0 -> "+${scoreHost - scoreOpponent}"
                         else -> "${scoreHost - scoreOpponent}"
                     }
                 )
-                viewModelScope.launch {
-                    _onNext.emit(3)
-                }
-
             }
 
             else -> _state.value = _state.value.copy(
@@ -250,10 +305,13 @@ class AddTrackViewModel @AssistedInject constructor(
             val tracks = mutableListOf<WarTrack>()
             tracks.addAll(it.tracks)
             tracks.add(track)
+            // Score de war hôte = score courant + score de manche. Recalculé à la validation
+            // (non accumulé) → insensible aux retours arrière (justesse, rule 13).
+            val newHostWarScore = (state.value.teamHostWarScore ?: 0) + (state.value.teamHostTrackScore ?: 0)
             val newWar = when (state.value.teamOpponent.orEmpty().size > 1) {
-                true -> it.copy(tracks = tracks, scores = listOf(WarScore(teamId = it.teamHost, score = state.value.teamHostWarScore ?: 0)))
+                true -> it.copy(tracks = tracks, scores = listOf(WarScore(teamId = it.teamHost, score = newHostWarScore)))
                 else -> it.copy(tracks = tracks, scores = listOf(
-                    WarScore(teamId = it.teamHost, score = state.value.teamHostWarScore ?: 0),
+                    WarScore(teamId = it.teamHost, score = newHostWarScore),
                     WarScore(teamId = it.teamOpponent.firstOrNull().orEmpty(), score = state.value.teamOpponentScore ?: 0)
                 ))
             }

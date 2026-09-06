@@ -12,6 +12,7 @@ import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DiagnosticRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.PDFRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.WorldRecordsRepositoryInterface
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.usecase.FetchUseCaseInterface
@@ -26,7 +27,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -42,6 +42,7 @@ class DebugViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val worldRecordsRepository: WorldRecordsRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface,
     private val pdfRepository: PDFRepositoryInterface
 ) : ViewModel() {
 
@@ -169,8 +170,7 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Réattribution (paquet A) : réécrit teamOpponent vers newId (résolvable
-    // localement). Action manuelle, déclenchée après décision humaine.
+    // Réattribution manuelle : réécrit teamOpponent vers newId (résolvable localement).
     fun onReattributeOpponent(hostRosterId: String, warId: Long, rawId: String, newId: String) {
         viewModelScope.launch {
             _sharedLoading.emit("Réattribution en cours...")
@@ -181,8 +181,7 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Suppression (paquet B) : retire la war irrécupérable de Firebase. Action
-    // destructive, déclenchée après confirmation dans l'écran.
+    // Suppression destructive : retire la war irrécupérable de Firebase (après confirmation).
     fun onDeleteWar(hostRosterId: String, warId: Long) {
         viewModelScope.launch {
             _sharedLoading.emit("Suppression de la war...")
@@ -202,8 +201,7 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Ajoute le joueur manquant en allié (local + Firebase newAllies) puis
-    // re-diagnostique pour qu'il disparaisse de la liste.
+    // Ajoute le joueur manquant en allié (local + Firebase newAllies) puis re-diagnostique.
     fun onAddMissingPlayerAsAlly(playerId: String) {
         viewModelScope.launch {
             _sharedLoading.emit("Ajout de l'allié...")
@@ -217,6 +215,19 @@ class DebugViewModel @Inject constructor(
     fun loadWRs() {
         viewModelScope.launch {
             worldRecordsRepository.getCurrentWRs()
+        }
+    }
+
+    // Inscrit rétroactivement les 3 saisons dans RTDB + Room (#30) ; réinitialise l'index
+    // (écriture inconditionnelle). Logique dans SeasonRepository (rule 32).
+    fun onSeedSeasons() {
+        viewModelScope.launch {
+            _sharedLoading.emit("Inscription des saisons...")
+            dataStoreRepository.mkcTeam.firstOrNull()?.id?.let {
+                seasonRepository.seedInitialSeasons(it.toString())
+            }
+            _sharedLoading.emit(null)
+            _sharedToast.emit("Saisons inscrites")
         }
     }
 

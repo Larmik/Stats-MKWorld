@@ -54,6 +54,28 @@ data class WarDetails(val war: War): Serializable, Parcelable {
                 }
         }
     }
+
+    /**
+     * Écart de score côté hôte, signé et pénalités incluses (marges V/D de [Stats]).
+     * - 12p : hôte − adversaire unique.
+     * - 24p : hôte − MEILLEUR score adverse ([War.scores], pénalités nettées) — même
+     *   référence de podium que [WarStats].
+     */
+    fun scoreMargin(is24p: Boolean = false): Int = when (is24p) {
+        false -> scoreHostWithPenalties - scoreOpponentWithPenalties
+        true -> {
+            val hostScore = war.scores.firstOrNull { it.teamId == war.teamHost }
+                ?.let { penaltyAdjustedScore(it) } ?: 0
+            val bestOpponent = war.scores
+                .filter { war.teamOpponent.contains(it.teamId) }
+                .maxOfOrNull { penaltyAdjustedScore(it) } ?: 0
+            hostScore - bestOpponent
+        }
+    }
+
+    /** Score d'une équipe (24p) net de ses pénalités. */
+    private fun penaltyAdjustedScore(score: WarScore): Int =
+        score.score - war.penalties.filter { it.teamId == score.teamId }.sumOf { it.amount }
 }
 
 @Parcelize
@@ -78,4 +100,15 @@ data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Parcelable,
     val displayedResult: String = "$teamScore - $opponentScore"
 
     val displayedDiff: String = if (diffScore > 0) "+$diffScore" else "$diffScore"
+
+    /** Résultat d'une manche 12p côté hôte : +1 gagnée / -1 perdue / 0 nul (séries par circuit). */
+    fun trackOutcome(): Int {
+        val opponent = teamScore.takeIf { it != 0 }
+            ?.let { ScoringConstants.MAX_POINTS_PER_TRACK_12P - it } ?: return 0
+        return when {
+            teamScore > opponent -> 1
+            teamScore < opponent -> -1
+            else -> 0
+        }
+    }
 }
