@@ -29,19 +29,10 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * ViewModel de l'historique des wars.
- *
- * - [userId] `null` (ou `"me"`) ⇒ historique **du joueur courant** au sens habituel :
- *   toutes les wars de l'équipe (filtre roster hôte), sans filtre de participation ;
- * - [userId] renseigné (autre joueur, ex. lien « Résultats → » depuis `Statsfull/{userId}`,
- *   #65) ⇒ historique **filtré sur les wars où CE joueur a joué** (`War.hasPlayer`).
- *
- * **War en cours** : elle n'apparaît PAS dans l'historique — non par un filtre, mais
- * parce qu'elle n'est écrite dans Room qu'à la **validation** (`CurrentWarViewModel.onValidateWar`) ;
- * tant qu'elle est « en cours », elle n'est pas dans `getWars()`. La bannière « Reprendre »
- * a par ailleurs été retirée de l'écran (#65). `State.currentWar` (issu du listener temps réel
- * `listenToCurrentWar(rosterId)`) ne sert plus qu'au **gating du bouton « Créer une war »**
- * (masqué tant qu'une war est en cours) — pas à un filtrage de la liste.
+ * ViewModel de l'historique des wars. [userId] `null`/`"me"` ⇒ toutes les wars de l'équipe
+ * (filtre roster hôte) ; [userId] renseigné ⇒ wars où CE joueur a joué (#65). La war en cours
+ * n'apparaît pas (écrite dans Room seulement à la validation) ; `State.currentWar` (listener
+ * temps réel) ne sert qu'au gating du bouton « Créer une war ».
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = WarListViewModel.Factory::class)
@@ -66,8 +57,7 @@ class WarListViewModel @AssistedInject constructor(
         val currentWar: War? = null,
         // Nom du joueur filtré (sous-titre « wars de … ») ; null = pas de filtre joueur.
         val playerName: String? = null,
-        // Filtre par saison (#70) : liste des saisons + saison sélectionnée (null = tout
-        // l'historique, défaut = saison en cours). Filtre la liste des wars affichées.
+        // Filtre par saison (#70) : liste + sélection (null = tout, défaut = saison en cours).
         val seasons: List<SeasonEntity> = listOf(),
         val selectedSeasonNumber: Int? = null
     )
@@ -89,8 +79,7 @@ class WarListViewModel @AssistedInject constructor(
     private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
 
     val state = currentRosterId
-        // `listenToCurrentWar` alimente `State.currentWar` (gating du bouton « Créer une war ») ;
-        // il n'est PAS utilisé pour filtrer la liste (la war en cours n'est pas dans Room).
+        // `listenToCurrentWar` alimente `State.currentWar` (gating du bouton), pas le filtrage.
         .flatMapLatest { rosterId ->
             combine(
                 databaseRepository.getWars(),
@@ -99,28 +88,23 @@ class WarListViewModel @AssistedInject constructor(
                 databaseRepository.getSeasons()
             ) { wars, currentWar, seasonFilter, seasons ->
                 val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
-                // "me"/null = joueur courant ; sinon le joueur passé. Filtre de participation
-                // uniquement pour un joueur donné (autre que la vue « toute l'équipe »).
+                // "me"/null = joueur courant ; sinon le joueur passé (filtre de participation).
                 val currentPlayerId = dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
                 val targetUserId = userId?.takeIf { it != "me" } ?: currentPlayerId
                 val filterByPlayer = userId != null
                 val playerName = targetUserId
                     ?.takeIf { filterByPlayer }
                     ?.let { databaseRepository.getPlayer(it).firstOrNull()?.name }
-                // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît
-                // dès que l'hydratation eager écrit les saisons. Liste pour le dropdown +
-                // résolution de la saison effective (défaut = saison en cours ; null = tout).
+                // Saisons observées en Flow réactif (#73) ; résolution de la saison effective
+                // (défaut = saison en cours ; null = tout).
                 val activeSeason = when (seasonFilter) {
                     is SeasonFilter.AllTime -> null
                     is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
                     is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
                 }
-                // Aucun filtre par mode (12/24) : l'historique mélange tous les modes.
-                // Filtre par saison (#70) + roster hôte + par joueur si demandé. Pas de filtre
-                // sur la war en cours : elle n'est pas dans Room tant qu'elle n'est pas validée.
-                // SEUL ce mapping/groupage CPU (construction WarDetails + tri + groupBy) est
-                // déporté sur `Dispatchers.Default` via `withContext` (et NON `flowOn` — cf.
-                // rule 21, #73) ; les lectures de sources et `seasons` restent sur le collecteur.
+                // Filtre par saison (#70) + roster hôte + par joueur si demandé, tous modes 12/24.
+                // Seul ce mapping/groupage CPU est déporté sur `Dispatchers.Default` (withContext,
+                // pas flowOn — rule 21, #73) ; lectures de sources et `seasons` sur le collecteur.
                 val (details, grouped) = withContext(Dispatchers.Default) {
                     val details = wars
                         .filterBySeason(activeSeason)

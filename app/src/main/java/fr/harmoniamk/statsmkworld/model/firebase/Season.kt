@@ -7,15 +7,8 @@ import java.io.Serializable
 
 /**
  * Saison d'équipe (source de vérité RTDB `seasons/{teamId}`, cachée en Room via
- * [SeasonEntity]). Le nœud `seasons/{teamId}` est un **tableau indexé** (`0,1,2…`)
- * d'objets `Season`, en ordre chronologique — la dernière = la plus récente.
- *
- * - [number] : numéro de saison (non null) ;
- * - [start]  : timestamp de début, epoch millis (non null) ;
- * - [end]    : timestamp de fin, epoch millis, **nullable** — `null` = saison en cours.
- *
- * Modèle « couche Firebase » (cf. `CLAUDE.md`, architecture 3 couches) : la conversion
- * vers/depuis Room passe par les constructeurs dédiés ([Season] ⇄ [SeasonEntity]).
+ * [SeasonEntity]). Le nœud est un tableau indexé d'objets en ordre chronologique — la
+ * dernière = la plus récente. [start]/[end] en epoch millis ; [end] `null` = en cours.
  */
 @Parcelize
 data class Season(

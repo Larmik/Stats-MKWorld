@@ -34,8 +34,8 @@ import kotlinx.coroutines.launch
 fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val rows = viewModel.rows.collectAsStateWithLifecycle()
-    // 9 emplacements (max de la maquette) ; seules les `rows` premières lignes sont
-    // affichées et prises en compte. Réduire le compteur ne détruit pas la saisie.
+    // 9 emplacements (max) ; seules les `rows` premières lignes sont affichées (réduire le
+    // compteur ne détruit pas la saisie).
     val valuesListName = remember { mutableStateListOf("", "", "", "", "", "", "", "", "") }
     val valuesListScore = remember { mutableStateListOf("", "", "", "", "", "", "", "", "") }
 
@@ -114,8 +114,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // 3. CTA « Tab classique & partager » (icône share) — bouton UNIQUE MKButton
-            //    (fond blanc translucide, plus de dégradé ad hoc — rule 16 / #67).
+            // 3. CTA « Tab classique & partager » (MKButton unique, rule 16 / #67).
             item {
                 Spacer(Modifier.height(3.dp))
                 MKButton(

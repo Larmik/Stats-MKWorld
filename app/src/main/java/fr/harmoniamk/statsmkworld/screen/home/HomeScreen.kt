@@ -48,19 +48,15 @@ fun HomeScreen(
     onPlayerProfile: (String) -> Unit,
     onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
-    // onAddWar est désormais consommé par le pôle Wars (WarListScreen), plus par
-    // l'Accueil : le sélecteur/CTA « Nouvelle war » a déménagé vers le pôle Wars.
     onWarDetailsClick: (WarDetails) -> Unit,
-    // Ouvre l'écran « Voir par période » (#80) depuis le pôle Wars → graphe racine.
+    // Ouvre « Voir par période » (#80) depuis le pôle Wars → graphe racine.
     onPeriodView: () -> Unit,
     onStats: (StatsType) -> Unit,
     onSearch: () -> Unit,
-    // Lien « Résultats → » du pôle Stats (joueur courant) : remonte au graphe racine
-    // pour ouvrir l'historique filtré sur « me » (#65) — évite le NavHost interne.
+    // « Résultats → » du pôle Stats : historique filtré sur « me » sur le graphe racine (#65).
     onResults: () -> Unit,
-    // « Classement entier » Circuits / Adversaires du pôle Stats (joueur courant) → classement
-    // complet scopé (#67 round 3). `isTeam` = portée courante (Équipe vs Individuel). Remonte
-    // au graphe racine (les écrans de classement y vivent).
+    // « Classement entier » Circuits/Adversaires du pôle Stats → classement scopé (#67 round 3).
+    // `isTeam` = portée courante (Équipe vs Individuel).
     onMapsRanking: (isTeam: Boolean) -> Unit,
     onOpponentsRanking: (isTeam: Boolean) -> Unit,
     onDisconnect: () -> Unit,
@@ -70,8 +66,7 @@ fun HomeScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Depuis n'importe quel pôle autre qu'Accueil, ← ramène au pôle Accueil (racine du
-    // NavHost imbriqué) ; depuis Accueil, ← quitte l'app (onBack).
+    // Hors Accueil, ← ramène à l'Accueil (racine) ; depuis l'Accueil, ← quitte (rule 14).
     val onWelcome = currentDestination?.hierarchy?.any { it.route == BottomNavItem.WELCOME.route } == true
     val backToWelcome: () -> Unit = {
         navController.navigate(BottomNavItem.WELCOME.route) {
@@ -131,7 +126,7 @@ fun HomeScreen(
                     )
                 }
                 composable(route = "Home/WarList") {
-                    // Pôle Wars : historique complet de l'équipe (pas de filtre joueur).
+                    // Pôle Wars : historique complet de l'équipe (userId = null).
                     WarListScreen(
                         viewModel = hiltViewModel(
                             key = "warlist-all",
@@ -145,9 +140,8 @@ fun HomeScreen(
                     )
                 }
                 composable(route = "Home/Stats") {
-                    // Pôle Stats (ticket #25) : écran riche à onglets Individuelles /
-                    // Équipe pour le joueur courant (« mes stats »). userId = null →
-                    // le VM résout le joueur courant.
+                    // Pôle Stats (#25) : onglets Individuelles/Équipe du joueur courant
+                    // (userId = null → le VM le résout).
                     StatsFullScreen(
                         viewModel = hiltViewModel(
                             key = "me-stats",
@@ -155,28 +149,21 @@ fun HomeScreen(
                                 factory.create(userId = null, showTabs = true)
                             }
                         ),
-                        // Historique du joueur courant : remonte au graphe racine (#65).
                         onResults = onResults,
-                        // « Classement entier » des podiums Circuits / Adversaires → classement
-                        // complet SCOPÉ au périmètre courant (joueur courant en Individuelles,
-                        // équipe en Équipe) sur le graphe racine (#67 round 3).
                         onMapsSeeAll = onMapsRanking,
                         onOpponentsSeeAll = onOpponentsRanking
                     )
                 }
                 composable(route = "Home/Rankings") {
-                    // Pôle Classements (#26) : écran unique à sous-onglets Joueurs /
-                    // Adversaires / Circuits (plus de menu intermédiaire). Les lignes
-                    // mènent aux fiches statistiques via onStats.
+                    // Pôle Classements (#26) : sous-onglets Joueurs/Adversaires/Circuits ; les
+                    // lignes mènent aux fiches via onStats.
                     StatsRankingScreen(
                         viewModel = hiltViewModel(key = "rankings"),
                         onStats = onStats
                     )
                 }
                 composable(route = "Home/Profile") {
-                    // Pôle Profil (#28) : profil unique à onglets fusionnés Joueur /
-                    // Équipe. Les CTA « Voir mes statistiques » / « Voir les stats de
-                    // l'équipe » basculent vers le pôle Stats avec la bonne portée.
+                    // Pôle Profil (#28) : onglets fusionnés Joueur/Équipe.
                     ProfileScreen(
                         onBack = backToWelcome,
                         onPlayerClick = onPlayerProfile,

@@ -146,9 +146,6 @@
     <string name="wars_played">Wars played</string>
     <string name="maps_played">Maps played</string>
     <string name="statistiques">Statistics</string>
-    <string name="statistiques_individuelles">Individual statistics</string>
-    <string name="statistiques_de_l_quipe">Team statistics</string>
-    <string name="statistiques_des_joueurs">Player statistics</string>
     <string name="statistiques_des_adversaires">Opponent statistics</string>
     <string name="statistiques_des_circuits">Track statistics</string>
     <string name="individuel">Individual</string>

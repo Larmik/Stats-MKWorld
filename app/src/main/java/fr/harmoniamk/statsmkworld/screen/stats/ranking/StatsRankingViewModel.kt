@@ -34,18 +34,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-/**
- * Onglets du pôle Classements (#26) : Joueurs / Adversaires / Circuits, présentés
- * directement sur l'écran (plus de menu intermédiaire). L'ordre = ordre du prototype.
- */
+/** Onglets du pôle Classements (#26) : Joueurs / Adversaires / Circuits. */
 enum class RankingTab { PLAYERS, OPPONENTS, TRACKS }
 
 /**
- * Critères de tri : COUNT (Participation · Occurrences · Fréquence selon l'onglet, **défaut** —
- * pour l'onglet Joueurs, tri par **taux de participation** #78 ; sinon par compteur),
- * Winrate, Score moyen. L'ordre de l'enum = ordre des chips affichés (COUNT en 1ʳᵉ
- * position et sélectionné par défaut, tri décroissant). L'ancien
- * `SortType.NAME` (chip « Nom ») n'apparaît pas dans le prototype → non proposé.
+ * Critères de tri (ordre = ordre des chips, COUNT défaut, tri décroissant). COUNT =
+ * Participation (Joueurs, #78) · Occurrences · Fréquence selon l'onglet.
  */
 enum class SortType { COUNT, WINRATE, AVERAGE }
 
@@ -58,9 +52,8 @@ sealed interface RankingItem {
     val sampleSize: Int
 
     /**
-     * [participationRate] (#78) : % de wars de l'équipe (sur la fenêtre/saison filtrée)
-     * où le joueur est présent = `warsPlayed × 100 / total wars équipe`. Calculé dans le VM
-     * (mono-consommateur, rule 32) avec le total d'équipe, absent du modèle [Stats].
+     * [participationRate] (#78) : % de wars de l'équipe où le joueur est présent
+     * (`warsPlayed × 100 / total wars équipe`). Calculé dans le VM (rule 32), absent de [Stats].
      */
     class PlayerRanking(
         val player: PlayerEntity,
@@ -131,17 +124,14 @@ class StatsRankingViewModel @Inject constructor(
 ) : ViewModel() {
 
     /**
-     * Section de l'onglet Joueurs : membres de l'équipe vs alliés (deux en-têtes). Un
-     * allié a `rosterId` non résolvable parmi les rosters mkworld de l'équipe (dans le
-     * cache `playersRankList`, clé `Pair(1, "Allies")`) ; un membre = `Pair(0, roster)`.
+     * Section de l'onglet Joueurs : membres vs alliés. Un allié a un `rosterId` non résolvable
+     * parmi les rosters mkworld de l'équipe.
      */
     data class PlayerSection(val titleRes: Int, val players: List<RankingItem.PlayerRanking>)
 
     data class State(
-        // Chargement de la zone de classements : true au 1er chargement ET remis à true au
-        // changement de saison (#73), le temps du recompute lourd off-main ; le compute émet
-        // ensuite `loading = false`. Les interactions légères (onglet/tri/recherche/curseur,
-        // via `recompute`) ne le touchent pas (elles préservent la valeur courante).
+        // Chargement de la zone de classements : true au 1er chargement et au changement de
+        // saison (#73), le temps du recompute off-main. Interactions légères ne le touchent pas.
         val loading: Boolean = true,
         val tab: RankingTab = RankingTab.PLAYERS,
         val sort: SortType = SortType.COUNT,
@@ -157,9 +147,8 @@ class StatsRankingViewModel @Inject constructor(
         val maxOccurrences: Int = 1,
         val currentUserId: String? = null,
         val is24PEnabled: Boolean? = null,
-        // Filtre par saison (#70) : liste des saisons (ordre chrono) + saison sélectionnée
-        // (`selectedSeasonNumber` null = tout l'historique, défaut = saison en cours). Les
-        // rankings sont recalculés à la volée sur les wars de l'intervalle sélectionné.
+        // Filtre saison (#70) : `selectedSeasonNumber` null = tout l'historique, défaut = saison
+        // en cours. Rankings recalculés à la volée sur l'intervalle.
         val seasons: List<SeasonEntity> = listOf(),
         val selectedSeasonNumber: Int? = null
     )
@@ -175,28 +164,23 @@ class StatsRankingViewModel @Inject constructor(
         data class Specific(val number: Int) : SeasonFilter
     }
 
-    // Sélection de saison courante (#70) : recompute déclenché à chaque changement via
-    // `combine` avec le flux de wars → recalcul à la volée des rankings sur l'intervalle.
+    // Sélection de saison (#70) : `combine` avec les wars → recompute à la volée.
     private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
 
     private val _state = MutableStateFlow(State())
     private var currentUser: MKCPlayer? = null
-    // Listes brutes (non filtrées/triées) mémorisées pour re-filtrer à chaque interaction.
-    // Joueurs : conservés PAR SECTION (membre = clé Pair(0,…), allié = Pair(1,"Allies")).
+    // Listes brutes mémorisées pour re-filtrer à chaque interaction (membres / alliés).
     private var allMembers: List<RankingItem.PlayerRanking> = listOf()
     private var allAllies: List<RankingItem.PlayerRanking> = listOf()
     private var allOpponents: List<RankingItem.OpponentRanking> = listOf()
     private var allTracks: List<RankingItem.TrackRanking> = listOf()
-    // Saisons chargées + sélection courante (#70) : mémorisées ici pour être ré-injectées à
-    // CHAQUE recompute(). Sinon une interaction (onglet/tri/recherche/curseur) émet un `_state`
-    // dont les `seasons` sont vides (le `_state` interne n'est pas alimenté par la branche
-    // `combine`) → le dropdown de saison disparaîtrait après toute interaction.
+    // Saisons + sélection (#70) mémorisées pour ré-injection à chaque recompute() : sinon une
+    // interaction émet un `_state` aux `seasons` vides → le dropdown disparaîtrait.
     private var loadedSeasons: List<SeasonEntity> = listOf()
     private var loadedSelectedSeasonNumber: Int? = null
 
     val state = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
-            // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît dès
-            // que l'hydratation eager écrit les saisons, sans redémarrage.
+            // Saisons observées en Flow (#73) : le dropdown apparaît dès l'hydratation eager.
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             val is24p = dataStoreRepository.is24PEnabled.firstOrNull() == true
             val activeSeason = when (seasonFilter) {
@@ -206,11 +190,8 @@ class StatsRankingViewModel @Inject constructor(
             }
             loadedSeasons = seasons
             loadedSelectedSeasonNumber = activeSeason?.number
-            // Rankings recalculés à la volée sur les wars filtrées par saison (recompute
-            // on-the-fly, stratégie recommandée du ticket), remplaçant le cache mono-jeu de
-            // StatsRepository (peuplé all-time par InitStatsWorker). Le filtre saison
-            // s'applique à `warList`, base des QUATRE classements (membres, alliés,
-            // adversaires, circuits). Filtres alignés sur le worker : host/roster + 12p/24p.
+            // Rankings recalculés à la volée sur les wars filtrées par saison.
+            // Filtres : host/roster + mode 12p/24p.
             computeRankings(warEntities.filterBySeason(activeSeason), is24p)
             _state.value.copy(
                 loading = false,
@@ -222,10 +203,8 @@ class StatsRankingViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
     /**
-     * Recalcule les listes brutes de rankings (membres/alliés/adversaires/circuits) sur
-     * les [wars] déjà filtrées par saison. Réplique la logique de `InitStatsWorker`
-     * (mono-consommateur ici → dans le VM, rule 32) : filtre host/roster + 12p/24p, puis
-     * calcule joueurs (groupés membres/alliés), adversaires et circuits.
+     * Recalcule les listes brutes (membres/alliés/adversaires/circuits) sur les [wars] filtrées
+     * par saison : filtre host/roster + mode 12p/24p.
      */
     private suspend fun computeRankings(warEntities: List<WarEntity>, is24p: Boolean) = withContext(Dispatchers.Default) {
         val currentPlayer = currentUser
@@ -244,8 +223,7 @@ class StatsRankingViewModel @Inject constructor(
 
         // Joueurs : groupés membre (rattaché à un roster mkworld) / allié (Pair(1,"Allies")).
         val userList = databaseRepository.getPlayers().firstOrNull().orEmpty().sortedBy { it.name }
-        // Dénominateur du taux de participation (#78) = wars de l'équipe sur la fenêtre/saison.
-        // Garde-fou dénominateur nul → 0 % (pas de division par zéro).
+        // Dénominateur du taux de participation (#78) = wars de l'équipe ; garde-fou nul → 0 %.
         val teamWarsCount = warDetailsList.size
         val playersByGroup = userList
             .mapNotNull { user ->
@@ -283,24 +261,19 @@ class StatsRankingViewModel @Inject constructor(
             .map { RankingItem.OpponentRanking(it.first, it.second) }
     }
 
-    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
-     * IMMÉDIATEMENT (via `_state`) — via `recompute()` pour conserver seasons/listes cohérentes —
-     * pendant le recompute lourd off-main (#73) ; la branche `combine` émet ensuite
-     * `loading = false`. */
+    /** Sélection de saison (`number` null = tout l'historique). Pose `loading` via `recompute()`
+     * pendant le recompute off-main (#73) ; la branche `combine` émet ensuite `loading = false`. */
     fun onSeasonSelected(number: Int?) {
         _state.value = _state.value.copy(loading = true).recompute()
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
-    // Les interactions LÉGÈRES (onglet/tri/recherche/curseur) ne font que re-filtrer/trier des
-    // listes DÉJÀ calculées → instantanées : elles posent explicitement `loading = false`.
-    // Indispensable car la branche `combine` émet `loading = false` dans le flux MERGÉ mais
-    // n'écrit jamais dans `_state` : `_state.value.loading` resterait sinon à `true` (défaut) et
-    // masquerait la liste après toute interaction (#73, régression classements). Seul
-    // `onSeasonSelected` pose `loading = true` (recompute lourd off-main via `combine`).
+    // Interactions légères (onglet/tri/recherche/curseur) : re-filtrage instantané → posent
+    // explicitement `loading = false` (la branche `combine` n'écrit jamais dans `_state`, qui
+    // resterait sinon à `true` et masquerait la liste, #73). Seul `onSeasonSelected` pose `true`.
     fun onTabSelected(index: Int) {
         val tab = RankingTab.entries.getOrElse(index) { RankingTab.PLAYERS }
-        // Nouvel onglet : tri par défaut (occurrences), recherche vide, curseur réinitialisé.
+        // Nouvel onglet : tri par défaut, recherche vide, curseur réinitialisé.
         _state.value = _state.value.copy(loading = false, tab = tab, sort = SortType.COUNT, search = "")
             .recompute(resetOccurrences = true)
     }
@@ -323,13 +296,12 @@ class StatsRankingViewModel @Inject constructor(
     }
 
     /**
-     * Applique recherche + filtre « occurrences min » + tri sur les listes brutes de
-     * l'onglet courant. [resetOccurrences] recalcule le max du curseur (plus haut
-     * compteur de l'onglet) et remet le min à 1 (changement d'onglet / (re)chargement).
+     * Recherche + filtre « occurrences min » + tri sur les listes brutes de l'onglet courant.
+     * [resetOccurrences] recalcule le max du curseur et remet le min à 1 (changement d'onglet / (re)chargement).
      */
     private fun State.recompute(resetOccurrences: Boolean = false): State {
         val query = search.trim().lowercase()
-        // Compteur max de l'onglet (borne haute du curseur) — sur les données non filtrées.
+        // Compteur max de l'onglet (borne haute du curseur), sur les données non filtrées.
         val newMax = when (tab) {
             RankingTab.PLAYERS -> (allMembers + allAllies)
             RankingTab.OPPONENTS -> allOpponents
@@ -337,9 +309,7 @@ class StatsRankingViewModel @Inject constructor(
         }.maxOfOrNull { it.sampleSize }?.coerceAtLeast(1) ?: 1
         val newMin = if (resetOccurrences) 1 else minOccurrences.coerceIn(1, newMax)
 
-        // Saisons + sélection ré-injectées à CHAQUE recompute (y compris les recompute
-        // déclenchés par interaction via `_state`) → le dropdown de saison reste renseigné
-        // en permanence, quel que soit l'onglet ou la vacuité de la liste filtrée.
+        // Saisons + sélection ré-injectées à chaque recompute → dropdown toujours renseigné.
         val base = copy(seasons = loadedSeasons, selectedSeasonNumber = loadedSelectedSeasonNumber)
         return when (tab) {
             RankingTab.PLAYERS -> {
@@ -370,9 +340,8 @@ class StatsRankingViewModel @Inject constructor(
     }
 
     /**
-     * Recherche (par [name]) + filtre occurrences (`sampleSize >= min`) + tri [sort].
-     * [count] = valeur du tri COUNT (défaut = `sampleSize`) ; l'onglet Joueurs le
-     * surcharge avec le taux de participation (#78), les autres gardent le compteur.
+     * Recherche (par [name]) + filtre occurrences (`sampleSize >= min`) + tri [sort]. [count] =
+     * valeur du tri COUNT (défaut `sampleSize` ; Joueurs = taux de participation #78).
      */
     private fun <T : RankingItem> List<T>.finalize(
         sort: SortType,

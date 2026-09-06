@@ -88,11 +88,7 @@ class BaseViewModel @Inject constructor(dataStoreRepository: DataStoreRepository
         ))
 }
 
-/**
- * Bouton d'action circulaire-arrondi de l'appbar (`.ic-btn` de la maquette : carré
- * 32 dp, coins 10 dp, fond blanc translucide, bordure douce, icône blanche).
- * Utilisé pour le retour ([BaseScreen] `onBack`) et la loupe/registre (`onSearch`).
- */
+/** Bouton d'action de l'appbar (`.ic-btn` maquette) : retour ou loupe/registre. */
 @Composable
 private fun AppBarIconButton(iconRes: Int, contentDescription: String, onClick: () -> Unit) {
     Box(
@@ -114,10 +110,8 @@ private fun AppBarIconButton(iconRes: Int, contentDescription: String, onClick: 
 }
 
 /**
- * Écran de base : fond en dégradé + **appbar conforme maquette** (`.appbar`, #50 pt.2) :
- * bouton retour optionnel ([onBack]) à gauche, titre (Bungee) + sous-titre alignés à
- * gauche, action loupe→registre optionnelle ([onSearch]) à droite. Le titre est en blanc,
- * comme dans la maquette.
+ * Écran de base : fond dégradé + appbar maquette (`.appbar`, #50 pt.2) — retour optionnel
+ * ([onBack]) à gauche, titre + sous-titre, action loupe→registre optionnelle ([onSearch]) à droite.
  */
 @Composable
 fun BaseScreen(
@@ -126,22 +120,17 @@ fun BaseScreen(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     onSearch: (() -> Unit)? = null,
-    // Action droite de l'appbar : icône/libellé personnalisables (défaut = loupe→registre).
-    // Ex. écran Wars : « Créer une war » (ic_add), affiché seulement si aucune war en cours (#50).
+    // Action droite personnalisable (défaut loupe→registre ; ex. Wars « Créer une war », #50).
     actionIcon: Int = R.drawable.ic_search,
     actionContentDescription: String? = null,
-    // Contenu additionnel aligné à DROITE dans l'app bar, avant l'icône d'action (#70) :
-    // sert au menu déroulant de saison (MKSeasonDropdown), mutualisé sur Accueil/Wars/
-    // Stats/Classements. Null = rien (comportement inchangé pour les autres écrans).
+    // Contenu à droite avant l'icône d'action (#70) : dropdown de saison (MKSeasonDropdown).
     headerTrailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
 
     val viewModel: BaseViewModel = hiltViewModel()
     val colors = viewModel.colors.collectAsState()
-    // Inset de la status bar : la bande d'appbar (et le fond) s'étend DERRIÈRE la status bar
-    // (edge-to-edge, cf. MainActivity.enableEdgeToEdge), mais le CONTENU (titre/boutons) est
-    // décalé sous elle pour ne pas passer dessous (#50 header edge-to-edge).
+    // Inset status bar : fond edge-to-edge derrière la barre, contenu décalé dessous (#50).
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(
         modifier = modifier
@@ -154,9 +143,7 @@ fun BaseScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             title?.let {
-                // Bande d'appbar pleine largeur ET jusqu'au bord haut physique (`.appbar` :
-                // fond rgba(48,51,54,.5)) : le fond couvre la zone status bar, le contenu de
-                // la Row est repoussé dessous par le top padding = inset status bar.
+                // Bande d'appbar pleine largeur jusqu'au bord haut ; contenu repoussé sous la status bar.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -179,7 +166,6 @@ fun BaseScreen(
                             MKText(text = sub, textColor = Colors.white66, fontSize = 14, font = Fonts.NunitoBD, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp))
                         }
                     }
-                    // Dropdown de saison (#70) aligné à droite, avant l'icône d'action.
                     headerTrailing?.invoke()
                     onSearch?.let { action ->
                         AppBarIconButton(
@@ -194,9 +180,8 @@ fun BaseScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    // Marge latérale du contenu (l'appbar est pleine largeur, elle, hors padding).
                     .padding(horizontal = 16.dp)
-                    // Sans appbar (pas de titre), compenser soi-même l'inset status bar + marge d'origine.
+                    // Sans appbar, compenser soi-même l'inset status bar.
                     .padding(top = if (title == null) statusBarTop + 16.dp else 0.dp)
                     .padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally

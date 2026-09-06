@@ -180,16 +180,13 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         currentRosterId()?.let { database.child("wars").child(it).child(war.id.toString()).setValue(war) }
     }
 
-    // Écrit une war historique dans un nœud hôte explicite (wars/{teamId}/{warId}),
-    // indépendamment du roster courant. Utilisé par la migration teamId→rosterId
-    // déclenchée depuis l'écran Debug : chaque war est réécrite sous son propre
-    // nœud hôte (war.teamHost), pas sous le roster de l'utilisateur courant.
+    // Écrit une war historique sous un nœud hôte explicite (wars/{teamId}/{warId}), pas le
+    // roster courant. Pour la migration teamId→rosterId (Debug) : réécriture sous war.teamHost.
     override suspend fun writeWar(teamId: String, war: War) {
         database.child("wars").child(teamId).child(war.id.toString()).setValue(war)
     }
 
-    // Suppression d'une war historique irrécupérable (adversaire introuvable),
-    // déclenchée manuellement depuis l'écran Debug après décision humaine.
+    // Suppression manuelle (Debug) d'une war historique irrécupérable (adversaire introuvable).
     override suspend fun deleteWar(teamId: String, warId: String) {
         database.child("wars").child(teamId).child(warId).removeValue()
     }
@@ -209,12 +206,10 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
     }
 
     /**
-     * Réhydrate le DataStore war si celui-ci est vide alors que la war Firebase
-     * a été créée par le joueur courant (playerHostId == mkcPlayer.id). Permet
-     * au créateur de retrouver ses droits d'édition après un DataStore nettoyé
-     * (logout, réinstallation, autre appareil). Sans effet si la war est nulle,
-     * si le DataStore contient déjà une war, ou si le joueur courant n'est pas
-     * le créateur (id absent → 0L, war legacy → playerHostId 0L).
+     * Réhydrate le DataStore war s'il est vide alors que la war Firebase a été créée par le
+     * joueur courant (playerHostId == mkcPlayer.id) — restaure ses droits d'édition après un
+     * DataStore nettoyé (logout, réinstallation). Sans effet sinon (war nulle, DataStore déjà
+     * peuplé, joueur non créateur).
      */
     override suspend fun restoreCurrentWarIfHost(war: War?) {
         war?.let {

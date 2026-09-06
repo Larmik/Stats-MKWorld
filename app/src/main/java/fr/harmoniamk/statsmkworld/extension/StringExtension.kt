@@ -10,6 +10,11 @@ val String.displayName: String
         else -> this
     }
 
+/**
+ * Convertit un code pays ISO 3166-1 alpha-2 (ex. « FR ») en emoji drapeau correspondant,
+ * en mappant les 2 lettres sur les Regional Indicator Symbols Unicode. Chaîne trop courte
+ * (< 2 caractères) → chaîne vide.
+ */
 val String.countryFlag: String
     get() {
         if (this.length >= 2) {

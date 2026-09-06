@@ -22,8 +22,6 @@ data class Stats(
     val averagePoints: Int =
         warScores.sumOf { it.score } / warScores.sizeOrOne()
     val averagePointsLabel: String = averagePoints.warScoreToDiff(warStats.is24p)
-    val averageMapPoints: Int =
-        (averageForMaps.map { it.teamScore }.sum() / averageForMaps.sizeOrOne())
     val averagePlayerPosition: List<Int> =
         (averageForMaps.map { it.playerScore }.sum() / averageForMaps.sizeOrOne())
             .pointsToPosition(warStats.is24p)
@@ -37,35 +35,19 @@ data class Stats(
         "${(it.filter { (it.teamScore ?: 0) > 41 }.size * 100 / it.size)}%"
     }
 
-    val shockCount = averageForMaps.map { it.shockCount }.sum()
-
-    // ---------------------------------------------------------------------
-    // Lot A — Séries (streaks) & records
-    //
-    // Les séries se calculent sur les wars triées CHRONOLOGIQUEMENT. war.id est
-    // un timestamp (cf. WarDetails.date = Date(war.id)) : on trie donc les
-    // warScores par war.war.id croissant avant tout parcours de série.
-    // ---------------------------------------------------------------------
-    // Wars triées chronologiquement (war.id = timestamp). Source UNIQUE de tri
-    // pour toutes les stats temporelles : séries (ticket principal) ET forme
-    // récente (ce ticket, N dernières wars). Ne pas réintroduire de tri parallèle.
+    // Wars triées chronologiquement (war.id = timestamp). Source UNIQUE de tri pour toutes
+    // les stats temporelles (séries, forme récente) — ne pas réintroduire de tri parallèle.
     val chronologicalWars: List<WarDetails> =
         warScores.sortedBy { it.war.war.id }.map { it.war }
 
-    // Mode de la war courante (12p vs 24p), propagé depuis WarStats. Détermine la
-    // base de calcul des marges/outcomes et l'étendue de la distribution des
-    // positions (P1→P12 ou P1→P24).
+    // Mode 12p/24p (propagé depuis WarStats) : base des marges/outcomes et étendue de la
+    // distribution des positions (P1→P12 ou P1→P24).
     private val is24p: Boolean = warStats.is24p
 
     /**
-     * Résultat d'une war du point de vue de l'équipe hôte : +1 victoire, -1
-     * défaite, 0 égalité.
-     *
-     * - 12p : dérivé de l'écart de score ([WarDetails.displayedDiff]).
-     * - 24p : dérivé du podium ([War.scores] à 3 équipes) — même règle que
-     *   [WarStats] : hôte dans le top 2 des scores = victoire, dans le bottom 2
-     *   = défaite. Une position médiane possible (2ᵉ sur 3) compte donc à la fois
-     *   comme "non-défaite" côté séries d'invincibilité selon la marge.
+     * Résultat d'une war côté hôte : +1 victoire / -1 défaite / 0 égalité.
+     * - 12p : signe de l'écart de score ([WarDetails.displayedDiff]).
+     * - 24p : signe de `scoreMargin` (hôte − meilleur adverse, même règle que [WarStats]).
      */
     private fun WarDetails.outcome(): Int = when (is24p) {
         false -> when {
@@ -85,19 +67,10 @@ data class Stats(
     /** Série en cours (la plus récente), signée : >0 victoires, <0 défaites, 0 aucune. */
     val currentStreak: Int = currentStreakOf(chronologicalWars)
 
-    /**
-     * Issues (+1 victoire / 0 nul / -1 défaite) de TOUTES les wars, en ordre
-     * chronologique (plus ancienne → plus récente). Alimente les pastilles V/N/D
-     * du « Momentum » de l'écran Accueil (dashboard) : l'UI prend `takeLast(n)`
-     * pour la fenêtre choisie (5 ou 10 dernières), sans dupliquer [outcome].
-     */
+    /** Issues V/N/D de toutes les wars (chronologique) — pastilles « Momentum » du dashboard (`takeLast(n)`). */
     val chronologicalOutcomes: List<Int> = chronologicalWars.map { it.outcome() }
 
-    /**
-     * Score par war (playerScore en vue joueur, total équipe sinon), en ordre
-     * chronologique. Alimente la sparkline « Momentum » du dashboard : l'UI prend
-     * `takeLast(n)` pour la fenêtre choisie.
-     */
+    /** Score par war (joueur ou équipe) en ordre chronologique — sparkline « Momentum » (`takeLast(n)`). */
     val scoreTimeline: List<Int> = warScores.sortedBy { it.war.war.id }.map { it.score }
 
     /** Record de série de victoires (max historique). */
@@ -136,85 +109,6 @@ data class Stats(
         return streak
     }
 
-    /**
-     * Séries déclinées par adversaire (id d'opposant = rosterId/teamId) : pour
-     * chaque adversaire, la série en cours, le record de victoires et le record
-     * de défaites, calculés sur ses wars triées chronologiquement.
-     */
-    val streaksByOpponent: Map<String, StreakStats> = chronologicalWars
-        .flatMap { war -> war.war.teamOpponent.map { it to war } }
-        .groupBy({ it.first }, { it.second })
-        .mapValues { (_, wars) ->
-            StreakStats(
-                current = currentStreakOf(wars),
-                bestWin = longestStreak(wars) { it > 0 },
-                worstLoss = longestStreak(wars) { it < 0 }
-            )
-        }
-
-    /**
-     * Séries déclinées par circuit (index de map) : la série de manches
-     * gagnées/perdues sur chaque circuit, triées chronologiquement.
-     */
-    val streaksByTrack: Map<String, StreakStats> = chronologicalWars
-        .flatMap { war -> war.warTracks.map { it to it.trackOutcome() } }
-        .groupBy({ it.first.index.joinToString("-") }, { it.second })
-        .mapValues { (_, outcomes) ->
-            StreakStats(
-                current = currentStreakOfOutcomes(outcomes),
-                bestWin = longestStreakOfOutcomes(outcomes) { it > 0 },
-                worstLoss = longestStreakOfOutcomes(outcomes) { it < 0 }
-            )
-        }
-
-    private fun currentStreakOfOutcomes(outcomes: List<Int>): Int {
-        var streak = 0
-        for (outcome in outcomes.reversed()) {
-            when {
-                outcome == 0 -> if (streak != 0) break
-                streak == 0 -> streak = outcome
-                streak > 0 && outcome > 0 -> streak++
-                streak < 0 && outcome < 0 -> streak--
-                else -> return streak
-            }
-        }
-        return streak
-    }
-
-    private fun longestStreakOfOutcomes(outcomes: List<Int>, predicate: (Int) -> Boolean): Int {
-        var best = 0
-        var current = 0
-        outcomes.forEach { outcome ->
-            when (predicate(outcome)) {
-                true -> {
-                    current++
-                    if (current > best) best = current
-                }
-                else -> current = 0
-            }
-        }
-        return best
-    }
-
-    // ---------------------------------------------------------------------
-    // Lot A — Top6/Bot6 global (12p)
-    // ---------------------------------------------------------------------
-    // Une manche est « Top6 » quand les 6 joueurs de l'équipe occupent les
-    // positions 1..6 (teamScore == 61 : 15+12+10+9+8+7, barème 12p), et « Bot6 »
-    // quand ils occupent 7..12 (teamScore == 21 : 6+5+4+3+2+1). C'est une égalité
-    // EXACTE sur le score d'équipe de la manche — même définition que la table
-    // équipe MapStats.topsTable["Top 6"] / bottomsTable["Bot 6"] (les 6 positions
-    // toutes <= 6, resp. >= 7).
-
-    /** Nombre de manches Top6 (les 6 joueurs en positions 1..6, teamScore == 61). */
-    val top6Count: Int = chronologicalWars
-        .flatMap { it.warTracks }
-        .count { it.teamScore == 61 }
-    /** Nombre de manches Bot6 (les 6 joueurs en positions 7..12, teamScore == 21). */
-    val bot6Count: Int = chronologicalWars
-        .flatMap { it.warTracks }
-        .count { it.teamScore == 21 }
-
     // ---------------------------------------------------------------------
     // Lot B — Meilleures/pires maps par winrate ET par score moyen
     //
@@ -223,18 +117,11 @@ data class Stats(
     // ---------------------------------------------------------------------
     private val mapsRankable: List<TrackStats> = maps.filter { it.totalPlayed >= MIN_RANKING_SAMPLE }
 
-    val bestMapByWinrate: TrackStats? = mapsRankable.maxByOrNull { it.winRate ?: 0 }
-    val worstMapByWinrate: TrackStats? = mapsRankable.minByOrNull { it.winRate ?: 0 }
-
-    // Score d'un circuit pour le classement « par score » : en vue joueur, c'est le
-    // score DU JOUEUR sur ce circuit (playerScore), pas le score d'équipe — le
-    // MapCell affiche déjà la position moyenne du joueur, le tri doit suivre la même
-    // base. En vue équipe, teamScore.
+    // Score d'un circuit pour le classement « par score » : en vue joueur, le score DU
+    // JOUEUR (playerScore, aligné sur la position moyenne affichée par MapCell) ; en vue
+    // équipe, teamScore.
     private val TrackStats.rankingScore: Int
         get() = (if (userId != null) playerScore else teamScore) ?: 0
-
-    val bestMapByScore: TrackStats? = mapsRankable.maxByOrNull { it.rankingScore }
-    val worstMapByScore: TrackStats? = mapsRankable.minByOrNull { it.rankingScore }
 
     /** Top 3 / Flop 3 des maps par winrate (seuil ≥ 3 matchs appliqué). */
     val topMapsByWinrate: List<TrackStats> =
@@ -275,21 +162,20 @@ data class Stats(
     // l'indicateur (position : plus bas = mieux) et est géré à l'affichage.
 
     /** Forme all-time (toutes les wars) : base des deltas des fenêtres récentes. */
-    val allTimeForm: FormStats? = formStats(chronologicalScores, requestedSize = null)
+    val allTimeForm: FormStats? = formStats(chronologicalScores)
 
     /** Forme sur les 5 dernières wars ; null si aucune war. */
-    val recentForm5: FormStats? = formStats(chronologicalScores.takeLast(5), requestedSize = 5)
+    val recentForm5: FormStats? = formStats(chronologicalScores.takeLast(5))
 
     /** Forme sur les 10 dernières wars ; null si aucune war. */
-    val recentForm10: FormStats? = formStats(chronologicalScores.takeLast(10), requestedSize = 10)
+    val recentForm10: FormStats? = formStats(chronologicalScores.takeLast(10))
 
     /**
      * Construit une [FormStats] sur une fenêtre de wars (déjà triée chrono).
-     * [requestedSize] = taille demandée (5/10) pour signaler un petit échantillon ;
-     * null pour l'all-time. Les deltas sont mesurés vs [allTimeForm] (null pour
-     * l'all-time lui-même, ou si l'un des termes manque).
+     * Les deltas sont mesurés vs [allTimeForm] (null pour l'all-time lui-même, ou si
+     * l'un des termes manque).
      */
-    private fun formStats(scores: List<WarScore>, requestedSize: Int?): FormStats? {
+    private fun formStats(scores: List<WarScore>): FormStats? {
         if (scores.isEmpty()) return null
         val wars = scores.map { it.war }
         val tracks = wars.flatMap { it.warTracks }
@@ -304,7 +190,7 @@ data class Stats(
                 .takeIf { it.isNotEmpty() }
                 ?.let { it.sum() / it.size }
         }
-        // Score moyen par manche (équipe) — même base que averageMapPoints historique.
+        // Score moyen par manche (équipe).
         val avgMapScore = tracks
             .takeIf { it.isNotEmpty() && userId == null }
             ?.let { list -> list.sumOf { it.teamScore } / list.size }
@@ -355,7 +241,6 @@ data class Stats(
         val base = allTimeForm
         return FormStats(
             sampleSize = scores.size,
-            requestedSize = requestedSize,
             winrate = winrate,
             averageScore = avgScore,
             averagePosition = avgPosition,
@@ -392,55 +277,6 @@ data class Stats(
         .takeIf { it.isNotEmpty() }
         ?.let { list -> list.sumOf { it.score } / list.size }
 
-    // --- Vague 1 : contribution du joueur à l'équipe (vue joueur only) -------
-    /**
-     * % moyen des points de l'équipe apportés par le joueur : moyenne, war par
-     * war, du ratio playerScore/teamScore (12p). Null hors vue joueur ou si
-     * aucune war exploitable. playerScore = warScores.score (vue joueur) ;
-     * teamScore = points totaux de l'équipe hôte sur la war ([WarDetails.scoreHost]).
-     */
-    val playerContribution: Int? = when (userId) {
-        null -> null
-        else -> chronologicalScores
-            .mapNotNull { warScore ->
-                warScore.war.scoreHost
-                    .takeIf { it > 0 }
-                    ?.let { team -> (warScore.score * 100f) / team }
-            }
-            .takeIf { it.isNotEmpty() }
-            ?.average()
-            ?.let { Math.round(it).toInt() }
-    }
-
-    // --- Vague 1 : régularité (écart-type ET amplitude min/max des scores) ----
-    private val scoreValues: List<Int> = chronologicalScores.map { it.score }
-
-    /** Écart-type (population) des scores par war ; null si < 2 wars. */
-    val scoreStdDev: Int? = scoreValues
-        .takeIf { it.size >= 2 }
-        ?.let { values ->
-            val mean = values.average()
-            val variance = values.sumOf { (it - mean) * (it - mean) } / values.size
-            Math.round(Math.sqrt(variance)).toInt()
-        }
-
-    /** Amplitude min/max des scores par war (null si aucune war). */
-    val scoreMin: Int? = scoreValues.minOrNull()
-    val scoreMax: Int? = scoreValues.maxOrNull()
-
-    // --- Vague 2 : distribution complète des positions P1→P12 (vue joueur) ---
-    /**
-     * Nombre de manches où le joueur a fini à chaque position (1..12 en 12p,
-     * 1..24 en 24p). Vide hors vue joueur. Étend le principe des tables
-     * individuelles de MapStats à l'ensemble des positions. L'étendue suit le
-     * mode ([is24p]) pour ne pas tronquer les positions 13..24 en 24p.
-     *
-     * NB : le RENDU de cette distribution (histogramme P1→P24, couleurs 24p)
-     * relève du ticket UI dédié — ici on garantit seulement la justesse des
-     * données produites.
-     */
-    val positionDistribution: List<Pair<Int, Int>> = positionDistributionFor(lastN = null)
-
     /**
      * Distribution des positions du joueur sur une FENÊTRE : [lastN] = null (all-time),
      * 5 ou 10 dernières wars (triées chrono). Vide hors vue joueur. Alimente le
@@ -458,53 +294,6 @@ data class Stats(
         }
     }
 
-    // --- Vague 2 : marge moyenne de victoire / défaite (gains/défaites séparés)
-    /** Marge moyenne (écart de score) lors des victoires ; null si aucune. */
-    val averageWinMargin: Int? = warMargins { it > 0 }
-    /** Marge moyenne (écart de score) lors des défaites ; null si aucune. */
-    val averageLossMargin: Int? = warMargins { it < 0 }
-
-    private fun warMargins(predicate: (Int) -> Boolean): Int? = chronologicalWars
-        .map { it.scoreMargin(is24p = is24p) }
-        .filter { predicate(it) }
-        .takeIf { it.isNotEmpty() }
-        ?.let { margins -> margins.sumOf { kotlin.math.abs(it) } / margins.size }
-
-    // --- Vague 3 : perf 1ʳᵉ vs 2ᵉ moitié de war (positions moyennes) ---------
-    // N'a de sens qu'en vue joueur (position du joueur). Index de track ordonné.
-    val firstHalfAvgPosition: Int? = halfAveragePosition(firstHalf = true)
-    val secondHalfAvgPosition: Int? = halfAveragePosition(firstHalf = false)
-
-    private fun halfAveragePosition(firstHalf: Boolean): Int? {
-        if (userId == null) return null
-        val positions = chronologicalWars.flatMap { war ->
-            val tracks = war.war.tracks
-            val mid = tracks.size / 2
-            val half = if (firstHalf) tracks.take(mid) else tracks.drop(mid)
-            half.mapNotNull { track -> track.positions.firstOrNull { it.playerId == userId }?.position }
-        }
-        return positions.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size }
-    }
-
-    // --- Vague 3 : invaincu depuis (série W+T en cours) ----------------------
-    /**
-     * Nombre de wars consécutives sans défaite (victoires + nuls) les plus
-     * récentes. Variante de [currentStreak] : compte outcome >= 0.
-     */
-    val unbeatenStreak: Int = run {
-        var streak = 0
-        for (war in chronologicalWars.reversed()) {
-            if (war.outcome() >= 0) streak++ else break
-        }
-        streak
-    }
-
-    // --- Vague 3 : points perdus en pénalités --------------------------------
-    /** Total des points de pénalité subis par l'équipe hôte sur l'historique. */
-    val penaltyPointsLost: Int = chronologicalWars.sumOf { war ->
-        war.war.penalties.filter { it.teamId == war.war.teamHost }.sumOf { it.amount }
-    }
-
 
     companion object {
         // Seuil d'échantillon minimal pour figurer dans les classements
@@ -515,9 +304,8 @@ data class Stats(
 
 /**
  * Forme d'une fenêtre de wars (all-time, 5 ou 10 dernières), avec deltas vs
- * l'all-time. [sampleSize] = nb de wars réellement disponibles ; [requestedSize] =
- * taille demandée (5/10) ou null pour l'all-time (sert à signaler un petit
- * échantillon). Les deltas sont null pour l'all-time et si un terme manque.
+ * l'all-time. [sampleSize] = nb de wars réellement disponibles. Les deltas sont null
+ * pour l'all-time et si un terme manque.
  *
  * Indicateurs (12p) : winrate, score moyen par war, position moyenne du joueur
  * (vue joueur ⇒ [averagePosition]) OU score moyen par manche (vue équipe ⇒
@@ -526,7 +314,6 @@ data class Stats(
  */
 data class FormStats(
     val sampleSize: Int,
-    val requestedSize: Int?,
     val winrate: Int?,
     val averageScore: Int?,
     val averagePosition: Int?,
@@ -556,18 +343,6 @@ data class FormStats(
 class WarScore(
     val war: WarDetails,
     val score: Int
-)
-
-/**
- * Séries associées à une entité (globale, adversaire ou circuit) :
- * - [current] série en cours signée (>0 victoires, <0 défaites, 0 aucune) ;
- * - [bestWin] record de série de victoires ;
- * - [worstLoss] record de série de défaites.
- */
-data class StreakStats(
-    val current: Int,
-    val bestWin: Int,
-    val worstLoss: Int
 )
 
 data class TrackStats(
@@ -698,19 +473,6 @@ class MapStats(
         }
     }
 
-    // Tables individuelles : nombre de manches où le joueur a fini à la position N.
-    val indivTopsTable = (1..6).map { n ->
-        n.toString() to when {
-            isIndiv -> list.count { it.warTrack.track.positions.singleOrNull { pos -> pos.position == n }?.playerId == userId }
-            else -> 0
-        }
-    }
-    val indivBottomsTable = (7..12).map { n ->
-        n.toString() to when {
-            isIndiv -> list.count { it.warTrack.track.positions.singleOrNull { pos -> pos.position == n }?.playerId == userId }
-            else -> 0
-        }
-    }
     val shockCount = list.map {
         it.warTrack.track.shocks?.filter { (isIndiv && it.playerId == userId) || !isIndiv }
             ?.sumOf { it.count }

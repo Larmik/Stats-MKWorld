@@ -21,18 +21,11 @@ import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 
 /**
  * Menu déroulant de sélection de **saison** (#70), composant **partagé unique** (rule 16)
- * réutilisé par les headers Accueil, Wars, Stats et Classements — jamais dupliqué.
+ * des headers Accueil/Wars/Stats/Classements. Stateless : sélection pilotée par
+ * [selectedSeasonNumber] (`null` = tout l'historique), choix remonté via [onSeasonSelected] ;
+ * seul l'état d'ouverture est local (rule 11). Rien affiché si [seasons] est vide.
  *
- * **Stateless** : la sélection est pilotée par [selectedSeasonNumber] (`null` = « Tout
- * l'historique ») et le choix remonte à l'appelant via [onSeasonSelected] (`null` = tout).
- * Seul l'état d'ouverture du menu est local (`mutableStateOf`, pur état UI éphémère, rule 11).
- *
- * **Style** : pastille alignée à droite dans l'app bar (fond blanc translucide `white30`,
- * bordure douce, coins 10 dp, texte + chevron blancs), cohérente avec les boutons d'app bar
- * de `BaseScreen`. ⚠️ **Écart assumé vs maquette (rules 13/15)** : le prototype ne prévoit
- * PAS de dropdown de saison dans les headers — style aligné au plus proche des boutons d'app bar.
- *
- * Renvoie sans rien afficher si [seasons] est vide (aucune saison hydratée → rien à filtrer).
+ * ⚠️ Écart assumé vs maquette (rules 13/15) : le prototype ne prévoit pas de dropdown de saison.
  */
 @Composable
 fun MKSeasonDropdown(
@@ -44,18 +37,13 @@ fun MKSeasonDropdown(
     if (seasons.isEmpty()) return
     var expanded by remember { mutableStateOf(false) }
 
-    // Libellé courant : « Saison N » si une saison précise est choisie, sinon « Tout l'historique ».
     val currentLabel = selectedSeasonNumber
         ?.let { number -> stringResource(R.string.season_label, number) }
         ?: stringResource(R.string.all_seasons)
 
-    // Le trigger ET le menu sont dans un même Box aligné à droite (`wrapContentSize(TopEnd)`) :
-    // le popup s'ancre alors sur le bord DROIT du sélecteur et s'ouvre juste en dessous
-    // (bord droit aligné), au lieu de déborder vers la gauche (retour utilisateur, point 3).
+    // Trigger + menu dans un Box aligné TopEnd : popup ancré au bord droit, sans déborder à gauche.
     Box(modifier = modifier.wrapContentSize(Alignment.TopEnd)) {
-        // Pastille de header partagée (rule 16) : même style que « Voir par période » (#80),
-        // avec un chevron « ▾ » en trailing (aucun drawable de flèche vers le bas dans le
-        // projet ; le texte évite d'ajouter un asset — écart mineur documenté).
+        // Pastille de header partagée (rule 16) ; chevron « ▾ » en trailing (pas de drawable dédié).
         MKHeaderChip(
             label = currentLabel,
             onClick = { expanded = true },
@@ -67,11 +55,9 @@ fun MKSeasonDropdown(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            // Ancre le popup à droite : dans un parent aligné TopEnd, le menu se colle au
-            // bord droit du sélecteur (offset y pour l'ouvrir juste sous la pastille).
             offset = DpOffset(x = 0.dp, y = 4.dp)
         ) {
-            // « Tout l'historique » en tête (valeur null), puis une entrée par saison.
+            // « Tout l'historique » (null) en tête, puis une entrée par saison.
             SeasonMenuItem(
                 label = stringResource(R.string.all_seasons),
                 selected = selectedSeasonNumber == null
@@ -92,11 +78,7 @@ fun MKSeasonDropdown(
     }
 }
 
-/**
- * Item du menu : libellé + mise en évidence de l'entrée sélectionnée en **vert**
- * (`Colors.green`, accent existant de la palette) — plus lisible sur le fond clair du
- * `DropdownMenu` que le jaune précédent (retour utilisateur, point 2).
- */
+/** Item du menu : entrée sélectionnée mise en évidence en vert (lisible sur le fond clair). */
 @Composable
 private fun SeasonMenuItem(label: String, selected: Boolean, onClick: () -> Unit) {
     DropdownMenuItem(

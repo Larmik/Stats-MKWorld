@@ -18,22 +18,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * Relecture **en lecture seule** d'une course jouée (pôle Wars, écran `trackdetails` de la
- * maquette 5 pôles, ticket #47). Fournit à l'écran :
- * - le circuit ([WarTrackDetails.index]) + son score de manche (`hôte - adverse`) et la diff
- *   signée, pour la carte en-tête « Course N · Score X (±diff) » ;
- * - la liste des joueurs avec leur **position** et leur **nombre de shocks** (grille
- *   « Positions & shocks », lecture seule) ;
- * - la visibilité du bouton « Éditer la course ».
- *
- * **Numéro de course** ([courseNumber]) est calculé au site de navigation (CurrentWar /
- * WarDetails, où la liste ordonnée des courses est connue).
- *
- * Bouton « Éditer la course » : visible tant que la war **n'est pas validée** (encore en cours en
- * local, `dataStoreRepository.war != null`) et que l'appelant autorise l'édition ([editing]).
- * **Toutes** les courses restent éditables tant que la war n'est pas validée (y compris la
- * dernière). Depuis WarDetails (war validée/historique), [editing] vaut `false` → bouton masqué
- * naturellement — cf. ticket #47.
+ * Relecture en lecture seule d'une course jouée (#47) : circuit + score de manche, joueurs
+ * (position + shocks), et visibilité du bouton « Éditer ». [courseNumber] est calculé au site de
+ * navigation. Bouton « Éditer » visible tant que la war n'est pas validée (`war != null`) ET que
+ * [editing] est vrai (false depuis WarDetails → masqué).
  */
 @HiltViewModel(assistedFactory = TrackDetailsViewModel.Factory::class)
 class TrackDetailsViewModel @AssistedInject constructor(
@@ -65,8 +53,7 @@ class TrackDetailsViewModel @AssistedInject constructor(
     val state = flowOf(details)
         .filterNotNull()
         .map { track ->
-            // Une course reste éditable tant que la war n'est pas validée (encore en cours en
-            // local) et que l'appelant autorise l'édition (ticket #47).
+            // Éditable tant que la war n'est pas validée et que l'appelant l'autorise (#47).
             val hasCurrentWar = dataStoreRepository.war.firstOrNull() != null
             val players = mutableListOf<PlayerPosition>()
             track.track.positions.forEach { position ->

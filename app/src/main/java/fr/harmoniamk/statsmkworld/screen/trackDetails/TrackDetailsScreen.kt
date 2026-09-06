@@ -41,21 +41,9 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
 /**
- * Relecture **en lecture seule** d'une course jouée (pôle Wars, écran `trackdetails` de la
- * maquette 5 pôles, ticket #47). Rendu pixel-perfect vs la maquette (rules 13/15) :
- *
- * 1. **Carte en-tête** ([TrackHeaderCard]) : illustration du circuit + nom (Bungee) + sous-titre
- *    « Course N · {score hôte - adverse} (±diff) » (diff colorisée vert/rouge/blanc). Style aligné
- *    sur la carte en-tête du Résumé d'AddTrack (cohérence de l'epic).
- * 2. **Carte « Positions & shocks »** : grille 2 colonnes de tuiles (nom + **position** rendue avec
- *    la font `MKPosition` colorée par [Int.positionColor], **chiffre seul**, + icône shock `x{n}`
- *    quand le joueur a ≥ 1 shock). Lecture seule.
- * 3. Bouton **« Éditer la course »** → EditTrack, visible tant que la war **n'est pas validée**
- *    (encore en cours) et que l'édition est autorisée (cf. [TrackDetailsViewModel]). Toutes les
- *    courses restent éditables tant que la war n'est pas validée (y compris la dernière).
- *
- * Écran du graphe racine (poussé par-dessus CurrentWar / WarDetails) → **pas de bottombar**,
- * aucune marge basse requise (rule 17).
+ * Relecture en lecture seule d'une course jouée (#47) : carte en-tête ([TrackHeaderCard]),
+ * grille « Positions & shocks », et bouton « Éditer la course » (visible tant que la war n'est
+ * pas validée, cf. [TrackDetailsViewModel]). Graphe racine → pas de bottombar (rule 17).
  */
 @Composable
 fun TrackDetailsScreen(
@@ -105,10 +93,8 @@ fun TrackDetailsScreen(
 }
 
 /**
- * Tuile joueur (lecture seule) de la grille « Positions & shocks » (`.two > .b` de la maquette) :
- * nom (petit, majuscule atténué) puis, sur une ligne, la **position** — chiffre seul rendu avec
- * la font `MKPosition` et coloré par [Int.positionColor] (comme partout dans l'app) — suivie de
- * l'icône shock + `x{n}` **uniquement** si le joueur a au moins un shock ([shockCount] > 0).
+ * Tuile joueur (lecture seule) : nom + position (font `MKPosition`, colorée par [Int.positionColor])
+ * + icône shock `x{n}` si [shockCount] > 0.
  */
 @Composable
 private fun PositionShockTile(
@@ -162,9 +148,8 @@ private fun PositionShockTile(
 }
 
 /**
- * Carte en-tête : illustration du dernier circuit de la manche + nom (Bungee) + sous-titre
- * « Course N · {score hôte - adverse} (±diff) ». La diff est colorisée (vert/rouge/blanc via
- * [Int.diffColor]) ; en 24 j (plusieurs adversaires) le score/diff par manche n'est pas affiché.
+ * Carte en-tête : illustration du dernier circuit + nom + sous-titre « Course N · score (±diff) »,
+ * diff colorisée ([Int.diffColor]). En 24p, pas de score/diff par manche.
  */
 @Composable
 private fun TrackHeaderCard(track: WarTrackDetails, courseNumber: Int) {
@@ -184,9 +169,7 @@ private fun TrackHeaderCard(track: WarTrackDetails, courseNumber: Int) {
                 lastMap?.let {
                     MKText(text = stringResource(it.label), font = Fonts.Bungee, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start, maxLines = 2)
                 }
-                // Sous-titre « Course N · score hôte - adverse (±diff) » — le score des deux équipes
-                // (WarTrackDetails.displayedResult) puis la diff colorisée (12 j uniquement ; en 24 j,
-                // pas de score/diff par manche, l'adversaire étant saisi ailleurs).
+                // Sous-titre « Course N · score (±diff) », diff colorisée (12p uniquement).
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     MKText(
                         text = stringResource(R.string.trackdetails_course_prefix, courseNumber),

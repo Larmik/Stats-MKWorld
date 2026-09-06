@@ -56,7 +56,6 @@ class SignupViewModel @AssistedInject constructor(
     }
 
     data class State(
-        val launched: Boolean = false,
         val currentPage: Int = 0
     )
 
@@ -100,9 +99,8 @@ class SignupViewModel @AssistedInject constructor(
             val teamId = it.rosters?.firstOrNull { it.game == "mkworld" }?.teamID?.toString()
             val rosterId = it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
 
-            //Connexion anonyme Firebase (autorise les accès RTDB via la var auth des règles).
-            //Ne remplace pas Discord OAuth. Appelée à chaque login (UID non stable après réinstallation).
-            //Échec (réseau) toléré : on log dans Crashlytics et on poursuit sans bloquer la navigation.
+            // Connexion anonyme Firebase (accès RTDB) à chaque login (UID non stable après
+            // réinstallation). Échec réseau toléré : log Crashlytics, on poursuit.
             if (!firebaseRepository.signInAnonymously())
                 FirebaseCrashlytics.getInstance().log("signInAnonymously failed")
 
@@ -115,11 +113,9 @@ class SignupViewModel @AssistedInject constructor(
             fetchUseCase.fetchTeam(teamId.toString())
             fetchUseCase.fetchAllies(teamId.toString())
             fetchUseCase.fetchTeams()
-            // Hydratation eager des saisons (#73) : au signup, InitStatsWorker a déjà tourné à
-            // l'onCreate AVANT que le player existe, donc les saisons doivent être écrites ici,
-            // dans la même séquence awaited que les autres fetch, pour être disponibles dès
-            // l'arrivée sur Home (sinon le filtre par saison resterait masqué jusqu'au worker
-            // périodique). `fetchSeasons` self-seed l'historique si le nœud RTDB est vide.
+            // Hydratation eager des saisons (#73) : InitStatsWorker tourne avant que le player
+            // existe → les écrire ici (séquence awaited) pour les avoir dès Home. `fetchSeasons`
+            // self-seed l'historique si le nœud RTDB est vide.
             seasonRepository.fetchSeasons(teamId.toString())
             val team = dataStoreRepository.mkcTeam.firstOrNull()
             val rosters = team?.rosters?.filter { it.game == "mkworld" }
@@ -145,7 +141,7 @@ class SignupViewModel @AssistedInject constructor(
             _state.value = _state.value.copy(currentPage = 5)
             delay(2000.milliseconds)
             _onNext.emit(Unit)
-            _state.value.copy(launched = true)
+            _state.value
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)

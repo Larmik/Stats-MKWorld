@@ -25,10 +25,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Classement COMPLET des baggeurs ayant joué contre un adversaire (« Voir le classement en
- * entier » de la section « Baggeurs contre eux » #69), de la plus grande à la plus petite
- * part de shocks (total/total). Réutilise le même [OpponentDetailViewModel] (même clé de nav
- * → mêmes données) et la grille `podiumRows` mutualisée (rule 16).
+ * Classement complet des baggeurs contre un adversaire (#69), par part de shocks décroissante.
+ * Réutilise le même [OpponentDetailViewModel] et la grille `podiumRows` (rule 16).
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable

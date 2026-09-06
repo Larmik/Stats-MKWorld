@@ -58,13 +58,8 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
 /**
- * Écran de création de war (pôle Wars) — wizard **2 étapes sur un seul écran** :
- * `1 · Adversaire` → `2 · Joueurs`, bascule **dynamique** (aucune re-navigation, rule
- * 11/14). Le segmenté 12/24 et le stepper pilotent l'état réactif du ViewModel.
- *
- * Rendu pixel-perfect vs la maquette prototype UX (écran `addwar`, rule 13/15) :
- * segmenté partagé [MKSegmentedSelector], stepper partagé [MKStepper], lignes de liste
- * partagées [MKListRow] (rule 16).
+ * Création de war — wizard `Adversaire` → `Joueurs` → `Récap`, étape pilotée par le
+ * [AddWarViewModel] (aucune re-navigation, rule 11/14).
  */
 @Composable
 fun AddWarScreen(
@@ -80,13 +75,12 @@ fun AddWarScreen(
         viewModel.goToCurrent.collect { onCurrentWar() }
     }
 
-    // Retour étape-conscient, partagé entre le back système et le bouton retour de
-    // l'appbar (#50 pt.2) pour un comportement cohérent.
+    // Retour étape-conscient, partagé back système + appbar (#50 pt.2).
     val handleBack: () -> Unit = {
         when {
             // Sélecteur de roster déplié → le replier.
             state.expandedRosterTeamId != null -> viewModel.collapseRosterPicker()
-            // Étape 3 (Récap) → revenir à l'étape 2 ; étape 2 → étape 1.
+            // Étape avancée → revenir à la précédente.
             state.step > 0 -> viewModel.onStepChange(state.step - 1)
             // Étape 1 avec un adversaire déjà retenu → le retirer.
             state.teamSelected?.isNotEmpty() == true -> viewModel.onRemoveTeam()
@@ -96,9 +90,8 @@ fun AddWarScreen(
     BackHandler { handleBack() }
 
     BaseScreen(title = stringResource(R.string.addwar_title), onBack = handleBack, modifier = Modifier.fillMaxSize()) {
-        // Segmenté 12/24 MASQUÉ temporairement (#91 pt.7) : la création se fait uniquement en
-        // 12p pour la MEP. Le mode par défaut reste 12p (is24p = false, semé par la nav) ; on
-        // remettra le sélecteur plus tard. Ne PAS supprimer.
+        // Segmenté 12/24 masqué temporairement (#91 pt.7) : création en 12p seulement pour la
+        // MEP. Ne PAS supprimer (à réactiver plus tard).
         // MKSegmentedSelector(
         //     items = listOf(
         //         stringResource(R.string.mode_12_players),
@@ -108,8 +101,7 @@ fun AddWarScreen(
         //     onClick = { selected -> viewModel.onModeChange(selected == 1) }
         // )
         // Spacer(Modifier.height(11.dp))
-        // Stepper cliquable : l'étape Joueurs n'est accessible que si l'adversaire est
-        // complet ; le Récap qu'une fois l'adversaire complet ET les 6 joueurs sélectionnés.
+        // Stepper cliquable : Joueurs gaté par adversaire complet ; Récap par adversaire + 6 joueurs.
         MKStepper(
             steps = listOf(
                 stringResource(R.string.addwar_step_opponent),
@@ -252,9 +244,8 @@ private fun RosterPicker(rosters: List<MKCTeamRoster>, onRosterSelected: (MKCTea
 }
 
 /**
- * Étape 2 — progression + sélection des joueurs de ton roster (le roster adverse indicatif a
- * été retiré, #91 pt.8). Aucun CTA : la composition complète (6 joueurs) bascule
- * AUTOMATIQUEMENT sur l'étape 3 (Récap).
+ * Étape 2 — sélection des joueurs de ton roster (roster adverse retiré, #91 pt.8). Aucun CTA :
+ * la 6ᵉ sélection bascule automatiquement sur le Récap.
  */
 @Composable
 private fun ColumnScope.PlayersStep(
@@ -290,16 +281,13 @@ private fun ColumnScope.PlayersStep(
                 )
             }
         }
-        // Affichage indicatif du roster adverse retiré (#91 pt.8) : l'étape « sélection
-        // joueurs » ne montre plus que ton roster. Les previews restent alimentées pour
-        // le récap (étape 3) et la création de war.
+        // Roster adverse indicatif retiré (#91 pt.8) : previews conservées pour le Récap et la création.
     }
 }
 
 /**
- * Étape 3 — Récap : rappel des adversaire(s) retenu(s) (nom+tag roster, avatar équipe,
- * rule 12) et des 6 joueurs sélectionnés, puis bouton « Démarrer la war » (le seul CTA
- * lançant réellement [onStart]). « Précédent » revient à l'étape Joueurs.
+ * Étape 3 — Récap : adversaire(s) (nom+tag roster, avatar équipe, rule 12) et 6 joueurs
+ * retenus, puis « Démarrer la war » ([onStart]). « Précédent » revient aux Joueurs.
  */
 @Composable
 private fun ColumnScope.RecapStep(

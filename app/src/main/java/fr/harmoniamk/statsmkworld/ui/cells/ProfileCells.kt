@@ -1,13 +1,11 @@
 package fr.harmoniamk.statsmkworld.ui.cells
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -27,7 +24,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -36,16 +32,11 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
 /**
- * Composants de présentation du **pôle Profil** (ticket #28), reproduisant au plus
- * près la maquette 5 pôles (écrans `profile` / `pplayer` / `pteam`). Mutualisés entre
- * le profil fusionné (`ProfileScreen`) et les fiches profil autonomes
- * (`PlayerProfileScreen` / `TeamProfileScreen`) — rule 16.
- *
- * Valeurs de style extraites de `docs/prototype/stats-mkworld-5poles.html`
- * (classes `.pcard`, `.role`, `.two`/`.b`, `.lrow`, `.setrow`, `.badge-mkc`).
+ * Composants du **pôle Profil** (maquette 5 pôles) mutualisés entre `ProfileScreen` et les fiches
+ * autonomes (`PlayerProfileScreen`/`TeamProfileScreen`) — rule 16.
  */
 
-/** Rôle affiché dans une pastille (`.role` de la maquette). */
+/** Rôle affiché dans une pastille (`.role`). */
 enum class ProfileRole(val labelRes: Int) {
     LEADER(R.string.leader),
     ADMIN(R.string.admin),
@@ -115,12 +106,10 @@ fun MkcBadge(labelRes: Int) {
 }
 
 /**
- * Carte profil centrée (`.card > .pcard` de la maquette) : avatar rond 76dp, nom
- * (Bungee), ligne meta (pays/tag + rôle), bio en italique, badge MKCentral.
+ * Carte profil centrée (`.pcard`) : avatar, nom, ligne meta, bio, badge MKCentral.
  *
- * @param avatarUrl URL MKCentral déjà préfixée (`https://mkcentral.com…`) → image ;
- *   `null` → pastille [avatarColor] avec [avatarFallback] (initiales / tag).
- * @param metaContent contenu de la ligne meta (pays + rôle joueur, ou tag + saison équipe).
+ * @param avatarUrl URL MKCentral préfixée → image ; `null` → pastille [avatarFallback].
+ * @param metaContent ligne meta (pays + rôle joueur, ou tag + saison équipe).
  */
 @Composable
 fun ProfilePersonCard(
@@ -138,7 +127,7 @@ fun ProfilePersonCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            // Médaillon mutualisé (#50 pt.4, rule 16) : photo/logo si dispo, initiales/tag sinon.
+            // Médaillon mutualisé (rule 16) : photo/logo si dispo, initiales/tag sinon.
             PlayerMedallion(
                 initials = avatarFallback,
                 avatarColor = avatarColor,
@@ -205,12 +194,7 @@ fun ProfileInfoCard(infos: List<ProfileInfo>) {
     }
 }
 
-/**
- * Ligne de membre / allié (`.lrow`) : pastille ronde (photo MKCentral [avatarUrl] si
- * disponible, sinon [initials] sur fond [color]), nom + pastille de rôle, sous-texte
- * optionnel (roster externe pour un allié), chevron. Délègue au composant partagé
- * [MKListRow] (rule 16 : un seul exemplaire de la `.lrow`).
- */
+/** Ligne membre/allié (`.lrow`) : avatar, nom + rôle, sous-texte, chevron. Délègue à [MKListRow] (rule 16). */
 @Composable
 fun ProfileMemberRow(
     initials: String,
@@ -235,13 +219,8 @@ fun ProfileMemberRow(
 }
 
 /**
- * Ligne de réglage (`.setrow`) : icône de tête (`.si`, carré 32dp arrondi translucide)
- * + titre (gras) + sous-titre optionnel, contenu de fin (toggle / chevron). [danger]
- * colore l'icône et le titre en rouge (Déconnexion). Séparateur inférieur optionnel
- * ([divider]).
- *
- * @param leadingIcon drawable de l'icône `.si` (refresh/bell/rank/book/cog/logout de
- *   la maquette).
+ * Ligne de réglage (`.setrow`) : icône de tête + titre + sous-titre, contenu de fin (toggle/chevron).
+ * [danger] colore icône et titre en rouge (Déconnexion) ; [divider] = séparateur inférieur optionnel.
  */
 @Composable
 fun ProfileSettingRow(

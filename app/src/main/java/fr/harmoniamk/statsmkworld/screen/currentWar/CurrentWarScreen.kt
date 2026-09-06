@@ -111,11 +111,8 @@ fun CurrentWarScreen(
                         )
                     }
 
-                    // 3. Actions. CTA principal + « Plus d'actions » sur une MÊME ligne (même
-                    //    disposition en cours ET terminée) : le CTA vaut « Course suivante » tant
-                    //    que la war n'est pas terminée, puis « Valider la war » en 12 j terminée.
-                    //    En 24 j terminée, la validation passe par la saisie des scores adverses
-                    //    (bloc dédié affiché ensuite).
+                    // 3. Actions : CTA « Course suivante », puis « Valider la war » en 12p terminée
+                    //    (en 24p terminée, validation via la saisie des scores adverses ci-dessous).
                     if (state.value.buttonsVisible) {
                         item {
                             ActionsBlock(
@@ -156,11 +153,7 @@ fun CurrentWarScreen(
     }
 }
 
-/**
- * Carte « Scores des joueurs » : cellules en **ligne compacte** (nom à gauche, score à
- * droite via `SpaceBetween`) disposées sur **deux colonnes** (6 joueurs → 2 × 3 lignes).
- * Une pastille de shock (icône + « xN ») s'affiche à côté du nom si applicable.
- */
+/** Carte « Scores des joueurs » : lignes compactes (nom / score) sur deux colonnes, + pastille shock. */
 @Composable
 private fun PlayersCard(players: List<PlayerScore>, trackCount: Int) {
     WarDashboardCard {
@@ -225,15 +218,9 @@ private fun PlayerRow(score: PlayerScore, trackCount: Int, modifier: Modifier = 
 }
 
 /**
- * Bloc d'actions : **CTA principal + « Plus d'actions » côte à côte sur une même ligne**, même
- * structure quel que soit l'état (deux boutons `weight(1f)`, même espacement 9 dp, CTA en
- * Gradient / « Plus d'actions » en Minor). Le CTA principal (colonne de gauche) vaut :
- * - war **en cours** → « Course suivante » (→ AddTrack) ;
- * - war **terminée** (12 courses) en **12 j** → « Valider la war » directe (→ onValidateWar).
- *
- * En **24 j** terminée, il n'y a pas de CTA de validation ici (elle passe par la saisie des
- * scores adverses, cf. [OpponentScoresBlock]) : seule « Plus d'actions » est affichée, en pleine
- * largeur.
+ * Bloc d'actions : CTA principal + « Plus d'actions » côte à côte. Le CTA vaut « Course suivante »
+ * en cours, « Valider la war » en 12p terminée. En 24p terminée, pas de CTA ici (validation via
+ * [OpponentScoresBlock]).
  */
 @Composable
 private fun ActionsBlock(
@@ -244,8 +231,7 @@ private fun ActionsBlock(
     onValidateWar: () -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-        // Colonne de gauche : CTA principal selon l'état (course suivante / valider la war).
-        // Absente uniquement en 24 j terminée (validation via les scores adverses).
+        // CTA principal selon l'état, absent en 24p terminée (validation via les scores adverses).
         when {
             !isOver -> MKButton(
                 modifier = Modifier.weight(1f),
@@ -267,9 +253,8 @@ private fun ActionsBlock(
 }
 
 /**
- * Variante 24 j : carte « Scores des équipes adverses » (une ligne de saisie par
- * équipe adverse) + CTA « Saisir & valider ». La validation (contrôle du total +
- * écriture) reste côté ViewModel (justesse des scores prioritaire).
+ * Variante 24p : saisie des scores des équipes adverses + CTA « Saisir & valider ».
+ * Le contrôle du total et l'écriture restent côté ViewModel (justesse prioritaire).
  */
 @Composable
 private fun OpponentScoresBlock(

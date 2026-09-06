@@ -63,16 +63,14 @@ fun WarListScreen(
     onWarDetailsClick: (WarDetails) -> Unit,
     onAddWar: (Boolean) -> Unit,
     onBack: (() -> Unit)? = null,
-    // Ouvre l'écran « Voir par période » (#80) : aide à la composition des line-ups sur
-    // une plage de dates. Null = non proposé (ex. historique filtré sur un joueur, #65).
+    // Ouvre « Voir par période » (#80). Null = non proposé (ex. historique filtré joueur, #65).
     onPeriodView: (() -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // Filtre de résultat : pur état UI, survit à la rotation (rule 11).
     var filter by rememberSaveable { mutableStateOf(WarFilter.ALL) }
 
-    // Sous-titre : « wars de <joueur> » si l'historique est filtré sur un joueur (#65),
-    // sinon le décompte habituel « N wars ».
+    // Sous-titre : « wars de <joueur> » si filtré sur un joueur (#65), sinon « N wars ».
     val subtitle = state.value.playerName
         ?.let { stringResource(R.string.wars_of_player, it, state.value.warCount) }
         ?: stringResource(R.string.wars_count, state.value.warCount)
@@ -80,15 +78,12 @@ fun WarListScreen(
         title = stringResource(R.string.wars),
         subtitle = subtitle,
         onBack = onBack,
-        // « Créer une war » dans l'action droite du header (#50), affichée UNIQUEMENT
-        // s'il n'y a pas de war en cours (même condition qu'auparavant, juste déplacée).
+        // « Créer une war » (#50), affichée seulement s'il n'y a pas de war en cours.
         onSearch = { onAddWar(false) }.takeIf { state.value.currentWar == null },
         actionIcon = R.drawable.ic_add,
         actionContentDescription = stringResource(R.string.nouvelle_war),
-        // Header trailing (#70 + #80) : « Voir par période » à gauche du dropdown de saison,
-        // tous deux dans la même Row, avec le MÊME style de pastille (MKHeaderChip).
-        // « Voir par période » n'apparaît que quand onPeriodView est fourni (pas dans
-        // l'historique filtré sur un joueur, #65) — comportement conservé.
+        // Header trailing (#70 + #80) : « Voir par période » (si onPeriodView fourni) + dropdown
+        // de saison, même style de pastille (MKHeaderChip).
         headerTrailing = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -113,9 +108,7 @@ fun WarListScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(11.dp)
         ) {
-            // La war en cours n'apparaît PLUS sur l'historique (bannière « Reprendre »
-            // retirée, #65) : l'écran ne liste que les wars terminées. Le bouton « Créer
-            // une war » du header reste masqué tant qu'une war est en cours (voir plus haut).
+            // L'écran ne liste que les wars terminées (war en cours absente, #65).
 
             // 1. Chips filtre Tous / Victoires / Nuls / Défaites.
             item {

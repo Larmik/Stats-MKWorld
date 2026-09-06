@@ -17,10 +17,9 @@ data class PlayerEntity(
     @ColumnInfo(name = "currentWar") val currentWar: String,
     @ColumnInfo(name = "rosterId") val rosterId: String,
     @ColumnInfo(name = "discordId") val discordId: String,
-    // Chemin RELATIF de la photo de profil MKCentral (userSettings.avatar), à préfixer
-    // par https://mkcentral.com à l'affichage (cf. médaillon UI). Null si indisponible :
-    // l'endpoint LISTE d'équipe (MKCTeamPlayer) ne fournit PAS l'avatar des membres —
-    // seuls le joueur courant (DataStore) et les alliés (fetchés en MKCPlayer) l'ont.
+    // Chemin RELATIF de la photo MKCentral (à préfixer par https://mkcentral.com à
+    // l'affichage). Null si indisponible : l'endpoint LISTE d'équipe (MKCTeamPlayer) ne
+    // le fournit pas — seuls le joueur courant (DataStore) et les alliés (MKCPlayer) l'ont.
     @ColumnInfo(name = "avatar") val avatar: String? = null,
 ) {
     constructor(player: MKCPlayer, role: Int = 0, isAlly: Boolean) : this(

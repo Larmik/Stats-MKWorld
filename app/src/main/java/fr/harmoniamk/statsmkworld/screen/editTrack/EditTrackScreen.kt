@@ -45,22 +45,9 @@ import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerShockCell
 
 /**
- * Écran d'édition d'une course déjà saisie (pôle Wars) — **2 onglets sur un seul écran** :
- * `Circuit` + `Positions` (positions **&** shocks fusionnés, refonte #46, retour utilisateur),
- * bascule **dynamique** d'état (aucune re-navigation, rule 11). L'onglet courant est un pur état
- * UI (`rememberSaveable`), le segmented partagé [MKSegmentedSelector] pilote la sélection (rule 15).
- *
- * Rendu pixel-perfect vs la maquette prototype UX (écran `edittrack`, rules 13/15) :
- * - **Circuit** : recherche + grille de circuits ([MKTrackCell] en mode sélection, mutualisée
- *   avec AddTrack/CurrentWar, rule 16) ; le circuit retenu est liseré.
- * - **Positions** : **une ligne par joueur** ([PlayerShockCell] mutualisée avec AddTrack, rule 16)
- *   portant DEUX contrôles ± — un pour la **position** (bornée 1..12 / 1..24), un pour les
- *   **shocks**. La position se met à jour en direct ; le score se recalcule à la validation.
- *
- * Pied de page : « Annuler » (retour) · « Confirmer » (écrit la war, recalcule le score —
- * cf. [EditTrackViewModel.updateWar]). « Confirmer » n'est actif que si **toutes les positions
- * sont distinctes** (aucun doublon). Écran du graphe racine poussé par-dessus CurrentWar →
- * **pas de bottombar**, aucune marge basse requise (rule 17).
+ * Édition d'une course saisie — 2 onglets (segmented partagé, état `rememberSaveable`, rule 11) :
+ * `Circuit` (grille de sélection) et `Positions` (positions & shocks fusionnés, #46). « Confirmer »
+ * n'est actif que si toutes les positions sont distinctes. Graphe racine → pas de bottombar (rule 17).
  */
 @Composable
 fun EditTrackScreen(
@@ -69,10 +56,8 @@ fun EditTrackScreen(
     onBackToCurrent: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // Onglet courant : pur état UI éphémère (rule 11), survivant à la rotation. La bascule
-    // recompose l'écran sans re-navigation.
+    // Onglet courant et recherche : purs états UI éphémères (rule 11), survivant à la rotation.
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    // Champ de recherche de circuit : pur état UI éphémère (rule 11).
     var search by rememberSaveable { mutableStateOf("") }
 
     BackHandler { onBack() }
@@ -131,9 +116,8 @@ fun EditTrackScreen(
 }
 
 /**
- * Onglet Circuit — recherche + grille de circuits ([MKTrackCell] en mode sélection). Le circuit
- * courant est liseré ; choisir un circuit met à jour la sélection (score recalculé à la
- * validation). Grille englobée dans un conteneur sombre (contraste, comme AddTrack).
+ * Onglet Circuit — recherche + grille ([MKTrackCell]). Circuit courant liseré ; choisir met à
+ * jour la sélection (score recalculé à la validation).
  */
 @Composable
 private fun ColumnScope.CircuitTab(
@@ -178,10 +162,8 @@ private fun ColumnScope.CircuitTab(
 }
 
 /**
- * Onglet Positions (positions & shocks fusionnés) — **une ligne par joueur** ([PlayerShockCell]),
- * chacune portant deux contrôles ± : **position** (bornée 1..12 / 1..24, − / + désactivés aux
- * extrémités) et **shocks**. La position se met à jour en direct ; le recalcul du score se fait
- * à la validation. Cartes en 2 colonnes dans un conteneur sombre (contraste).
+ * Onglet Positions (positions & shocks fusionnés) — une ligne par joueur ([PlayerShockCell])
+ * portant deux contrôles ± (position bornée 1..12 / 1..24, et shocks). Score recalculé à la validation.
  */
 @Composable
 private fun ColumnScope.PositionsTab(

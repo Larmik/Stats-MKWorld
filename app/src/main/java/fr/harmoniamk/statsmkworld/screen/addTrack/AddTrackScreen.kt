@@ -56,17 +56,9 @@ import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 
 /**
- * Écran d'ajout d'une course dans la war en cours (pôle Wars) — wizard **4 étapes sur un
- * seul écran** : `Circuit` → `Intermission` → `Positions` → `Résumé`, bascule **dynamique**
- * (aucune re-navigation, rule 11). L'étape courante vit dans le [AddTrackViewModel] : le
- * stepper et la saisie joueur-par-joueur la font évoluer, le retour arrière réinitialise
- * l'étape rejointe (rule 11 wizard).
- *
- * Rendu pixel-perfect vs la maquette prototype UX (écran `addtrack`, rule 13/15) : stepper
- * partagé [fr.harmoniamk.statsmkworld.ui.MKStepper], cellule circuit partagée [MKTrackCell]
- * (sélection Circuit, Intermission, aperçu Positions) et [PositionCell] (rule 16) ; cellule
- * joueur du Résumé fidèle à la maquette ([SummaryPlayerCell]). Écran du graphe racine poussé
- * par-dessus CurrentWar → **pas de bottombar**, aucune marge basse requise (rule 17).
+ * Ajout d'une course dans la war en cours — wizard `Circuit` → (`Intermission` 24p) →
+ * `Positions` → `Résumé`, étape pilotée par le [AddTrackViewModel] (retour arrière réinitialise
+ * l'étape rejointe, rule 11). Graphe racine par-dessus CurrentWar → pas de bottombar (rule 17).
  */
 @Composable
 fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () -> Unit) {
@@ -78,11 +70,10 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
         viewModel.backToWar.collect { onBack() }
     }
 
-    // Retour étape-conscient, partagé entre le back système et le bouton retour de
-    // l'appbar (#50 pt.2).
+    // Retour étape-conscient, partagé back système + appbar (#50 pt.2).
     val handleBack: () -> Unit = {
         when {
-            // Depuis une étape avancée → revenir à la précédente (réinitialise l'étape rejointe).
+            // Étape avancée → revenir à la précédente (réinitialise l'étape rejointe).
             state.step > 0 -> viewModel.onStepChange(state.step - 1)
             else -> onBack()
         }
@@ -90,8 +81,7 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
     BackHandler { handleBack() }
 
     BaseScreen(title = stringResource(R.string.addtrack_title), onBack = handleBack, modifier = Modifier.fillMaxSize()) {
-        // Libellés d'étapes selon le mode : l'Intermission ne figure qu'en 24p (wizard à 3
-        // étapes en 12p, 4 en 24p). L'ordre suit les index sémantiques du State.
+        // Libellés d'étapes selon le mode : Intermission seulement en 24p (3 étapes en 12p, 4 en 24p).
         val steps = when (state.is24p) {
             true -> listOf(
                 stringResource(R.string.addtrack_step_circuit),
@@ -259,11 +249,9 @@ private fun IntermissionNoneChip(selected: Boolean, onClick: () -> Unit, modifie
 }
 
 /**
- * Étape 3 — saisie **joueur par joueur** : progression `Joueur n / total`, rappel du joueur
- * courant, grille de positions cliquables (les positions prises sont verrouillées). La
- * dernière position bascule AUTOMATIQUEMENT sur le Résumé (dans le VM). « Précédent »
- * revient à l'étape précédente (Intermission en 24p, Circuit en 12p) et réinitialise la
- * saisie via [AddTrackViewModel.onStepChange].
+ * Étape 3 — saisie joueur par joueur : progression, positions cliquables (les prises sont
+ * verrouillées). La dernière position bascule automatiquement sur le Résumé (VM). « Précédent »
+ * revient à l'étape précédente et réinitialise la saisie ([AddTrackViewModel.onStepChange]).
  */
 @Composable
 private fun ColumnScope.PositionsStep(
@@ -271,9 +259,7 @@ private fun ColumnScope.PositionsStep(
     onPositionClick: (Int) -> Unit,
     onPrevious: () -> Unit
 ) {
-    // Aperçu du circuit en tête = MÊME cellule que la sélection Circuit (MKTrackCell unifié,
-    // rule 16), en **pleine largeur** (moins les marges de l'écran). En intermission (24p), on
-    // montre le circuit d'arrivée (`intermissionSelected`), sinon le circuit principal.
+    // Aperçu circuit en tête (MKTrackCell, rule 16) : circuit d'arrivée en 24p, sinon principal.
     val headerMap = state.intermissionSelected ?: state.mapSelected
     headerMap?.let {
         MKTrackCell(map = it, onClick = {}, modifier = Modifier.fillMaxWidth())
@@ -320,9 +306,8 @@ private fun ColumnScope.PositionsStep(
 }
 
 /**
- * Étape 4 — Résumé : carte circuit + **score de manche calculé** (barème `positionToPoints`),
- * puis grille « Positions & shocks » (une carte par joueur avec compteur de shocks − / +) et
- * CTA « Confirmer ». « Précédent » revient aux Positions.
+ * Étape 4 — Résumé : carte circuit + score de manche calculé, grille « Positions & shocks »
+ * (compteur − / + par joueur) et CTA « Confirmer ». « Précédent » revient aux Positions.
  */
 @Composable
 private fun ColumnScope.SummaryStep(
@@ -376,11 +361,7 @@ private fun ColumnScope.SummaryStep(
     )
 }
 
-/**
- * Carte en-tête du Résumé : illustration du circuit + nom + score de manche calculé.
- * **Score en blanc**, **diff colorisée** (vert/rouge/blanc selon le signe, via `Int.diffColor`
- * mutualisé avec CurrentWar).
- */
+/** Carte en-tête du Résumé : circuit + nom + score de manche, diff colorisée (`Int.diffColor`). */
 @Composable
 private fun SummaryHeaderCard(state: AddTrackViewModel.State) {
     val maps = listOfNotNull(state.intermissionSelected, state.mapSelected)
@@ -403,7 +384,6 @@ private fun SummaryHeaderCard(state: AddTrackViewModel.State) {
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     MKText(text = "${stringResource(R.string.addtrack_summary_score)} · ", textColor = Colors.white66, fontSize = 12)
-                    // Score en blanc.
                     MKText(text = summaryScoreLabel(state), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
                     // Diff colorisée (12p uniquement : en 24p, pas d'adverse par manche).
                     if (!state.is24p) {

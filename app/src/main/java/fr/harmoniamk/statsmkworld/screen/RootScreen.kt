@@ -32,7 +32,6 @@ import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.registry.RegistryScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupViewModel
-import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerMapsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerOpponentsRankingScreen
@@ -113,32 +112,22 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
                     navController.navigate("Home/WarDetails")
                 },
-                // « Voir par période » (#80) : écran de graphe racine poussé par-dessus le pôle Wars.
+                // « Voir par période » (#80) : écran de graphe racine par-dessus le pôle Wars.
                 onPeriodView = { navController.navigate("Home/Period") },
                 onStats = { type ->
-                    // Fiches dédiées Joueur (#65 : StatsFullScreen centré sur le joueur cliqué,
-                    // sans sélecteur Indiv/Équipe), Adversaire (#27) et Circuit (#27) ; les autres
-                    // portées (ex. équipe) restent sur l'écran Stats générique. Le userId (nullable)
-                    // sème le mode initial Indiv/Équipe de la fiche (rule 11) ; « null » = Équipe.
+                    // userId (nullable) sème le mode initial Indiv/Équipe (rule 11) ; « null » = Équipe.
                     when (type) {
                         is StatsType.PlayerStats -> navController.navigate("Statsfull/${type.userId}")
                         // Saison propagée (#91 pt.5) en segment de route : « all » = tout l'historique.
                         is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}/${type.userId ?: "null"}/${type.seasonNumber ?: "all"}")
                         is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}/${type.userId ?: "null"}/${type.seasonNumber ?: "all"}")
-                        else -> {
-                            navController.currentBackStackEntry?.savedStateHandle?.set("type", type)
-                            navController.navigate("Stats")
-                        }
                     }
                 },
                 onSearch = { navController.navigate("Home/Registry") },
-                // Lien « Résultats → » du pôle Stats (joueur courant) : historique filtré
-                // sur « me », poussé sur le GRAPHE RACINE (route accessible depuis ici),
-                // évitant la route interne au NavHost de HomeScreen (#65).
+                // « Résultats → » du pôle Stats : historique filtré sur « me », graphe racine (#65).
                 onResults = { navController.navigate("Home/WarList/me") },
-                // « Classement entier » Circuits / Adversaires du pôle Stats (joueur courant) :
-                // classement complet SCOPÉ (userId « me » → le VM résout le joueur courant en
-                // Individuelles ; isTeam en Équipe), poussé sur le graphe racine (#67 round 3).
+                // « Classement entier » Circuits/Adversaires du pôle Stats : scopé « me »
+                // (joueur courant), isTeam = portée Équipe, graphe racine (#67 round 3).
                 onMapsRanking = { isTeam -> navController.navigate("Statsfull/me/Maps/$isTeam") },
                 onOpponentsRanking = { isTeam -> navController.navigate("Statsfull/me/Opponents/$isTeam") },
                 onDisconnect = { navController.navigate("Signup") },
@@ -154,26 +143,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        composable("Stats") {
-            val type =
-                navController.previousBackStackEntry?.savedStateHandle?.get<StatsType>("type")
-            StatsScreen(
-                viewModel = hiltViewModel(
-                    creationCallback = { factory: fr.harmoniamk.statsmkworld.screen.stats.StatsViewModel.Factory ->
-                        factory.create(type)
-                    }
-                ),
-                onBack = { navController.popBackStack() },
-                onWarDetailsClick = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
-                    navController.navigate("Home/WarDetails")
-                }
-            )
-        }
-
-        // Fiche détail ADVERSAIRE (#27) : atteinte depuis les Classements/Résultats
-        // (et, à terme, la fiche équipe publique #28). teamId = identifiant d'opposant ;
-        // userId (« null » = Équipe) sème le mode initial Indiv/Équipe.
+        // Fiche détail ADVERSAIRE (#27). teamId = id d'opposant ; userId (« null » = Équipe)
+        // sème le mode initial Indiv/Équipe.
         composable(
             route = "Opponent/{teamId}/{userId}/{season}",
             arguments = listOf(
@@ -272,8 +243,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        // Fiche détail CIRCUIT (#27) : atteinte depuis les Classements. trackIndex =
-        // index(es) de map (CSV) ; userId (« null » = Équipe) sème le mode initial.
+        // Fiche détail CIRCUIT (#27). trackIndex = index(es) de map (CSV) ;
+        // userId (« null » = Équipe) sème le mode initial.
         composable(
             route = "Map/{trackIndex}/{userId}/{season}",
             arguments = listOf(
@@ -381,10 +352,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        // statsfull (ticket #25) : stats détaillées d'un joueur donné (variante
-        // « pour un joueur donné » de la vue Individuelles, mutualisée). Atteinte
-        // depuis les Classements (#26) et la fiche joueur (Profil) — points d'entrée
-        // relevant d'autres tickets ; ici la route réutilisable est en place.
+        // Stats détaillées d'un joueur donné (variante « pour un joueur » des Individuelles, #25).
         composable(
             route = "Statsfull/{userId}",
             arguments = listOf(navArgument("userId") { type = NavType.StringType })
@@ -400,16 +368,15 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onBack = { navController.popBackStack() },
                 // « Résultats → » : historique filtré sur CE joueur (#65).
                 onResults = { navController.navigate("Home/WarList/$userId") },
-                // « Classement entier » Circuits / Adversaires SUR LA FICHE D'UN JOUEUR TIERS
-                // (#67 round 3, point 2) : mène au classement complet scopé à CE joueur.
-                // showTabs=false ⇒ portée toujours Individuelles ⇒ isTeam = false.
+                // « Classement entier » Circuits/Adversaires scopé à CE joueur (#67 round 3).
+                // showTabs=false ⇒ toujours Individuelles ⇒ isTeam = false.
                 onMapsSeeAll = { isTeam -> navController.navigate("Statsfull/$userId/Maps/$isTeam") },
                 onOpponentsSeeAll = { isTeam -> navController.navigate("Statsfull/$userId/Opponents/$isTeam") }
             )
         }
 
-        // Classement complet des CIRCUITS scopé à un joueur/équipe (« Classement entier » des
-        // podiums Circuits de StatsFullScreen, #67 round 3). userId « me » ⇒ joueur courant.
+        // Classement complet des CIRCUITS scopé à un joueur/équipe (#67 round 3).
+        // userId « me » ⇒ joueur courant.
         composable(
             route = "Statsfull/{userId}/Maps/{isTeam}",
             arguments = listOf(
@@ -453,9 +420,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        // Historique des wars FILTRÉ sur un joueur (#65), poussé sur le graphe racine
-        // (au-dessus du pôle) → back = retour à StatsFullScreen (rule 14). `userId` = id
-        // du joueur, ou « me » = joueur courant (résolu par le VM).
+        // Historique des wars filtré sur un joueur (#65), graphe racine (back → StatsFull, rule 14).
+        // `userId` = id du joueur, ou « me » = joueur courant (résolu par le VM).
         composable(
             route = "Home/WarList/{userId}",
             arguments = listOf(navArgument("userId") { type = NavType.StringType })
@@ -477,8 +443,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        // Écran « Voir par période » (#80), poussé sur le graphe racine (au-dessus du pôle
-        // Wars → pas de bottombar, rule 17). Aide à la composition des line-ups sur une plage.
+        // « Voir par période » (#80), graphe racine (pas de bottombar, rule 17).
         composable(route = "Home/Period") {
             PeriodScreen(
                 viewModel = hiltViewModel(),
@@ -529,9 +494,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             arguments = listOf(navArgument("is24p") { type = NavType.BoolType })
 
         ) {
-            // L'argument de route ne sert qu'à SEMER le mode initial du VM ; la
-            // bascule 12/24 se fait ensuite en interne (état réactif, même écran,
-            // sans re-navigation).
+            // L'argument sème le mode initial du VM ; la bascule 12/24 se fait en interne
+            // (état réactif, sans re-navigation).
             val is24p = it.arguments?.getBoolean("is24p")
             AddWarScreen(
                 viewModel = hiltViewModel(
@@ -605,9 +569,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.currentBackStackEntry?.savedStateHandle?.set("details", it)
                     navController.navigate("Home/WarDetails/Tab")
                 },
-                // « Voir l'adversaire » → fiche adversaire (12 j : opposant unique). Le teamId
-                // est l'id d'opposant de la war (rosterId, ou teamId legacy) ; userId « null »
-                // = portée Équipe (rule 15, cf. autres appels d'Opponent).
+                // « Voir l'adversaire » → fiche adversaire. opponentId = rosterId (ou teamId
+                // legacy) ; userId « null » = portée Équipe (rule 15).
                 onOpponent = { opponentId ->
                     // Depuis une war : pas de contexte de saison → tout l'historique (« all », #91 pt.5).
                     navController.navigate("Opponent/$opponentId/null/all")
@@ -676,8 +639,5 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
     }
 }
 
-/**
- * Décode le segment de route « saison » (#91 pt.5) : « all » (ou null) = tout l'historique
- * (numéro null) ; sinon le numéro de saison. Symétrique de l'encodage `seasonNumber ?: "all"`.
- */
+/** Décode le segment de route « saison » (#91 pt.5) : « all »/null → null (tout l'historique). */
 private fun String?.toSeasonNumber(): Int? = this?.takeIf { it != "all" }?.toIntOrNull()

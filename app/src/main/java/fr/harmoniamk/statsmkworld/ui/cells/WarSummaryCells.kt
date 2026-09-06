@@ -41,10 +41,8 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 val WarSummaryRadius = RoundedCornerShape(6.dp)
 
 /**
- * Composants partagés du **résumé de war** (carte score, tracks, pastilles d'équipe) —
- * mutualisés entre `CurrentWarScreen` (war en cours) et `WarDetailsScreen` (war terminée),
- * mêmes écrans-frères du pôle Wars de la maquette 5 pôles (rule 16 : extraction dès un
- * 2ᵉ consommateur). Style pixel-perfect vs la maquette (rules 13/15).
+ * Composants partagés du **résumé de war** (carte score, tracks, pastilles) — mutualisés entre
+ * `CurrentWarScreen` et `WarDetailsScreen` (rule 16).
  */
 
 /** Carte dashboard : fond sombre translucide, bordure blanche, radius 6, padding 13. */
@@ -74,16 +72,10 @@ fun WarEyebrow(text: String) {
 }
 
 /**
- * Carte « Score du match » (`.warscore`) : côté hôte VS côté(s) adversaire(s), chacun avec
- * pastille (avatar équipe ou initiales sur couleur), nom du roster et score (blanc).
- *
- * - [subtitle] optionnel affiché sous la ligne des scores, en blanc, centré (ex. « N courses
- *   restantes » pour la war en cours). Absent (null) pour une war terminée.
- * - En **24 j** (plusieurs adversaires), les côtés adverses sont empilés, sans score chiffré
- *   au niveau de la carte.
- *
- * La **différence de score seule** est affichée au centre, colorisée (vert > 0, rouge < 0,
- * blanc = 0). Un total de **shocks** de la war est affiché sous la ligne quand > 0.
+ * Carte « Score du match » (`.warscore`) : hôte VS adversaire(s), pastille + nom du roster + score.
+ * [subtitle] optionnel sous les scores (ex. courses restantes, war en cours). En 24 j les côtés
+ * adverses sont empilés, sans score chiffré. Différence de score centrale colorisée, total de
+ * shocks affiché sous la ligne quand > 0.
  */
 @Composable
 fun WarScoreCard(
@@ -93,15 +85,13 @@ fun WarScoreCard(
     is24p: Boolean,
     subtitle: String? = null
 ) {
-    // Écart signé du point de vue de l'hôte (avec pénalités) : colore la diff centrale.
+    // Écart signé côté hôte (avec pénalités) : colore la diff centrale.
     val margin = details.scoreMargin(is24p)
     val diffColor = margin.diffColor()
-    // Total de pénalités par équipe (clé = teamId/rosterId). La clé hôte est war.teamHost
-    // (rosterId), PAS teamHost.id (id d'équipe).
+    // Pénalités par équipe : clé hôte = war.teamHost (rosterId), PAS teamHost.id (id d'équipe).
     val penaltyByTeam = details.war.penalties
         .groupBy { it.teamId }
         .mapValues { entry -> entry.value.sumOf { it.amount } }
-    // Total de shocks de la war (somme sur toutes les manches).
     val totalShocks = details.war.tracks.sumOf { it.shocks.orEmpty().sumOf { shock -> shock.count } }
     WarDashboardCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -285,13 +275,8 @@ fun WarTracksSection(
 }
 
 /**
- * Carte « Classement joueurs » (`.card > .two > .b` de la maquette `wardetails`) : grille
- * 2 colonnes de tuiles (fond translucide) — **nom** en clé (petit, majuscule atténué) puis
- * **points** (gros chiffre Urbanist) + suffixe « pts ». Les joueurs sont classés par points
- * décroissants. Un compteur de shocks (icône + « xN ») s'affiche à côté du nom si applicable.
- *
- * Spécifique à `WarDetailsScreen` (war terminée). La war en cours utilise sa propre carte
- * « Joueurs » (lignes compactes), les deux dispositions différant dans la maquette.
+ * Carte « Classement joueurs » (`wardetails`) : grille 2 colonnes nom → points, classés par points
+ * décroissants, compteur de shocks à côté du nom si applicable. Spécifique à `WarDetailsScreen`.
  */
 @Composable
 fun WarPlayerRankingCard(title: String, players: List<PlayerScore>) {

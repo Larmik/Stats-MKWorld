@@ -5,12 +5,9 @@ import androidx.room.Entity
 import fr.harmoniamk.statsmkworld.model.firebase.Season
 
 /**
- * Cache local (Room) d'une saison d'équipe. Miroir de [Season] (couche Firebase,
- * `seasons/{teamId}`). Clé primaire **composite** `teamId + number` : une saison est
- * unique pour une équipe donnée. [end] nullable → `null` = saison en cours.
- *
- * ⚠️ La DB est en `fallbackToDestructiveMigration()` : la table est ré-hydratée depuis
- * RTDB à la synchro, pas de migration.
+ * Cache local (Room) d'une saison, miroir de [Season] (RTDB `seasons/{teamId}`). Clé
+ * composite `teamId + number` ; [end] `null` = saison en cours. Ré-hydratée depuis RTDB
+ * (fallbackToDestructiveMigration, pas de migration).
  */
 @Entity(primaryKeys = ["teamId", "number"])
 data class SeasonEntity(

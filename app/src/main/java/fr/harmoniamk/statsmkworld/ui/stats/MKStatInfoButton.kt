@@ -24,28 +24,16 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKDialog
 
 /**
- * Petit bouton rond d'information (ⓘ) placé à côté d'un indicateur de stat. Au clic,
- * ouvre [MKDialog] (composant de dialog unique de l'app, PAS de nouveau dialog) avec
- * le libellé de la stat en titre et son explication en message.
- *
- * L'état d'ouverture est un pur état UI éphémère, possédé par le bouton et conservé
- * en rotation ([rememberSaveable], rule 11). Aucune re-navigation.
- *
- * Réutilisé par toutes les sections de stats (rule 16). L'écran RÉELLEMENT rendu du
- * pôle Stats est [fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen] : ses
- * sections « Indicateurs / Détails équipe » (`IndicatorsCard`) et « Records & séries »
- * (`RecordsTilesCard`) émettent ce bouton sur CHAQUE tuile via `MetricTile.info`. Il est
- * aussi câblé dans le chemin legacy `MKWarDetailsStatsView` et `MKRecentFormCell`.
+ * Bouton rond d'information (ⓘ) à côté d'un indicateur : ouvre [MKDialog] (titre = libellé,
+ * message = explication). État d'ouverture éphémère conservé en rotation ([rememberSaveable],
+ * rule 11). Réutilisé par toutes les sections de stats (rule 16, via `MetricTile.info`).
  */
 @Composable
 fun MKStatInfoButton(title: String, message: String, modifier: Modifier = Modifier) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
 
-    // Pastille ronde CONTRASTÉE (fond translucide `white30` + icône blanche nette) :
-    // discrète mais nettement visible et cliquable (ticket #87). Le fond + le tint blanc
-    // plein la rendent lisible même sur carte sombre, contrairement à une icône `white70`
-    // seule (trop discrète, invisible en pratique). Taille 23 dp (agrandie pour la
-    // visibilité/cliquabilité), l'icône ⓘ occupe l'intérieur moins le padding.
+    // Pastille ronde contrastée (fond `white30` + icône blanche) : lisible sur carte sombre,
+    // 23 dp pour la cliquabilité (#87).
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier

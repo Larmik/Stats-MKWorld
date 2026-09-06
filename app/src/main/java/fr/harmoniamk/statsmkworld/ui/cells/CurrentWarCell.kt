@@ -33,12 +33,10 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 private val CellRadius = RoundedCornerShape(6.dp)
 
 /**
- * Cellule « war en cours », restylée à l'image des cellules de résultat
- * ([WarCell12p]) : carte `blackAlphaed` + bordure, pastille adversaire (avatar de
- * l'équipe ou tag sur cercle), « vs … », score + écart, et le **nombre de courses
- * restantes**. Utilisée dans [CurrentWarBanner] (Accueil + pôle Wars).
- * - **12p** (1 adversaire) : ligne de résultat façon `WarCell12p`.
- * - **24p** (3 équipes) : podium des 3 logos + score de l'hôte (style aligné).
+ * Cellule « war en cours » calée sur les cellules de résultat ([WarCell12p]), avec le nombre de
+ * courses restantes. Utilisée dans [CurrentWarBanner].
+ * - **12p** : ligne de résultat façon `WarCell12p`.
+ * - **24p** : podium des 3 logos + score de l'hôte.
  */
 @Composable
 fun CurrentWarCell(modifier: Modifier = Modifier, viewModel: CurrentWarCellViewModel, onClick: () -> Unit) {

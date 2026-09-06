@@ -58,8 +58,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
-// Rayon uniforme des cartes du dashboard (maquette : radius 6px). Bordure blanche
-// translucide sur fond sombre translucide.
+// Rayon uniforme des cartes du dashboard (maquette : radius 6px).
 private val CardRadius = RoundedCornerShape(6.dp)
 
 @Composable
@@ -72,16 +71,14 @@ fun WelcomeScreen(
     onSearch: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // État UI local : profil affiché (0 = Moi, 1 = Équipe) et fenêtre du Momentum
-    // (0 = 5 dernières, 1 = 10 dernières). Survivent à la rotation.
+    // État UI local : profil (0 = Moi, 1 = Équipe), fenêtre Momentum (0 = 5, 1 = 10). Rule 11.
     var profileIndex by rememberSaveable { mutableIntStateOf(0) }
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
     BaseScreen(
         title = stringResource(R.string.accueil),
         modifier = Modifier.padding(bottom = 90.dp),
         onSearch = onSearch,
-        // Dropdown de saison (#70) : filtre TOUS les agrégats du dashboard (momentum, séries,
-        // records, chiffres clés, derniers résultats). Aligné à droite, avant la loupe.
+        // Dropdown de saison (#70) : filtre tous les agrégats du dashboard.
         headerTrailing = {
             MKSeasonDropdown(
                 seasons = state.value.seasons,
@@ -95,8 +92,7 @@ fun WelcomeScreen(
             // 1er chargement (aucune métadonnée encore) : spinner plein écran.
             state.value.playerName.isNullOrEmpty() -> CircularProgressIndicator()
             else -> {
-                // Vue sélectionnée : joueur (Moi) ou équipe. Deux jeux de Stats déjà
-                // calculés côté VM → le switch ne recalcule rien.
+                // Vue Moi ou Équipe : deux jeux de Stats déjà calculés côté VM (switch sans recalcul).
                 val selectedStats = when (profileIndex) {
                     0 -> state.value.playerStats
                     else -> state.value.teamStats
@@ -105,9 +101,8 @@ fun WelcomeScreen(
                     Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(11.dp)
                 ) {
-                    // 1. Carte de salutation (→ profil) + segmenté Moi/Équipe. TOUJOURS visible
-                    // (métadonnées équipe/joueur invariantes au changement de saison) → le
-                    // segmented reste affiché pendant le recalcul (#73).
+                    // 1. Carte de salutation + segmenté Moi/Équipe, toujours visible (invariant à
+                    // la saison → reste affiché pendant le recalcul, #73).
                     item {
                         GreetingCard(
                             greeting = stringResource(R.string.home_greeting, state.value.playerName.orEmpty().displayName),
@@ -122,9 +117,8 @@ fun WelcomeScreen(
                     }
 
                     when {
-                        // Recalcul en cours (changement de saison) : spinner sur la ZONE DE
-                        // DONNÉES seulement ; header (dropdown) + carte de salutation restent
-                        // affichés. Les agrégats de saison réapparaissent une fois le compute fini.
+                        // Recalcul en cours : spinner sur la zone de données seulement (header +
+                        // salutation restent affichés).
                         state.value.loading -> item {
                             Box(Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator()
@@ -241,8 +235,7 @@ private fun GreetingCard(
             Column(Modifier.weight(1f)) {
                 MKText(text = greeting, font = Fonts.Bungee, textColor = Colors.white, fontSize = 18, textAlign = TextAlign.Start)
                 MKText(text = subtitle, textColor = Colors.white66, fontSize = 13, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 3.dp))
-                // La saison en cours est désormais montrée par le dropdown de saison du header
-                // (#70, retour utilisateur) — plus de pastille redondante ici.
+                // Saison en cours montrée par le dropdown du header (#70).
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -311,21 +304,14 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
             // Couleur de tendance : delta ≥ 0 (ou indisponible) → vert, sinon rouge.
             val trendColor = if ((form?.winrateDelta ?: 0) < 0) Colors.red else Colors.green
             Spacer(Modifier.height(12.dp))
-            // Deux colonnes, chacune graphe/valeur AU-DESSUS de son hint (#91 pt.10) : GAUCHE =
-            // sparkline + hint « évolution score » ; DROITE = delta de forme + hint « forme N wars
-            // vs all-time ». Row en IntrinsicSize.Min + colonnes fillMaxHeight/SpaceBetween → les
-            // contenus hauts (sparkline 44dp vs texte delta) restent en haut, les DEUX hints sont
-            // poussés en bas et **alignés sur la même ligne basse** (retour utilisateur), même si un
-            // hint wrappe sur deux lignes (maxLines non forcé). Styles inchangés (white66, NunitoBD).
-            // Deux demi-colonnes ÉGALES (weight(1f)), CONTENU CENTRÉ dans chacune (#91, retour user),
-            // séparées par un gap réel au centre (spacedBy 12dp) → sparkline centrée à gauche, forme
-            // centrée à droite, espace au milieu.
+            // Deux demi-colonnes égales (#91 pt.10) : gauche = sparkline + hint « évolution score »,
+            // droite = delta de forme + hint. IntrinsicSize.Min + SpaceBetween → hints alignés en bas.
             Row(
                 Modifier.height(IntrinsicSize.Min),
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Colonne GAUCHE : graphe en haut (centré), hint poussé en bas (centré).
+                // Colonne GAUCHE : sparkline en haut, hint en bas.
                 Column(
                     Modifier.weight(1f).fillMaxHeight(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -340,7 +326,7 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                // Colonne DROITE : delta en haut (centré), hint poussé en bas (centré, aligné bas gauche).
+                // Colonne DROITE : delta en haut, hint en bas.
                 Column(
                     Modifier.weight(1f).fillMaxHeight(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -384,10 +370,7 @@ private fun OutcomeChip(outcome: Int) {
     }
 }
 
-/**
- * Sparkline stylée maquette : aire dégradée + ligne + point de fin, teintés selon
- * la TENDANCE ([trendColor] : vert si delta ≥ 0, rouge sinon). Padding 9 px.
- */
+/** Sparkline : aire dégradée + ligne + point de fin, teintés par la tendance ([trendColor]). */
 @Composable
 private fun Sparkline(values: List<Int>, trendColor: Color, modifier: Modifier = Modifier) {
     val min = values.min()
@@ -424,10 +407,7 @@ private fun Sparkline(values: List<Int>, trendColor: Color, modifier: Modifier =
     }
 }
 
-/**
- * Carte « Chiffres clés » : trois tuiles (winrate coloré vert · score moyen ·
- * 3ᵉ colonne selon la vue). Vue Moi : score brut + position ; Équipe : écart + %.
- */
+/** Carte « Chiffres clés » : winrate · score moyen · 3ᵉ tuile selon la vue (position / maps gagnées). */
 @Composable
 private fun KeyFiguresCard(stats: Stats, isPlayer: Boolean) {
     DashboardCard {
@@ -464,10 +444,7 @@ private fun RowScope.KeyTile(value: String, label: String) {
     }
 }
 
-/**
- * Bandeau highlight série : flamme colorée (vert = série de victoires, rouge =
- * série de défaites) dans un cercle assorti + titre + record.
- */
+/** Bandeau série : flamme colorée (vert = victoires, rouge = défaites) + titre + record. */
 @Composable
 private fun StreakBanner(stats: Stats) {
     val streak = stats.currentStreak

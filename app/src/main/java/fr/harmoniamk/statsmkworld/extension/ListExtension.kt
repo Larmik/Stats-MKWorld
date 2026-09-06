@@ -134,11 +134,9 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 
     return flowOf(
         Stats(
-            // WarStats sur la liste FILTRÉE (warList) : en vue joueur, ne compter que
-            // les wars où le joueur a joué ; en vue adversaire, celles face à cet
-            // adversaire. `warList == this` quand userId/teamId sont null (vue équipe),
-            // donc le comportement équipe est inchangé. Corrige V/N/D & nb de wars qui,
-            // sinon, comptaient TOUTES les wars de la liste même en vue joueur.
+            // WarStats sur la liste FILTRÉE (warList) : V/N/D & nb de wars ne comptent que
+            // les wars pertinentes (jouées par le joueur / face à l'adversaire). En vue
+            // équipe (userId/teamId null), warList == this → comportement inchangé.
             warStats = WarStats(warList, is24p = is24p),
             warScores = warScores,
             maps = maps,
@@ -149,11 +147,9 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
 }
 
 /**
- * Total de shocks (éclairs obtenus) sur ces wars — filtré sur [playerId] si non-null
- * (shocks de ce joueur), sinon TOUS les shocks de l'équipe hôte. Somme des `count` de
- * tous les `Shock` de toutes les manches. Base commune du classement des **baggeurs**
- * (#69) : la part d'un joueur = ses shocks / total équipe (ratio TOTAL/TOTAL, PAS une
- * moyenne par war — cf. domaine « bagging »).
+ * Total de shocks (éclairs obtenus) sur ces wars : somme des `count` de tous les `Shock`
+ * des manches, filtrée sur [playerId] si non-null, sinon toute l'équipe hôte. Base des
+ * classements « baggeurs » (#69) — ratio TOTAL/TOTAL, jamais une moyenne par war.
  */
 fun List<WarDetails>.totalShocks(playerId: String? = null): Int = sumOf { war ->
     war.war.tracks.sumOf { track ->
@@ -164,10 +160,8 @@ fun List<WarDetails>.totalShocks(playerId: String? = null): Int = sumOf { war ->
 }
 
 /**
- * Part de shocks d'un joueur sur ces wars, en % (total shocks joueur / total shocks
- * équipe). `null` si l'équipe n'a obtenu aucun shock sur la fenêtre (pas de dénominateur).
- * Règle UNIQUE réutilisée par les 4 emplacements « baggeurs » (indiv/équipe/adversaire/
- * circuit, #69) : ratio de TOTAUX, jamais une moyenne.
+ * Part de shocks d'un joueur en % (ses shocks / total équipe). `null` si l'équipe n'a aucun
+ * shock (pas de dénominateur). Règle unique des 4 classements « baggeurs » (#69).
  */
 fun List<WarDetails>.shockShare(playerId: String): Int? =
     totalShocks().takeIf { it > 0 }?.let { totalShocks(playerId) * 100 / it }
@@ -180,9 +174,8 @@ fun List<TeamEntity>.withFullTeamStats(
 ) = flow {
     val temp = mutableListOf<Pair<TeamEntity, Stats>>()
 
-    // Calcule les stats d'un adversaire pour un identifiant d'opposant donné
-    // (rosterId ou teamId legacy). `display` porte la vue affichée dans le
-    // classement (id = identifiant d'opposant, nom/tag du roster, avatar équipe).
+    // Stats d'un adversaire pour un id d'opposant (rosterId ou teamId legacy). `display` =
+    // vue affichée (id d'opposant, nom/tag roster, avatar équipe).
     suspend fun addRankingItem(display: TeamEntity, opponentId: String) {
         wars
             .filter { it.hasTeam(opponentId) }
@@ -197,18 +190,15 @@ fun List<TeamEntity>.withFullTeamStats(
     }
 
     this@withFullTeamStats.forEach { team ->
-        // Un item par ROSTER : chaque roster produit son propre classement (ses
-        // wars où l'opposant = ce rosterId), affiché avec le nom/tag du roster et
-        // l'avatar de l'équipe parente. On ne fusionne plus les rosters d'une même
-        // équipe sous l'équipe.
+        // Un item par ROSTER (ses wars où l'opposant = ce rosterId) : rosters d'une même
+        // équipe non fusionnés, affichés avec nom/tag du roster + avatar de l'équipe.
         team.rosters.forEach { roster ->
             addRankingItem(
                 display = team.copy(id = roster.id, name = roster.name, tag = roster.tag),
                 opponentId = roster.id
             )
         }
-        // Item de niveau ÉQUIPE pour les wars legacy (opposant = teamId, avant la
-        // granularité roster) : elles n'ont pas de rosterId → conservées à part.
+        // Item ÉQUIPE pour les wars legacy (opposant = teamId, sans rosterId) → à part.
         addRankingItem(display = team, opponentId = team.id)
     }
     emit(temp)
@@ -270,11 +260,10 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
 }
 
 /**
- * Filtre une liste de wars sur l'intervalle d'une saison (#70). Rattachement war →
- * saison **calculé** (pas de `seasonId` dénormalisé sur la war) : `war.id` est le
- * timestamp (epoch ms) de la war, une war appartient à la saison dont l'intervalle
- * `[start, end]` le contient. [season] `null` = **tout l'historique** (aucun filtre).
- * `season.end == null` (saison en cours) → borne haute = maintenant.
+ * Filtre les wars sur l'intervalle d'une saison (#70). Rattachement calculé (pas de
+ * `seasonId` sur la war) : `war.id` = timestamp epoch ms, une war est dans la saison dont
+ * `[start, end]` le contient. [season] `null` = tout l'historique ; `end == null` (saison
+ * en cours) → borne haute = maintenant.
  */
 fun List<WarEntity>.filterBySeason(season: SeasonEntity?): List<WarEntity> {
     season ?: return this

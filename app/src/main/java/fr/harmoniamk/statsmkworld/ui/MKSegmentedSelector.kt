@@ -16,20 +16,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 
 /**
- * Segmenté standard de l'app (style « pill » de la maquette prototype UX) : conteneur
- * arrondi translucide, item **actif** = fond blanc plein / texte sombre, item
- * **inactif** = texte contrasté sur fond translucide. C'est LE composant segmented du
- * projet — ne pas recréer de segmented local (cf. rule 15).
+ * Segmenté standard de l'app (« pill » maquette) : item actif = fond blanc/texte sombre, inactif
+ * = texte contrasté sur fond translucide. LE composant segmented du projet, ne pas recréer (rule 15).
+ * Stateless : sélection pilotée par [page], nouvel index remonté via [onClick].
  *
- * Composant **stateless** : la sélection est pilotée par [page] (index sélectionné) ;
- * [onClick] remonte le nouvel index à l'appelant, qui détient l'état.
- *
- * @param onDark `true` quand le segmented est posé sur une **carte sombre** (ex.
- *   dashboard Accueil, cartes `blackAlphaed`) : conteneur blanc très translucide,
- *   texte inactif **blanc**. Par défaut (`false`), le segmented est posé sur le
- *   **fond clair du dégradé de `BaseScreen`** : conteneur sombre translucide, texte
- *   inactif **sombre** — lisible sur le dégradé coloré. L'item actif (pastille blanche
- *   + texte sombre) reste identique dans les deux cas (contraste sur les deux fonds).
+ * @param onDark `true` sur carte sombre (dashboard Accueil) → texte inactif blanc ; `false`
+ *   (défaut) sur le dégradé clair de `BaseScreen` → texte inactif sombre. Item actif identique.
  */
 @Composable
 fun MKSegmentedSelector(

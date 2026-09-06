@@ -22,8 +22,7 @@ fun PositionCell(
     modifier: Modifier = Modifier,
     isVisible: Boolean = true,
     is24p: Boolean,
-    // Taille de police du numéro. Par défaut le grand rendu historique (EditTrack) ; l'écran
-    // AddTrack passe une taille réduite pour un rendu plus harmonieux dans sa grille.
+    // Défaut = grand rendu (EditTrack) ; AddTrack passe une taille réduite pour sa grille.
     fontSize: Int = if (is24p) 50 else 70,
     onClick: (Int) -> Unit
 ) {

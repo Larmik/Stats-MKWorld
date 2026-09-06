@@ -27,10 +27,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Classement COMPLET des circuits joués contre un adversaire (« Voir le classement en
- * entier » de la fiche adversaire #27). Réutilise le même [OpponentDetailViewModel] (même
- * clé de nav → mêmes données, même mode ET même tri) et la grille `podiumRows` mutualisée
- * (rule 16). Sélecteur de tri Occurrences / Winrate / Score moy. en tête (point 5).
+ * Classement complet des circuits joués contre un adversaire (#27). Réutilise le même
+ * [OpponentDetailViewModel] (mêmes données, mode et tri) et la grille `podiumRows` (rule 16).
+ * Sélecteur de tri Occurrences / Winrate / Score moy. en tête.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -46,7 +45,7 @@ fun OpponentTracksRankingScreen(
             state.loading -> CircularProgressIndicator()
             state.allTracks.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)
             else -> {
-                // Sélecteur de tri sur le fond clair du BaseScreen (onDark false).
+                // Sélecteur de tri sur fond clair (onDark false).
                 TracksSortSelector(state.tracksSort, onDark = false, onSelect = viewModel::onTracksSortSelected)
                 Spacer(Modifier.height(11.dp))
                 LazyColumn(
@@ -60,8 +59,7 @@ fun OpponentTracksRankingScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     podiumRows(
-                        // Cellules en BLANC dans un cadre transparent-noir (#50 pt.7) —
-                        // harmonisation avec les autres écrans.
+                        // Cellules blanches sur cadre transparent-noir (#50 pt.7).
                         items = state.allTracks.map { track -> track.toPodiumEntry(state.isIndiv) to track },
                         contentColor = Colors.white
                     )

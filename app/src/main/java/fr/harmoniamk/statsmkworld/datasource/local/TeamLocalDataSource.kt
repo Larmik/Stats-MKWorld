@@ -16,9 +16,7 @@ import javax.inject.Singleton
 
 interface TeamLocalDataSourceInterface {
     fun getAll(): Flow<List<TeamEntity>>
-    fun getById(id: String) : Flow<TeamEntity?>
     suspend fun bulkInsert(teams: List<TeamEntity>)
-    suspend fun insert(team: TeamEntity)
     suspend fun clear()
 }
 
@@ -39,9 +37,7 @@ class TeamLocalDataSource @Inject constructor(@ApplicationContext private val co
     private val dao = MKDatabase.getInstance(context).teamDao()
 
     override fun getAll(): Flow<List<TeamEntity>> = dao.getAll()
-    override fun getById(id: String) = dao.getById(id)
     override suspend fun bulkInsert(teams: List<TeamEntity>) = dao.bulkInsert(teams)
-    override suspend fun insert(team: TeamEntity) = dao.insert(team)
     override suspend fun clear() = dao.clear()
 
 }

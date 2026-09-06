@@ -58,16 +58,9 @@ import kotlinx.coroutines.launch
 import java.util.Date
 
 /**
- * Écran profil équipe autonome (fiche d'une équipe, atteinte depuis l'Annuaire :
- * route `Team/Profile/{id}`). Barre de titre propre + contenu.
- *
- * - `id == "me"` : mon équipe (onglets Membres / Alliés, ajout d'ally).
- * - sinon : fiche d'une autre équipe (fiche publique `pteam`, #28) — lecture seule,
- *   membres → `pplayer`.
- *
- * Le contenu réel est [TeamProfileContent], mutualisé avec le pôle Profil (onglet
- * Équipe du `ProfileScreen` fusionné, #28) qui l'affiche sans barre de titre propre.
- * Rendu pixel-perfect maquette (écrans `profile` / `pteam`).
+ * Fiche profil équipe autonome (route `Team/Profile/{id}`) : barre de titre + [TeamProfileContent].
+ * `id == "me"` = mon équipe (onglets Membres/Alliés, ajout d'ally) ; sinon fiche publique lecture
+ * seule (#28). Contenu mutualisé avec l'onglet Équipe du pôle Profil.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -123,10 +116,9 @@ fun TeamProfileScreen(
 }
 
 /**
- * Contenu du profil équipe (carte identité, informations, membres / alliés + ajout),
- * sans barre de titre : posé dans le [ColumnScope] d'un `BaseScreen` par l'appelant.
- * Mutualisé entre [TeamProfileScreen] (fiche autonome) et l'onglet Équipe du pôle
- * Profil (`ProfileScreen`). Rendu fidèle à la maquette 5 pôles.
+ * Contenu du profil équipe (identité, informations, membres / alliés + ajout), sans barre de
+ * titre : posé dans un [ColumnScope]. Mutualisé entre [TeamProfileScreen] et l'onglet Équipe du
+ * pôle Profil.
  *
  * @param onAddAllyClick ouvre le sheet « Ajouter un ally » (hébergé par l'appelant).
  */
@@ -143,8 +135,7 @@ fun ColumnScope.TeamProfileContent(
     // Résolu hors du LazyListScope (stringResource n'y est pas appelable).
     val membersHeader = stringResource(R.string.profile_members)
 
-    // Confirmation « Démarrer une nouvelle saison » (leader strict, #30) : action
-    // importante et irréversible (clôt la saison en cours, en ouvre une nouvelle).
+    // Confirmation « Démarrer une nouvelle saison » (leader strict, #30) : action irréversible.
     if (state.value.newSeasonDialog) {
         MKDialog(
             title = stringResource(R.string.new_season_dialog_title),
@@ -201,9 +192,8 @@ fun ColumnScope.TeamProfileContent(
                     ProfileInfoCard(infos)
                 }
 
-                // Action leader STRICT (role == 2, #30) : démarrer une nouvelle saison
-                // (clôt la courante). Confirmation via MKDialog. Bouton en largeur
-                // intrinsèque, centré (même traitement que « Ajouter un ally »).
+                // Action leader strict (role == 2, #30) : démarrer une nouvelle saison (confirmée
+                // par MKDialog). Bouton centré en largeur intrinsèque.
                 if (state.value.newSeasonVisible) item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         MKButton(
@@ -229,8 +219,7 @@ fun ColumnScope.TeamProfileContent(
                         when (subTab) {
                             1 -> {
                                 if (state.value.addAllyVisible) item {
-                                    // Bouton « Ajouter un ally » en largeur intrinsèque, centré
-                                    // (retour utilisateur #28 ; solution d'attente avant le ticket UI).
+                                    // Bouton « Ajouter un ally » centré en largeur intrinsèque (#28).
                                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                                         MKButton(
                                             text = stringResource(R.string.ajouter_un_ally),
@@ -251,13 +240,11 @@ fun ColumnScope.TeamProfileContent(
                                     )
                                 }
                             }
-                            // Onglet Membres : pas d'en-tête « Membres » (déjà nommé par le
-                            // segmented), mais un en-tête par roster si l'équipe en a ≥ 2.
+                            // Onglet Membres : en-tête par roster si l'équipe en a ≥ 2 (le segmented nomme déjà « Membres »).
                             else -> memberRows(members, singleRosterHeader = null, onPlayerClick)
                         }
                     }
-                    // Autre équipe (pteam) : liste des membres. En-tête « Membres » si
-                    // roster unique, sinon un en-tête par roster.
+                    // Autre équipe (pteam) : en-tête « Membres » si roster unique, sinon un par roster.
                     false -> memberRows(members, singleRosterHeader = membersHeader, onPlayerClick)
                 }
             }
@@ -266,14 +253,8 @@ fun ColumnScope.TeamProfileContent(
 }
 
 /**
- * Lignes de membres (`.lrow`) : avatar/initiales + nom + rôle réel + chevron.
- *
- * **Regroupement par roster** : si les membres appartiennent à **≥ 2 rosters**, une
- * section par roster est émise, titrée par le **nom du roster** (`Eyebrow`). Sinon
- * (roster unique) la liste est plate, précédée de [singleRosterHeader] si fourni
- * (ex. « Membres » sur une fiche équipe publique ; `null` dans l'onglet Membres de
- * mon équipe, déjà nommé par le segmented). Rattachement membre→roster fourni par
- * `MemberInfo.rosterId`/`rosterName`.
+ * Lignes de membres. Si ≥ 2 rosters, une section par roster titrée par son nom (`Eyebrow`) ;
+ * sinon liste plate précédée de [singleRosterHeader] si fourni.
  */
 private fun androidx.compose.foundation.lazy.LazyListScope.memberRows(
     members: List<TeamProfileViewModel.MemberInfo>,

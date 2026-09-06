@@ -33,7 +33,7 @@ class WorldRecordsRepository @Inject constructor(): WorldRecordsRepositoryInterf
     private val baseUrl = "https://mkwrs.com/mkworld/"
     private val ua = "Mozilla/5.0 (Android) MKWorldFetcher/1.0"
 
-    // cache mapping trackUrl -> HeaderInfo (détecté une fois)
+    // trackUrl -> HeaderInfo (détecté une fois)
     private val headerCache = ConcurrentHashMap<String, HeaderInfo>()
 
     private data class HeaderInfo(
@@ -146,25 +146,21 @@ class WorldRecordsRepository @Inject constructor(): WorldRecordsRepositoryInterf
         return null
     }
 
-    /**
-     * Try to detect header indices by scanning tables' <th> or first row <td> if no <th>.
-     */
+    // Détecte les index de colonnes via les <th> (ou la 1ʳᵉ ligne <td> à défaut).
     private fun detectHeaderInfo(doc: org.jsoup.nodes.Document): HeaderInfo? {
         val tables = doc.select("table")
         for (table in tables) {
-            // Prefer explicit <th> header row if present
             val headerCells = table.select("thead th").ifEmpty { table.select("tr").first()?.select("th") ?: listOf() }
             val headerTexts = if (headerCells.isNotEmpty()) {
                 headerCells.map { it.text().trim() }
             } else {
-                // No <th>, try to use the first row's <td> as a pseudo-header (risky but helps)
+                // Pas de <th> : 1ʳᵉ ligne <td> en pseudo-en-tête.
                 val firstRow = table.select("tr").first()
                 firstRow?.select("td")?.map { it.text().trim() } ?: listOf()
             }
 
             if (headerTexts.isEmpty()) continue
 
-            // heuristics to find indices
             val dateIdx = indexOfRegex(headerTexts, ".*date.*") ?: indexOfRegex(headerTexts, ".*datum.*") ?: 0
             val timeIdx = indexOfRegex(headerTexts, ".*time.*") ?: 1
             val playerIdx = indexOfRegex(headerTexts, ".*player.*") ?: 2
@@ -174,15 +170,13 @@ class WorldRecordsRepository @Inject constructor(): WorldRecordsRepositoryInterf
             val coinsIdx = indexOfRegex(headerTexts, ".*coin(s)?.*") ?: (headerTexts.size - 2).coerceAtLeast(5)
             val shroomsIdx = indexOfRegex(headerTexts, ".*shroom(s)?.*") ?: (headerTexts.size - 1).coerceAtLeast(6)
 
-            // find first "Lap" column index
             val lapStartIdx = indexOfRegex(headerTexts, ".*lap.*") ?: run {
-                // if "Lap" not in headers, heuristically assume laps start after fixed columns (durationIdx + 1)
+                // Pas de colonne "Lap" : on suppose les laps après les colonnes fixes.
                 (durationIdx + 1).coerceAtLeast(5)
             }
 
-            // sanity check: coinsIdx should be > lapStartIdx
+            // Layout inattendu (coins doit suivre les laps) → table ignorée.
             if (coinsIdx <= lapStartIdx) {
-                // skip this table — layout not as expected
                 continue
             }
 
@@ -205,7 +199,7 @@ class WorldRecordsRepository @Inject constructor(): WorldRecordsRepositoryInterf
         for (table in tables) {
             val rows = table.select("tr:has(td)")
             if (rows.isEmpty()) continue
-            // quick check: does first data row have enough columns?
+            // 1ʳᵉ ligne de données a-t-elle assez de colonnes ?
             val first = rows.first()
             if (first != null) {
                 val cols = first.select("td")
@@ -224,11 +218,11 @@ class WorldRecordsRepository @Inject constructor(): WorldRecordsRepositoryInterf
     private fun normalizeTimeDigits(s: String): String = s.filter { it.isDigit() }
 
     private fun timeMatches(a: String, b: String): Boolean {
-        // Normalize and compare digits only (robust to different separators ' : " etc)
+        // Compare les chiffres seuls (robuste aux séparateurs ' : " etc.).
         val na = normalizeTimeDigits(a)
         val nb = normalizeTimeDigits(b)
         if (na.isEmpty() || nb.isEmpty()) return a.trim() == b.trim()
-        // accept equality or one containing the other (some pages may omit ms or separators)
+        // Égalité ou inclusion (certaines pages omettent les ms/séparateurs).
         return na == nb || na.contains(nb) || nb.contains(na)
     }
 
@@ -244,7 +238,7 @@ class WorldRecordsRepository @Inject constructor(): WorldRecordsRepositoryInterf
         var coins = parseDashInts(coinsRaw)
         var shrooms = parseDashInts(shroomsRaw)
 
-        // Ensure coins/shrooms lengths match laps length
+        // Aligne les longueurs de coins/shrooms sur celle des laps.
         val lapCount = laps.size
         if (coins.size < lapCount) {
             coins = coins + List(lapCount - coins.size) { 0 }

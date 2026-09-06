@@ -37,13 +37,9 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerMedallion
 private val CardRadius = RoundedCornerShape(6.dp)
 
 /**
- * Entrée de podium mutualisée (circuit / adversaire / joueur), **structure identique** :
- * image (illustration de circuit, logo d'équipe, ou pastille d'initiales joueur) + nom +
- * un ou plusieurs couples (libellé → valeur). Utilisée par les podiums de `StatsFullScreen`
- * (#25/#36) ET par les grilles du pôle Classements (#26).
- *
- * Priorité de l'avatar : [pictureRes] (circuit) > [logo] (URL d'équipe MKCentral, préfixée
- * ici) > [initials] (pastille joueur, avec photo [avatar] superposée si dispo) > `default_logo`.
+ * Entrée de podium mutualisée (circuit / adversaire / joueur) : image + nom + couples
+ * (libellé → valeur). Podiums de `StatsFullScreen` (#25/#36) et grilles Classements (#26).
+ * Priorité avatar : [pictureRes] > [logo] > [initials] (+ [avatar] superposée) > `default_logo`.
  */
 class PodiumEntry(
     val labelRes: Int? = null,       // circuit : @StringRes du nom de map
@@ -58,10 +54,8 @@ class PodiumEntry(
 
 /**
  * Une ligne de podium : jusqu'à [columns] `PodiumCell` à poids égal, hauteur uniforme
- * (`IntrinsicSize.Min`). Comble avec des `Spacer` si moins de [columns] entrées (podiums
- * Top3/Flop3). [onClick] optionnel (Classements → fiche stats) ; index passé à l'appelant.
- * [contentColor] pilote la couleur du texte (défaut blanc — carte sombre du pôle Stats ;
- * les Classements passent noir).
+ * (`IntrinsicSize.Min`), complétée par des `Spacer` si moins d'entrées. [onClick] optionnel
+ * (index passé à l'appelant). [contentColor] = couleur du texte.
  */
 @Composable
 fun ColumnScope.PodiumRow(
@@ -82,14 +76,9 @@ fun ColumnScope.PodiumRow(
 }
 
 /**
- * Cellule podium, **structure identique circuit / adversaire / joueur** : image en haut
- * (illustration de circuit arrondie, logo d'équipe en cercle, pastille d'initiales joueur,
- * fallback `default_logo`), nom (2 lignes max), puis les lignes de stats empilées
- * (libellé + valeur en gras).
- *
- * [contentColor] : couleur du **nom** et des **valeurs** (défaut `Colors.white` — carte
- * sombre du pôle Stats ; le pôle Classements passe `Colors.black`). Le libellé secondaire
- * en dérive à 66 % d'alpha. Les initiales restent blanches sur leur pastille colorée.
+ * Cellule podium : image (circuit / logo / initiales / `default_logo`), nom (2 lignes max), puis
+ * lignes de stats (libellé + valeur). [contentColor] = couleur du nom et des valeurs (libellé à
+ * 66 % d'alpha) ; les initiales restent blanches sur leur pastille.
  */
 @Composable
 fun RowScope.PodiumCell(
@@ -118,7 +107,7 @@ fun RowScope.PodiumCell(
                 contentDescription = null,
                 modifier = Modifier.size(40.dp).clip(CircleShape)
             )
-            // Médaillon joueur mutualisé (#50 pt.4, rule 16) : photo si dispo, initiales sinon/pendant le chargement.
+            // Médaillon mutualisé (#50 pt.4, rule 16) : photo si dispo, initiales sinon.
             entry.initials != null -> PlayerMedallion(
                 initials = entry.initials,
                 avatarColor = entry.avatarColor,

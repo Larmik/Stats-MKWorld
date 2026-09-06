@@ -63,11 +63,8 @@ import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 import java.util.Date
 
 /**
- * Écran profil joueur autonome (fiche d'un joueur donné, atteinte depuis l'Annuaire /
- * les résultats : route `Player/Profile/{id}`). Barre de titre propre + contenu.
- * Le contenu réel est [PlayerProfileContent], mutualisé avec le pôle Profil
- * (onglet Joueur du `ProfileScreen` fusionné, ticket #28) qui l'affiche sans barre
- * de titre propre. Rendu pixel-perfect maquette (écrans `profile` / `pplayer`).
+ * Fiche profil joueur autonome (route `Player/Profile/{id}`) : barre de titre + [PlayerProfileContent],
+ * ce dernier mutualisé avec l'onglet Joueur du pôle Profil (#28).
  */
 @Composable
 fun PlayerProfileScreen(
@@ -95,10 +92,8 @@ private fun roleFromRes(res: Int?): ProfileRole? = when (res) {
 }
 
 /**
- * Contenu du profil joueur (carte identité, informations, réglages), sans barre de
- * titre : posé dans le [ColumnScope] d'un `BaseScreen` par l'appelant. Mutualisé
- * entre [PlayerProfileScreen] (fiche autonome `pplayer`) et l'onglet Joueur du pôle
- * Profil (`ProfileScreen`, écran `profile`). Rendu fidèle à la maquette 5 pôles.
+ * Contenu du profil joueur (identité, informations, réglages), sans barre de titre : posé dans
+ * un [ColumnScope]. Mutualisé entre [PlayerProfileScreen] et l'onglet Joueur du pôle Profil.
  */
 @Composable
 fun ColumnScope.PlayerProfileContent(
@@ -224,8 +219,7 @@ fun ColumnScope.PlayerProfileContent(
                     }
                 }
 
-                // Carte Informations : équipe/tag, membre depuis, code ami, discord,
-                // inscription, rôle — grille 2 colonnes de la maquette.
+                // Carte Informations : équipe, membre depuis, code ami, discord, inscription, rôle.
                 item {
                     val infos = buildList {
                         roster?.let {
@@ -246,10 +240,8 @@ fun ColumnScope.PlayerProfileContent(
                     ProfileInfoCard(infos)
                 }
 
-                // Boutons de règles métier (fiche d'un autre joueur) : ajout ally,
-                // changement de rôle Leader-only, message « déjà ally ». Boutons en
-                // largeur intrinsèque, centrés (retour utilisateur #28 ; même traitement
-                // que le profil équipe — solution d'attente avant le ticket UI boutons).
+                // Actions sur la fiche d'un autre joueur : ajout ally, changement de rôle
+                // (Leader-only), message « déjà ally ». Boutons centrés en largeur intrinsèque (#28).
                 if (state.value.buttonVisible) item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         MKButton(

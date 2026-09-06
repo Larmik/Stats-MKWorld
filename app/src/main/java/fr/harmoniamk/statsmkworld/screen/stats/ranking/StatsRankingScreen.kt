@@ -42,17 +42,12 @@ import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 import fr.harmoniamk.statsmkworld.ui.stats.podiumRows
 
 /**
- * Pôle Classements (#26) — écran unique à sous-onglets Joueurs / Adversaires /
- * Circuits (plus de menu intermédiaire). Palmarès triable (Winrate défaut / Score
- * moy. / compteur), cherchable, avec un **curseur « occurrences minimum »** (wars pour
- * Joueurs/Adversaires, maps pour Circuits) filtrant la liste. Chaque ligne mène à sa
- * fiche statistique. Cellules mutualisées avec les podiums de `StatsFullScreen`
- * (`PodiumCell`). L'onglet Joueurs est **sectionné** Membres / Alliés.
+ * Pôle Classements (#26) — sous-onglets Joueurs / Adversaires / Circuits. Palmarès triable,
+ * cherchable, avec un curseur « occurrences minimum ». Chaque ligne mène à sa fiche (cellules
+ * `PodiumCell` mutualisées). Onglet Joueurs sectionné Membres / Alliés.
  *
- * Navigation vers les fiches : `StatsType.PlayerStats` → écran Statistiques du joueur
- * cliqué (#65, route `Statsfull/{userId}` → `StatsFullScreen(showTabs = false)`, sans
- * sélecteur Indiv/Équipe) ; `OpponentStats` / `MapStats` → fiches dédiées Adversaire/
- * Circuit (#27), routées par type dans `RootScreen` (`Opponent/{teamId}`, `Map/{trackIndex}`).
+ * Navigation : `PlayerStats` → `StatsFullScreen(showTabs = false)` du joueur (#65) ;
+ * `OpponentStats` / `MapStats` → fiches Adversaire/Circuit (#27), routées dans `RootScreen`.
  */
 @Composable
 fun StatsRankingScreen(
@@ -62,14 +57,12 @@ fun StatsRankingScreen(
     val state by viewModel.state.collectAsState()
     val is24p = state.is24PEnabled == true
 
-    // padding bas = hauteur de la bottom bar des 5 pôles, pour que le dernier élément de
-    // la grille reste visible au-dessus d'elle (même valeur/approche que Accueil/Stats : 90.dp).
+    // padding bas = hauteur de la bottom bar (rule 17, 90.dp).
     BaseScreen(
         title = stringResource(R.string.classements),
         modifier = Modifier.padding(bottom = 90.dp),
-        // Sélecteur de SAISON (#70) : menu déroulant aligné à droite dans le header (composant
-        // partagé MKSeasonDropdown, rule 16). Change l'état VM ⇒ recalcul à la volée des
-        // classements (rule 11, pas de re-nav). Masqué tant qu'aucune saison chargée.
+        // Sélecteur de saison (#70, MKSeasonDropdown partagé rule 16). Change l'état VM ⇒
+        // recalcul à la volée (rule 11, pas de re-nav).
         headerTrailing = {
             MKSeasonDropdown(
                 seasons = state.seasons,
@@ -88,8 +81,6 @@ fun StatsRankingScreen(
             page = state.tab.ordinal,
             onClick = viewModel::onTabSelected
         )
-        // Marges verticales du champ de recherche réduites de moitié (11 → ~6 dp,
-        // #50 pt.5) pour rapprocher les deux sélecteurs qui l'entourent.
         Spacer(Modifier.height(6.dp))
 
         // Recherche.
@@ -105,10 +96,8 @@ fun StatsRankingScreen(
         )
         Spacer(Modifier.height(6.dp))
 
-        // Chips de tri (3 par onglet) : le chip de COUNT est en 1ʳᵉ position et
-        // sélectionné par défaut (libellé variable Participation / Occurrences / Fréquence),
-        // suivi de Winrate puis Score moy. — ordre calé sur SortType.entries (COUNT en 0).
-        // Onglet Joueurs : ce chip trie désormais par taux de participation (#78).
+        // Chips de tri : COUNT (défaut, libellé variable Participation/Occurrences/Fréquence),
+        // Winrate, Score moy. — ordre calé sur SortType.entries. Joueurs : COUNT = participation (#78).
         MKSegmentedSelector(
             items = listOf(
                 stringResource(
@@ -133,16 +122,13 @@ fun StatsRankingScreen(
             onChange = viewModel::onMinOccurrencesChange
         )
 
-        // Zone de DONNÉES : au changement de saison (#73), seul ce bloc passe en chargement ;
-        // le header (dropdown), les onglets, la recherche, les chips de tri et le curseur
-        // ci-dessus restent affichés. Les classements réapparaissent le compute terminé.
+        // Zone de données : au changement de saison (#73), seul ce bloc passe en chargement ;
+        // le header et les sélecteurs restent affichés.
         when {
             state.loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            // Liste par onglet — cellules PodiumCell (3 par ligne), texte en BLANC et
-            // placées dans un cadre transparent-noir (comme les sections Stats, #50 pt.7)
-            // pour harmoniser avec le reste de l'app.
+            // Liste par onglet — PodiumCell (3/ligne) sur cadre transparent-noir (#50 pt.7).
             else -> LazyColumn(
                 Modifier
                     .weight(1f)
@@ -182,20 +168,17 @@ fun StatsRankingScreen(
     }
 }
 
-// =====================================================================
 // Entrées PodiumEntry (grille `podiumRows` mutualisée — ui/stats/PodiumGrid.kt)
-// =====================================================================
-
 private fun RankingItem.PlayerRanking.toPodiumEntry(): Pair<PodiumEntry, RankingItem.PlayerRanking> =
     PodiumEntry(
         name = player.name.displayName,
         initials = initialsOf(player.name.displayName),
-        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales sur pastille colorée.
+        // Photo si dispo (#50 pt.4), sinon initiales.
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
             R.string.times_played_short to warsPlayedLabel,
-            // 4ᵉ ligne (#78) : taux de participation, juste sous « Wars jouées ».
+            // Taux de participation (#78).
             R.string.participation_rate_short to participationRateLabel,
             R.string.form_winrate to winrateLabel,
             R.string.form_score to averageLabel
@@ -203,8 +186,7 @@ private fun RankingItem.PlayerRanking.toPodiumEntry(): Pair<PodiumEntry, Ranking
     ) to this
 
 private fun RankingItem.OpponentRanking.toPodiumEntry(): Pair<PodiumEntry, RankingItem.OpponentRanking> =
-    // Rule 12 : nom/tag du roster (porté par TeamEntity), avatar de l'équipe (logo), et
-    // adversaire non résolu déjà dégradé en « Équipe inconnue » côté données (non effacé).
+    // Rule 12 : nom/tag du roster, logo de l'équipe (non résolu déjà dégradé côté données).
     PodiumEntry(
         name = team.name,
         logo = team.logo,
@@ -232,14 +214,8 @@ private fun RankingItem.TrackRanking.toPodiumEntry(is24p: Boolean): Pair<PodiumE
     ) to this
 }
 
-// =====================================================================
 // Composants locaux
-// =====================================================================
-
-/**
- * En-tête de section (Membres / Alliés) sur l'onglet Joueurs. Texte en BLANC :
- * les cellules sont désormais dans un cadre transparent-noir (#50 pt.7).
- */
+/** En-tête de section (Membres / Alliés) sur l'onglet Joueurs. */
 @Composable
 private fun SectionHeader(text: String) {
     MKText(
@@ -253,12 +229,9 @@ private fun SectionHeader(text: String) {
 }
 
 /**
- * Curseur « occurrences minimum » : `Slider` Material3 **continu** (piste sans
- * graduations : pas de tick marks — `steps = 0` + `tickColors` transparents), **pouce
- * cercle plein blanc opaque**, piste active verte. Le libellé de valeur est placé
- * **au-dessus** (pas à côté), et le Slider a un léger padding horizontal, pour que le
- * pouce en position minimale reste **entièrement visible** (pas de rognage à gauche).
- * Masqué si le max ne dépasse pas 1 (rien à filtrer).
+ * Curseur « occurrences minimum » : `Slider` Material3 continu (`steps = 0`, ticks transparents),
+ * libellé de valeur au-dessus, léger padding horizontal (pouce au min entièrement visible).
+ * Masqué si max ≤ 1 (rien à filtrer).
  */
 @Composable
 private fun ColumnScope.MinOccurrencesSlider(value: Int, max: Int, onChange: (Int) -> Unit) {
@@ -283,9 +256,7 @@ private fun ColumnScope.MinOccurrencesSlider(value: Int, max: Int, onChange: (In
             activeTickColor = Color.Transparent,
             inactiveTickColor = Color.Transparent
         ),
-        // Hauteur de la barre réduite au minimum (#50 pt.5) : le Slider Material3
-        // réserve ~48 dp de zone tactile, on la contraint à 24 dp pour resserrer
-        // la barre entre les cellules et le champ de recherche.
+        // Zone tactile contrainte à 24 dp (défaut ~48) pour resserrer la barre (#50 pt.5).
         modifier = Modifier.fillMaxWidth().height(24.dp).padding(horizontal = 6.dp)
     )
     Spacer(Modifier.height(6.dp))
