@@ -122,8 +122,9 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     // sème le mode initial Indiv/Équipe de la fiche (rule 11) ; « null » = Équipe.
                     when (type) {
                         is StatsType.PlayerStats -> navController.navigate("Statsfull/${type.userId}")
-                        is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}/${type.userId ?: "null"}")
-                        is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}/${type.userId ?: "null"}")
+                        // Saison propagée (#91 pt.5) en segment de route : « all » = tout l'historique.
+                        is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}/${type.userId ?: "null"}/${type.seasonNumber ?: "all"}")
+                        is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}/${type.userId ?: "null"}/${type.seasonNumber ?: "all"}")
                         else -> {
                             navController.currentBackStackEntry?.savedStateHandle?.set("type", type)
                             navController.navigate("Stats")
@@ -174,19 +175,21 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
         // (et, à terme, la fiche équipe publique #28). teamId = identifiant d'opposant ;
         // userId (« null » = Équipe) sème le mode initial Indiv/Équipe.
         composable(
-            route = "Opponent/{teamId}/{userId}",
+            route = "Opponent/{teamId}/{userId}/{season}",
             arguments = listOf(
                 navArgument("teamId") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val teamId = it.arguments?.getString("teamId").orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             OpponentDetailScreen(
                 viewModel = hiltViewModel(
-                    key = "$teamId-$userId",
+                    key = "$teamId-$userId-$season",
                     creationCallback = { factory: OpponentDetailViewModel.Factory ->
-                        factory.create(teamId = teamId, initialUserId = userId)
+                        factory.create(teamId = teamId, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() },
@@ -194,27 +197,29 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
                     navController.navigate("Home/WarDetails")
                 },
-                onTracksRanking = { navController.navigate("Opponent/$teamId/$userId/Tracks") },
-                onPilotsRanking = { navController.navigate("Opponent/$teamId/$userId/Pilots") },
-                onBaggersRanking = { navController.navigate("Opponent/$teamId/$userId/Baggers") }
+                onTracksRanking = { navController.navigate("Opponent/$teamId/$userId/$season/Tracks") },
+                onPilotsRanking = { navController.navigate("Opponent/$teamId/$userId/$season/Pilots") },
+                onBaggersRanking = { navController.navigate("Opponent/$teamId/$userId/$season/Baggers") }
             )
         }
 
         // Classement complet des circuits joués contre l'adversaire (« Voir en entier »).
         composable(
-            route = "Opponent/{teamId}/{userId}/Tracks",
+            route = "Opponent/{teamId}/{userId}/{season}/Tracks",
             arguments = listOf(
                 navArgument("teamId") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val teamId = it.arguments?.getString("teamId").orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             OpponentTracksRankingScreen(
                 viewModel = hiltViewModel(
-                    key = "$teamId-$userId-tracks",
+                    key = "$teamId-$userId-$season-tracks",
                     creationCallback = { factory: OpponentDetailViewModel.Factory ->
-                        factory.create(teamId = teamId, initialUserId = userId)
+                        factory.create(teamId = teamId, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() }
@@ -223,19 +228,21 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
 
         // Classement complet des pilotes ayant joué contre l'adversaire (« Voir en entier » #67).
         composable(
-            route = "Opponent/{teamId}/{userId}/Pilots",
+            route = "Opponent/{teamId}/{userId}/{season}/Pilots",
             arguments = listOf(
                 navArgument("teamId") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val teamId = it.arguments?.getString("teamId").orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             OpponentPilotsRankingScreen(
                 viewModel = hiltViewModel(
-                    key = "$teamId-$userId-pilots",
+                    key = "$teamId-$userId-$season-pilots",
                     creationCallback = { factory: OpponentDetailViewModel.Factory ->
-                        factory.create(teamId = teamId, initialUserId = userId)
+                        factory.create(teamId = teamId, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() }
@@ -244,19 +251,21 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
 
         // Classement complet des baggeurs face à l'adversaire (« Voir en entier » #69).
         composable(
-            route = "Opponent/{teamId}/{userId}/Baggers",
+            route = "Opponent/{teamId}/{userId}/{season}/Baggers",
             arguments = listOf(
                 navArgument("teamId") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val teamId = it.arguments?.getString("teamId").orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             OpponentBaggersRankingScreen(
                 viewModel = hiltViewModel(
-                    key = "$teamId-$userId-baggers",
+                    key = "$teamId-$userId-$season-baggers",
                     creationCallback = { factory: OpponentDetailViewModel.Factory ->
-                        factory.create(teamId = teamId, initialUserId = userId)
+                        factory.create(teamId = teamId, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() }
@@ -266,10 +275,11 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
         // Fiche détail CIRCUIT (#27) : atteinte depuis les Classements. trackIndex =
         // index(es) de map (CSV) ; userId (« null » = Équipe) sème le mode initial.
         composable(
-            route = "Map/{trackIndex}/{userId}",
+            route = "Map/{trackIndex}/{userId}/{season}",
             arguments = listOf(
                 navArgument("trackIndex") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val trackIndex = it.arguments?.getString("trackIndex")
@@ -277,27 +287,29 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 ?.mapNotNull { part -> part.toIntOrNull() }
                 .orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             val csv = trackIndex.joinToString(",")
             MapDetailScreen(
                 viewModel = hiltViewModel(
-                    key = "$csv-$userId",
+                    key = "$csv-$userId-$season",
                     creationCallback = { factory: MapDetailViewModel.Factory ->
-                        factory.create(trackIndex = trackIndex, initialUserId = userId)
+                        factory.create(trackIndex = trackIndex, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() },
-                onPilotsRanking = { navController.navigate("Map/$csv/$userId/Pilots") },
-                onBaggersRanking = { navController.navigate("Map/$csv/$userId/Baggers") },
-                onOpponentsRanking = { navController.navigate("Map/$csv/$userId/Opponents") }
+                onPilotsRanking = { navController.navigate("Map/$csv/$userId/$season/Pilots") },
+                onBaggersRanking = { navController.navigate("Map/$csv/$userId/$season/Baggers") },
+                onOpponentsRanking = { navController.navigate("Map/$csv/$userId/$season/Opponents") }
             )
         }
 
         // Classement complet des pilotes sur le circuit (« Voir en entier »).
         composable(
-            route = "Map/{trackIndex}/{userId}/Pilots",
+            route = "Map/{trackIndex}/{userId}/{season}/Pilots",
             arguments = listOf(
                 navArgument("trackIndex") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val trackIndex = it.arguments?.getString("trackIndex")
@@ -305,11 +317,12 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 ?.mapNotNull { part -> part.toIntOrNull() }
                 .orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             MapPilotsRankingScreen(
                 viewModel = hiltViewModel(
-                    key = "${trackIndex.joinToString(",")}-$userId-pilots",
+                    key = "${trackIndex.joinToString(",")}-$userId-$season-pilots",
                     creationCallback = { factory: MapDetailViewModel.Factory ->
-                        factory.create(trackIndex = trackIndex, initialUserId = userId)
+                        factory.create(trackIndex = trackIndex, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() }
@@ -318,10 +331,11 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
 
         // Classement complet des baggeurs sur le circuit (« Voir en entier » #69).
         composable(
-            route = "Map/{trackIndex}/{userId}/Baggers",
+            route = "Map/{trackIndex}/{userId}/{season}/Baggers",
             arguments = listOf(
                 navArgument("trackIndex") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val trackIndex = it.arguments?.getString("trackIndex")
@@ -329,11 +343,12 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 ?.mapNotNull { part -> part.toIntOrNull() }
                 .orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             MapBaggersRankingScreen(
                 viewModel = hiltViewModel(
-                    key = "${trackIndex.joinToString(",")}-$userId-baggers",
+                    key = "${trackIndex.joinToString(",")}-$userId-$season-baggers",
                     creationCallback = { factory: MapDetailViewModel.Factory ->
-                        factory.create(trackIndex = trackIndex, initialUserId = userId)
+                        factory.create(trackIndex = trackIndex, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() }
@@ -342,10 +357,11 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
 
         // Classement complet des adversaires rencontrés sur le circuit (« Voir en entier » #67).
         composable(
-            route = "Map/{trackIndex}/{userId}/Opponents",
+            route = "Map/{trackIndex}/{userId}/{season}/Opponents",
             arguments = listOf(
                 navArgument("trackIndex") { type = NavType.StringType },
-                navArgument("userId") { type = NavType.StringType; nullable = true }
+                navArgument("userId") { type = NavType.StringType; nullable = true },
+                navArgument("season") { type = NavType.StringType }
             )
         ) {
             val trackIndex = it.arguments?.getString("trackIndex")
@@ -353,11 +369,12 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 ?.mapNotNull { part -> part.toIntOrNull() }
                 .orEmpty()
             val userId = it.arguments?.getString("userId")
+            val season = it.arguments?.getString("season")
             MapOpponentsRankingScreen(
                 viewModel = hiltViewModel(
-                    key = "${trackIndex.joinToString(",")}-$userId-opponents",
+                    key = "${trackIndex.joinToString(",")}-$userId-$season-opponents",
                     creationCallback = { factory: MapDetailViewModel.Factory ->
-                        factory.create(trackIndex = trackIndex, initialUserId = userId)
+                        factory.create(trackIndex = trackIndex, initialUserId = userId, seasonNumber = season.toSeasonNumber())
                     }
                 ),
                 onBack = { navController.popBackStack() }
@@ -592,7 +609,8 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 // est l'id d'opposant de la war (rosterId, ou teamId legacy) ; userId « null »
                 // = portée Équipe (rule 15, cf. autres appels d'Opponent).
                 onOpponent = { opponentId ->
-                    navController.navigate("Opponent/$opponentId/null")
+                    // Depuis une war : pas de contexte de saison → tout l'historique (« all », #91 pt.5).
+                    navController.navigate("Opponent/$opponentId/null/all")
                 }
             )
         }
@@ -657,3 +675,9 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
 
     }
 }
+
+/**
+ * Décode le segment de route « saison » (#91 pt.5) : « all » (ou null) = tout l'historique
+ * (numéro null) ; sinon le numéro de saison. Symétrique de l'encodage `seasonNumber ?: "all"`.
+ */
+private fun String?.toSeasonNumber(): Int? = this?.takeIf { it != "all" }?.toIntOrNull()

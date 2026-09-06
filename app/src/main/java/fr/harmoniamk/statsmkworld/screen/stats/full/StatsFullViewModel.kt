@@ -159,15 +159,24 @@ class StatsFullViewModel @AssistedInject constructor(
 
     private val _state = MutableStateFlow(State())
 
+    // Dernier State COMPLET calculé par la branche `compute` (mémorisé comme StatsRanking
+    // mémorise `loadedSeasons`, #73/#91 pt.4) : `onSeasonSelected` pose `loading = true` sur
+    // CE state (et non sur le `_state` par défaut, vide) pour que le loader s'affiche SANS
+    // faire disparaître le header (dropdown de saison) ni les données déjà calculées.
+    @Volatile
+    private var lastComputedState: State = State()
+
     val state = compute()
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
     /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
-     * IMMÉDIATEMENT (via `_state`, mergé dans `state`) pour un ressenti instantané pendant que
-     * le compute lourd tourne off-main (#73) ; `computeState` émet ensuite `loading = false`. */
+     * IMMÉDIATEMENT sur le DERNIER state complet (via `_state`, mergé dans `state`) pour que
+     * le loader s'affiche visiblement (comme les Classements, #91 pt.4) sans vider le header,
+     * pendant que le compute lourd tourne off-main (#73) ; `computeState` émet ensuite
+     * `loading = false`. */
     fun onSeasonSelected(number: Int?) {
-        _state.value = _state.value.copy(loading = true)
+        _state.value = lastComputedState.copy(loading = true)
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
     }
 
@@ -184,6 +193,9 @@ class StatsFullViewModel @AssistedInject constructor(
             // Filtre saison appliqué AVANT tout autre filtre/calcul (calculé sur war.id).
             val seasonWars = warEntities.filterBySeason(activeSeason)
             computeState(seasonWars, seasons, activeSeason?.number)
+                // Mémorise le dernier state complet pour que `onSeasonSelected` puisse poser
+                // `loading = true` dessus sans vider l'écran (#91 pt.4).
+                .also { lastComputedState = it }
         }
 
     // Le calcul des agrégats (fenêtres, contributeurs, adversaires) est CPU-lourd : déporté sur

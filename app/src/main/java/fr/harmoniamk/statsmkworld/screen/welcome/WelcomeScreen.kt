@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -309,23 +311,55 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
             // Couleur de tendance : delta ≥ 0 (ou indisponible) → vert, sinon rouge.
             val trendColor = if ((form?.winrateDelta ?: 0) < 0) Colors.red else Colors.green
             Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-                Sparkline(values, trendColor, Modifier.width(110.dp).height(44.dp))
-                Column(Modifier.weight(1f)) {
+            // Deux colonnes, chacune graphe/valeur AU-DESSUS de son hint (#91 pt.10) : GAUCHE =
+            // sparkline + hint « évolution score » ; DROITE = delta de forme + hint « forme N wars
+            // vs all-time ». Row en IntrinsicSize.Min + colonnes fillMaxHeight/SpaceBetween → les
+            // contenus hauts (sparkline 44dp vs texte delta) restent en haut, les DEUX hints sont
+            // poussés en bas et **alignés sur la même ligne basse** (retour utilisateur), même si un
+            // hint wrappe sur deux lignes (maxLines non forcé). Styles inchangés (white66, NunitoBD).
+            // Deux demi-colonnes ÉGALES (weight(1f)), CONTENU CENTRÉ dans chacune (#91, retour user),
+            // séparées par un gap réel au centre (spacedBy 12dp) → sparkline centrée à gauche, forme
+            // centrée à droite, espace au milieu.
+            Row(
+                Modifier.height(IntrinsicSize.Min),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Colonne GAUCHE : graphe en haut (centré), hint poussé en bas (centré).
+                Column(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Sparkline(values, trendColor, Modifier.width(110.dp).height(44.dp))
+                    MKText(
+                        text = stringResource(R.string.home_score_evolution_cap, count),
+                        textColor = Colors.white66,
+                        fontSize = 12,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                // Colonne DROITE : delta en haut (centré), hint poussé en bas (centré, aligné bas gauche).
+                Column(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
                     form?.winrateDelta?.let { delta ->
                         MKText(
                             text = if (delta >= 0) "↗ +$delta%" else "↘ $delta%",
                             font = Fonts.NunitoBD,
                             textColor = if (delta >= 0) Colors.green else Colors.red,
                             fontSize = 20,
-                            textAlign = TextAlign.Start
+                            textAlign = TextAlign.Center
                         )
                     }
                     MKText(
                         text = stringResource(R.string.home_form_delta_cap, count),
                         textColor = Colors.white66,
                         fontSize = 12,
-                        textAlign = TextAlign.Start,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }

@@ -14,7 +14,6 @@ import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
-import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -55,15 +54,15 @@ class AddWarViewModel @AssistedInject constructor(
     private var is24p: Boolean = initialIs24p
 
     /**
-     * Preview du roster adverse retenu (pour l'affichage de la liste indicative de
-     * l'étape 2 « Roster adverse »). Nom/tag du roster, avatar de l'équipe parente.
+     * Preview du/des adversaire(s) retenu(s), affichée au récap (étape 3). Nom/tag du
+     * roster, avatar de l'équipe parente (rule 12). La liste des joueurs adverses n'est
+     * plus portée ici : l'affichage indicatif du roster adverse a été retiré (#91 pt.8).
      */
     data class OpponentPreview(
         val name: String,
         val tag: String,
         val logo: String?,
-        val color: Int?,
-        val players: List<MKCTeamPlayer>
+        val color: Int?
     )
 
     data class State(
@@ -110,9 +109,6 @@ class AddWarViewModel @AssistedInject constructor(
     private var players = listOf<PlayerEntity>()
     private var currentTeam: MKCTeam? = null
     private var rosterId: String? = null
-
-    // rosterId adverse retenu pour chaque équipe sélectionnée (index aligné sur teamSelected).
-    private var selectedRosterIds = listOf<String>()
 
     // Photos de profil MKCentral résolues (playerId → url préfixée). Portée par le
     // State construit dans le `zip` pour survivre à ses ré-émissions ; peuplée une
@@ -210,7 +206,6 @@ class AddWarViewModel @AssistedInject constructor(
      * mode courant.
      */
     private fun resetOpponentSelection() {
-        selectedRosterIds = listOf()
         _state.value = state.value.copy(
             step = 0,
             is24p = is24p,
@@ -294,24 +289,22 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     private fun commitTeam(team: TeamEntity, roster: MKCTeamRoster?) {
-        val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { add(team) }
-        val selectedRosterMetas = state.value.rostersSelected.toMutableList().apply { add(roster) }
+        val current = state.value
+        // Garde d'unicité (#91 pt.9) : un même adversaire ne peut être ajouté deux fois
+        // (double-clic rapide, re-sélection). On repart TOUJOURS de l'état courant (source
+        // de vérité unique) pour que teamSelected/rostersSelected restent alignés.
+        if (current.teamSelected.orEmpty().any { it.id == team.id }) return
+        val selectedTeams = current.teamSelected.orEmpty() + team
+        val selectedRosterMetas = current.rostersSelected + roster
         // Preview de l'adversaire : nom/tag du roster (rule 12), avatar de l'équipe.
-        val previews = state.value.opponentPreviews.toMutableList().apply {
-            add(
-                OpponentPreview(
-                    name = roster?.name ?: team.name,
-                    tag = roster?.tag ?: team.tag,
-                    logo = team.logo,
-                    color = roster?.color?.toInt() ?: team.color,
-                    players = roster?.players.orEmpty()
-                )
-            )
-        }
-        // rosterId retenu = id du roster mkworld, sinon fallback sur le teamId.
-        selectedRosterIds = selectedRosterIds.toMutableList().apply { add(roster?.id?.toString() ?: team.id) }
-        val allOpponentsPicked = selectedTeams.size == state.value.opponentCount
-        _state.value = state.value.copy(
+        val previews = current.opponentPreviews + OpponentPreview(
+            name = roster?.name ?: team.name,
+            tag = roster?.tag ?: team.tag,
+            logo = team.logo,
+            color = roster?.color?.toInt() ?: team.color
+        )
+        val allOpponentsPicked = selectedTeams.size == current.opponentCount
+        _state.value = current.copy(
             // À l'issue de la sélection complète, on bascule sur l'étape Joueurs.
             step = if (allOpponentsPicked) 1 else 0,
             teamList = when (allOpponentsPicked) {
@@ -332,7 +325,6 @@ class AddWarViewModel @AssistedInject constructor(
         val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
         val selectedRosterMetas = state.value.rostersSelected.toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
         val previews = state.value.opponentPreviews.toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
-        selectedRosterIds = selectedRosterIds.toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
         _state.value = state.value.copy(
             teamList = teams.filterNot { selectedTeams.contains(it) },
             teamSelected = selectedTeams,
@@ -371,7 +363,14 @@ class AddWarViewModel @AssistedInject constructor(
             val roster = dataStoreRepository.mkcPlayer.firstOrNull()
                 ?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() ?: return@launch
             rosterId = roster
-            val opponents = selectedRosterIds
+            // Ids d'opposant dérivés de l'état (source de vérité unique, #91 pt.9) : rosterId
+            // mkworld retenu, sinon fallback teamId. Alignés index par index sur teamSelected —
+            // plus de `var selectedRosterIds` parallèle qui pouvait désynchroniser au double-clic.
+            val currentState = state.value
+            val selectedTeams = currentState.teamSelected.orEmpty()
+            val opponents = currentState.rostersSelected.mapIndexed { index, rosterMeta ->
+                rosterMeta?.id?.toString() ?: selectedTeams.getOrNull(index)?.id.orEmpty()
+            }
             val teams = listOf(roster) + opponents
             val war = War(
                 id = System.currentTimeMillis(),

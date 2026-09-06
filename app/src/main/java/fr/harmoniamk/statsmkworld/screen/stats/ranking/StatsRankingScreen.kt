@@ -162,14 +162,17 @@ fun StatsRankingScreen(
                     }
 
                     RankingTab.OPPONENTS -> podiumRows(state.opponents.map { it.toPodiumEntry() }, contentColor = Colors.white) { opponent ->
-                        onStats(StatsType.OpponentStats(teamId = opponent.team.id, is24p = is24p))
+                        // Propage la saison active (#91 pt.5) → la fiche détail est filtrée comme le classement.
+                        onStats(StatsType.OpponentStats(teamId = opponent.team.id, is24p = is24p, seasonNumber = state.selectedSeasonNumber))
                     }
 
                     RankingTab.TRACKS -> podiumRows(state.tracks.map { it.toPodiumEntry(is24p) }, contentColor = Colors.white) { track ->
                         onStats(
                             StatsType.MapStats(
                                 trackIndex = track.stats.map?.map { it.ordinal },
-                                is24p = is24p
+                                is24p = is24p,
+                                // Propage la saison active (#91 pt.5).
+                                seasonNumber = state.selectedSeasonNumber
                             )
                         )
                     }

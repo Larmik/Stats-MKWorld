@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -276,8 +277,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
             item {
                 StatCard(title = stringResource(R.string.stats_contribution_title)) {
                     IconLine(
-                        icon = R.drawable.stats,
+                        // Icône champignon illustrant la part de POINTS de l'équipe (#91 pt.11).
+                        // tinted = false → dessinée en Image (couleurs d'origine, pas d'aplat par le tint).
+                        // iconSize = 34dp : compense le padding interne transparent du PNG pour un rendu
+                        // visuellement proche du shock (reste sous les 44dp du médaillon).
+                        icon = R.drawable.ic_mushroom,
                         accent = Colors.yellow,
+                        tinted = false,
+                        iconSize = 34.dp,
                         title = stringResource(R.string.stats_contribution_value, contributor.pointsShare),
                         subtitle = meContributorRank
                             ?.let { stringResource(R.string.stats_contribution_rank, it + 1) }
@@ -425,7 +432,7 @@ private fun IndicatorsCard(
     val title = if (isPlayer) stringResource(R.string.stats_player_indicators) else stringResource(R.string.stats_team_details)
     StatCard(title = title) {
         val tiles = buildList {
-            add(MetricTile(stringResource(R.string.form_winrate), window?.winrate?.let { "$it%" } ?: "-", if (showDelta) window?.winrateDelta else null, "%", DeltaPolarity.HIGHER, stringResource(R.string.info_form_winrate)))
+            // Winrate NON répété ici (#91 pt.3) : déjà affiché en grand dans la carte « Bilan ».
             when (isPlayer) {
                 true -> {
                     // Vue JOUEUR : score = points/war (brut) + position moyenne.
@@ -604,7 +611,11 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
         2 -> stats.topMapsByScore to stats.flopMapsByScore
         else -> stats.topMapsByCount to stats.flopMapsByCount
     }
-    if (top.isEmpty() && flop.isEmpty()) return
+    // La carte disparaît seulement si AUCUN circuit n'est jouable, TOUS tris confondus (#91
+    // pt.1) — pas seulement pour le tri courant : un tri sans échantillon dégrade en message
+    // (cf. `PodiumOrMessage`) au lieu de faire disparaître toute la section au changement de tri.
+    val hasAnyMap = stats.topMapsByCount.isNotEmpty() || stats.topMapsByWinrate.isNotEmpty() || stats.topMapsByScore.isNotEmpty()
+    if (!hasAnyMap) return
     val scoreLabel = if (userId != null) R.string.average_position_short else R.string.form_score
     val toEntry: (fr.harmoniamk.statsmkworld.model.local.TrackStats) -> PodiumEntry = { track ->
         val map = track.map?.firstOrNull()
@@ -628,11 +639,9 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
     ) {
         SortSelector(selectors.trackSortIndex, selectors.onTrackSortChange)
         Spacer(Modifier.height(11.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_top))
-        PodiumRow(top.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_top), top.map(toEntry))
         Spacer(Modifier.height(8.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_flop))
-        PodiumRow(flop.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_flop), flop.map(toEntry))
     }
 }
 
@@ -654,7 +663,13 @@ private fun OpponentsPodiumCard(
         2 -> podiums.topByScore to podiums.flopByScore
         else -> podiums.topByCount to podiums.flopByCount
     }
-    if (top.isEmpty() && flop.isEmpty()) return
+    // La carte reste affichée dès qu'au moins un adversaire est classable, TOUS tris confondus
+    // (#91 pt.1) : sur une fenêtre réduite (5/10 dernières), le seuil MIN_RANKING_SAMPLE peut
+    // vider le tri winrate/score alors que le tri occurrences reste peuplé → on ne fait plus
+    // disparaître la section au changement de fenêtre/tri ; un tri sans données affiche un
+    // message (cf. `PodiumOrMessage`) plutôt qu'un podium tronqué (2 sur 3) incohérent.
+    val hasAnyOpponent = podiums.topByCount.isNotEmpty() || podiums.topByWinrate.isNotEmpty() || podiums.topByScore.isNotEmpty()
+    if (!hasAnyOpponent) return
     val toEntry: (RankingItem.OpponentRanking) -> PodiumEntry = { opponent ->
         val scoreValue = when (userId) {
             null -> opponent.stats.averagePointsLabel      // écart d'équipe
@@ -676,11 +691,34 @@ private fun OpponentsPodiumCard(
     ) {
         SortSelector(selectors.opponentSortIndex, selectors.onOpponentSortChange)
         Spacer(Modifier.height(11.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_top))
-        PodiumRow(top.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_top), top.map(toEntry))
         Spacer(Modifier.height(8.dp))
-        PodiumLabel(stringResource(R.string.stats_podium_flop))
-        PodiumRow(flop.map(toEntry))
+        PodiumOrMessage(stringResource(R.string.stats_podium_flop), flop.map(toEntry))
+    }
+}
+
+/**
+ * Podium sous label (#91 pt.1) : rend une ligne [PodiumRow] complète quand il y a **assez
+ * d'entrées** pour un podium cohérent (≥ 3), sinon un message de dégradation « pas assez de
+ * données sur cette période » — jamais un podium tronqué « 2 sur 3 » (artefact du seuil
+ * MIN_RANKING_SAMPLE sur une fenêtre réduite). Le label reste toujours affiché → la section
+ * ne disparaît plus au changement de période/tri.
+ */
+@Composable
+private fun ColumnScope.PodiumOrMessage(label: String, entries: List<PodiumEntry>) {
+    PodiumLabel(label)
+    when (entries.size) {
+        // Podium complet (3 cellules) : rendu normal, cohérent.
+        3 -> PodiumRow(entries)
+        // Aucun / trop peu d'entrées classables sur cette fenêtre → message, pas de podium
+        // tronqué (2 sur 3) qui donnerait un rendu incohérent.
+        else -> MKText(
+            text = stringResource(R.string.stats_podium_not_enough),
+            textColor = Colors.white55,
+            fontSize = 12,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+        )
     }
 }
 
@@ -769,15 +807,25 @@ private fun BalanceCard(stats: Stats, showResultsLink: Boolean, onResults: (() -
     }
 }
 
-/** Ligne icône + gros titre + sous-titre (contribution). */
+/**
+ * Ligne icône + gros titre + sous-titre (contribution). [tinted] = true : l'icône est
+ * teintée par [accent] (`Icon`, cas monochrome comme le shock). false : icône dessinée en
+ * couleurs d'origine (`Image`) — pour une image multicolore comme le champignon (#91), qu'un
+ * tint aplatirait. [iconSize] = taille de rendu de l'icône (défaut 22 dp, comme le shock ;
+ * augmentée pour un asset à padding interne transparent, ex. champignon 34 dp) — bornée par le
+ * médaillon accent de 44 dp, identique dans les deux cas.
+ */
 @Composable
-private fun IconLine(icon: Int, accent: Color, title: String, subtitle: String) {
+private fun IconLine(icon: Int, accent: Color, title: String, subtitle: String, tinted: Boolean = true, iconSize: Dp = 22.dp) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(
             Modifier.size(44.dp).clip(CircleShape).background(accent.copy(alpha = 0.25f)).border(1.dp, accent.copy(alpha = 0.5f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(painter = painterResource(icon), contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+            when (tinted) {
+                true -> Icon(painter = painterResource(icon), contentDescription = null, tint = accent, modifier = Modifier.size(iconSize))
+                else -> Image(painter = painterResource(icon), contentDescription = null, modifier = Modifier.size(iconSize))
+            }
         }
         Column(Modifier.weight(1f)) {
             MKText(text = title, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start)

@@ -243,6 +243,7 @@
     <string name="home_last_5">Last 5</string>
     <string name="home_last_10">Last 10</string>
     <string name="home_form_delta_cap">%1$d-war form vs all-time</string>
+    <string name="home_score_evolution_cap">score trend over %1$d wars</string>
     <string name="home_live_players">Live · %1$d players</string>
     <string name="home_vs">vs %1$s</string>
     <string name="home_key_figures">Key figures</string>
@@ -277,8 +278,6 @@
     <string name="addwar_progress">%1$d / %2$d</string>
     <string name="addwar_progress_hint">Select the 6 players of your roster taking part in the war.</string>
     <string name="addwar_your_roster">Your roster</string>
-    <string name="addwar_opponent_roster">Opponent roster</string>
-    <string name="addwar_opponent_indicative">The opponent is indicative: only your roster is recorded in the app.</string>
     <string name="addwar_previous">Previous</string>
     <string name="addwar_start_war">Start the war</string>
     <!-- AddTrack wizard — Add a race screen (ticket #44) -->
@@ -331,6 +330,7 @@
     <string name="stats_shocks_share">%1$d %% of shocks</string>
     <string name="stats_podium_top">Top 3</string>
     <string name="stats_podium_flop">Flop 3</string>
+    <string name="stats_podium_not_enough">Not enough data on this period for a full ranking.</string>
     <string name="stats_sort_winrate">Winrate</string>
     <string name="stats_sort_score">Score</string>
     <string name="stats_amplitude_min">Min score</string>
@@ -437,7 +437,7 @@
     <string name="info_average_score">Average points scored per war in the player view; in the team view, the average score gap versus the opponent (“+X / -X”). Higher = better; a positive team gap means you dominate, a negative one that you are dominated.</string>
     <string name="info_maps_won">Share of races won by the team (its race score exceeds half of the scale). Measures race-by-race consistency, regardless of the final war result. A race exactly at half is not counted as won.</string>
     <string name="info_average_map">Player average finishing position on a race in the player view; in the team view, the team’s average points per race as a differential. For position, lower (closer to P1) = better; for the team race score, higher = better.</string>
-    <string name="info_shocks_per_war">Average number of lightning items obtained per war (an obtained lightning is counted even if the team chooses not to use it). Measures bagging quality (farming lightnings), an activity as important as running up front but situational. No correlation with the final position: more/less is not “better” or “worse” — the indicator is neutral.</string>
+    <string name="info_shocks_per_war">Average number of lightning items obtained per war. Measures bagging quality (farming lightnings), an activity as important as running up front. Higher = better.</string>
     <string name="info_form_winrate">Percentage of wars won. A synthetic measure of success; higher = better (50 % = as many wins as losses). Ties count in the denominator but not as wins.</string>
     <string name="info_form_score">Average score per war: the player’s raw points in the player view, the team score gap (“+X / -X”) in the team view. Higher = better.</string>
     <string name="info_average_position">Your average finishing position on a race (player view). A position reads from “close to P1” (best) to “close to P12” (worst): lower = better.</string>

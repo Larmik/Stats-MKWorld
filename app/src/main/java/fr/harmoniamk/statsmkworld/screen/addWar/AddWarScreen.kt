@@ -52,7 +52,6 @@ import fr.harmoniamk.statsmkworld.ui.MKTextField
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRow
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowCheck
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowChevron
-import fr.harmoniamk.statsmkworld.ui.cells.PlayerMedallion
 import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
@@ -97,17 +96,18 @@ fun AddWarScreen(
     BackHandler { handleBack() }
 
     BaseScreen(title = stringResource(R.string.addwar_title), onBack = handleBack, modifier = Modifier.fillMaxSize()) {
-        // Segmenté 12/24 : c'est ICI que vit le sélecteur de mode (pôle Wars). Le
-        // changer met à jour l'état réactif du VM SANS re-navigation.
-        MKSegmentedSelector(
-            items = listOf(
-                stringResource(R.string.mode_12_players),
-                stringResource(R.string.mode_24_players)
-            ),
-            page = if (state.is24p) 1 else 0,
-            onClick = { selected -> viewModel.onModeChange(selected == 1) }
-        )
-        Spacer(Modifier.height(11.dp))
+        // Segmenté 12/24 MASQUÉ temporairement (#91 pt.7) : la création se fait uniquement en
+        // 12p pour la MEP. Le mode par défaut reste 12p (is24p = false, semé par la nav) ; on
+        // remettra le sélecteur plus tard. Ne PAS supprimer.
+        // MKSegmentedSelector(
+        //     items = listOf(
+        //         stringResource(R.string.mode_12_players),
+        //         stringResource(R.string.mode_24_players)
+        //     ),
+        //     page = if (state.is24p) 1 else 0,
+        //     onClick = { selected -> viewModel.onModeChange(selected == 1) }
+        // )
+        // Spacer(Modifier.height(11.dp))
         // Stepper cliquable : l'étape Joueurs n'est accessible que si l'adversaire est
         // complet ; le Récap qu'une fois l'adversaire complet ET les 6 joueurs sélectionnés.
         MKStepper(
@@ -252,8 +252,9 @@ private fun RosterPicker(rosters: List<MKCTeamRoster>, onRosterSelected: (MKCTea
 }
 
 /**
- * Étape 2 — progression + sélection des joueurs + roster adverse indicatif. Aucun CTA :
- * la composition complète (6 joueurs) bascule AUTOMATIQUEMENT sur l'étape 3 (Récap).
+ * Étape 2 — progression + sélection des joueurs de ton roster (le roster adverse indicatif a
+ * été retiré, #91 pt.8). Aucun CTA : la composition complète (6 joueurs) bascule
+ * AUTOMATIQUEMENT sur l'étape 3 (Récap).
  */
 @Composable
 private fun ColumnScope.PlayersStep(
@@ -289,28 +290,9 @@ private fun ColumnScope.PlayersStep(
                 )
             }
         }
-
-        // 3. Roster adverse : lignes indicatives (non saisies côté app).
-        state.opponentPreviews.forEach { preview ->
-            if (preview.players.isNotEmpty()) {
-                item {
-                    Eyebrow("${stringResource(R.string.addwar_opponent_roster)} · ${preview.name}")
-                }
-                items(preview.players, key = { "${preview.tag}-${it.playerId}" }) { player ->
-                    OpponentPlayerRow(name = player.name.displayName, color = preview.color.toTeamColor())
-                }
-            }
-        }
-
-        item {
-            MKText(
-                text = stringResource(R.string.addwar_opponent_indicative),
-                textColor = Colors.white55,
-                fontSize = 12,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        // Affichage indicatif du roster adverse retiré (#91 pt.8) : l'étape « sélection
+        // joueurs » ne montre plus que ton roster. Les previews restent alimentées pour
+        // le récap (étape 3) et la création de war.
     }
 }
 
@@ -369,27 +351,6 @@ private fun ColumnScope.RecapStep(
             enabled = state.buttonEnabled,
             onClick = onStart
         )
-    }
-}
-
-/** Ligne indicative d'un joueur adverse (`.lrow.static` de la maquette) : pastille + nom, atténué. */
-@Composable
-private fun OpponentPlayerRow(name: String, color: Color) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp)
-    ) {
-        // Médaillon mutualisé (#50 pt.4) : joueur adverse → pas d'avatar dispo, initiales seules.
-        PlayerMedallion(
-            initials = initialsOf(name),
-            avatarColor = color,
-            size = 28.dp,
-            initialsFontSize = 11,
-            borderWidth = 2.dp,
-            borderColor = Colors.white.copy(alpha = 0.75f)
-        )
-        MKText(text = name, font = Fonts.NunitoBD, fontSize = 13, textColor = Colors.white.copy(alpha = 0.8f), textAlign = TextAlign.Start)
     }
 }
 
