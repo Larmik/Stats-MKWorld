@@ -1,766 +1,536 @@
-# Documentation fonctionnelle — Stats MKWorld
+# Guide de l'application Stats MKWorld
 
-> Application mobile de suivi des statistiques de *wars* (matchs d'équipe) pour **Mario Kart World**.
-> Ce document décrit l'application du point de vue de l'utilisateur, écran par écran, avec les règles métier encodées. Volet architecture : [TECHNICAL.md](TECHNICAL.md).
+> **Ton app de suivi et d'analyse des *wars* de Mario Kart World.**
+> Ce guide s'adresse à toi, joueur ou joueuse de Mario Kart World qui dispute des matchs d'équipe. Il t'explique, pas à pas et sans aucun terme compliqué, à quoi sert l'application, comment t'y retrouver et comment profiter de toutes ses fonctionnalités. Aucune connaissance technique n'est nécessaire : si tu sais jouer une war, tu sauras utiliser l'app.
+
+---
 
 ## Sommaire
 
-1. [À qui s'adresse l'application](#1-à-qui-sadresse-lapplication)
-2. [Concepts clés & vocabulaire](#2-concepts-clés--vocabulaire)
-3. [Rôles & permissions](#3-rôles--permissions)
-4. [Onboarding & connexion](#4-onboarding--connexion)
-5. [Accueil & navigation](#5-accueil--navigation)
-6. [Cycle de vie d'une war](#6-cycle-de-vie-dune-war)
-7. [Historique & détails](#7-historique--détails)
-8. [Statistiques](#8-statistiques)
-9. [Annuaire & profils](#9-annuaire--profils)
-10. [Tableau partageable (PDF)](#10-tableau-partageable-pdf)
-11. [Paramètres, données & mode debug](#11-paramètres-données--mode-debug)
-12. [Récapitulatif des règles métier](#12-récapitulatif-des-règles-métier)
+1. [Bienvenue — à quoi sert cette application](#1-bienvenue--à-quoi-sert-cette-application)
+2. [Le vocabulaire à connaître](#2-le-vocabulaire-à-connaître)
+3. [Premiers pas — installation et connexion](#3-premiers-pas--installation-et-connexion)
+4. [Se repérer dans l'application](#4-se-repérer-dans-lapplication)
+5. [Le pôle Accueil — ton tableau de bord](#5-le-pôle-accueil--ton-tableau-de-bord)
+6. [Le pôle Wars — tes matchs](#6-le-pôle-wars--tes-matchs)
+7. [Le pôle Stats — tes performances en détail](#7-le-pôle-stats--tes-performances-en-détail)
+8. [Le pôle Classements — comparer joueurs, adversaires et circuits](#8-le-pôle-classements--comparer-joueurs-adversaires-et-circuits)
+9. [Le pôle Profil — toi, ton équipe et tes réglages](#9-le-pôle-profil--toi-ton-équipe-et-tes-réglages)
+10. [L'Annuaire — rechercher un joueur ou une équipe](#10-lannuaire--rechercher-un-joueur-ou-une-équipe)
+11. [Enregistrer une war, pas à pas](#11-enregistrer-une-war-pas-à-pas)
+12. [Comprendre tes statistiques](#12-comprendre-tes-statistiques)
+13. [Les fiches détaillées (adversaire, circuit, joueur)](#13-les-fiches-détaillées-adversaire-circuit-joueur)
+14. [Le tableau de résultats à partager (image)](#14-le-tableau-de-résultats-à-partager-image)
+15. [Rôles, saisons et réglages](#15-rôles-saisons-et-réglages)
+16. [Questions fréquentes](#16-questions-fréquentes)
 
 ---
 
-## 1. À qui s'adresse l'application
+## 1. Bienvenue — à quoi sert cette application
 
-Aux **équipes compétitives de Mario Kart World** qui disputent des *wars* et veulent en conserver une trace structurée et des statistiques détaillées (par joueur, équipe, adversaire, circuit).
+**Stats MKWorld** est faite pour les équipes qui jouent à **Mario Kart World** en compétition, sur Nintendo Switch 2. Le jeu peut réunir jusqu'à **24 pilotes** sur une même course, avec **30 circuits** répartis en **8 coupes** (Champignon, Fleur, Étoile, Carapace, Banane, Feuille, Éclair, Spéciale).
 
-Prérequis utilisateur :
-- Être inscrit sur **MKCentral** (registre communautaire des joueurs/équipes MK).
-- Avoir un **compte Discord lié à MKCentral** (utilisé pour l'identification).
+Quand ton équipe affronte une autre équipe dans un match organisé (une **war**), tu joues une série de courses et tu accumules des points. L'application te permet de :
+
+- **Enregistrer chaque war**, course après course, pendant que tu joues ;
+- **Retrouver l'historique** de tous tes matchs, avec le détail de chaque course ;
+- **Analyser tes performances** et celles de ton équipe grâce à des statistiques claires ;
+- **Comparer** les joueurs de ton équipe, les adversaires que tu rencontres et les circuits que tu joues ;
+- **Générer une image de résultats** à partager avec ton équipe ou tes adversaires.
+
+L'application ne suit **pas** ton classement solo ni tes parties classées : elle est entièrement centrée sur les **wars de ton équipe**.
+
+**Ce qu'il te faut pour commencer :**
+
+- Un **compte MKCentral** (le grand annuaire de la communauté Mario Kart, où sont enregistrés les joueurs et les équipes) ;
+- Ton **compte Discord relié à MKCentral** : c'est par Discord que tu te connectes à l'application, qui retrouve alors automatiquement ton profil et ton équipe.
+
+Si ces deux conditions sont remplies, tu es prêt·e. Sinon, crée d'abord ton compte MKCentral et relie-lui ton Discord.
 
 ---
 
-## 2. Concepts clés & vocabulaire
+## 2. Le vocabulaire à connaître
 
-| Terme | Définition |
+Voici les mots que tu croiseras dans l'application. Chacun est expliqué simplement. Tu peux revenir à cette section à tout moment.
+
+| Mot | Ce que ça veut dire |
 |---|---|
-| **War** | Un match entre équipes, composé d'une série de courses (12 en général). |
-| **12 joueurs** | Format 6 v 6 : l'équipe affronte **un** adversaire. |
-| **24 joueurs** | Format tournoi : l'équipe affronte **trois** équipes adverses ; les scores finaux sont saisis manuellement. |
-| **Course / Track** | Une course sur un circuit, avec les positions d'arrivée des joueurs. |
-| **Intermission** | En 24 joueurs, segment alternatif du monde ouvert enchaîné à un circuit (un track peut alors porter 2 circuits). |
-| **Position → points** | Chaque place d'arrivée rapporte des points (1ʳᵉ = 15 pts). |
-| **Pénalité** | Retrait de points (−10, −15, −20) imputé à une équipe. |
-| **Shock** | L'objet **éclair** récupéré en jeu, stratégiquement décisif. Compté par joueur sur une course pour produire des statistiques dédiées (n'affecte pas le calcul du score). |
-| **Équipe** | Entité MKCentral complète (identifiant `teamId`), pouvant regrouper plusieurs rosters. Les joueurs y sont rattachés. |
-| **Roster** | Composition inscrite sur MKCentral (identifiant `rosterId`) ; une équipe peut en avoir plusieurs. C'est à ce niveau que se rattachent les wars. |
-| **Allié** | Joueur de renfort hors roster officiel (rosterId interne `-1`), pouvant participer aux wars. |
-| **Multi-roster** | Option : calculer les stats sur tous les rosters de l'équipe ou seulement le sien. |
-| **Mode matrix** | Mode debug permettant de simuler les données d'un autre joueur. |
+| **War** | Un match entre deux équipes organisées. Une war est composée d'une série de courses (12 en général). |
+| **Course** | Une seule course, sur un circuit donné, à l'intérieur d'une war. On parle parfois de « manche ». |
+| **12 joueurs** | Le format classique : **6 contre 6**. Ton équipe affronte **une** équipe adverse. C'est le mode principal de l'application. |
+| **24 joueurs** | Le grand format : ton équipe affronte **trois** autres équipes en même temps. Les scores finaux se saisissent à la main. |
+| **Position → points** | À chaque course, ta place d'arrivée rapporte des points. Une 1ʳᵉ place vaut plus qu'une 12ᵉ (voir le détail plus bas). |
+| **Score** | Le total de points de ton équipe sur la war. On le compare à celui de l'adversaire. |
+| **Écart** | La différence entre ton score et celui de l'adversaire. Positif (« +40 »), tu domines ; négatif (« -30 »), tu es mené·e. |
+| **Pénalité** | Des points retirés à une équipe en sanction (par exemple −10, −15 ou −20). |
+| **Shock / Éclair** | L'objet **Éclair** récupéré en course. Très puissant : il rétrécit et ralentit tous les adversaires. Dans l'app, le **nombre d'éclairs obtenus** mesure la qualité du *bagging* (voir ci-dessous). Ce n'est **pas** une faute et cela **n'entre pas** dans le calcul du score. |
+| **Bagging** | Rester volontairement à l'arrière pour récupérer des objets puissants — surtout l'éclair — et marquer gros en fin de course. C'est une vraie stratégie, aussi importante que de rouler devant. |
+| **Front-running** | L'inverse du bagging : rouler devant et défendre la tête de course. |
+| **Host** | Le joueur qui héberge la partie en ligne. S'il se déconnecte, la partie tombe. |
+| **Équipe** | Ton clan, tel qu'il est enregistré sur MKCentral. Une équipe peut regrouper plusieurs *rosters*. |
+| **Roster** | Une composition précise inscrite sur MKCentral. Une même équipe peut avoir plusieurs rosters (par exemple une équipe principale et une académie). Les wars sont rattachées à un roster. |
+| **Tag** | L'identifiant court d'une équipe (quelques lettres), placé devant le pseudo des joueurs. Il change rarement. |
+| **Allié** | Un joueur de renfort qui ne fait pas partie du roster officiel mais qui peut jouer une war avec toi. |
+| **Saison** | Une période de jeu. L'application découpe l'histoire de ton équipe en saisons, et tu peux filtrer tes stats saison par saison. |
+| **Winrate** | Le pourcentage de wars gagnées. Par exemple, 60 % de winrate = 6 wars gagnées sur 10. |
+| **All-time** | « Depuis toujours », c'est-à-dire sur tout ton historique, sans limite de temps. |
 
-**Scoring synthétique :**
-- **12 joueurs** : 82 points distribués par course ; score adverse = 82 − score équipe ; total war 12 courses = 984 (équilibre à 492). L'affichage met en avant l'**écart** (`+/−`) par rapport à l'équilibre.
-- **24 joueurs** : 144 points par course ; total war 12 courses = **1728** (valeur de contrôle à la saisie des scores). L'affichage montre les **scores absolus** (pas d'écart `+/−`), le classement se faisant entre 4 équipes.
+### Comment les points sont attribués
 
-Détails du barème position→points : voir [TECHNICAL.md §8](TECHNICAL.md#8-algorithmes-de-scoring).
+En **12 joueurs**, chaque place d'arrivée rapporte un nombre de points fixe. Au total, **82 points** sont distribués à chaque course.
 
----
+| Place | Points | Place | Points |
+|---|---|---|---|
+| 1ʳᵉ | 15 | 7ᵉ | 6 |
+| 2ᵉ | 12 | 8ᵉ | 5 |
+| 3ᵉ | 10 | 9ᵉ | 4 |
+| 4ᵉ | 9 | 10ᵉ | 3 |
+| 5ᵉ | 8 | 11ᵉ | 2 |
+| 6ᵉ | 7 | 12ᵉ | 1 |
 
-## 3. Rôles & permissions
+Comme il y a 82 points par course, le score de l'adversaire se déduit tout seul : **score adverse = 82 × nombre de courses − ton score**. Sur une war de 12 courses, 984 points sont en jeu au total ; il faut donc dépasser **492** pour l'emporter (à égalité, c'est un match nul). Les **pénalités** viennent ensuite s'ajouter ou se retrancher.
 
-Le rôle est un entier stocké par joueur :
-
-| Rôle (`role`) | Niveau | Peut faire |
-|---|---|---|
-| **2** | Leader / Manager | Tout : créer des wars, gérer rosters & alliés, changer les rôles des membres |
-| **1** | Admin | Créer/gérer des wars, basculer le rôle d'un membre |
-| **0** | Membre | Consulter, participer aux wars (pas de création) |
-
-Le rôle ne dépend que de la gestion explicite des rôles (et du statut leader/manager détecté dans le roster MKCentral) : **le cycle de vie d'une war — création, validation, annulation, remplacement de joueur — ne le modifie jamais** (cf. audit B10). Un **allié** (joueur hors équipe) a toujours le rôle `0` : ne faisant pas partie de l'équipe, il ne peut pas la modérer.
-
-Gating concret :
-- Le bouton **« Nouvelle war »** n'apparaît que si `role > 0` **ou** le mode matrix est actif (et qu'aucune war n'est en cours).
-- Le bouton **« Ajouter en allié »** apparaît si le joueur consulté n'est pas dans l'équipe, n'est pas soi-même, et n'est pas déjà allié.
-- Le bouton **« Basculer le rôle »** apparaît si un leader consulte un membre de l'équipe qui n'est ni lui-même ni déjà leader.
-- L'action **« Démarrer une nouvelle saison »** (onglet **Équipe** du profil) est réservée au **leader strict** (`role == 2`, **pas** les admins `role == 1`) — cf. §11.
-- L'accès à l'**écran debug** est réservé (utilisateur de référence id `18595` ou mode matrix actif).
+En **24 joueurs**, comme trois équipes t'affrontent, l'application ne calcule pas les scores automatiquement : tu saisis à la fin le **score final de chaque équipe adverse**, et l'app établit le classement entre les équipes.
 
 ---
 
-## 4. Onboarding & connexion
+## 3. Premiers pas — installation et connexion
 
-Écran `Signup` : un pager de 7 pages (`TutorialItem`) piloté par `SignupViewModel` (état `currentPage`, `code`).
+Au tout premier lancement, l'application t'accompagne à travers quelques écrans de bienvenue. Laisse-toi guider : chaque étape est courte.
 
-| Page | Contenu | Action |
-|---|---|---|
-| **START** | Présentation de l'app et des prérequis (MKCentral + Discord lié) | Continuer |
-| **OPEN_APP** | Autoriser l'ouverture des liens `statsmkworld.com` (Android 12+) | Ouvrir les réglages |
-| **NOTIFICATIONS** | Autoriser les notifications (Android 13+) | Activer (déclenche la demande de permission) |
-| **AUTH** | Connexion Discord (OAuth2) | Se connecter (ouvre l'autorisation Discord) |
-| **FIND_PLAYER** | « Récupération de ton profil… » (fetch MKCentral) | Auto |
-| **WELCOME** | Succès — redirection auto vers l'accueil | Auto (~2 s) |
-| **ERROR** | Échec : Discord non lié à MKCentral / erreur serveur / réseau | Réessayer (revient à AUTH) |
+1. **Présentation** — Un rappel de ce qu'il te faut : un compte MKCentral et un Discord relié.
+2. **Autoriser l'ouverture des liens** — Sur certains téléphones récents, l'app te propose d'ouvrir un réglage pour qu'elle puisse gérer la connexion. Suis simplement l'indication.
+3. **Autoriser les notifications** — Pour être prévenu·e quand tes données sont à jour. Tu peux accepter ou refuser ; tu changeras d'avis plus tard dans les réglages.
+4. **Connexion Discord** — Appuie sur « Se connecter avec Discord ». L'app ouvre la page d'autorisation Discord habituelle. Tu autorises, et c'est tout.
+5. **Récupération de ton profil** — L'application retrouve ton profil et ton équipe sur MKCentral à partir de ton Discord. Cette étape est automatique.
+6. **Bienvenue !** — En cas de succès, tu es redirigé·e vers l'accueil au bout de quelques secondes.
 
-**Flux technique** : au retour OAuth (deep link portant `code`), l'app échange le code contre un token, récupère l'utilisateur Discord, retrouve le joueur sur MKCentral via son `discord_id`, effectue une **connexion anonyme Firebase** (UID technique pour autoriser l'accès RTDB, transparent pour l'utilisateur ; échec réseau non bloquant), puis enchaîne `fetchData` (joueur → équipe → alliés → équipes → wars). Le joueur est enregistré en DataStore et un `User` Firebase est créé (role 0, sauf si leader détecté dans le roster). La connexion anonyme est aussi re-tentée à chaque démarrage si l'UID a été perdu (ex. après réinstallation).
+**Si la connexion échoue :** l'app te propose de réessayer. Les causes les plus fréquentes sont : ton **Discord n'est pas relié à MKCentral**, un souci de **réseau**, ou un **serveur momentanément indisponible**. Vérifie d'abord que ton compte Discord est bien lié sur MKCentral, puis réessaie.
 
----
-
-## 5. Accueil & navigation
-
-`HomeScreen` = conteneur à **cinq pôles** (barre du bas — `Accueil · Wars · Stats · Classements · Profil`), avec conservation d'état entre onglets (`saveState`/`restoreState`). Chaque pôle est une destination du `NavHost` imbriqué de `HomeScreen`. L'**Annuaire** n'est plus un onglet : il est accessible via une **icône recherche** (loupe) dans l'app bar des écrans Accueil et Classements (route `Home/Registry` du graphe racine). Le graphe racine (`RootScreen`) conserve `startDestination = Signup` et les deep links Discord (`statsmkworld.com?...=code`) inchangés.
-
-**En-tête commun (app bar) — conforme maquette (#50).** L'app bar de tous les écrans reproduit la maquette : **bande sombre pleine largeur**, **titre aligné à gauche en blanc** + sous-titre, **bouton retour `←`** à gauche sur tous les **écrans poussés** (fiches, détails, war en cours, wizards, annuaire…) et une **action à droite** paramétrable : **icône recherche** (Accueil/Classements → Annuaire) ou, sur le pôle **Wars**, **icône « + » « Créer une war »** (masquée si une war est en cours, #50). Les **racines de pôle** (Accueil, Wars, Stats, Classements, Profil) n'ont pas de flèche retour ; le retour système y suit le comportement bottom-nav (retour au pôle Accueil, puis quitte depuis l'Accueil). Sur les wizards (Créer une war / Saisie de course), la flèche retour applique le **même recul par étape** que le retour système.
-
-### Pôle 1 — Accueil (`WelcomeScreen`) — tableau de bord
-État : `teamName/teamLogo`, `playerName/playerLogo`, `currentWar`, `playerStats` + `teamStats` (les **deux** vues 12p, calculées d'emblée par le VM), `recentResults` (3 dernières wars 12p).
-
-L'accueil est un **dashboard** qui met l'essentiel à portée immédiate. **Rendu pixel-perfect** : `WelcomeScreen` reproduit fidèlement le style de la maquette du prototype UX (`docs/prototype/stats-mkworld-5poles.html`, vue `home`) — cartes sombres translucides (fond `rgba(60,64,67,.5)`, bordure blanche, radius 6), eyebrows majuscules, pastilles V/N/D (vert/blanc/rouge), sparkline teintée selon la tendance à aire dégradée, segmentés stylés, bannière « En direct » verte, bandeau série avec flamme colorée, pastilles adversaire colorées. Ce rendu est la **norme** de la refonte (rules 13/15 : pixel-perfect exigé pour tout écran impacté, `WelcomeScreen` = rendu de référence). Les données affichées restent **réelles** (aucune valeur de démo codée en dur). Sections dans l'ordre (calcul 12p uniquement ; le support 24p relèvera d'un ticket dédié) :
-
-1. **Carte de salutation** (cliquable → **Profil**) : pastille/avatar du joueur, « Salut, <prénom> », sous-titre « <équipe> · voir mon profil → ». Sous la carte, un **segmenté `Moi` / `Équipe`** (`Moi` actif par défaut, état UI `rememberSaveable`) **pilote la vue** des stats du dashboard (Momentum + Chiffres clés). Les deux jeux de stats étant précalculés par le VM (`playerStats` avec `userId` = id MKCentral du joueur courant ; `teamStats` avec `userId = null`), le basculement ne déclenche **aucun recalcul**.
-2. **War en cours** — bannière « En direct · N joueurs » (dégradé vert, bordure verte) cliquable (→ reprend la war courante), affichée seulement si `currentWar != null`. Le corps réutilise `CurrentWarCell` (données réelles).
-3. **Momentum** (reflète le profil sélectionné) : segmenté **`5 dernières` / `10 dernières`** pilotant la fenêtre ; bande de forme en **pastilles V/N/D** (`Stats.chronologicalOutcomes.takeLast(n)`) ; **sparkline** à aire dégradée des scores de la fenêtre (`Stats.scoreTimeline.takeLast(n)`, tracé Compose `Canvas`), **teintée selon la tendance** (vert si delta ≥ 0, rouge sinon) + delta de forme (flèche ↗/↘, winrate de la fenêtre `recentForm5`/`recentForm10` vs all-time), coloré vert/rouge. Le bloc est organisé en **deux demi-colonnes égales** (#91) — **gauche** : la sparkline surmontant son hint « évolution du score sur N wars » ; **droite** : le delta de forme surmontant son hint « forme N wars vs all-time » — chaque graphe/valeur au-dessus de son libellé descriptif (même style `white66`). Le **contenu de chaque colonne est centré horizontalement**, les deux colonnes séparées par un gap central (sparkline centrée à gauche, forme centrée à droite, espace au milieu). Les deux hints sont **alignés sur la même ligne basse** (colonnes en hauteur intrinsèque : contenu haut ancré en haut, hint poussé en bas), quel que soit le contenu au-dessus.
-4. **Chiffres clés** (reflète le profil sélectionné) : winrate (`allTimeForm.winrate`) · score moyen · 3ᵉ colonne, toutes valeurs en blanc. En vue **Moi** : score = score brut du joueur (`averagePoints`), 3ᵉ = position moyenne (`averagePlayerPosLabel`). En vue **Équipe** : score = écart moyen (`averagePointsLabel`), 3ᵉ = % de manches gagnées (`mapsWon`).
-5. **Bandeau highlight — série en cours** (affiché si `currentStreak != 0`) : « Série de N victoires/défaites » + « En cours — record : M » (`bestWinStreak` / `worstLossStreak`). Icône flamme (`ic_flame`) teintée **verte** (série de victoires) ou **rouge** (série de défaites), dans un cercle assorti.
-6. **Derniers résultats** : 3 wars 12p (`recentResults`, cliquables → détail de war) + lien **« Voir tout »** → pôle Wars (historique). Réutilise la **cellule `WarCell` unifiée** (voir ci-dessous).
-
-> **Filtre par saison (#70)** : un **menu déroulant de saison** (`MKSeasonDropdown`, composant partagé) est aligné **à droite dans le header** de l'Accueil (avant la loupe). Options : **« Tout l'historique »** puis une entrée par saison (« Saison N ») ; **défaut = saison en cours**. La sélection **filtre dynamiquement TOUS les agrégats du dashboard** (rule 11, pas de re-nav) : Momentum, séries (streaks), records, chiffres clés **et** derniers résultats sont recalculés sur les seules wars de la saison choisie. **Sémantique du Momentum** : en vue **saison**, le Momentum porte sur les wars **de cette saison** (les fenêtres « 5 / 10 dernières » = les N dernières wars de la saison) ; en vue **« Tout l'historique »**, il porte sur **toute** l'histoire. ⚠️ **Écart assumé vs prototype (rules 13/15)** : la maquette `home` ne prévoit pas de dropdown de saison — ajout de ce ticket, style aligné sur les boutons d'app bar. Le dropdown est masqué tant qu'aucune saison n'est hydratée. *(La pastille « Saison N » d'une première version a été retirée : redondante avec le dropdown qui affiche déjà la saison courante par défaut — retour utilisateur.)*
-
-- **Icône recherche** (app bar) → Annuaire.
-- Le **sélecteur 12/24 joueurs** et le bouton **« Créer une war »** ne figurent plus sur l'accueil : ils vivent désormais dans le **pôle Wars** — le bouton « Créer une war » dans l'**action droite de l'app bar** de `WarListScreen` (#50), le segmenté 12/24 en tête de `AddWarScreen` (cf. §6). Les destinations de navigation `Home/AddWar/{is24p}` restent inchangées.
-
-> **Cellule `WarCell` unifiée** : la cellule de résultat (`ui/cells/WarCell.kt`) est **partagée** par l'Accueil, l'historique (`WarListScreen`) et les stats (`StatsScreen`), signature publique inchangée. Elle rend **12p** avec le style pixel-perfect de l'Accueil (pastille V/N/D, pastille adversaire, « vs … » + date, score + écart + **maps gagnées**) et **24p** avec le podium des 3 équipes (style minimal, non régressé). L'ancienne implémentation dédoublée a été supprimée.
-
-### Pôle 2 — Wars (`WarListScreen`)
-Point d'entrée unifié du domaine « match ». Barre d'app : titre **WARS** + sous-titre **« N wars »** (total affiché). L'écran enchaîne, de haut en bas :
-
-1. **Création** : le bouton **« Créer une war »** est l'**action à droite de l'app bar** (icône « + », #50), et non un CTA dans la liste. Il est **masqué tant qu'une war est en cours** (`state.currentWar != null`, alimenté en temps réel par `FirebaseRepository.listenToCurrentWar`) → `AddWarScreen`. **La bannière « Reprendre » a été RETIRÉE de l'écran Wars (#65)** : la war en cours n'apparaît plus du tout sur l'historique (ni comme item, ni comme bannière). La **reprise** de la war en cours se fait depuis l'**Accueil** (bannière « En direct » du dashboard, cf. Pôle 1), point d'accès prévu par la maquette.
-2. **Chips filtre de résultat** : `Tous` (actif par défaut) / `Victoires` / `Nuls` / `Défaites`. Filtre purement UI (état `rememberSaveable`), sur le signe de la marge de score (`WarDetails.scoreMargin`, 12j comme 24j).
-3. **Historique complet**, groupé par mois (en-têtes collants), triés du plus récent au plus ancien. **Tous les modes sont mélangés (12j ET 24j)** — l'ancien filtrage par mode (`is24PEnabled`) a été retiré. La war en cours **n'y figure jamais** : elle n'est écrite dans la base locale qu'à la **validation** (`CurrentWarViewModel.onValidateWar`) — tant qu'elle est en cours, elle n'est pas dans la liste (aucun filtre spécifique nécessaire). Clic sur une war → détail de war. Réutilise la cellule `WarCell` unifiée.
-
-> **Filtre par saison (#70)** : un **menu déroulant de saison** (`MKSeasonDropdown`, composant partagé, aligné à droite dans le header, à côté du bouton « Créer une war ») **filtre la liste des wars affichées** sur la saison sélectionnée (« Tout l'historique » = aucun filtre ; défaut = **saison en cours**). Le décompte du sous-titre reflète la sélection. Cumulable avec les chips de résultat (V/N/D). Rule 11 : mise à jour dynamique, pas de re-navigation.
-
-> **Divergence assumée vs maquette (rules 13/15)** : le prototype (écran Wars `ws-on`) prévoit une bannière « Reprendre » sur le pôle Wars ; par **décision produit** elle en est retirée (la reprise reste sur l'Accueil). Aucune autre régression : le gating du bouton « Créer une war » est conservé.
-
-> **Variante « historique filtré par joueur » (#65)** : `WarListScreen` accepte un `userId` optionnel (`WarListViewModel.Factory.create(userId)`). Sans `userId` (pôle Wars) → historique complet de l'équipe (filtre roster hôte seul). Avec `userId` (route `Home/WarList/{userId}`, ouverte par le lien « Résultats → » des stats) → seules les wars où **ce joueur a joué** (`War.hasPlayer`, participation à toutes les courses) ; le sous-titre devient « Wars de <joueur> · N ». `userId = « me »` résout le **joueur courant** (id MKCentral en DataStore). Même écran, mêmes chips/cellules (rule 16), un seul exemplaire. **La bannière « Reprendre » est absente dans les deux cas** (retirée de `WarListScreen`).
-
-> **Écran « Voir par période » (#80, `PeriodScreen`)** — aide à la composition des line-ups. Un bouton **« Voir par période »** en tête de l'historique (pôle Wars **uniquement** ; absent de la variante filtrée par joueur) ouvre un écran de graphe racine (`Home/Period`, back = retour au pôle Wars). L'écran présente **deux sélecteurs de dates** (`Du` / `Au`, `DatePickerDialog` Material3) formant une plage `[dateA, dateB]` **semée par défaut sur la saison en cours** (`SeasonEntity.start` → aujourd'hui, borne haute plafonnée à aujourd'hui) et modifiable. Les wars de l'équipe (roster hôte, **12p uniquement**) dont le timestamp (`War.id`, epoch ms) tombe dans la plage alimentent **deux onglets** (`MKSegmentedSelector`) :
-> - **Wars** : compteur « N wars sur la période » + liste des wars filtrées via `WarCell` (clic → détail de war).
-> - **Joueurs** : classement (cellules podium `MKPodiumCell`, 3 par ligne) de tous les joueurs ayant joué ≥ 1 war sur la période, triés par nb de wars jouées décroissant. Chaque joueur affiche **Wars** = `nb wars jouées (% participation)` avec `% participation = wars jouées × 100 / nb total de wars équipe de la période` (formule #78, dénominateur nul → 0 %), **Score moyen** = `somme des points du joueur / nb de wars jouées` (moyenne PAR WAR), **Shocks** = cumul des shocks du joueur.
->
-> Plage sans war → état vide « Aucune war sur cette période ». **Écran hors maquette d'origine** (ajout à l'epic) : pas de critère de conformité structurelle ; rendu pixel-perfect par réutilisation des composants (`MKSegmentedSelector`, `WarCell`, `MKPodiumCell`, `MKButton`). Seul écart documenté : les sélecteurs de dates s'appuient sur le `DatePickerDialog` Material3 (pas de composant date maison dans le projet).
-
-> **Composant `CurrentWarBanner`** (`ui/cells/CurrentWarBanner.kt`) : la bannière « War en cours » (dégradé vert, pastille « En direct », corps = `CurrentWarCell`) n'est plus utilisée **que par l'Accueil** (#65 : retirée du pôle Wars). Elle conserve ses paramètres `withPlayers` (libellé de pastille) et `callToAction` optionnel (au cas où un futur écran la réutiliserait), mais le pôle Wars ne l'affiche plus.
->
-> **Cellule `CurrentWarCell` restylée** (`ui/cells/CurrentWarCell.kt`) : alignée sur le style des cellules de résultat (`WarCell12p`) — carte `blackAlphaed` + bordure, pastille adversaire (avatar équipe ou tag), « vs … », score + écart — et affiche en sous-ligne le **nombre de courses restantes** (`12 − courses jouées`). En 24p, podium des 3 logos + score de l'hôte + courses restantes. Le « courses restantes » (cellule) et le « N courses jouées » du `callToAction` (bannière, côté Wars) sont complémentaires et cohérents (jouées + restantes = 12).
-
-### Pôle 3 — Stats (`StatsFullScreen`)
-Écran riche à **onglets Individuelles / Équipe**, au niveau maquette (pôle Stats du prototype UX). **12p uniquement** pour l'instant : le sélecteur 12 j / 24 j et le comparatif 12/24 sont **temporairement retirés** (réintégration prévue au ticket #37).
-
-- **Sélecteur de période GLOBAL** (#68) : un **unique** segmenté **all-time / 5 dernières / 10 dernières** est placé **en haut de l'écran**, juste sous le sélecteur Individuelles / Équipe (et **au-dessus de toutes les sections**). Il **reste visible** même quand le sélecteur Indiv/Équipe est masqué (vue `statsfull` d'un joueur donné, `showTabs = false`). Au changement, **toutes** les sections de l'écran se recomposent sur la période choisie (bilan, indicateurs, contribution, records, distribution, tops/bots, circuits, adversaires, contributeurs) — dynamiquement, sans re-navigation (rule 11). Les **anciens sélecteurs de période locaux** aux sections (Indicateurs, Records & séries, Distribution, Contributeurs) ont été **supprimés** : il n'y a plus qu'un seul sélecteur de période à l'écran. Le **tri** des podiums Circuits/Adversaires (Occurrences / Winrate / Score) reste **propre à chaque podium** : c'est un axe indépendant de la période, conservé en plus du filtre.
-- **En-tête** : **photo de profil du joueur** (Individuelles) ou **logo de l'équipe** (Équipe) — vignette MKCentral, fallback initiales/`default_logo` — + nom + sous-titre (« Tes performances · N wars » / « Performances collectives · N wars »). Pas de nombre de courses.
-- **Bilan** : gros winrate + V/N/D + barre proportionnelle. Le décompte V/N/D **et** le nombre de wars sont calculés sur la portée affichée : en Individuelles seules les wars où le joueur a joué, en Équipe toutes les wars de l'équipe.
-- **Indicateurs** (Individuelles) / **Détails équipe** (Équipe) : **grille régulière** de tuiles **toutes de la même taille** (la place de la ligne de progression **et** du libellé sur 2 lignes est réservée en permanence → aucune tuile ne change de taille, ni au changement de fenêtre ni selon la longueur du libellé), recalculée sur la **période globale** de l'écran (#68), avec **progression en %** (delta vs all-time, flèche ↗/↘ colorée) sur les métriques comparables. Distinction stricte : Individuelles = **points/war** + position + **taux de participation** ; Équipe = **écart de points** (le « Score moyen » affiche une différence, pas le total) + **score moyen/manche** lui aussi affiché en **écart de points par manche** (`trackScoreToDiff`, #67). Tuiles communes : maps gagnées, régularité, marges V/D, **pénalités** (points perdus), shocks/war. *(La tuile **winrate** a été **retirée de la grille d'indicateurs** — #91 — car déjà affichée **en grand** dans la carte « Bilan ».)* **Position moyenne** et **pénalités** se mettent à jour avec la fenêtre. Le **taux de participation** (#78, Individuelles uniquement) = `wars jouées par le joueur ÷ wars de l'équipe × 100` sur la **même fenêtre filtrée** (all-time / 5 / 10, + saison) ; delta vs all-time affiché comme les autres tuiles (« plus haut = mieux »). Valeurs en blanc, seuls les deltas colorés.
-- **Contribution** (Individuelles) : **deux lignes** (#69) — (1) **% des points** de l'équipe + rang de contributeur, illustrée d'une **icône champignon** (`ic_mushroom`, dessinée en couleurs via `Image` ; #91) ; (2) **% de shocks** de l'équipe + rang de baggeur, illustrée de l'**icône éclair** (`shock`). Les **deux** parts sont des ratios **total/total** (part du joueur = total du joueur ÷ total cumulé du roster) et sont **LUES telles quelles depuis les classements « Contributeurs » / « Meilleurs baggeurs »** de la même fenêtre (source de vérité unique) : le % affiché ici est **strictement identique** à celui du joueur dans le classement équipe correspondant. *(Retour PR #75 : la ligne « points » n'est **plus une moyenne war par war** mais un total/total aligné sur « Contributeurs » ; auparavant l'indiv agrégeait sur le seul sous-ensemble des wars du joueur → dénominateur différent et % incohérents entre indiv et équipe.)* La 2ᵉ ligne est masquée si le joueur n'a aucun shock sur la période ; la section entière ne s'affiche que pour un **membre du roster** (la contribution au roster n'a de sens que pour un membre).
-- **Forme & séries** (série en cours + forme sur 10 wars) puis **Records & séries** : **grille 3 lignes × 2 colonnes** recalculée sur la **période globale** (#68 ; la « série en cours » reste par nature all-time) — ligne 1 amplitude (**score min | score max** — en **mode Équipe**, ces deux valeurs sont affichées en **écart de points** de war via `warScoreToDiff`, pas en score brut ; en mode Individuel, score perso brut, #67), ligne 2 (**record V | record D**), ligne 3 (**Top 6 | Bot 6**). Le **texte de série** est en **blanc** (vues Individuelles ET Équipe, #50 pt.3) ; seule la flamme garde sa couleur V/D.
-- **Top / Bot équipe** et **Top / Bot adversaire** (onglet **Équipe** uniquement, #64) : deux cartes de compteurs Top / Bot calculés sur la **période globale** de l'écran (#68 ; toutes wars 12p de la fenêtre, tous adversaires/circuits). La table adversaire porte sur les **6 positions adverses** (complément des positions de l'équipe). **La ligne Top 6 / Bot 6 n'est PAS affichée** (redondante avec la ligne Top6/Bot6 de « Records & séries ») → seuls **N = 5→2** apparaissent, et **une ligne à 0 est masquée**. Une carte entièrement vide après ce filtrage est masquée.
-- **Répartition des positions** : recalculée sur la **période globale** (#68) + barres P1→P12 **ancrées sur une ligne de base commune** (labels alignés) + pied Top6/Bot6 avec %.
-- **Podium circuits** et **Podium adversaires** : Top 3 / Flop 3 (**chacun sur une ligne**, 3 cellules), recalculés sur la **période globale** (#68), + sélecteur de **tri** **Occurrences (défaut) / Winrate / Score** (axe indépendant de la période). « Occurrences » classe par nombre de fois joué (circuit) / de confrontations (adversaire) — Top 3 = les plus joués, Flop 3 = les moins joués. Les deux podiums partagent la **même cellule**, qui reprend **toutes** les infos des cellules historiques (image, nom, puis *nb de fois joué / confrontations*, *winrate*, *score équipe ou position/score joueur*) ; seule l'image change (illustration de circuit vs logo d'équipe). Perspective joueur (score du joueur) en Individuelles, équipe (écart) en Équipe. **Dégradation propre par période (#91)** : la carte reste affichée dès qu'au moins une entrée est classable **tous tris confondus** (elle ne disparaît plus au changement de fenêtre/tri) ; pour un tri sans assez d'échantillons (le seuil `MIN_RANKING_SAMPLE` peut vider le tri Winrate/Score sur une fenêtre réduite), un **message « pas assez de données sur cette période »** remplace le podium — jamais un podium **tronqué « 2 sur 3 »** incohérent (seul un podium **complet de 3** est rendu).
-- **Contributeurs** (Équipe) : mini-classement du roster recalculé sur la **période globale** (#68) (% de points + winrate, « toi » mis en évidence).
-- **Meilleurs baggeurs** (Équipe, #69) : mini-classement du roster **construit exactement comme « Contributeurs »** (mêmes lignes, médaillon, badge « Moi »), mais classé par **part de shocks** (**total shocks joueur ÷ total shocks équipe** sur la période — ratio de totaux, **jamais une moyenne**). Recalculé sur la période globale, masqué si aucun joueur n'a de shock sur la fenêtre.
-
-> Les sections « Rythme de war », « Comparatif 12/24 » et l'accordéon « Indicateurs avancés » ont été retirés : leurs indicateurs sont surfacés ailleurs (régularité, marges, pénalités → Indicateurs ; amplitude, records, invaincu → Records), **sauf la position moyenne 1ʳᵉ/2ᵉ moitié de war** qui disparaît avec le rythme (choix produit assumé).
-
-> **`statsfull` — vue « pour un joueur donné »** : même rendu que l'onglet Individuelles, paramétré par `userId` (`StatsFullScreen(showTabs = false)`, route `Statsfull/{userId}`), avec barre de retour et sous-titre = nom du joueur. Mutualisé avec la vue Individuelles. **Point d'entrée câblé** : le clic sur une ligne joueur des **Classements** (#65) ouvre cette vue via `Statsfull/{userId}`. (Un autre point d'entrée « fiche joueur → Voir ses statistiques » relève d'un ticket ultérieur ; la route réutilisable est déjà en place.)
->
-> **Lien « Résultats → » de la carte Bilan (#65) — TOUJOURS visible** dans les deux contextes (pôle Stats onglet Individuelles ET vue `statsfull` d'un joueur donné). Au clic, il ouvre l'**historique des wars filtré sur le joueur concerné** : sur `Statsfull/{userId}` → wars **de ce joueur** ; sur le pôle Stats (joueur courant, `userId` non passé) → wars du **joueur courant** (`me`). L'historique filtré est une route du **graphe racine** `Home/WarList/{userId}` (`userId` = id du joueur, ou `me` = courant, résolu côté VM) → le retour `←` revient à `StatsFullScreen`. Écart maquette assumé (rules 13/15) : le prototype ne montre ce lien que sur l'écran `statsfull`, pas sur l'onglet Individuelles du pôle Stats ; par décision produit il est désormais visible aussi sur le pôle Stats.
->
-> **Filtrage par saison (#70)** : un **menu déroulant de saison** (`MKSeasonDropdown`, composant partagé) est aligné **à droite dans le header** de l'écran Statistiques. Options : **« Tout l'historique »** puis une entrée par saison (« Saison N »). Défaut = **saison en cours**. Au changement, **toutes** les sections se recalculent **à la volée** sur les seules wars de la saison sélectionnée (intervalle `[start, end]` comparé au timestamp `war.id`) — dynamiquement, sans re-navigation (rule 11). Filtre et période sont **indépendants** (saison = quelles wars ; période = les N dernières de cette saison). **Aucun libellé de saison** (« S1 », « S2 »…) n'est affiché sur les records/séries : seul le **filtre** agit (retour utilisateur). **Loader au changement de saison (#91)** : comme sur les Classements, la zone de données passe **visiblement en chargement** (spinner) pendant le recalcul off-main ; le header (dropdown) et les sélecteurs restent affichés. *(Le VM pose `loading = true` sur le **dernier state complet** mémorisé — et non sur un état vide — pour que le loader s'affiche sans faire disparaître les données/sélecteurs.)*
-
-### Pôle 4 — Classements (`StatsRankingScreen`)
-Écran **unique à sous-onglets** `Joueurs / Adversaires / Circuits` (`MKSegmentedSelector`), **sans menu intermédiaire** (l'ancien `StatsMenuScreen` a été supprimé). Titre **CLASSEMENTS** (le hint « Palmarès triable… » a été **retiré**, #50 pt.5). Chaque onglet propose : **recherche par nom** (marges verticales resserrées et barre de curseur de hauteur minimale, #50 pt.5), **tri à 3 chips** (le chip d'**occurrences en 1ʳᵉ position et sélectionné par défaut**, tri décroissant), **curseur « occurrences minimum »**, et une **grille de cellules podium** (`PodiumCell` mutualisée avec le pôle Stats, **texte blanc dans un cadre transparent-noir** — harmonisé avec les autres écrans, #50 pt.7) — avatar + nom + lignes de stats (occurrences / winrate / score moyen ; l'onglet **Joueurs** ajoute une **4ᵉ ligne** « Participation » sous « Wars jouées », #78) :
-1. **Joueurs** — chips `Participation (défaut) / Winrate / Score moy.`. Le chip **Participation** (ex-« Wars », #78) trie les joueurs par **taux de participation** décroissant (et non plus par nombre de wars jouées) ; le curseur « occurrences minimum » reste basé sur le nombre de wars jouées. Liste **sectionnée** en **Membres** (joueurs de l'équipe) et **Alliés** (deux en-têtes). Cellule = **médaillon joueur** (photo de profil MKCentral si dispo, sinon initiales, #50 pt.4) + nom + **4 lignes** de stats : Wars jouées, **Taux de participation** (#78, `wars jouées ÷ wars de l'équipe × 100` sur la saison filtrée, sous « Wars jouées »), Winrate, Score moy. Ligne → stats joueur (`StatsType.PlayerStats`).
-2. **Adversaires** — chips `Occurrences (défaut) / Winrate / Score moy.`. Champ « Rechercher une équipe ». Les wars étant rattachées au **rosterId** adverse, le classement compte **un item par roster** (nom/tag du roster, avatar de l'équipe) ; les wars legacy restent sous un item de niveau équipe. Ligne → **fiche détail adversaire** (`Opponent/{teamId}`, cf. plus bas).
-3. **Circuits** — chips `Fréquence (défaut) / Winrate / Score moy.`. Champ « Rechercher un circuit ». Cellule = illustration du circuit + nom. Ligne → **fiche détail circuit** (`Map/{trackIndex}`, cf. plus bas).
-
-**Curseur « occurrences minimum »** (`Slider`, état réactif) : filtre la liste sur le nombre de matchs (**wars** pour Joueurs/Adversaires, **maps jouées** pour Circuits). Min = 1, max = le plus haut compteur de l'onglet courant ; seules les entrées à `occurrences ≥ valeur` sont affichées. Ce filtre utilisateur **remplace, pour l'affichage**, l'ancien seuil fixe : il n'y a plus de carte « En bref » ni de relégation automatique — l'utilisateur choisit lui-même l'échantillon minimum. Le curseur est masqué s'il n'y a rien à filtrer (max ≤ 1). La constante `Stats.MIN_RANKING_SAMPLE` reste utilisée par les **podiums du pôle Stats** (calculs de biais), pas par cet écran.
-
-**Divergence assumée vs prototype** : la maquette prévoit une carte « En bref » (On domine / Bête noire ; Meilleur / Pire) sur les onglets Adversaires et Circuits. Elle a été **retirée sur décision explicite de l'utilisateur** (remplacée par le curseur d'occurrences), au profit d'un contrôle direct de l'échantillon.
-
-**Filtrage par saison (#70)** : un **menu déroulant de saison** (`MKSeasonDropdown`, composant partagé, aligné à droite dans le header) propose **« Tout l'historique »** puis une entrée par saison ; défaut = **saison en cours**. Au changement, les **classements** (Joueurs/Membres/Alliés, Adversaires, Circuits) sont **recalculés à la volée** sur les seules wars de la saison sélectionnée, sans re-navigation (rule 11). Ce recalcul remplace, pour cet écran, la lecture du cache mémoire `StatsRepository` (qui n'agrégeait que l'historique complet) : la VM `StatsRankingViewModel` recalcule désormais elle-même les listes (mêmes filtres host/roster + 12p que le worker de synchro, plus l'intervalle de saison). **12p uniquement** ; le 24p suivra dans un ticket dédié.
-
-Perspective : Joueurs = par joueur ; Adversaires / Circuits = **winrate global de l'équipe** (le prototype n'a pas de switch individuel/équipe sur les Classements). Depuis une ligne Adversaire/Circuit, la navigation ouvre désormais la **fiche dédiée** correspondante (#27, cf. ci-dessous) ; la ligne Joueur ouvre l'**écran Statistiques du joueur cliqué** (#65, route `Statsfull/{userId}` → `StatsFullScreen(showTabs = false)` : rendu Individuelles seul du bon joueur, **sans** sélecteur Indiv/Équipe, sous-titre = nom du joueur) — et non plus l'ancien écran `Stats` générique ni le profil. Le retour (`←`/back système) revient aux Classements (fiche poussée sur le graphe racine par-dessus le pôle, `popBackStack`).
-
-#### Fiches détail Adversaire & Circuit (#27)
-
-Fiches profil « page équipe » (pattern apps sportives), atteintes depuis les Classements. Rendu **pixel-perfect** de la maquette (écrans `opp` / `map`), cartes translucides mutualisées (`ui/stats/MKStatCard.kt` : `StatCard`, `StatHeaderCard`, `BalanceCard`, `WinTieLossBar`, `StatTiles` — extraites de `StatsFullScreen`, rule 16). **12p uniquement**, données réelles. Chaque fiche présente **toutes les données détaillées** de l'écran Statistiques scopées à son entité.
-
-**Sélecteur Indiv / Équipe** (les deux fiches) — `MKSegmentedSelector` partagé (rule 15), libellés courts **« Joueur » / « Équipe »**, état **réactif** du ViewModel (rule 11 : `MutableStateFlow` basculé par `onModeChange`, l'écran reste monté, pas de re-navigation). **Mode initial semé par le contexte d'ouverture** : `OpponentStats`/`MapStats` portent un `userId` (nullable) passé dans la route (`…/{userId}`, arg **nullable** — le littéral « null » est parsé en `null` par `StringType` ⇒ mode Équipe). Les sections réagissent au mode, **sauf** celles explicitement figées ci-dessous.
-
-- **Fiche adversaire** (`OpponentDetailScreen`, route `Opponent/{teamId}/{userId}/{season}`, `OpponentDetailViewModel`) : en-tête (nom/tag du roster + avatar de l'équipe, rule 12 ; nb de confrontations + dernière rencontre), **Bilan face à eux** (winrate **coloré selon seuil** — rouge < 50 %, blanc = 50 %, vert > 50 % — + V/N/D + barre), **5 dernières face à eux** (pastilles V/N/D), **Séries & scores** — grille **3 lignes × 2 cellules** : L1 = *Score/diff* (mode-dépendant : Équipe = différence moyenne signée pour − contre ; Indiv = score moyen du joueur) · *Série en cours* ; L2 = *Record série de victoires* · *Record série de défaites* ; L3 = *Shocks obtenus* · *Shocks/War* (ratio), les deux cellules de la L3 portant l'**illustration shock** à gauche (centrée verticalement) ; **Circuits contre eux** (podium Top3/Flop3 + **sélecteur Occurrences / Winrate / Score moy.** + « **Classement entier** » → `OpponentTracksRankingScreen` ; en **mode Indiv**, la 3ᵉ info affiche la **position moyenne** — libellé *Position moy.* + valeur `averagePosition` via `pointsToPosition` — au lieu du score, #67), **Pilotes contre eux** (podium Top3/Flop3 des **membres** ayant joué contre eux, calculé UNIQUEMENT sur les wars/manches vs cet adversaire ; cellules **Nb joué / Winrate / Position moy.** — pas de score ; **`Nb joué` = nombre de WARS distinctes** vs cet adversaire où le pilote a couru, `Winrate` et `Position moy.` calculés sur SES manches vs cet adversaire seulement (#67 round 3) ; **membres uniquement — alliés exclus** ; **seuil `MIN_RANKING_SAMPLE`** + « **Classement entier** » → `OpponentPilotsRankingScreen` — **affiché en mode Équipe uniquement**, #67), **Baggeurs contre eux** (#69 : podium Top3/Flop3 des **membres** classés par **part de shocks** face à eux — **total shocks joueur ÷ total shocks équipe** vs cet adversaire, ratio de totaux ; cellules **Nb joué / Shocks / % shocks** ; **membres uniquement**, baggeurs à 0 shock exclus + « **Classement entier** » → `OpponentBaggersRankingScreen` — **affiché en mode Équipe uniquement**), **sections détaillées** (répartition des positions, Top/Bot 2→6), **Historique des wars** (`WarCell` → `WarDetailsScreen`). Réutilise `withFullStats(teamId=…, userId=…)`.
-- **Fiche circuit** (`MapDetailScreen`, route `Map/{trackIndex}/{userId}/{season}`, `MapDetailViewModel`) : en-tête (illustration + nom + « joué N fois » ; **plus d'icône/label de coupe**), **Performance** (winrate de manche **coloré selon seuil** + V/N/D + barre), **Scores moyens** : *Score équipe* (affiché en **écart de points par manche** via `trackScoreToDiff`, #67) et *Ta position moyenne* **FIXES** (indépendants du mode — toujours score d'équipe + position du joueur courant) + *Shocks obtenus* **DYNAMIQUE** (suit le mode), **sections détaillées** (répartition des positions, Top/Bot 2→6, mode-scopées), **Pilotes sur ce circuit** (podium Top3/Flop3 **trié par score perso moyen** ; cellules **Nb joué / Winrate / Position moy.** — le score moyen a été remplacé par le **winrate**, aligné sur « Pilotes contre eux » (#67 round 3) ; **membres uniquement — alliés exclus** ; **seuil `MIN_RANKING_SAMPLE`** de manches sur le circuit + « **Classement entier** » → `MapPilotsRankingScreen`) — **affiché en mode Équipe uniquement** (masqué en Indiv), **Baggeurs sur ce circuit** (#69 : podium Top3/Flop3 des **membres** classés par **part de shocks** sur ce circuit — **total shocks joueur ÷ total shocks équipe** sur le circuit, ratio de totaux ; cellules **Nb joué / Shocks / % shocks** ; **membres uniquement**, baggeurs à 0 shock exclus + « **Classement entier** » → `MapBaggersRankingScreen` — **mode Équipe uniquement**), **Adversaires sur ce circuit** (podium Top3/Flop3 des adversaires rencontrés sur ce circuit, par écart d'équipe moyen ; **seuil `MIN_RANKING_SAMPLE`** + « **Classement entier** » → `MapOpponentsRankingScreen` — **affiché en mode Équipe uniquement**, masqué en Indiv, #67 round 3). S'appuie sur `MapStats`.
-
-> **Filtrage par saison propagé (#91)** : lorsqu'on ouvre une fiche **adversaire**/**circuit** depuis un **classement filtré sur une saison**, la période active est **propagée en argument de navigation** (segment de route `{season}` : le **numéro de saison**, ou `all` = tout l'historique). Les VM `OpponentDetailViewModel` / `MapDetailViewModel` **filtrent alors leurs wars sur cette saison** (`filterBySeason`, avant tout calcul) — la fiche est cohérente avec le classement d'origine (et non plus systématiquement all-time). Les classements « Voir en entier » poussés depuis la fiche héritent du même segment de saison. Depuis un autre point d'entrée (ex. « Voir l'adversaire » d'une war), la saison vaut `all` (tout l'historique).
-
-**Sections détaillées communes** (`ui/stats/MapStatsSections.kt`, `mapStatsDetailSections(MapStats)`) — mêmes calculs/rendus que `StatsFullScreen`, scopés à l'entité ET au mode : **Répartition des positions** (histogramme P1→P12 — positions du joueur en Indiv, de l'ÉQUIPE en Équipe — + pied Top6/Bot6 %, `DistributionChart`/`DistributionFooter`), **Top / Bot équipe** (compteurs Top / Bot, `TopBottomColumns`) et, en **mode Équipe uniquement** (12p), **Top / Bot adversaire** — mêmes compteurs sur les **6 positions adverses** (complément `(1..12) − positions équipe` par manche) (#64). **Ligne Top 6 / Bot 6 non affichée** (redondante avec le pied Top6/Bot6) : seuls **N = 5→2**, **lignes à 0 masquées**. Cartes masquées si vides après filtrage.
-
-**Classements complets** (« Classement entier », **cellules à texte blanc dans un cadre transparent-noir** — harmonisé avec les autres écrans, #50 pt.7) : `OpponentTracksRankingScreen` (circuits contre l'adversaire, **même sélecteur de tri** Occurrences / Winrate / Score moy. que la fiche et l'écran Classements), `OpponentPilotsRankingScreen` (pilotes membres contre l'adversaire, #67), `MapPilotsRankingScreen` (pilotes membres sur le circuit, tri ET affichage par score perso moyen, seuil `MIN_RANKING_SAMPLE`) et `MapOpponentsRankingScreen` (adversaires rencontrés sur le circuit, #67). Rendus via la **grille de podiums mutualisée** `ui/stats/PodiumGrid.kt` (`podiumRows`, extraite de `StatsRankingScreen`, rule 16), en réutilisant le **même ViewModel** que la fiche (mêmes données, même mode, même tri). **Depuis l'écran Stats (`StatsFullScreen`)**, les sections **Circuits** et **Adversaires** portent un lien « Classement entier » → écrans **`PlayerMapsRankingScreen` / `PlayerOpponentsRankingScreen`** (#67 round 3) : classements complets **SCOPÉS au périmètre courant** — en **Individuelles** (onglet du pôle Stats OU fiche `Statsfull/{userId}` d'un joueur tiers, point 2), les données sont celles **DU JOUEUR** (position moyenne, adversaires affrontés par le joueur) ; en **Équipe**, celles de l'ÉQUIPE. Ces écrans réutilisent le **même `StatsFullViewModel`** (même `userId` → mêmes données scopées, rules 16/32), avec leur propre sélecteur de tri Occurrences / Winrate / Score moy. (état local, rule 11). Le booléen de portée `isTeam` est passé par la route (`Statsfull/{userId}/Maps|Opponents/{isTeam}`, `userId = « me »` → joueur courant). Ces classements entiers affichent **l'all-time** (fenêtre `…ByWindow[0]`) : ce sont des destinations autonomes **sans** sélecteur de période — le filtre de période global (#68) ne concerne que l'écran du pôle Stats.
-
-Le routage par type se fait dans `RootScreen` (`onStats` dispatche `OpponentStats`→`Opponent/{teamId}/{userId}`, `MapStats`→`Map/{trackIndex}/{userId}`, autres→`Stats`).
-
-**Note calcul** : distinction stricte **score vs position** pour les circuits — la « position moyenne » est la position réelle (1..12) moyenne (du joueur via `MapStats.averagePlayerPosLabel`, de l'équipe via `MapStats.teamAveragePosition`), jamais un score. Les **shocks** sont les objets éclair **obtenus** (comptés même non joués ; `Shock.playerId` = joueur qui a obtenu l'éclair ; filtrés par joueur en Indiv, tous les joueurs de l'équipe hôte en Équipe). Le winrate coloré selon seuil réutilise `winrateColor()` de `ui/stats/MKStatCard.kt`.
-
-**Flèche retour** : les classements complets, comme tous les écrans poussés, affichent désormais un **bouton retour `←`** dans l'app bar (`BaseScreen(onBack=…)`, #50) en plus du geste/bouton système.
-
-### Pôle 5 — Profil (`ProfileScreen`, onglets fusionnés Joueur / Équipe)
-Profil unique du joueur courant / de mon équipe (`me`), **à onglets fusionnés** (écran `profile` du prototype, ticket #28), **rendu pixel-perfect** vis-à-vis de la maquette (rules 13/15). Un seul `BaseScreen` (titre **Profil**), un **segmented partagé** `Joueur` / `Équipe` (`MKSegmentedSelector`) qui bascule l'onglet **dynamiquement** (état interne réactif, sans re-navigation — rule 11). Le contenu de chaque onglet **réutilise** le contenu existant des fiches profil, restylé au niveau maquette via des **composants profil mutualisés** (`ui/cells/ProfileCells.kt` : `ProfilePersonCard`, `ProfileInfoCard`, `ProfileMemberRow`, `ProfileSettingRow`, `RolePill`, `MkcBadge`) :
-
-- **Onglet Joueur** (`PlayerProfileContent`) : **carte identité** centrée (avatar rond 76dp / pastille d'initiales, nom Bungee, pays + **pastille de rôle** Membre/Admin/Leader, bio italique, **badge « Profil MKCentral »**) ; **carte Informations** (grille 2 colonnes : Équipe + tag, Membre depuis **[date exacte jj/mm/aaaa]**, Code ami, Discord, Inscription **[date exacte]**, Rôle) ; boutons de règles métier (fiche d'un autre joueur — « Ajouter en ally », « Changer le rôle ») **en largeur intrinsèque, centrés** ; **carte Réglages** (lignes `setrow` avec **icône de tête** : Rafraîchir, Notifications + toggle, Multi-roster + toggle si ≥ 2 rosters, entrée **Debug** si joueur 18595 / mode matrice, **Déconnexion** en rouge) ; **ligne version** « Stats MKWorld · vX » + dernière synchro.
-- **Onglet Équipe** (`TeamProfileContent`) : **carte identité** équipe (logo / pastille de tag, nom, `TAG XX · créée le jj/mm/aaaa`, bio, **badge « Équipe MKCentral »**) ; **carte Informations** (Membres, Alliés, Créée le **[date exacte]**) ; **sous-onglets `MKSegmentedSelector`** Membres / Alliés (remplaçant l'ancien `MKSelectorViewPager`, conformément au style pill de la maquette) ; **lignes membres** (`ProfileMemberRow` : **photo de profil MKCentral** du membre — fallback initiales colorées par roster — nom, **pastille de rôle réel** [nœud Firebase `users` : Leader=2 / Admin=1 / Membre=0], chevron → fiche joueur), **regroupées par roster** (un en-tête par roster) **si l'équipe a ≥ 2 rosters** mkworld, sinon liste plate ; onglet Alliés = bouton « **Ajouter un ally** » **en largeur intrinsèque, centré** (sheet hébergé par l'écran) + lignes alliés (« roster externe »). Si le joueur courant est **leader strict** (`role == 2`, #30), un bouton « **Démarrer une nouvelle saison** » (largeur intrinsèque, centré) s'affiche au-dessus des sous-onglets → confirmation `MKDialog` irréversible → clôt la saison en cours et en démarre une nouvelle (cf. §11).
-
-Pastilles de rôle (couleurs de la maquette) : **Leader** = or (`gold`), **Admin** = bleu, **Membre / Ally** = blanc translucide. Le **rôle réel** provient du nœud Firebase `users` (un allié vaut toujours 0) ; pour une équipe publique (sans nœud `users`), repli sur les indicateurs MKCentral leader/manager.
-
-Le contenu scrollable réserve une **marge basse** (≈ 90 dp) pour ne pas être masqué par la bottombar (cf. rule `.claude/rules/17-ui-bottombar-inset.md`).
-
-**Fiches profil autonomes** (atteintes depuis l'Annuaire / résultats, graphe racine) : `PlayerProfileScreen(id)` et `TeamProfileScreen(id)` restent des écrans à barre de titre propre, réutilisant le **même** contenu (`PlayerProfileContent` / `TeamProfileContent`, rule 16 — un seul exemplaire, généralisé par paramètres). La **fiche équipe publique** (`id != "me"`, `pteam`) est en lecture seule : membres → fiche joueur (regroupés par roster si ≥ 2 rosters), sans CTA supplémentaire.
-
-### Annuaire (`RegistryScreen`, via icône recherche)
-Sélecteur **Joueurs / Équipes** :
-- **Joueurs** : recherche déclenchée à partir de **3 caractères** ; pagination de toutes les pages MKCentral. Clic → profil joueur.
-- **Équipes** : filtre local par nom/tag (insensible à la casse). Clic → profil équipe.
+Tu n'as **rien d'autre à configurer** : ni mot de passe, ni saisie manuelle de ton pseudo. Tout est récupéré depuis MKCentral.
 
 ---
 
-## 6. Cycle de vie d'une war
+## 4. Se repérer dans l'application
 
-```mermaid
-flowchart LR
-    A["Nouvelle war"] --> B["Choix adversaire(s)"]
-    B --> C["Composition (6 joueurs)"]
-    C --> D["War en cours"]
-    D -->|Course suivante| E["Saisie d'une course"]
-    E --> D
-    D -->|Plus d'actions| F["Pénalités / Remplacement / Annuler"]
-    F --> D
-    D -->|12 courses faites, 12p| G["Valider la war"]
-    D -->|12 courses faites, 24p| H["Saisie scores adverses"]
-    H --> G
-    G --> I["Historique"]
-```
+L'application est organisée en **cinq pôles**, accessibles par la **barre en bas de l'écran**. Chaque pôle regroupe un type d'usage :
 
-**Wizard 3 étapes sur un seul écran** (`AddWarScreen`, rendu **pixel-perfect** vs la maquette du prototype UX — écran `addwar`, rules 13/15). En tête : le **stepper cliquable** `1 · Adversaire` → `2 · Joueurs` → `3 · Récap` (composant partagé `MKStepper`). *(Le **segmenté 12/24** est **masqué temporairement** pour la MEP — #91 : la création se fait uniquement en **12p** ; le code est **commenté, pas supprimé**, à réactiver plus tard.)* Les étapes basculent **dynamiquement** (état `step` du ViewModel, **aucune re-navigation** ni transition slide, rules 11/14) ; l'étape « Joueurs » n'est accessible qu'une fois l'adversaire complet, et « Récap » qu'une fois les 6 joueurs sélectionnés. Le bouton retour replie d'abord le sélecteur de roster inline, sinon recule d'une étape (3→2→1), sinon retire la dernière équipe, sinon quitte.
-
-> **Le retour en arrière annule la sélection de l'étape rejointe** (demande utilisateur) : revenir à **Adversaire** (== 1ʳᵉ étape, via « Précédent », back système ou clic stepper) fait une **remise à zéro complète** — **désélectionne l'adversaire** (les adversaires en 24p), **réaffiche la liste complète** des équipes **et remet la line-up à zéro** (aucun joueur coché) ; revenir aux **Joueurs** depuis le Récap remet **seulement** la line-up à zéro. Aller **en avant** ne réinitialise rien. Le changement de mode 12/24 (qui repasse par la 1ʳᵉ étape) applique aussi cette remise à zéro complète. Le gating du stepper empêche alors de re-remonter au Récap sans re-compléter la sélection.
-
-> **Divergence assumée vs la maquette** (demande utilisateur explicite, PR #54 / audit B23) : la maquette d'origine ne décrit **que 2 étapes** (Adversaire, Joueurs, avec le CTA « Commencer la war » en pied d'étape Joueurs). À la demande de l'utilisateur, une **3ᵉ étape « Récap »** a été ajoutée : le CTA de lancement est **retiré de l'étape Joueurs** et **déplacé sur l'étape Récap** ; le passage d'étape se fait par la **logique de complétion** (adversaire complet → Joueurs ; 6 joueurs → Récap) et/ou le stepper. Le style reste conforme à la maquette.
-
-### Étape 1 — Choix de l'adversaire
-- **Segmenté 12/24 joueurs** : **masqué pour la MEP (#91)** — le mode reste **12p** (`is24p = false`, semé par la nav). Le composant `MKSegmentedSelector` 12/24 et `AddWarViewModel.onModeChange` sont **conservés en commentaire** (réactivation ultérieure prévue).
-- **12 joueurs** : sélectionner **1** équipe. **24 joueurs** : sélectionner **3** équipes.
-- Champ « **Rechercher une équipe / un tag** » (insensible à la casse) ; le texte est comparé au nom et au tag de l'équipe **ainsi qu'au nom et au tag de chacun de ses rosters** — chercher le nom d'un roster fait donc remonter l'équipe parente (affichée une seule fois, avec son avatar). Aucune requête réseau (rosters déjà en local). Sous le champ, une **liste d'équipes** (`MKListRow` : logo de l'équipe, nom + sous-texte `roster · TAG` ou `N rosters mkworld`, chevron), suivie d'un **hint** rappelant « Logo = équipe, nom + tag = roster… ». Un pied de liste réserve de la marge pour ne pas coller au CTA.
-- **Sélection du roster adverse** (rule 12) : au clic sur une équipe, l'app récupère ses rosters MK World.
-  - **Un seul roster** → il est retenu automatiquement et l'écran passe directement à l'étape 2.
-  - **Plusieurs rosters** → un **sélecteur inline** se déplie **sous la ligne** de l'équipe (cadre translucide `roster-pick` de la maquette) : une ligne par roster (nom — tag, avatar hérité de l'équipe). Choisir un roster le retient et passe à l'étape 2. En 24p, l'opération se répète pour chaque équipe adverse.
-- Nom de war construit avec les **tags des rosters** : `TAG_rosterHôte - TAG_rosterAdv1 - TAG_rosterAdv2 …`.
-
-### Étape 2 — Composition
-- **Carte de progression** : compteur `n / 6` + barre verte + hint « Sélectionne les 6 joueurs… ».
-- **Ton roster** : joueurs **groupés par roster** (un eyebrow par roster ; eyebrow « Allies » pour les alliés). Chaque ligne (`MKListRow`) porte la **photo de profil MKCentral** du joueur (résolue en parallèle ; **initiales colorées en repli** tant que la photo n'est pas là, rule 12) et une **pastille de sélection ✓** verte qui bascule au clic.
-- **Roster adverse** : l'**affichage indicatif** du roster adverse (lignes des joueurs adverses + hint « L'adversaire est indicatif… ») a été **retiré** de cette étape (#91) — elle ne montre plus que **ton roster**. Les previews d'adversaire restent alimentées pour le **récap** (étape 3) et la création.
-- **Aucun CTA** sur cette étape : dès que **exactement 6** joueurs sont sélectionnés, l'écran **bascule automatiquement** sur l'étape 3 « Récap » (retirer un joueur y ramène). C'est `AddWarViewModel.onPlayerSelected` qui pose `step = 2` quand la composition est complète, `step = 1` sinon.
-
-### Étape 3 — Récap
-- **Accessible seulement** quand **adversaire complet ET line-up complète** (les 6 joueurs) : le stepper conditionne l'accès à `nextButtonEnabled && buttonEnabled`.
-- Rappel de l'**adversaire (des adversaires en 24p)** : `MKListRow` avec **nom + tag du roster** et **avatar de l'équipe** (rule 12).
-- Rappel de la **line-up** : les 6 joueurs sélectionnés (`MKListRow` avec **photo de profil MKCentral** / initiales en repli + pastille ✓).
-- Pied : bouton **« Précédent »** (→ étape 2) + **le seul CTA de lancement**, **« Démarrer la war »** (actif tant que la composition reste à 6 joueurs) → appelle `createWar()`.
-- À la création : `War(id = now, teamHost = rosterId, teamOpponent = [rosterId…], scores = [WarScore(0)…])` — `teamOpponent` contient le(s) **rosterId** choisi(s) à l'étape 1 (et non le teamId) ; le `currentWar` de chaque joueur est mis à jour en DB **et** Firebase (les alliés `rosterId = -1` vont dans `newAllies`, les autres dans `users`).
-
-> **Note** : les **photos de profil** ne sont résolues que pour **ton roster** (étape 2 + line-up du Récap). L'affichage indicatif du roster adverse ayant été retiré (#91), la question des avatars adverses ne se pose plus à l'étape 2.
-
-### Étape 4 — War en cours (`CurrentWarScreen`)
-> Hôte comme adversaires sont affichés avec le **nom et le tag de leur roster** (l'**avatar** reste celui de l'équipe principale). Idem sur le résumé/détail de war et les cellules de war. Si un adversaire ne peut plus être résolu localement (équipe/roster disparu du cache, war ancienne jamais synchronisée), il n'est **plus effacé** de l'affichage : il apparaît **en dégradé** (« Équipe inconnue » / tag `???`, sans logo) au lieu de disparaître.
-
-**Écran unique scrollable** (`CurrentWarScreen`, ticket #43), **pixel-perfect** vs la maquette du prototype UX (écran `currentwar`, rules 13/15). Plus de pager : un seul `LazyColumn` (marge basse `90.dp` pour la bottombar, rule 17) au style « cartes dashboard » (fond `blackAlphaed`, bordure blanche, radius 6 — même style que l'Accueil). Le **segmenté « Démo : 12/24 joueurs »** de la maquette est un **contrôle de démo** (non reproduit, rule 15) : le mode réel est **déterminé par la war** (`teamOpponent.size > 1`), pas un choix utilisateur.
-
-De haut en bas :
-- **Carte « Score du match »** (`.warscore`) : côté hôte VS côté adversaire, chacun avec pastille (avatar de l'équipe ou initiales du tag sur couleur), **nom du roster** et score (en **blanc**), puis **sous le score, la pénalité de l'équipe** (« -N » en rouge) si elle en a une (rattachement pénalité↔équipe via `War.penalties`/`WarPenalty.teamId` — clé hôte = `war.teamHost`/rosterId). La **différence de score seule** est affichée **au centre**, entre les deux scores, **colorisée** (vert si > 0, rouge si < 0, blanc si = 0). Sous la diff : le **total de shocks de la war** (icône éclair + « N shocks », somme de `war.tracks → WarTrack.shocks → Shock.count`). Sous-titre : **« N courses restantes »** (12 − courses jouées), en **blanc** (non colorisé). En 24p, les côtés adverses sont empilés (pas de score chiffré au niveau de la carte tant que non saisi).
-- **Carte « Scores des joueurs »** : cellules en **ligne compacte** — nom à gauche (**+ nb de courses jouées entre parenthèses uniquement en cas de remplacement**, i.e. quand le joueur n'a pas joué toutes les courses, via `PlayerScore.trackPlayed`), + pastille de shock si applicable ; « **N pts** » à droite (`Arrangement.SpaceBetween`) — disposées sur **deux colonnes** (6 joueurs → 2 × 3 lignes).
-- **Actions** : **CTA principal (dégradé) + « Plus d'actions » (→ `Actions`) sur une MÊME ligne, côte à côte** (deux boutons à poids égal, même espacement) — **disposition identique en cours ET terminée**. Le CTA principal vaut « **Course suivante** » → `AddTrack` tant que la war n'est pas terminée, puis « **Valider la war** » (validation directe) une fois les 12 courses jouées en **12 j**.
-- **Validation selon la variante** (uniquement à 12 courses jouées, `isOver`) :
-  - **12 j** : le CTA « **Valider la war** » **prend la place de « Course suivante »** dans la ligne d'actions (donc côte à côte avec « Plus d'actions » — plus de bouton pleine largeur séparé) ;
-  - **24 j** : la ligne d'actions n'affiche que « **Plus d'actions** » (pas de CTA de validation direct) ; la validation passe par la carte « **Scores des équipes adverses** » (une ligne de saisie par équipe adverse : pastille + nom + champ numérique) + hint + CTA « **Saisir & valider** » affichée juste en dessous. Le **total doit valoir 144 × N courses** (soit 1728 sur 12 courses), pénalités exclues ; toast d'erreur indiquant les points manquants/en trop ; les pénalités sont déduites avant écriture.
-- **Section « Courses jouées »** (`.trackgrid`) : **enveloppée dans le même cadre** que les autres sections (`DashboardCard` — `blackAlphaed` + bordure blanche, mêmes radius/padding), eyebrow « Courses jouées · N » puis grille 2 colonnes. Chaque cellule, de gauche à droite : **(1) bande colorée verticale** au bord gauche (vert si diff > 0, rouge si < 0, blanc si = 0) ; **(2) colonne centrale** = image du circuit (rectangle arrondi) + **nom** (`Maps.label`) en dessous ; **(3) zone shocks** = icônes éclair de la manche (`WarTrack.shocks`), de **largeur toujours réservée** (placeholder invisible si aucun shock) pour aligner toutes les cellules ; **(4) score « hôte-adverse »** (ex. « 44-38 », `WarTrackDetails.displayedResult`) **+ diff colorisée** dessous, **à droite**, centrés verticalement. **Hauteur de cellule uniforme** (fixe, calée sur le cas « nom sur 2 lignes ») → toutes les cellules alignées quelle que soit la longueur du nom. Clic → détail de la course. Grille en lignes chunkées (pas de `LazyVerticalGrid` imbriqué dans le `LazyColumn`).
-
-`isOver` = `tracks.size == 12`. `buttonsVisible` = une war en cours existe en DataStore.
-
-> **Écart résiduel assumé** (rule 13) : la carte score des variantes **24 j** n'affiche pas encore le podium des 3 scores en direct comme un rendu final (les scores sont saisis manuellement en fin de war, pas calculés par manche) ; le focus pixel-perfect porte sur la variante 12 j (cas principal), la 24 j réutilise le même style de cartes.
-
-**Récupération des droits d'édition (DataStore vidé).** Le DataStore local peut être vide alors que la war existe encore côté Firebase (logout, réinstallation, autre appareil) : les boutons d'édition disparaîtraient. Pour éviter cela, la war courante enregistre son **créateur** via un `playerHostId` (id MKCentral) sur Firebase. À la lecture de la war courante (accueil comme écran de war en cours), si le DataStore est vide **et** que le joueur courant est le créateur (`playerHostId == mkcPlayer.id`), le DataStore est **réhydraté automatiquement** et l'édition redevient possible. Un utilisateur qui n'est pas le créateur (ou dont le profil MKCentral est lui aussi vidé) ne déclenche pas cette réhydratation. Les wars antérieures à ce mécanisme (sans `playerHostId`) restent lisibles (valeur par défaut, pas de réhydratation).
-
-### Étape 4 — Saisie d'une course (`AddTrackScreen`)
-**Wizard sur un seul écran** (rendu **pixel-perfect** vs la maquette du prototype UX — écran `addtrack`, rules 13/15). En tête, le **stepper cliquable** partagé (`MKStepper`). Le **nombre d'étapes dépend du mode** :
-
-- **12 joueurs → 3 étapes** : `Circuit` → `Positions` → `Résumé` (**pas d'Intermission** en 12p).
-- **24 joueurs → 4 étapes** : `Circuit` → `Intermission` → `Positions` → `Résumé`.
-
-Les étapes basculent **dynamiquement** (état `step` du `AddTrackViewModel`, **aucune re-navigation** ni transition slide, rule 11) ; l'indexation des étapes est **mode-aware** (`is24p` : `stepCircuit`/`stepIntermission`/`stepPositions`/`stepSummary`). Le **gating** du stepper : `Intermission`/`Positions` accessibles une fois le circuit choisi, `Résumé` une fois toutes les positions saisies. Écran du graphe racine poussé **par-dessus** CurrentWar → **sans bottombar** (rule 17).
-
-1. **Circuit** : recherche par nom/label + grille des 30 circuits (**cellule `MKTrackCell` mutualisée** avec CurrentWar, rule 16), la grille étant **englobée dans un conteneur sombre** (`blackAlphaed`, coins arrondis) pour le contraste. Choisir un circuit **réinitialise la saisie de positions** et avance à l'étape suivante (Intermission en 24p, directement Positions en 12p).
-2. **Intermission (24p uniquement)** : chip « **Aucune** » (actif par défaut) ou grille des circuits alternatifs (`Maps.intermissionsTo(...)`) enchaînés (mêmes `MKTrackCell`), cellule active liserée vert ; resélectionner le même circuit l'annule. Boutons « Précédent » / « Suivant · Positions ».
-3. **Positions** : aperçu du circuit en tête via la **même cellule que la sélection Circuit** (`MKTrackCell`, **pleine largeur**) ; saisie **joueur par joueur** — carte de progression `Joueur n / total` + barre, nom du joueur courant, grille de positions cliquables (1–12 ou 1–24, cellules plus petites en 24p, **police du numéro réduite** pour l'harmonie) ; les positions déjà prises sont verrouillées. La **dernière** position bascule **automatiquement** au Résumé. Bouton « Précédent » (réinitialise la saisie).
-4. **Résumé** : carte en-tête (circuit + **score de la manche calculé** — barème `positionToPoints`, total 82 en 12j) avec **score en blanc** et **diff colorisée** (vert/rouge/blanc via `Int.diffColor`, mutualisé avec CurrentWar) ; en 24p : progression `score actuel → nouveau score` (l'adversaire est saisi ailleurs, sans diff par manche). Grille des cellules joueurs **englobée dans un conteneur sombre** (`blackAlphaed`, comme la grille de circuits, pour le contraste) : cellule joueur (`SummaryPlayerCell`) en **colonne verticale centrée** — **nom** en haut, **position** au milieu **dans un carré blanc** (numéro `MKPosition` + couleur `positionColor`), **compteur de shocks** en bas (illustration `shock` + contrôle `− N +`) pour ajouter/retirer des shocks directement depuis le résumé (shocks **hors calcul du score**). « Confirmer » écrit le `WarTrack` (indices du/des circuit(s), positions, shocks) dans Firebase et met à jour les scores.
-
-> **Petits labels indicatifs retirés (demande utilisateur, round 4)** : les hints/eyebrows décoratifs en petit blanc (`addtrack_intermission_hint`, `addtrack_positions_hint`, `addtrack_summary_hint`, eyebrow « Positions & shocks ») ont été **supprimés** de l'écran pour épurer le rendu — **divergence assumée vs la maquette** (qui les affichait). Ne subsistent que le contenu utile (titres d'étape du stepper, champs, cellules, nom du joueur, score).
-
-- **Retour en arrière (rule 11 wizard)** : revenir au **Circuit** = remise à zéro complète (circuit, intermission, positions, shocks, score) ; revenir à l'**Intermission** (24p) réinitialise le 2ᵉ circuit + les positions ; revenir aux **Positions** vide la line-up. Le bouton retour système recule d'une étape (et applique la réinitialisation de l'étape rejointe), puis quitte depuis l'étape Circuit.
-- **Justesse du score** (rule 13) : le score de manche est calculé une seule fois à la dernière position (barème `positionToPoints`) ; le score de war final (`score courant + score de manche`) est recomposé **à la validation**, insensible aux retours arrière / reprises de saisie (plus de cumul incrémental).
-
-### Étape 5 — Plus d'actions (`CurrentWarActionsScreen`, 3 onglets)
-Écran conforme à la maquette (`waractions`) : segmenté partagé (`MKSegmentedSelector`)
-**Pénalités / Remplacement / Annuler** basculé **dynamiquement** (état local, sans
-re-navigation ni pager animé), contenu scrollable.
-- **Pénalités** : hint + **une colonne par équipe** (en-tête = nom du **roster** hôte / de l'équipe adverse, rule 12), chaque colonne empilant les montants −10/−15/−20 de son équipe (12p → 2 colonnes hôte/adverse ; 24p → une colonne par équipe adverse en plus). **Sélection unique** toutes équipes confondues ; la tuile active passe en fond **`blackAlphaed`** (texte toujours blanc) ; « Valider » applique et déduit du score de l'équipe visée.
-- **Remplacement** : lignes joueur (`MKListRow`, pastille + initiales, coche ✓ verte) ; sélectionner 1 joueur sortant (composition actuelle) + 1 entrant (banc) ; « Remplacer » met à jour `currentWar` des deux joueurs (DB + Firebase).
-- **Annuler la war** : carte de confirmation (eyebrow « Annuler la war » + hint) + bouton **`MKButton` « Supprimer la war »** (style unique translucide, plus de fond rouge ad hoc — #67) → abandon complet (réinitialise `currentWar` de tous les joueurs, supprime `currentWars/{rosterId}`, vide le DataStore).
-
-### Étape 6 — Validation finale
-`onValidateWar()` : écrit la war dans l'historique Firebase (`wars/{rosterId}/{id}`), réinitialise les `currentWar`, supprime la war en cours, revient à l'accueil. En 24p, la validation des scores (`onValidateScore`) précède.
-
----
-
-## 7. Historique & détails
-
-### Liste des wars (`WarListScreen`)
-- Bannière « War en cours » (dans la liste) / bouton « Créer une war » (action droite de l'app bar) + chips filtre de résultat (cf. §5, Pôle 2).
-- Wars **groupées par mois** (`Pair("Mois AAAA", [WarDetails])`), triées du plus récent au plus ancien, en-tête collant avec compte (recalculé après filtrage).
-- **Tous les modes (12j ET 24j) mélangés** : seul le filtre multi-roster subsiste (si désactivé : seulement `teamHost == rosterId`). L'ancien filtre par mode a été retiré.
-- Filtre de résultat V/N/D purement UI (chips), appliqué par mois : un mois sans war correspondant au filtre est masqué.
-- Clic → détail.
-
-### Détail d'une war (`WarDetailsScreen`, refonte maquette #48)
-Écran **refondu conforme à la maquette prototype UX** (`wardetails`), relecture d'une **war terminée** (pôle Wars), **écran-frère de `CurrentWarScreen`** dont il réutilise les composants de résumé partagés :
-- **Carte score** : côté hôte VS côté(s) adversaire(s), chacun avec pastille (avatar équipe ou initiales sur couleur) + **nom du roster** (rule 12) + score. La **différence de score seule** est affichée au centre, colorisée (vert > 0, rouge < 0, blanc = 0) ; les **pénalités** de chaque équipe (« -N » rouge) et le **total de shocks** de la war (icône éclair + compteur, si > 0) sont rappelés. En 24 j, les côtés adverses sont empilés sans score chiffré.
-- **Classement joueurs** : grille 2 colonnes de tuiles (nom + points + suffixe « pts »), **classées par points décroissants** ; un compteur de shocks (icône + « xN ») s'affiche à côté du nom le cas échéant.
-- Deux **boutons d'action** : **« Générer le Tab (PDF) »** → génération du tableau partageable, affiché **uniquement en 12 joueurs / 1v1** (masqué en 24 j) ; **« Voir l'adversaire »** → fiche adversaire (portée Équipe). Un **hint** rappelle la règle métier « « Tab » (PDF) n'apparaît qu'en 1v1 / 12 joueurs » (12 j uniquement).
-- **Courses jouées · N** : grille 2 colonnes des courses (mêmes cellules `MKTrackCell` que la war en cours) ; clic sur une course → **détail de la course** (`TrackDetailsScreen`, lecture seule).
-- Retour par geste/bouton système (`BackHandler`, pas de flèche `←` dans l'app bar `BaseScreen`).
-
-### Détail d'une course (`TrackDetailsScreen`, refonte maquette #47)
-Écran **refondu conforme à la maquette prototype UX** (`trackdetails`), relecture **en lecture seule** d'une course jouée (pôle Wars) :
-- **Carte en-tête** (`StatCard`) : illustration du circuit + **nom** (`Maps.label`) + sous-titre **« Course N · hôte - adverse (±diff) »** (score des deux équipes séparés par un tiret, `WarTrackDetails.displayedResult` ; diff colorisée vert/rouge/blanc via `Int.diffColor`). En 24 j, score/diff par manche masqués.
-- **Carte « Positions & shocks »** : tuiles **triées par position**, une par joueur — **position** rendue avec la font canonique des positions (`Fonts.MKPosition`) et sa **couleur** (`Int.positionColor`), **chiffre seul** (ex. « 3 »), suivie de l'**icône shock + « x{n} » uniquement s'il y a au moins un shock** (rien sinon). **Lecture seule**.
-- Bouton **« Éditer la course »** (Gradient) → `EditTrackScreen`, affiché tant que la war **n'est pas validée** (encore en cours en local) et que l'édition est autorisée (`editing`). **Toutes** les courses restent éditables tant que la war n'est pas validée, **y compris la dernière**. Depuis une war **validée** (accès via `WarDetails` historique, `editing = false`), le bouton est masqué.
-
-### Édition d'une course (`EditTrackScreen`, 2 onglets — refonte maquette #46)
-Écran **refondu conforme à la maquette prototype UX** (`edittrack`) : titre **« Éditer la course »**, **segmented partagé** (`MKSegmentedSelector`) **Circuit / Positions/Shocks** en tête. La bascule d'onglet est **dynamique** (état UI local `rememberSaveable`, aucune re-navigation, rule 11). Pied de page commun : boutons **« Annuler »** (retour) et **« Confirmer »** (Gradient). Sur retour utilisateur, la ré-attribution joueur par joueur a été supprimée et **positions + shocks fusionnés en une seule section**.
-- **Circuit** : champ « Rechercher un circuit » + grille de circuits (mêmes cellules `MKTrackCell` que l'ajout de course / CurrentWar), le circuit courant liseré en vert ; la sélection pré-remplit le circuit réel de la course.
-- **Positions/Shocks** : **une ligne par joueur** (cellules `PlayerShockCell` partagées avec le Résumé de l'ajout de course), pré-remplie avec la position et les shocks actuels. Les lignes sont **triées par position de départ** (tri appliqué une seule fois à l'ouverture) puis l'**ordre reste stable** pendant l'édition — les cellules ne sautent pas de place quand on change une position. Chaque ligne est une **petite grille alignée** : colonne des `−` | colonne centrale (**position** en haut, **sans encadré blanc** ; **icône shock collée à gauche du compteur** en bas) | colonne des `+`, le tout **centré**. Deux contrôles ± : la **position** (bornée **1..12** en 12p / **1..24** en 24p, − / + désactivés aux extrémités) se met à jour **en direct**, et les **shocks** (hors calcul du score).
-- **Bouton Confirmer** : actif uniquement si une modification a eu lieu **ET** si **toutes les positions sont distinctes** (aucun doublon entre joueurs). Tant qu'un doublon existe, « Confirmer » est désactivé (état visuel grisé). **Recalcul du score** : le score hôte de la war est recalculé sur l'ensemble des courses (barème `positionToPoints`, sensible au changement de circuit / de positions), **12p** = score hôte seul (adverse dérivé à l'affichage), **24p** = les scores adverses saisis sont **préservés** ; les **pénalités** sont conservées.
-
----
-
-## 8. Statistiques
-
-Les stats se déclinent par **format** (12/24) et souvent par **Individuel / Équipe**. Type porté par la classe scellée `StatsType` : `PlayerStats`, `TeamStats`, `OpponentStats`, `MapStats`.
-
-### Écran de stats (`StatsScreen`)
-Sections affichées selon le type :
-- Cellule joueur / équipe / circuit en tête.
-- `MKWarStatsView` : bilan global de wars (nombre de wars, V/N/D, winrate, courbe).
-- `MKWarDetailsStatsView` : détails (score moyen, score moyen par manche / position
-  moyenne, maps gagnées, shocks) — affiché pour la vue **circuit (`MapStats`)** et
-  pour l'**écran détail d'un adversaire (`OpponentStats`)**. En vue **individuelle**
-  (un joueur ciblé), ces valeurs sont celles **du joueur** (son score moyen, sa
-  position moyenne par manche) ; en vue équipe, celles de l'équipe. Pour les récaps
-  globaux joueur/équipe, ces indicateurs sont couverts par « Forme récente ».
-- Historique des 5 dernières wars (pour `OpponentStats`).
-- **Sections enrichies repliables** (accordéon animé, hors `MapStats`) :
-  - **Forme récente** (`MKRecentFormCell`) — **vue de référence des stats** :
-    compare **trois fenêtres** (all-time, 5 dernières, 10 dernières wars) sur les
-    mêmes indicateurs, une ligne par indicateur avec ses trois valeurs. Indicateurs :
-    **winrate**, **score moyen** par war, **position moyenne** (vue joueur) OU
-    **score moyen par manche** (vue équipe/adversaire), **% de manches gagnées**,
-    **shocks/war** (avec l'icône éclair). Les deux fenêtres récentes affichent un
-    **delta** vs l'all-time (chiffre + flèche ↗/↘ + couleur) dont le sens dépend de
-    l'indicateur : winrate & % manches gagnées → plus haut = mieux ; position moyenne
-    → plus **bas** = mieux (couleur inversée) ; shocks/war → direction ambiguë, donc
-    **valeur neutre** sans couleur. Si moins de wars que demandé, la fenêtre le
-    signale sans delta trompeur.
-  - **Records & séries** (`MKRecordsCell`) : série de victoires/défaites en cours,
-    records historiques de séries de victoires et de défaites, comptes Top6/Bot6
-    (affichés si > 0).
-  - **Indicateurs avancés** (`MKAdvancedStatsCell`) : contribution du joueur aux
-    points de l'équipe (vue joueur), régularité du score (écart-type + amplitude
-    min/max), marge moyenne de victoire et de défaite (séparées), position moyenne
-    en 1ʳᵉ vs 2ᵉ moitié de war (vue joueur), série d'invincibilité (V+N) en cours,
-    points perdus en pénalités.
-  - **Distribution des positions** (`MKPositionDistributionCell`, vue joueur) :
-    mini-histogramme du nombre de fois où le joueur a fini à chaque position.
-  - **Meilleurs / pires circuits** (`MKMapsRankingCell`) : top 3 / flop 3 des
-    circuits, présentés par lignes, avec **winrate ET score moyen** affichés
-    simultanément. Un circuit n'apparaît qu'à partir de 3 matchs joués.
-  - **Meilleurs / pires adversaires** (`MKOpponentsRankingCell`, vues **équipe ET
-    joueur/individuelle**) : top 3 / flop 3 des adversaires par « winrate face à »
-    et « score moyen face à » (double critère). Chaque adversaire est présenté sur
-    une **ligne pleine largeur** (cellules empilées) afin d'afficher ses trois
-    valeurs — wars jouées, winrate et score moyen — sans les tronquer, seuil de 3
-    matchs. En vue joueur, les adversaires sont ceux affrontés **du point de vue de
-    ce joueur**.
-- `MKTopBottomCell` : tops/bottoms d'équipe et positions individuelles.
-
-> Ces sections enrichies restent **affichées en 12p uniquement** pour l'instant
-> (l'affichage 24p — histogramme des positions P1→P24, comparatif 12p vs 24p —
-> viendra dans un ticket dédié). Le **moteur de calcul** sous-jacent est en revanche
-> déjà prêt pour le 24p (résultat victoire/nul/défaite et marges corrects en 24p) :
-> lorsque l'affichage 24p sera livré, les valeurs seront justes. Les anciens blocs
-> à une valeur créés au départ ont été retirés car en doublon avec les nouvelles
-> sections top3/flop3 : le bloc « circuits » (circuit le plus joué, meilleur/pire
-> circuit) et le bloc « adversaires » (adversaire le plus joué, le plus vaincu, le
-> moins vaincu).
->
-> `MKPlayerScoreCell` (pire/meilleur score, plus large victoire / plus lourde
-> défaite) a été **retiré** : ces deux indicateurs sont abandonnés car ils n'entrent
-> pas dans une comparaison de moyennes. Les indicateurs récurrents (score moyen,
-> position moyenne / score par manche, % manches gagnées, shocks/war) sont désormais
-> dans « Forme récente » sur trois fenêtres **pour les récaps globaux joueur/équipe**.
-> `MKWarDetailsStatsView` reste utilisé pour la vue **circuit** et l'**écran détail
-> d'un adversaire** (où, en vue individuelle, il montre le score moyen et la position
-> moyenne **du joueur**).
-
-### Statistiques enrichies — que veut dire chaque stat ?
-
-Cette section explique, en langage clair, le **sens** de chaque statistique
-enrichie ajoutée à l'écran de stats. Sauf mention contraire, elles se lisent du
-point de vue de **ton équipe** (ou de **toi** en vue joueur), et portent
-uniquement sur les **wars 12 joueurs** (le mode 24 joueurs arrivera plus tard).
-
-Rappels de vocabulaire : une **war** = un match ; une **manche** (ou « track ») =
-une course dans la war ; le **winrate** = pourcentage de wars gagnées ;
-« **all-time** » = sur tout l'historique.
-
-#### Séries
-
-- **Série en cours** — Ta dynamique du moment : combien de wars d'affilée tu as
-  gagnées (ex. « 3 victoires ») **ou** perdues (ex. « 2 défaites ») en comptant à
-  partir de la war la plus récente. Une seule war nulle ou un résultat inverse
-  remet la série à zéro. Affiche « Aucune » s'il n'y a pas de série nette.
-- **Record de victoires** — La plus longue série de victoires consécutives que tu
-  aies jamais réalisée (meilleur historique).
-- **Record de défaites** — À l'inverse, la plus longue série de défaites
-  consécutives subie (pire historique).
-- **Invaincu depuis** — Depuis combien de wars tu n'as plus perdu, en comptant
-  aussi les matchs nuls (victoires **et** nuls). Se réinitialise à la première
-  défaite. Utile pour visualiser une bonne passe même avec quelques nuls.
-
-Toutes les séries sont calculées dans l'**ordre chronologique** réel des wars
-(par date), condition indispensable pour qu'elles aient un sens.
-
-#### Top6 / Bot6
-
-Une manche est un **Top6** quand les **6 joueurs de l'équipe occupent les
-positions 1 à 6** (score d'équipe de la manche = 61) et un **Bot6** quand ils
-occupent les **positions 7 à 12** (score d'équipe = 21). C'est un cas **exact** :
-une manche où l'équipe est répartie entre le haut et le bas n'est ni l'un ni
-l'autre.
-
-- **Nombre de Top6 / Bot6** — Le **compte brut** de manches Top6 et Bot6 sur
-  l'historique. Chaque ligne n'apparaît que si son compte est supérieur à 0.
-- **Top6/Bot6 par circuit** — La même idée déclinée circuit par circuit (série de
-  bonnes/mauvaises manches sur chaque map), pour repérer les circuits où l'équipe
-  performe ou coince.
-
-#### Meilleurs / pires circuits
-
-Deux classements de circuits, présentés **par lignes** (top 3 et flop 3), avec les
-**deux critères affichés côte à côte** :
-
-- par **winrate** : les circuits que tu gagnes le plus souvent (top 3) et le moins
-  souvent (flop 3) ;
-- par **score moyen** : les circuits où l'équipe marque le plus / le moins de
-  points en moyenne.
-
-**Condition** : un circuit n'apparaît dans ces classements que s'il a été joué
-**au moins 3 fois** — en dessous, l'échantillon est trop faible pour être fiable,
-le circuit est donc exclu.
-
-#### Meilleurs / pires adversaires
-
-Deux classements d'adversaires (top 3 / flop 3), toujours avec **winrate ET score
-moyen** affichés ensemble sur chaque cellule (wars jouées + winrate + score moyen) :
-
-- **Meilleur / Pire winrate face à** — Les équipes contre lesquelles on gagne le
-  plus / le moins souvent.
-- **Meilleur / Pire score moyen face à** — Les équipes contre lesquelles on marque
-  le plus / le moins de points en moyenne.
-
-Le libellé est volontairement « **face à** » (et non « meilleur/pire
-adversaire »), pour bien dire de quel angle on parle. **Condition** : seuls les
-adversaires rencontrés **au moins 3 fois** entrent dans ces classements.
-
-Ces classements apparaissent dans les **stats d'équipe** comme dans les **stats de
-joueur / individuelles** — dans ce dernier cas, ce sont les adversaires affrontés
-**du point de vue du joueur** concerné (winrate/score calculés sur ses wars).
-
-#### Forme récente
-
-**Vue de référence** des stats : compare **trois fenêtres** — ta moyenne de
-toujours (**all-time**), tes **5 dernières** et tes **10 dernières** wars — sur les
-mêmes indicateurs, affichés une ligne par indicateur avec ses trois valeurs.
-
-Indicateurs :
-
-- **Winrate** — pourcentage de wars gagnées.
-- **Score moyen** par war (points du joueur en vue joueur ; écart d'équipe « +X/-X »
-  en vue équipe/adversaire).
-- **Position moyenne** (vue joueur) — ta place moyenne sur une manche.
-- **Score moyen par manche** (vue équipe/adversaire) — remplace la position moyenne.
-- **% de manches gagnées**.
-- **Shocks/war** — nombre moyen d'éclairs **obtenus** par war (icône éclair ; un éclair
-  obtenu est compté même s'il n'est pas joué) ; mesure la qualité du *bagging* (farmer des
-  éclairs), sans corrélation avec la position finale.
-
-Lecture du **delta** (sur les fenêtres 5 et 10 dernières, vs l'all-time) : un
-**chiffre signé + une flèche + une couleur**. Le **sens** dépend de l'indicateur :
-
-- winrate, % manches gagnées, score → **plus haut = mieux** (hausse en vert).
-- **position moyenne → plus BAS = mieux** : une baisse de la position est affichée
-  en **vert** (couleur inversée).
-- **shocks/war → direction ambiguë** : valeur affichée **sans couleur** (neutre),
-  pour ne pas suggérer à tort que plus/moins est mieux.
-
-Le delta du **score moyen** est exprimé sur la même échelle que la valeur affichée :
-en vue joueur c'est un delta de points bruts, en vue équipe c'est un delta d'écart de
-score (cohérent avec l'affichage « +X / -X »).
-
-**Petit échantillon** : si tu as joué moins de wars que la fenêtre demandée (ex.
-seulement 3 wars pour la fenêtre « 10 dernières »), l'app affiche ce qui est
-disponible, le signale, et **n'affiche pas de delta trompeur**.
-
-#### Contribution du joueur (vue joueur uniquement)
-
-Le **pourcentage moyen des points de l'équipe que tu apportes toi-même**, calculé
-war par war puis moyenné. Exemple : 20 % signifie que tu marques en moyenne un
-cinquième des points de l'équipe. Utile pour situer son poids dans le collectif.
-Visible **seulement en vue joueur**.
-
-#### Régularité
-
-Mesure la **constance** de tes performances, de deux façons complémentaires :
-
-- **Écart-type** — Plus il est **bas**, plus tes scores sont réguliers d'une war à
-  l'autre ; plus il est **haut**, plus ils sont irréguliers (des hauts et des
-  bas). Affiché « ± X ».
-- **Amplitude (min – max)** — Simplement ton **pire** et ton **meilleur** score sur
-  l'historique, pour visualiser l'écart entre les deux extrêmes.
-
-#### Distribution des positions (vue joueur uniquement)
-
-Un **mini-histogramme** qui montre, pour chaque position de 1 à 12, **combien de
-fois** tu as terminé une manche à cette place. Permet de voir en un coup d'œil si
-tu finis souvent devant, ou plutôt dispersé. Visible **seulement en vue joueur**.
-
-#### Marge moyenne de victoire / de défaite
-
-Au-delà du simple bilan Victoires/Nuls/Défaites, indique **de combien** on gagne
-ou on perd en moyenne :
-
-- **Marge moyenne de victoire** — L'écart de score moyen **quand on gagne** (ex.
-  « +45 »).
-- **Marge moyenne de défaite** — L'écart de score moyen **quand on perd** (ex.
-  « -30 »).
-
-Les deux sont **séparées** : gagner souvent de justesse mais perdre lourdement
-raconte une autre histoire qu'un simple winrate.
-
-#### Performance 1ʳᵉ vs 2ᵉ moitié de war (vue joueur)
-
-Compare ta **position moyenne** sur la **première moitié** de la war (premières
-manches) et sur la **seconde moitié** (dernières manches). Permet de voir si tu
-commences fort et faiblis, ou si tu montes en puissance en fin de match.
-
-#### Points perdus en pénalités
-
-Le **total des points retirés à l'équipe par des pénalités** sur tout
-l'historique. Un repère du « coût » cumulé des pénalités.
-
-#### Bouton info sur chaque indicateur (ⓘ)
-
-Chaque cellule d'indicateur des sections de l'écran Statistiques — **Détails
-équipe**, **Forme récente**, **Records & séries** et **Indicateurs avancés** — porte
-un petit **bouton rond d'information (ⓘ)** discret à côté de son libellé. Au clic, une
-**popup** (le dialog standard de l'app) s'ouvre avec le **libellé de la stat en titre**
-et son **explication en message**, puis se ferme via son bouton **Fermer** (ou par un
-clic à l'extérieur). Les explications reprennent fidèlement les définitions ci-dessus et
-du tableau récapitulatif (notamment : une position moyenne plus **basse** = meilleure ;
-les **shocks/war** sont un indicateur **neutre**, sans corrélation avec la position
-finale). L'objectif est de rendre chaque statistique compréhensible sans quitter
-l'écran.
-
-### Tableau récapitulatif — toutes les statistiques
-
-Ce tableau reprend **chaque statistique de l'application**, **organisée par écran** et
-dans **l'ordre d'affichage** (de haut en bas). Sauf mention `(Indiv)` / `(Équipe)`, un
-indicateur est commun aux deux onglets de l'écran Statistiques. Rappels : **war** = un
-match ; **course** = une course d'une war (un circuit joué) ; **winrate** = pourcentage
-de wars gagnées ; « **all-time** » = sur tout l'historique. Une **position** se lit de
-« proche de P1 » (meilleur) à « proche de P12 » (moins bon). Plusieurs cartes
-(Indicateurs, Records & séries, Distribution, Contributeurs) portent un **sélecteur de
-fenêtre** all-time / 5 dernières / 10 dernières et affichent un **delta** vs l'all-time
-(flèche colorée) ; les **podiums** (circuits, adversaires) n'incluent une entrée qu'à
-partir de **3 matchs** joués (sauf tri « occurrences »).
-
-#### Pôle Stats — écran Statistiques (`StatsFullScreen`, onglets Individuelles / Équipe)
-
-| Nom de la stat | De quoi on parle | À quoi ça sert | Comment la lire | Interprétation rapide | Usage concret | Infos complémentaires |
-|---|---|---|---|---|---|---|
-| **Wars jouées** | Nombre total de wars prises en compte (celles du joueur en Indiv, de l'équipe en Équipe). | Donner la taille de l'échantillon des autres stats. | Compteur en sous-titre d'en-tête (« Tes performances · 42 wars »). | Plus il est grand, plus les stats sont fiables. | Vérifier qu'une stat ne repose pas sur trop peu de wars. | Sert de dénominateur au winrate. |
-| **Winrate** | Pourcentage de wars gagnées. | Mesure synthétique de la réussite. | Un gros pourcentage dans la carte Bilan (« 58 % »). | Plus haut = mieux ; 50 % = autant de V que de D. | Comparer joueurs, périodes, adversaires. | Repris en tuile dans « Tes indicateurs » avec un delta selon la fenêtre ; les nuls comptent au dénominateur mais pas comme victoires. |
-| **Bilan Victoires / Nuls / Défaites (V/N/D)** | Décompte des wars gagnées, nulles et perdues. | Photo d'ensemble du palmarès. | Trois nombres + barre proportionnelle (vert / gris / rouge). | Le rapport V vs D résume la réussite ; nuls rares. | Base du winrate ; comparer périodes ou adversaires. | Issue déterminée par le score final, pénalités incluses (pas par les seules positions). |
-| **Points / war** *(Indiv)* / **Score moyen** *(Équipe)* | Points moyens marqués par war (Indiv) ; en Équipe, l'écart de score moyen face à l'adversaire. | Mesurer le rendement moyen. | Indiv = points bruts (« 62 ») ; Équipe = écart signé (« +34 »). | Indiv plus haut = mieux ; Équipe positif = on domine, négatif = on subit. | Suivre la progression sur 5 / 10 dernières. | L'écart d'équipe est un différentiel (au-dessus/en dessous de l'équilibre), pas des points bruts. |
-| **Position moy.** *(Indiv)* / **Score moy./map** *(Équipe)* | Place moyenne du joueur sur une course (Indiv) ; points moyens de l'équipe par course, en différentiel (Équipe). | Mesurer la performance à l'échelle d'une seule course. | Indiv = une position (« P4 ») ; Équipe = un écart (« +6 »). | Position → plus proche de P1 = mieux ; score de course d'équipe → plus haut = mieux. | Voir si le joueur finit près de la tête, ou si l'équipe grignote course après course. | Indicateur qui change selon l'onglet (position en Indiv, score par course en Équipe). |
-| **Maps gagnées** | Part des courses remportées par l'équipe (son score de course dépasse la moitié du barème). | Mesurer la régularité course par course, indépendamment du résultat final de la war. | Un pourcentage. | Plus haut = mieux ; complète le winrate. | Repérer une équipe qui gagne les courses mais perd les wars serrées. | Une course pile à la moitié n'est pas comptée gagnée. |
-| **Régularité** | Dispersion des scores autour de leur moyenne (écart-type). | Mesurer la constance des performances. | « ± X points ». | Bas = régulier ; haut = irrégulier (des hauts et des bas). | Distinguer un profil constant d'un profil « montagnes russes ». | Nécessite au moins 2 wars. |
-| **Marge moyenne de victoire / de défaite** | De combien de points on gagne en moyenne (quand on gagne) et de combien on perd en moyenne (quand on perd) — deux tuiles séparées. | Savoir non seulement si on gagne/perd, mais de combien. | Avec un signe : « +18 » (marge des victoires) et « -12 » (marge des défaites). | Marge de victoire élevée = victoires larges ; marge de défaite basse = défaites serrées. Idéal = grosse marge de victoire + petite marge de défaite. | Bon winrate mais grosse marge de défaite = équipe qui « prend cher » ses mauvais jours → cible ce qu'il faut stabiliser. | Écart = ton score − score adverse (pénalités incluses) ; les égalités ne comptent pas ; chaque war pèse pareil (une war extrême tire la moyenne). |
-| **Points perdus en pénalités** | Total des points retirés à ton équipe par les pénalités. | Chiffrer le coût cumulé des pénalités. | « -X points ». | Plus c'est haut, plus les pénalités pèsent. | Argument pour réduire les comportements pénalisés. | Ne compte que les pénalités de ton équipe. |
-| **Shocks/war** | Nombre moyen d'éclairs **obtenus** par war (les tiens en Indiv ; un éclair obtenu est compté même s'il n'est pas joué). | Mesurer l'activité et la qualité de **bagging** (farmer des éclairs). Le bagging est **situationnel** — aucun rôle attribué en début de course — mais **aussi important que jouer devant**. | Une moyenne (« 1,5 ») ; plus c'est haut, plus le joueur obtient d'éclairs. | Plus le joueur obtient d'éclairs, mieux c'est côté bagging. À **ne pas** relier à la position finale (bag + éclair n'empêche pas de remonter dans le top) ni à un rôle figé. | Situer combien un joueur bag et son poids dans les éclairs de l'équipe — sans en déduire un « bagueur attitré ». | L'éclair n'entre pas dans le calcul du score ; **aucune corrélation shocks ↔ position finale**. Le bagging est **situationnel** : les joueurs alternent run/bag en cours de course (un run détruit peut se mettre à bag, un bagueur qui tire un Bill/Doré doit remonter) — pas de bagueur/runner fixe. Son delta s'affiche sans couleur (le « mieux » dépend du contexte). |
-| **Ta contribution** *(Indiv)* / **Contributeurs** *(Équipe)* | Part moyenne des points de l'équipe apportée par le joueur (Indiv) ; classement du roster par part de points + winrate (Équipe). | Situer le poids de chacun dans le collectif. | Indiv = « 20 % des points » + rang ; Équipe = liste classée (rang, %, winrate). | ~16-17 % = contribution moyenne dans une équipe de 6 ; au-dessus = moteur. Parts déséquilibrées = équipe portée par 1-2 joueurs. | Équilibrer les rôles, valoriser les moteurs. | Moyenne de ratios calculée war par war. |
-| **Forme & série en cours** | Série de victoires/défaites en cours, avec un rappel de forme (winrate sur 10 wars) et du record. | Capturer la dynamique du moment. | Flamme colorée + « Série de 3 victoires » ; sous-titre « Forme 60 % sur 10 wars · record N ». | Série positive = bonne passe ; flamme verte (victoires) / rouge (défaites). | Prendre le pouls avant/après une session. | Une war nulle ou un résultat inverse casse la série ; calcul dans l'ordre chronologique réel. |
-| **Amplitude du score (min – max)** | Pire et meilleur score enregistrés sur la fenêtre. | Visualiser l'écart entre les deux extrêmes. | « X – Y » (min à gauche, max à droite). | Écart large = performances variables ; resserré = régulier. | Complément de la régularité. | Valeurs extrêmes : une seule war peut fixer le min ou le max. |
-| **Record de victoires** | La plus longue série de victoires consécutives. | Repère du meilleur passage. | « X victoires ». | Plus c'est grand, plus la meilleure passe a été longue. | Objectif à battre. | Dépend de la fenêtre sélectionnée (all-time / 5 / 10). |
-| **Record de défaites** | La plus longue série de défaites consécutives. | Repère du pire passage. | « X défaites ». | Plus c'est grand, plus il y a eu un creux prolongé. | Contextualiser une mauvaise passe actuelle. | Dépend de la fenêtre sélectionnée. |
-| **Nombre de Top6** | Nombre de courses où les 6 joueurs occupent les positions 1 à 6. | Compter les courses parfaites. | Un compte de courses. | Plus il y en a, plus l'équipe a verrouillé des courses entières. | Repérer une domination totale sur certains circuits. | Cas exact (les 6 devant) : une course à cheval haut/bas n'est ni Top6 ni Bot6. |
-| **Nombre de Bot6** | Nombre de courses où les 6 joueurs occupent les positions 7 à 12. | Compter les courses complètement ratées. | Un compte de courses. | Plus il y en a, plus l'équipe s'est fait dominer sur des courses entières. | Identifier des circuits à travailler. | Cas exact (les 6 derrière). |
-| **Ta distribution de positions** *(Indiv)* | Histogramme du nombre de fois où le joueur a fini à chaque position (P1 à P12). | Voir la répartition de ses résultats. | Une barre par position ; barre haute = position fréquente. | Concentré près de P1 = joueur de tête ; étalé = résultats dispersés. | Identifier un profil ; consultable sur 5 / 10 dernières. | Un pied de carte résume le nombre de courses en Top6 / Bot6. Onglet Individuelles. |
-| **Meilleurs / pires circuits** | Podium Top 3 / Flop 3 des circuits, selon le tri choisi (occurrences, winrate ou score). | Repérer où l'on performe ou coince. | 3 cellules « TOP 3 » + 3 « FLOP 3 » (illustration + nb joué + winrate + score/position). | Bon winrate = circuit fort ; bon score = on y marque large. | Choisir/bannir des circuits, orienter l'entraînement. | Seuil de 3 matchs (sauf tri « occurrences »). Score = score joueur en Indiv, écart d'équipe en Équipe. |
-| **Meilleurs / pires adversaires** | Podium Top 3 / Flop 3 des adversaires, selon le tri (occurrences, winrate « face à », score « face à »). | Identifier bêtes noires et adversaires favoris. | 3 cellules TOP 3 + 3 FLOP 3 (logo + nb confrontations + winrate + score). | Winrate faible « face à » = adversaire difficile. | Préparer un match selon l'historique face à l'équipe visée. | Seuil de 3 confrontations (sauf tri « occurrences »). Disponible en Indiv (du point de vue du joueur) et Équipe. |
-
-#### Fiche détail — Adversaire (`OpponentDetailScreen`, sélecteur Indiv / Équipe)
-
-| Nom de la stat | De quoi on parle | À quoi ça sert | Comment la lire | Interprétation rapide | Usage concret | Infos complémentaires |
-|---|---|---|---|---|---|---|
-| **Confrontations** | Nombre de wars jouées contre cet adversaire + date de la dernière. | Situer l'ampleur de l'historique face à eux. | « X confrontations · dernier : JJ/MM ». | Peu de confrontations = stats face à eux peu fiables. | Jauger la pertinence des chiffres qui suivent. | En-tête de la fiche. |
-| **Bilan face à eux** | Winrate et V/N/D calculés uniquement sur les wars contre cet adversaire. | Rapport de force global face à eux. | Gros winrate + V/N/D + barre (« de winrate sur X wars »). | Plus haut = on les domine. | Savoir si c'est un adversaire favorable. | Même logique que le bilan général, restreint à cet adversaire. |
-| **5 dernières face à eux** | Les 5 dernières wars contre eux en pastilles V/N/D. | Tendance récente contre cette équipe. | 5 pastilles vert/gris/rouge, de la plus ancienne à la plus récente. | Suite de verts = ascendant pris ; de rouges = domination subie. | Contexte immédiat avant un match. | Complète le bilan « toutes confrontations ». |
-| **Score moyen face à eux** *(Indiv)* / **Différence moyenne** *(Équipe)* | Score moyen du joueur (Indiv) ou écart de score moyen de l'équipe (Équipe) face à cet adversaire. | Mesurer le rendement face à eux. | Indiv = points ; Équipe = écart signé (« +22 »). | Équipe positif = on marque plus qu'eux en moyenne. | Nuancer le winrate (gagne-t-on large ou au finish ?). | Tuile de la carte « Séries & scores ». |
-| **Séries face à eux (en cours + records)** | Série en cours contre eux + records de victoires et de défaites face à eux. | Dynamique spécifique à cet adversaire. | « Série de X », « Record de X V », « Record de X D ». | Longue série = ascendant durable. | Savoir si on est dans une bonne/mauvaise passe contre eux précisément. | Calculées sur les seules wars face à eux, en ordre chronologique. |
-| **Shocks obtenus / par war (face à eux)** | Nombre d'éclairs **obtenus** contre cet adversaire (total et moyenne par war ; un éclair obtenu est compté même s'il n'est pas joué). | Mesurer l'activité de **bagging** sur les confrontations contre eux. | Un total + une moyenne. | Plus d'éclairs = meilleur bagging ; indépendant de la position finale. | Situer l'activité de bagging sur les matchs contre cette équipe (sans rôle attitré). | Hors calcul du score ; aucune corrélation avec la position finale ; bagging situationnel. |
-| **Circuits contre eux** | Podium Top 3 / Flop 3 des circuits joués contre cet adversaire (tri occurrences / winrate / score). | Repérer les circuits favorables/défavorables face à eux. | TOP 3 + FLOP 3 + lien « Classement entier ». | Circuits à privilégier/éviter en pick/ban contre cette équipe. | Préparer les choix de circuits d'un match. | Score « mode-aware » (joueur en Indiv, équipe en Équipe). |
-| **Répartition des positions & regroupements (face à eux)** | Histogramme des positions + regroupements Top/Bot de 2 à 6, restreints aux wars face à eux. | Analyse fine des résultats contre cet adversaire. | Histogramme + compteurs Top2→6 / Bot2→6. | Concentration près de P1 = on les domine course par course. | Détail derrière le bilan face à eux. | Sections mutualisées avec la fiche circuit. |
-| **Historique des wars** | Liste des wars jouées contre cet adversaire. | Revoir chaque match en détail. | Cellules de war (résultat, score, date) ; clic → détail de la war. | Liste, pas une valeur à interpréter. | Retrouver une war précise. | En bas de la fiche. |
-
-#### Fiche détail — Circuit (`MapDetailScreen`, sélecteur Indiv / Équipe)
-
-| Nom de la stat | De quoi on parle | À quoi ça sert | Comment la lire | Interprétation rapide | Usage concret | Infos complémentaires |
-|---|---|---|---|---|---|---|
-| **Nombre de passages** | Nombre de fois où ce circuit a été joué. | Taille de l'échantillon pour ce circuit. | « joué X fois ». | Peu de passages = stats peu fiables. | Jauger la pertinence des chiffres. | En-tête de la fiche. |
-| **Performance sur ce circuit** | Winrate (à l'échelle de la course) + V/N/D sur ce circuit. | Réussite globale sur le circuit. | Gros winrate + V/N/D + barre (« de winrate sur X passages »). | Plus haut = circuit fort. | Décider pick / ban. | Winrate calculé sur les passages du circuit. |
-| **Score moyen équipe** | Points moyens de l'équipe sur ce circuit, en différentiel. | Rendement de l'équipe sur le circuit. | Un écart signé. | Positif = on y marque plus que l'adversaire. | Comparer les circuits entre eux. | Valeur indépendante du sélecteur Indiv/Équipe. |
-| **Ta position moy.** | Place moyenne du joueur sur ce circuit. | Rendement individuel sur le circuit. | Une position (« P4 »). | Plus proche de P1 = mieux. | Identifier ses bons/mauvais circuits. | Valeur individuelle. |
-| **Shocks obtenus** | Nombre d'éclairs **obtenus** sur ce circuit (un éclair obtenu est compté même s'il n'est pas joué). | Voir où le bagging se pratique (circuits propices au farm d'éclairs). | Un compte. | Beaucoup d'éclairs = circuit propice au bagging. | Repérer les circuits où l'on bag efficacement. | Suit le sélecteur Indiv/Équipe ; hors score ; sans corrélation avec la position finale. |
-| **Répartition des positions & regroupements (sur ce circuit)** | Histogramme des positions + Top/Bot de 2 à 6 sur ce circuit. | Analyse fine des résultats sur le circuit. | Histogramme + compteurs. | Concentration près de P1 = circuit maîtrisé. | Détail derrière la performance. | Sections mutualisées avec la fiche adversaire. |
-| **Pilotes sur ce circuit** *(Équipe)* | Podium Top 3 / Flop 3 des joueurs du roster sur ce circuit (trié par score perso moyen). | Voir qui performe le mieux/le moins sur le circuit. | TOP 3 + FLOP 3 (initiales + nom + **Nb joué / Winrate / Position moy.**) + « Classement entier ». | Aide à répartir les circuits selon les points forts de chacun. | Stratégie de composition/entraînement par circuit. | Onglet Équipe uniquement. |
-
-#### Pôle Classements (`StatsRankingScreen`, onglets Joueurs / Adversaires / Circuits)
-
-Chaque onglet dispose d'une **recherche par nom** et d'un **curseur d'occurrences minimum**
-(masque les entités jouées moins de N fois).
-
-| Nom de la stat | De quoi on parle | À quoi ça sert | Comment la lire | Interprétation rapide | Usage concret | Infos complémentaires |
-|---|---|---|---|---|---|---|
-| **Classement Joueurs** | Liste de tous les joueurs (Membres puis Alliés), triable. | Comparer les joueurs entre eux. | Cellules podium (initiales + nom + wars + winrate + score moy.) ; tri Wars (défaut) / Winrate / Score moy. | Le tri choisi définit « le meilleur ». | Trouver le meilleur joueur selon un critère. | Clic → fiche stats du joueur ; pas de carte « En bref » sur cet onglet. |
-| **Classement Adversaires** | Liste des adversaires rencontrés, triable. | Comparer les adversaires entre eux. | Cellules (logo + nom + confrontations + winrate + score moy.) ; tri Occurrences (défaut) / Winrate / Score moy. | Repère les adversaires les plus fréquents ou les plus coriaces. | Vue d'ensemble du paysage adverse. | Perspective équipe ; carte « En bref » (on domine / bête noire) ; clic → fiche adversaire. |
-| **Classement Circuits** | Liste des circuits joués, triable. | Comparer les circuits entre eux. | Cellules (illustration + nom + nb joué + winrate + score) ; tri Fréquence (défaut) / Winrate / Score moy. | Repère les circuits les plus joués et les plus/moins réussis. | Vue d'ensemble des circuits. | Perspective équipe ; carte « En bref » (meilleur / pire) ; clic → fiche circuit. |
-
-### Statistiques individuelles (joueur)
-Bilan V/N/D, taux de victoire, score moyen/circuit, position moyenne, circuit le plus joué, meilleur/pire circuit, plus grosse victoire, meilleur/pire score, pire défaite, nombre de wars et de circuits, meilleurs/pires résultats face aux adversaires, tableau par circuit, historique.
-
-### Statistiques d'équipe
-Mêmes agrégats au niveau équipe + détail par joueur.
-
-### Classements (`StatsRankingScreen`)
-Écran unique à **sous-onglets** `Joueurs / Adversaires / Circuits` (`RankingTab`, `MKSegmentedSelector`), pilotés par un **état interne réactif** (pas de re-navigation, cf. rule 11). Chaque onglet : recherche par nom + tri à **3 chips** (`SortType`, `MKSegmentedSelector`) + **curseur d'occurrences minimum** (`Slider`). Cellules = `PodiumCell` **mutualisée** (extraite de `StatsFullScreen` vers `ui/stats/MKPodiumCell.kt`, param `contentColor` = **noir** ici, blanc côté Stats), rendue en lignes de 3.
-- **Joueurs** : liste **sectionnée** Membres / Alliés (`PlayerSection`), cellule avatar-initiales + nom, tri `Wars (défaut) / Winrate / Score moy.`. Clic → stats individuelles (`StatsType.PlayerStats`). La distinction membre/allié vient du cache `playersRankList` (clé `Pair(0, roster)` = membre, `Pair(1, "Allies")` = allié).
-- **Adversaires** : cellule logo d'équipe + nom (rule 12), tri `Occurrences (défaut) / Winrate / Score moy.`. Clic → **fiche détail adversaire** (`Opponent/{teamId}`, #27).
-- **Circuits** : cellule illustration + nom, tri `Fréquence (défaut) / Winrate / Score moy.`. Clic → **fiche détail circuit** (`Map/{trackIndex}`, #27).
-- **Tri** (`SortType`, ordre = ordre des chips) : `COUNT` (**défaut**, nb de matchs, desc), `WINRATE` (desc), `AVERAGE` (score moyen, desc). L'ancien tri `NAME` (chip « Nom ») a été **retiré** (absent du prototype).
-- **Curseur d'occurrences** : `Slider` **continu** (piste sans graduations, pouce cercle plein blanc), `minOccurrences` (état réactif) filtre par `sampleSize ≥ min` ; `maxOccurrences` = plus haut compteur de l'onglet (borne haute). Remplace, à l'affichage, le seuil fixe ; **plus de carte « En bref »** (retrait décidé par l'utilisateur). `Stats.MIN_RANKING_SAMPLE` n'est plus utilisé par cet écran (il reste employé par les podiums du pôle Stats).
-
-Sources : les classements sont pré-calculés par `InitStatsWorker` et lus depuis le cache. Perspective **équipe** pour adversaires/circuits (`opponentRankList` / `trackRankList`, pas de switch individuel/équipe) ; `playersRankList` (groupé membre/allié) pour les joueurs.
-
----
-
-## 9. Annuaire & profils
-
-### Profil joueur (`PlayerProfileScreen`)
-- Avatar, drapeau pays, nom, bio (MKCentral) ; date d'inscription, friend code, tag Discord, équipe + date d'arrivée, **badge de rôle**.
-- **Bouton « Ajouter en allié »** (selon gating §3) ; message « Allié » si déjà allié ; **bouton « Basculer le rôle »** (leader uniquement).
-- **Menu visible uniquement sur son propre profil** (`id == "me"`) :
-  - **Rafraîchir** (relance `fetchData`, met à jour `lastUpdate` affiché `dd/MM/yyyy - HH:mm`).
-  - **Notifications** (interrupteur ; demande la permission au besoin).
-  - **Multi-roster** (interrupteur ; **nécessite un redémarrage** pour s'appliquer).
-  - **Déconnexion** (confirmation → vide DB/DataStore, révoque le token Discord, retour à `Signup`).
-  - **Debug** (visible si id `18595` ou matrix).
-
-### Profil équipe (`TeamProfileScreen`)
-Si c'est **sa** propre équipe (`id == "me"`), 3 contenus :
-- **Membres** : groupés par roster (en-têtes si plusieurs), clic → profil joueur.
-- **Alliés** : bouton « Ajouter un allié » (si role > 0) ouvrant une bottom sheet de recherche (≥ 3 caractères, pagination MKCentral, exclut les alliés déjà présents).
-- **Stats** d'équipe.
-
-Pour une autre équipe : vue simple (rosters + joueurs), sans gestion d'alliés.
-
----
-
-## 10. Tableau partageable (PDF)
-
-Écran `EditTabScreen` — titre **« Tab (PDF) »** (depuis le détail d'une war 12p, bouton « Générer le Tab (PDF) », 1v1 uniquement) : génère une **image de tableau récapitulatif partageable**. Écran refondu conforme à la maquette `edittab` du prototype UX (#41/#49), **sans texte d'aide** (les hints décoratifs ont été retirés à la demande de l'utilisateur).
-
-- **Chips compteur** (pilules maquette `.chip`, composant partagé `MKChip`) : `− ligne` / `N lignes` (chip active) / `+ ligne` — ajustent le nombre de lignes adverses (**min 6, max 9**, défaut 6) ; les chips `−`/`+` sont **grisées et inactives** en butée. La saisie n'est pas détruite en réduisant le compteur (9 emplacements internes, seules les `N` premières lignes sont affichées et prises en compte).
-- **Lignes de saisie** générées dynamiquement selon le compteur : par ligne, un champ « Adversaire N » (large) + un champ « Score » (étroit), disposés en grille 2/1.
-- **CTA « Tab classique & partager »** (dégradé maquette `.cta` + icône share, pleine largeur) : valide que la somme des scores adverses saisis = `scoreOpponent` calculé (sinon toast d'écart), puis génère le PDF (détails de war, logos/tags, scores équipe/joueur/adversaire **pénalités incluses**, top joueurs couronne/argent/bronze) et ouvre le partage (`Intent.ACTION_SEND`). La génération est **robuste à toute répartition** : elle ne crashe jamais si une équipe compte moins de 6 marqueurs (lignes sans donnée masquées) et affiche l'intégralité du contenu — jusqu'à **9 marqueurs par équipe** (remplaçants) et les **lignes de pénalité par équipe** — la hauteur de l'image s'adaptant dynamiquement au contenu réel (sans plafond ni rognage). Un **joueur remplacé** (ayant joué moins de courses que le total de la war) voit son nom suffixé du **nombre de courses jouées entre parenthèses**, ex. « PseudoJoueur (7) » ; un joueur ayant disputé toutes les courses reste sans parenthèses.
-- Le **« Tab détaillé »** (circuits + courbe) reste **présent mais désactivé** dans l'app (`generateDetailedPdf` commenté dans le code).
-
-Le rendu et l'enregistrement (galerie / partage) sont décrits dans [TECHNICAL.md §15](TECHNICAL.md#15-génération-pdf).
-
----
-
-## 11. Paramètres, données & mode debug
-
-- **Notifications** : informent de la fin des traitements (ex. « Données mises à jour »). Activables depuis le profil.
-- **Multi-roster** : périmètre de calcul des stats (tous les rosters vs le sien).
-- **Synchronisation** : tâche de fond quotidienne (~4 h) rafraîchissant les données ; rafraîchissement manuel depuis le profil.
-- **Fonctionnement hors-ligne** : données en cache local (Room/DataStore), wars synchronisées via Firebase (la war en cours est écoutée en temps réel).
-
-### Saisons (#30)
-
-Une **saison** découpe l'activité d'une équipe dans le temps (`number`, date de début, date de fin — la saison en cours n'a **pas** de date de fin). L'historique réel est **initialisé** à la première synchro (l'app est déjà en **saison 3**) : S1 05/06/2025 → 21/12/2025, S2 22/12/2025 → 03/05/2026, S3 04/05/2026 → **en cours**. Une saison commence toujours le **lendemain** de la fin de la précédente.
-
-- **Filtre par saison disponible dès le 1er lancement (#73)** : le **menu déroulant de saison** (`MKSeasonDropdown`) des headers Accueil / Wars / Stats / Classements apparaît **dès la première ouverture** (install fraîche ou après un wipe Room). Les saisons sont désormais **hydratées de façon eager** — à chaque démarrage pour les utilisateurs existants **et** pendant le signup pour les nouveaux — au lieu d'attendre le worker de synchro périodique (qui pouvait ne tourner que ~1 jour après l'installation). Avant ce correctif, le dropdown restait masqué tant que ce worker n'avait pas peuplé la table locale des saisons.
-- **Démarrer une nouvelle saison** (onglet **Équipe** du profil, **leader strict** uniquement — `role == 2`, pas les admins) : au clic, une **confirmation** insiste sur le caractère **important et irréversible** de l'action. À la validation, la saison en cours est **close** et une **nouvelle saison** démarre (numéro suivant, sans date de fin). Les bornes sont « propres » autour de minuit (règle des bornes) : la saison close se termine **le jour du clic à 23h59**, la nouvelle commence **le lendemain à 00h01** (heures calculées dans le **fuseau horaire du téléphone**). Une fois close, une saison ne peut **plus** être rouverte.
-- **Inscription manuelle (Debug)** : l'écran Debug propose « **Inscrire les saisons existantes** » qui (ré)inscrit l'historique réel des 3 saisons dans RTDB + Room — outil de maintenance (mêmes dates que le seeding automatique).
-- **Hors périmètre de ce ticket** : le **filtrage des stats/classements par saison** et l'affichage du libellé de saison sur les écrans (records, carte équipe) feront l'objet d'un autre ticket. Ici seuls le **modèle de données** (RTDB `seasons/{teamId}` + cache Room), la **gestion** (démarrage + inscription Debug) et le **seeding initial** sont livrés.
-
-### Écran debug (`DebugScreen`) — réservé
-1. **Update Tags** — pousse les tags d'équipes vers Firebase.
-2. **Update LariisBot Data** — rafraîchit pour chaque utilisateur d'équipe ses infos Discord/nom depuis MKCentral.
-3. **Inscrire les saisons existantes** (#30) — outil de maintenance : (ré)inscrit **inconditionnellement** l'historique réel des 3 saisons (S1, S2, S3 ouverte, dates du ticket) dans RTDB `seasons/{teamId}` + cache Room. Réutilise le seeding de `SeasonRepository` (mêmes dates que le seeding automatique à la première synchro).
-4. **Update Transferts** — réconcilie les rosters (entrées/sorties de joueurs, alliés).
-4. **Migrer les adversaires (teamId → roster)** — action manuelle et idempotente : réécrit dans l'historique Firebase le `teamId` d'un adversaire en `rosterId`, **uniquement** pour les équipes possédant un seul roster mkworld (cas non ambigu) **et dont le roster est résolvable localement** (sinon la migration s'abstient, pour ne pas rendre l'adversaire non affichable). Fusionne alors le doublon « équipe legacy + roster » d'une même équipe mono-roster en un seul item du classement adverse (wars anciennes et récentes réunies). Les équipes multi-rosters et la war en cours ne sont pas touchées.
-5. **Diagnostiquer les adversaires inconnus** — outil **non destructif** d'arbitrage des wars dont un adversaire s'affiche « Équipe inconnue » / tag `???` (id de `teamOpponent` non résolu localement). Balaye les wars de chaque roster hôte, liste chaque war concernée (id, date, score, hôte) et, pour chaque id d'adversaire non résolu, tente une résolution MKCentral parmi les **équipes mkworld actives ayant plus de 6 joueurs** (miroir du filtre par défaut du site MKCentral : actives, non historiques, effectif ≥ 6). Le domaine étant exclusivement mkworld, un adversaire qui a **recréé une équipe mkworld** avec un nom/tag proche est retrouvé : le diagnostic identifie l'**équipe source** mkworld, puis **rebondit sur son nom/tag** pour proposer les **équipes mkworld candidates** (correspondance de tag ou de nom). Un **mapping manuel expert** (correspondances exactes relevées à la main dans les données historiques de l'équipe) **prime** sur cette recherche automatique pour certains adversaires : il propose alors directement l'équipe mkworld cible et ses rosters. Issues par id : **source retrouvée avec candidats mkworld** → un bouton **« Réattribuer »** **par roster mkworld candidat** (réécrit `teamOpponent` vers le rosterId choisi, uniquement s'il est résolvable localement) — le choix reste **humain** (0, 1 ou plusieurs candidats, jamais automatique) ; **source retrouvée sans candidat** (irrécupérable en l'état) ; **introuvable** (adversaire dissous/historique/à faible effectif ou d'origine mk8dx pure, hors mapping — à supprimer) ; **erreur réseau** (réessayer). Chaque war offre aussi **« Supprimer la war »** (avec confirmation) pour le paquet irrécupérable. Les actions destructives/réécritures restent manuelles, war par war.
-6. **Diagnostiquer les joueurs manquants** — outil **non destructif** (miroir du diagnostic des adversaires) qui répertorie les joueurs présents dans des wars mais absents du cache local (membres + alliés) — typiquement des joueurs ayant quitté l'équipe. Balaye les wars de chaque roster hôte, collecte les `playerId` (via `WarPosition`), retient ceux qui ne correspondent à **aucun** joueur du cache, dédoublonne, et affiche pour chacun : nom, pays et **nombre de wars** où il apparaît (nom/pays résolus via MKCentral ; « Joueur inconnu » si non résolu, sans faire disparaître l'entrée). Chaque joueur offre un bouton **« Ajouter en ally »** qui l'enregistre comme allié **en local ET sur Firebase `newAllies`** (durable — sinon la resynchro l'effacerait) ; le joueur ajouté disparaît alors de la liste.
-7. **Test MKWR** — charge les records du monde (scraping `mkwrs.com`).
-8. **Test Notif** — envoie une notification de test (si activées).
-9. **Mode Matrix** — simule un autre joueur : entrée par id (charge ses données et passe `matrixMode = true`), sortie (recharge le joueur de référence `18595`, `matrixMode = false`).
-
----
-
-## 12. Récapitulatif des règles métier
-
-| Domaine | Règle |
+| Pôle | Ce que tu y trouves |
 |---|---|
-| **Format** | `teamOpponent.size == 1` ⇒ 12 joueurs ; `> 1` (3) ⇒ 24 joueurs. Sélecteur dans le pôle Wars (création) et le menu stats. |
-| **Composition** | Exactement **6 joueurs** sélectionnés pour démarrer ; substitutions possibles en cours de war. |
-| **Adversaires** | 1 équipe (12p) ou 3 équipes (24p) à sélectionner. |
-| **Scoring 12p** | Position→points (1ʳᵉ = 15) ; score adverse = 82 − score équipe ; pénalités déduites des totaux. |
-| **Scoring 24p** | 144 pts/course ; scores finaux **saisis manuellement**, total de contrôle **1728** ; victoire = top 2 des scores. |
-| **Pénalités** | −10, −15, −20 ; une par équipe ; déduites avant l'écriture finale. |
-| **Shocks** | Objet éclair obtenu en jeu (item stratégique majeur) ; compté par joueur/course pour des statistiques dédiées, sans impact sur le calcul du score. |
-| **Alliés** | `rosterId = -1` ; stockés dans `newAllies` Firebase ; ajoutables depuis l'annuaire ou le profil d'équipe. |
-| **Rôles** | 2 = leader/manager, 1 = admin, 0 = membre ; gating des actions (cf. §3). |
-| **Multi-roster** | Active/désactive l'agrégation des stats sur tous les rosters ; redémarrage requis. |
-| **War en cours** | Une seule à la fois, écoutée en temps réel ; terminée à 12 courses. |
-| **Équipe « 6v6 Squad »** | Équipe synthétique (`SQ`, id `123456789`) injectée localement pour les matchs amicaux. |
+| **Accueil** | Ton tableau de bord : l'essentiel en un coup d'œil (forme du moment, war en cours, derniers résultats). |
+| **Wars** | Tous tes matchs : créer une war, suivre celle en cours, consulter l'historique et les détails. |
+| **Stats** | Tes performances et celles de ton équipe, en profondeur. |
+| **Classements** | Comparer les joueurs de ton équipe, les adversaires et les circuits. |
+| **Profil** | Ton identité, ton équipe, les rôles et tous les réglages. |
+
+**Passer d'un pôle à l'autre** : appuie sur l'icône correspondante dans la barre du bas. L'application garde en mémoire où tu en étais dans chaque pôle.
+
+**La loupe 🔍 (Annuaire)** : en haut des écrans **Accueil** et **Classements**, une icône de recherche ouvre l'**Annuaire**, qui te permet de chercher n'importe quel joueur ou n'importe quelle équipe de MKCentral (voir le [chapitre 10](#10-lannuaire--rechercher-un-joueur-ou-une-équipe)).
+
+**Le bouton retour** : sur les écrans de détail (une war, un circuit, un profil…), une flèche **←** en haut à gauche te ramène à l'écran précédent. Le bouton retour de ton téléphone fait la même chose. Depuis un pôle autre que l'Accueil, le retour te ramène d'abord à l'Accueil ; depuis l'Accueil, il ferme l'application.
+
+**Le filtre par saison** : en haut de plusieurs écrans (Accueil, Wars, Stats, Classements), un **menu déroulant** te laisse choisir la saison à afficher. L'option « Tout l'historique » montre tout ; par défaut, c'est la **saison en cours** qui est sélectionnée. Changer de saison met à jour l'écran immédiatement.
 
 ---
 
-*Détails techniques (modèles, algorithmes, intégrations) : [TECHNICAL.md](TECHNICAL.md).*
+## 5. Le pôle Accueil — ton tableau de bord
+
+L'**Accueil** est ta page d'entrée : l'essentiel y est rassemblé pour te donner le pouls de ton équipe en quelques secondes. **Comment y accéder :** icône maison dans la barre du bas (c'est aussi l'écran affiché au lancement).
+
+De haut en bas, tu y trouves :
+
+1. **La carte de salutation** — « Salut, [ton prénom] », avec ta photo (ou tes initiales) et le nom de ton équipe. Appuie dessus pour ouvrir ton **Profil**. Juste en dessous, un sélecteur **« Moi » / « Équipe »** te laisse choisir si le tableau de bord parle de **tes** performances ou de celles de **l'équipe**. Le basculement est instantané.
+
+2. **La war en cours** — Si une war est en cours, une bannière verte **« En direct »** s'affiche avec l'adversaire et le score actuel. Appuie dessus pour **reprendre** la war là où tu l'avais laissée. (S'il n'y a aucune war en cours, cette bannière n'apparaît pas.)
+
+3. **Le Momentum (ta dynamique)** — Un aperçu de ta forme récente. Tu peux choisir la fenêtre **« 5 dernières » ou « 10 dernières »** wars. Tu y vois :
+   - une **bande de pastilles** vertes (victoire), blanches (nul) et rouges (défaite) qui résume tes derniers résultats ;
+   - une **petite courbe** de l'évolution de ton score (verte si ça monte, rouge si ça descend) ;
+   - un **indicateur d'évolution** de ta forme (une flèche ↗ ou ↘ avec un pourcentage), qui compare ta forme récente à ta moyenne de toujours.
+
+4. **Les chiffres clés** — Trois valeurs essentielles : ton **winrate**, ton **score moyen** et une troisième donnée (ta **position moyenne** en vue « Moi », ou le **pourcentage de courses gagnées** en vue « Équipe »).
+
+5. **La série en cours** — Si tu es sur une série de victoires (ou de défaites), un bandeau avec une **flamme** l'annonce : « Série de 4 victoires », avec le rappel de ton record. La flamme est verte pour une série de victoires, rouge pour une série de défaites.
+
+6. **Les derniers résultats** — Tes **3 dernières wars**, chacune cliquable pour ouvrir son détail. Un lien **« Voir tout »** t'emmène vers l'historique complet (pôle Wars).
+
+En haut de l'écran, tu retrouves la **loupe** (vers l'Annuaire) et le **menu de saison** (pour filtrer tout le tableau de bord sur une saison précise).
+
+---
+
+## 6. Le pôle Wars — tes matchs
+
+Le pôle **Wars** rassemble tout ce qui concerne tes matchs. **Comment y accéder :** icône drapeau dans la barre du bas.
+
+En haut de l'écran, le titre indique le **nombre total de wars**. À droite, un bouton **« + » (Créer une war)** te permet de lancer un nouveau match — il disparaît tant qu'une war est déjà en cours (on ne peut suivre qu'une war à la fois). Le détail de la création est expliqué au [chapitre 11](#11-enregistrer-une-war-pas-à-pas).
+
+> **Où reprendre une war en cours ?** Ce n'est pas sur cet écran, mais depuis l'**Accueil** (la bannière verte « En direct »). L'historique des Wars ne montre que les wars **terminées**.
+
+L'écran propose :
+
+- **Des filtres de résultat** : « Tous » (par défaut), « Victoires », « Nuls », « Défaites ». Ils affinent la liste sans quitter l'écran.
+- **L'historique complet** de tes wars, **regroupé par mois** et trié de la plus récente à la plus ancienne. Les deux formats (12 et 24 joueurs) apparaissent ensemble. Appuie sur une war pour ouvrir son **détail**.
+- **Un menu de saison** en haut pour n'afficher que les wars d'une saison donnée. Le compteur de wars s'ajuste à ta sélection.
+
+### Voir par période
+
+En tête de l'historique, un bouton **« Voir par période »** ouvre un écran d'aide à la composition des équipes. Tu choisis **deux dates** (« Du » et « Au »), et l'app te montre, pour cette plage :
+
+- l'onglet **Wars** : toutes les wars de la période ;
+- l'onglet **Joueurs** : le classement des joueurs ayant joué au moins une war sur la période, avec le **nombre de wars jouées et le taux de participation**, le **score moyen** et le **nombre d'éclairs** de chacun.
+
+Par défaut, la période couvre la **saison en cours**, mais tu peux choisir n'importe quelles dates. C'est pratique pour décider qui aligner en fonction de qui a le plus joué récemment.
+
+### Le détail d'une war
+
+Depuis l'historique, appuie sur une war pour ouvrir son détail :
+
+- **La carte de score** : ton équipe face à l'adversaire, avec la **différence de score** au centre (verte si tu gagnes, rouge sinon), les **pénalités** éventuelles de chaque camp et le **total d'éclairs** de la war.
+- **Le classement des joueurs** : chaque joueur avec ses points, **classés du meilleur au moins bon**, et son nombre d'éclairs le cas échéant.
+- **Deux boutons** : **« Générer le Tab (PDF) »** (uniquement en 12 joueurs) pour créer une image de résultats à partager, et **« Voir l'adversaire »** pour ouvrir sa fiche détaillée.
+- **Les courses jouées** : la liste des courses de la war, chacune cliquable pour voir le détail (circuit, positions, éclairs).
+
+### Le détail d'une course
+
+Depuis le détail d'une war, appuie sur une course pour l'ouvrir :
+
+- **Le circuit** joué, avec le score de la course et l'écart.
+- **Les positions de chaque joueur**, avec le nombre d'éclairs obtenus si applicable.
+
+Tant qu'une war **n'est pas encore validée**, tu peux **éditer** n'importe laquelle de ses courses (bouton « Éditer la course ») : corriger le circuit, une position, ou le nombre d'éclairs. Une fois la war validée, les courses ne sont plus modifiables.
+
+---
+
+## 7. Le pôle Stats — tes performances en détail
+
+Le pôle **Stats** est le cœur analytique de l'application. **Comment y accéder :** icône graphe dans la barre du bas. Il présente tes performances de façon détaillée, avec deux angles de lecture au choix : **« Individuelles »** (toi) ou **« Équipe »** (le collectif).
+
+> Toutes les statistiques portent aujourd'hui sur les **wars 12 joueurs**. Le mode 24 joueurs sera couvert plus tard.
+
+En haut de l'écran, tu disposes de deux outils qui s'appliquent à **tout** l'écran :
+
+- **Le sélecteur de période** : « Tout l'historique » / « 5 dernières » / « 10 dernières ». Il définit sur quelles wars les stats sont calculées.
+- **Le menu de saison** : pour restreindre le calcul à une saison précise.
+
+Ces deux réglages sont complémentaires : la saison choisit **quelles** wars comptent, la période prend les **N dernières** parmi elles. L'écran se met à jour immédiatement.
+
+Voici ce que tu y trouves (le contenu s'adapte selon que tu es en « Individuelles » ou en « Équipe ») :
+
+- **Le bilan** : ton **winrate** en grand, le décompte **Victoires / Nuls / Défaites** et une barre proportionnelle.
+- **Les indicateurs** : une grille de tuiles (score par war, position moyenne, régularité, marges, pénalités, éclairs, taux de participation…). Beaucoup affichent une **flèche d'évolution** par rapport à ta moyenne de toujours. Chaque indicateur est expliqué au [chapitre 12](#12-comprendre-tes-statistiques).
+- **Ta contribution** (en vue Individuelles) : la part des points de l'équipe que tu apportes, et ta part d'éclairs (ton poids dans le bagging collectif).
+- **Forme & séries** puis **Records & séries** : ta dynamique du moment, tes meilleurs et pires passages, tes courses parfaites (Top 6) et complètement ratées (Bot 6).
+- **La répartition des positions** : un histogramme montrant à quelles places tu (ou l'équipe) finis le plus souvent.
+- **Les podiums Circuits et Adversaires** : le Top 3 et le Flop 3 de tes circuits et adversaires, avec un choix de tri (par nombre de fois joué, par winrate ou par score).
+- **Contributeurs** et **Meilleurs baggeurs** (en vue Équipe) : le classement des joueurs de l'équipe selon leur part de points, puis selon leur part d'éclairs.
+
+Sur beaucoup d'indicateurs, un petit **bouton d'information (ⓘ)** ouvre une explication en une phrase, pour ne jamais rester bloqué sur le sens d'une stat.
+
+Un lien **« Résultats → »** te renvoie vers l'historique des wars filtré sur le joueur concerné.
+
+---
+
+## 8. Le pôle Classements — comparer joueurs, adversaires et circuits
+
+Le pôle **Classements** te permet de comparer entre eux les joueurs, les adversaires et les circuits. **Comment y accéder :** icône barres dans la barre du bas.
+
+L'écran propose trois onglets :
+
+1. **Joueurs** — La liste de tous les joueurs, séparée en **Membres** (ceux de ton équipe) et **Alliés**. Pour chacun : nombre de wars jouées, **taux de participation**, winrate et score moyen. Appuie sur un joueur pour ouvrir ses **statistiques individuelles**.
+2. **Adversaires** — La liste des équipes que tu as affrontées, avec le nombre de confrontations, le winrate face à elles et le score moyen. Appuie sur une équipe pour ouvrir sa **fiche détaillée**.
+3. **Circuits** — La liste des circuits joués, avec le nombre de fois joué, le winrate et le score moyen. Appuie sur un circuit pour ouvrir sa **fiche détaillée**.
+
+Sur chaque onglet, tu disposes de :
+
+- **une recherche par nom** ;
+- **un tri à trois choix** (par exemple : par nombre de fois joué, par winrate, par score) ;
+- **un curseur « occurrences minimum »** : il masque les entrées jouées moins de N fois, pour ne garder que celles où tu as assez de recul. Fais glisser le curseur pour choisir ton seuil ;
+- **un menu de saison** en haut, pour restreindre le classement à une saison.
+
+Toutes les listes se recalculent instantanément quand tu changes un réglage.
+
+---
+
+## 9. Le pôle Profil — toi, ton équipe et tes réglages
+
+Le pôle **Profil** regroupe ton identité, celle de ton équipe et tous les réglages. **Comment y accéder :** icône utilisateur dans la barre du bas. Deux onglets : **« Joueur »** et **« Équipe »**.
+
+### Onglet Joueur
+
+- **Ta carte d'identité** : ta photo (ou tes initiales), ton pseudo, ton pays, ta **pastille de rôle** (Membre, Admin ou Leader) et ta bio.
+- **Tes informations** : ton équipe et son tag, ta date d'arrivée dans l'équipe, ton code ami, ton Discord, ta date d'inscription et ton rôle.
+- **Tes réglages** :
+  - **Rafraîchir les données** — Relance la récupération de tes infos (joueur, équipe, alliés, adversaires, wars) depuis MKCentral.
+  - **Notifications** — Un interrupteur pour être prévenu·e quand tes données sont à jour.
+  - **Multi-roster** — Un interrupteur qui étend le calcul des stats à **tous** les rosters de l'équipe, plutôt qu'au tien seul (nécessite un redémarrage de l'app).
+  - **Déconnexion** — Te déconnecte et efface tes données locales.
+- **La version de l'application** et la date de la dernière synchronisation, en bas.
+
+### Onglet Équipe
+
+- **La carte d'identité de l'équipe** : logo (ou tag), nom, tag, date de création et bio.
+- **Les informations** : nombre de membres, d'alliés et date de création.
+- **Deux sous-onglets « Membres » / « Alliés »** :
+  - **Membres** : la liste des joueurs de l'équipe, avec leur **rôle réel** (Leader, Admin, Membre). Regroupés par roster si l'équipe en a plusieurs. Appuie sur un membre pour ouvrir sa fiche.
+  - **Alliés** : la liste des renforts, plus un bouton **« Ajouter un ally »** pour en enregistrer un nouveau.
+- Si tu es **Leader**, un bouton **« Démarrer une nouvelle saison »** apparaît (voir le [chapitre 15](#15-rôles-saisons-et-réglages)).
+
+Les **pastilles de rôle** ont chacune une couleur : **Leader** en or, **Admin** en bleu, **Membre / Allié** en blanc.
+
+---
+
+## 10. L'Annuaire — rechercher un joueur ou une équipe
+
+L'**Annuaire** te permet de chercher n'importe quel joueur ou équipe enregistré sur MKCentral, même en dehors de ton équipe. **Comment y accéder :** la **loupe 🔍** en haut des écrans Accueil et Classements.
+
+Deux onglets :
+
+- **Joueurs** — Tape un nom (à partir de **3 caractères**) pour lancer la recherche. Appuie sur un résultat pour ouvrir son profil. Depuis le profil d'un joueur qui n'est pas dans ton équipe, tu peux (selon ton rôle) l'**ajouter comme allié**.
+- **Équipes** — Cherche une équipe par nom ou par tag. Appuie sur un résultat pour ouvrir son profil (rosters et joueurs).
+
+---
+
+## 11. Enregistrer une war, pas à pas
+
+C'est la fonctionnalité centrale de l'application : suivre une war en direct. Voici le parcours complet.
+
+> **Qui peut créer une war ?** Les joueurs ayant le rôle Admin ou Leader (voir le [chapitre 15](#15-rôles-saisons-et-réglages)). Le bouton n'apparaît que s'il n'y a **aucune war en cours**.
+
+### Lancer une nouvelle war
+
+Depuis le pôle **Wars**, appuie sur le bouton **« + » (Créer une war)** en haut à droite. Tu arrives sur un assistant en **trois étapes**, indiquées par une barre en haut : **1 · Adversaire → 2 · Joueurs → 3 · Récap**.
+
+> Pour l'instant, la création se fait uniquement en **12 joueurs**. Le choix du format 24 joueurs sera réactivé plus tard.
+
+### Étape 1 — Choisir l'adversaire
+
+- Cherche l'équipe adverse dans le champ **« Rechercher une équipe / un tag »**. La recherche fonctionne aussi sur les noms de rosters.
+- Appuie sur l'équipe voulue.
+  - Si elle n'a **qu'un seul roster**, il est retenu automatiquement et tu passes à l'étape suivante.
+  - Si elle a **plusieurs rosters**, un petit sélecteur s'ouvre juste sous son nom : choisis le bon roster.
+
+### Étape 2 — Composer ton équipe
+
+- Sélectionne **exactement 6 joueurs** parmi ton roster (et tes alliés). Une pastille verte ✓ apparaît sur chaque joueur choisi ; un compteur « n / 6 » suit ta progression.
+- Dès que les 6 joueurs sont sélectionnés, l'assistant passe **automatiquement** à l'étape suivante. (Retirer un joueur te ramène en arrière.)
+
+### Étape 3 — Récapitulatif
+
+- Vérifie l'**adversaire** et ta **composition**.
+- Appuie sur **« Démarrer la war »** pour lancer le match.
+
+> **Bon à savoir :** si tu reviens en arrière dans l'assistant, la sélection de l'étape que tu rejoins est **remise à zéro** (revenir tout au début efface l'adversaire *et* la composition). C'est voulu : quand tu recules, c'est pour refaire ton choix.
+
+### La war en cours
+
+Une fois la war lancée, tu arrives sur l'écran de suivi :
+
+- **La carte de score** : ton équipe face à l'adversaire, la différence au centre (colorée), les pénalités éventuelles, le total d'éclairs et le **nombre de courses restantes**.
+- **Les scores des joueurs** : chaque joueur avec ses points cumulés (et une pastille d'éclair si applicable).
+- **Les actions** : un bouton principal **« Course suivante »** et un bouton **« Plus d'actions »**.
+- **Les courses déjà jouées** : une grille de tuiles, une par course, avec le circuit, le score et les éclairs. Appuie sur une course pour la revoir ou la corriger.
+
+> **Tu as changé de téléphone, réinstallé l'app ou été déconnecté·e en pleine war ?** Pas de panique : si tu es bien la personne qui a créé la war, l'application **retrouve automatiquement** tes droits d'édition et tu peux reprendre la saisie.
+
+### Saisir une course
+
+Appuie sur **« Course suivante »**. Un assistant t'accompagne :
+
+1. **Circuit** — Cherche et choisis le circuit joué parmi les 30 disponibles.
+2. **Positions** — Saisis la position d'arrivée **joueur par joueur** : pour chaque joueur, appuie sur sa place (de 1 à 12). Les places déjà prises sont verrouillées. Après la dernière position, tu passes au résumé.
+3. **Résumé** — L'app affiche le **score de la course** (calculé automatiquement) et te permet, pour chaque joueur, d'**ajouter ou retirer des éclairs** avec les boutons « − » et « + ». Appuie sur **« Confirmer »** pour enregistrer la course.
+
+> En 24 joueurs, une étape **Intermission** s'ajoute (un second circuit enchaîné, optionnel).
+
+### Plus d'actions : pénalités, remplacement, annulation
+
+Le bouton **« Plus d'actions »** ouvre trois onglets :
+
+- **Pénalités** — Applique une pénalité (−10, −15 ou −20) à ton équipe ou à l'adversaire. Choisis le montant et l'équipe visée, puis valide : les points sont déduits du score de l'équipe concernée.
+- **Remplacement** — Fais entrer un joueur du banc à la place d'un titulaire, en cours de war. Sélectionne le sortant et l'entrant, puis valide.
+- **Annuler la war** — Supprime définitivement la war en cours et toutes ses courses (avec une confirmation). À utiliser si la war n'a finalement pas eu lieu.
+
+### Valider la war
+
+Quand les **12 courses** sont jouées :
+
+- **En 12 joueurs**, le bouton principal devient **« Valider la war »** : appuie dessus pour l'enregistrer dans ton historique.
+- **En 24 joueurs**, une carte apparaît pour **saisir le score final de chaque équipe adverse** ; le bouton devient **« Saisir & valider »**. L'app vérifie que le total des scores est cohérent avant d'enregistrer.
+
+Une fois validée, la war rejoint ton **historique** (pôle Wars) et l'écran de war en cours se libère : tu peux en créer une nouvelle.
+
+---
+
+## 12. Comprendre tes statistiques
+
+Cette section explique, en langage simple, **ce que veut dire chaque statistique**, comment la lire et comment t'en servir. Toutes portent sur les wars 12 joueurs. Rappels : une **war** = un match, une **course** = une course d'une war, le **winrate** = le pourcentage de wars gagnées, **all-time** = sur tout l'historique.
+
+Beaucoup de stats existent en deux versions selon l'angle choisi (« Individuelles » = **toi**, « Équipe » = **le collectif**). Quand la lecture diffère, c'est précisé.
+
+### Les stats de bilan
+
+- **Wars jouées** — Le nombre de wars prises en compte. Plus il est grand, plus tes autres stats sont fiables. Une stat calculée sur 3 wars est moins parlante que sur 40.
+- **Winrate** — Le pourcentage de wars gagnées. 50 % = autant de victoires que de défaites ; au-dessus, tu gagnes plus que tu ne perds. Les matchs nuls comptent dans le total mais pas comme des victoires.
+- **Victoires / Nuls / Défaites (V/N/D)** — Le décompte de tes résultats. Le résultat d'une war est déterminé par le **score final** (pénalités comprises), pas seulement par les places.
+- **Points / war** (toi) — Tes points moyens par war. Plus c'est haut, mieux c'est.
+- **Score moyen** (équipe) — Ici, c'est l'**écart de score moyen** : positif (« +34 »), l'équipe domine en moyenne ; négatif, elle subit.
+
+### Les stats de course
+
+- **Position moyenne** (toi) — Ta place moyenne sur une course. Plus tu es **proche de la 1ʳᵉ place**, mieux c'est. C'est le seul cas où un chiffre **plus bas** est meilleur.
+- **Score moyen par course** (équipe) — Les points moyens marqués par l'équipe sur une course, exprimés en écart. Plus c'est haut, mieux c'est.
+- **Maps gagnées** — La part des **courses** remportées par l'équipe. C'est utile pour repérer une équipe qui gagne les courses mais perd les wars serrées (ou l'inverse).
+- **Répartition des positions** — Un histogramme montrant à quelles places tu finis le plus souvent. Concentré près de la 1ʳᵉ place = joueur de tête ; étalé = résultats variables.
+
+### Les stats de régularité et de marge
+
+- **Régularité** — À quel point tes scores sont constants d'une war à l'autre. Affichée en « ± X » : plus le chiffre est **bas**, plus tu es régulier·e ; plus il est haut, plus tu fais des hauts et des bas.
+- **Amplitude du score (min – max)** — Ton pire et ton meilleur score sur la période. Un grand écart signale des performances variables.
+- **Marge moyenne de victoire** — De combien de points tu gagnes en moyenne **quand tu gagnes** (ex. « +45 »).
+- **Marge moyenne de défaite** — De combien tu perds en moyenne **quand tu perds** (ex. « -30 »). L'idéal : gagner large et perdre serré.
+- **Points perdus en pénalités** — Le total des points retirés à ton équipe par les pénalités. Un repère du « coût » cumulé des sanctions.
+
+### Les séries
+
+Toutes les séries sont calculées dans l'**ordre réel des wars** (par date).
+
+- **Série en cours** — Combien de wars d'affilée tu as gagnées **ou** perdues, à partir de la plus récente. Un match nul ou un résultat inverse remet le compteur à zéro.
+- **Record de victoires** — Ta plus longue série de victoires consécutives (ton meilleur passage).
+- **Record de défaites** — Ta plus longue série de défaites consécutives (ton pire passage).
+- **Invaincu depuis** — Depuis combien de wars tu n'as plus perdu, **nuls compris**. Se remet à zéro à la première défaite.
+
+### Top 6 et Bot 6
+
+- **Top 6** — Une course où **les 6 joueurs de l'équipe occupent les 6 premières places** (1 à 6). C'est une course parfaite. Le compteur indique combien de fois c'est arrivé.
+- **Bot 6** — L'inverse : les 6 joueurs occupent les 6 dernières places (7 à 12). Une course complètement dominée par l'adversaire.
+
+Ce sont des cas **exacts** : une course répartie entre le haut et le bas du classement n'est ni un Top 6 ni un Bot 6.
+
+### Le bagging et les éclairs
+
+- **Shocks / war** — Le nombre moyen d'**éclairs obtenus** par war. C'est la mesure de ton *bagging* (rester à l'arrière pour farmer des objets puissants). Un éclair obtenu est compté même si tu ne l'utilises pas.
+
+  **À lire avec nuance :** un grand nombre d'éclairs veut dire que tu bagges beaucoup, ce qui est **précieux** pour l'équipe — mais ce n'est **pas** relié à ta position finale, et il n'y a **pas** de « baggeur attitré » : les rôles changent en pleine course (un joueur devant peut se mettre à bagger, un baggeur qui tire un bon objet peut remonter). C'est pourquoi l'évolution de cette stat s'affiche **sans couleur** : ni « plus » ni « moins » n'est forcément « mieux ». Et rappel : les éclairs **n'entrent pas** dans le calcul du score.
+
+### La contribution
+
+- **Ta contribution** (toi) — La part des points de l'équipe que tu apportes toi-même. Dans une équipe de 6, une contribution « moyenne » tourne autour de 16-17 % ; nettement au-dessus, tu es un moteur de l'équipe.
+- **Contributeurs** (équipe) — Le classement des joueurs par part de points apportés.
+- **Meilleurs baggeurs** (équipe) — Le même principe, mais classé par part d'éclairs obtenus.
+
+### La forme récente et son évolution
+
+Plusieurs écrans comparent ta forme **récente** à ta moyenne **de toujours**, sous forme d'une flèche colorée avec un chiffre :
+
+- pour le **winrate**, le **% de courses gagnées** et le **score** : une hausse est **bonne** (affichée en vert) ;
+- pour la **position moyenne** : une **baisse** est bonne (couleur inversée), puisqu'être plus proche de la 1ʳᵉ place est meilleur ;
+- pour les **éclairs** : l'évolution est affichée **sans couleur** (voir plus haut).
+
+**Petit échantillon :** si tu as joué moins de wars que la fenêtre demandée (par exemple 3 wars pour une fenêtre de 10), l'app affiche ce qu'elle a et **n'invente pas** d'évolution trompeuse.
+
+---
+
+## 13. Les fiches détaillées (adversaire, circuit, joueur)
+
+Au-delà des chiffres globaux, l'application propose des **fiches dédiées** pour analyser un adversaire, un circuit ou un joueur en profondeur.
+
+### La fiche d'un adversaire
+
+**Comment y accéder :** depuis le pôle **Classements** (onglet Adversaires), ou depuis le détail d'une war (bouton « Voir l'adversaire »).
+
+Tu y trouves tout ce que tu dois savoir avant de les affronter : le **nombre de confrontations** et la date de la dernière, le **bilan face à eux** (winrate coloré : rouge si tu es en dessous de 50 %, vert au-dessus), tes **5 dernières wars** contre eux, tes **séries** face à eux, ton **score / écart moyen**, tes **éclairs** contre eux, ainsi que les **circuits qui te réussissent le mieux (ou le moins)** contre cette équipe. En vue Équipe, tu vois aussi quels **pilotes** et quels **baggeurs** de ton équipe performent le mieux face à eux. Tout en bas, l'**historique** de tes wars contre cet adversaire.
+
+Un sélecteur **« Joueur » / « Équipe »** te laisse voir ces stats de ton point de vue personnel ou de celui du collectif.
+
+### La fiche d'un circuit
+
+**Comment y accéder :** depuis le pôle **Classements** (onglet Circuits).
+
+Elle rassemble tout sur un circuit : le **nombre de fois joué**, ta **performance** (winrate de course, coloré selon un seuil), le **score moyen** de l'équipe, ta **position moyenne**, tes **éclairs**, la **répartition des positions** sur ce circuit, et — en vue Équipe — quels **pilotes** et **baggeurs** de ton équipe brillent sur ce circuit, ainsi que les **adversaires** rencontrés dessus. Utile pour décider quels circuits privilégier ou éviter.
+
+### La fiche statistique d'un joueur
+
+**Comment y accéder :** depuis le pôle **Classements** (onglet Joueurs) en appuyant sur un joueur.
+
+Elle affiche les **mêmes statistiques que l'onglet « Individuelles » du pôle Stats**, mais pour le joueur choisi : son bilan, ses indicateurs, ses séries, sa répartition de positions, ses meilleurs circuits et adversaires. Un lien **« Résultats → »** ouvre l'historique des wars de ce joueur.
+
+> **Le filtre de saison suit :** si tu ouvres une fiche depuis un classement filtré sur une saison, la fiche reste cohérente avec cette saison.
+
+---
+
+## 14. Le tableau de résultats à partager (image)
+
+À la fin d'une war en **12 joueurs**, tu peux générer une **image récapitulative** à partager (par exemple sur Discord).
+
+**Comment y accéder :** depuis le détail d'une war 12 joueurs, appuie sur **« Générer le Tab (PDF) »**. (Ce bouton n'existe pas en 24 joueurs.)
+
+- Tu peux ajuster le **nombre de lignes adverses** (de 6 à 9) avec les boutons « − ligne » et « + ligne », utile s'il y a eu des remplaçants côté adverse.
+- Renseigne le **nom et le score** de chaque joueur adverse.
+- Appuie sur **« Tab classique & partager »** : l'app vérifie que les scores sont cohérents, génère l'image (logos, tags, scores de chaque camp — pénalités comprises, meilleurs joueurs avec médailles) et ouvre le menu de partage.
+
+Un joueur qui a été **remplacé** (il n'a pas joué toutes les courses) voit son nombre de courses jouées indiqué entre parenthèses à côté de son nom (ex. « Pseudo (7) »).
+
+---
+
+## 15. Rôles, saisons et réglages
+
+### Les rôles
+
+Chaque joueur a un **rôle** qui définit ce qu'il peut faire :
+
+| Rôle | Ce qu'il permet |
+|---|---|
+| **Leader** | Tout : créer des wars, gérer les rosters et les alliés, changer les rôles des membres, démarrer une nouvelle saison. |
+| **Admin** | Créer et gérer des wars, changer le rôle d'un membre. |
+| **Membre** | Consulter et participer aux wars (mais pas en créer). |
+
+Un **allié** est toujours considéré comme un simple membre : ne faisant pas partie de l'équipe, il ne peut pas la gérer.
+
+**Important :** créer, valider, annuler une war ou remplacer un joueur ne change **jamais** le rôle de qui que ce soit.
+
+Concrètement :
+
+- Le bouton **« Créer une war »** n'apparaît que pour les Admins et Leaders (et seulement si aucune war n'est en cours).
+- Le bouton **« Ajouter en allié »** apparaît sur le profil d'un joueur qui n'est pas déjà dans ton équipe.
+- Le bouton **« Changer le rôle »** est réservé aux Leaders, sur le profil d'un membre.
+- **« Démarrer une nouvelle saison »** est réservé aux **Leaders** (pas aux Admins).
+
+### Les saisons
+
+Une **saison** est une période de jeu de ton équipe. L'application connaît déjà l'historique des saisons passées et en cours, et te laisse **filtrer toutes tes stats** saison par saison (via le menu de saison en haut des écrans).
+
+Si tu es **Leader**, tu peux **démarrer une nouvelle saison** depuis l'onglet Équipe de ton Profil. Une confirmation t'avertit que l'action est **importante et définitive** : elle **clôt** la saison en cours (à la fin de la journée) et en **démarre** une nouvelle (le lendemain). Une saison close ne peut plus être rouverte.
+
+### Les autres réglages
+
+- **Rafraîchir les données** — Met à jour manuellement tes infos (joueur, équipe, alliés, adversaires, wars) depuis MKCentral. L'app le fait aussi automatiquement en tâche de fond environ une fois par jour.
+- **Notifications** — Te préviennent quand une mise à jour de tes données est terminée.
+- **Multi-roster** — Étend le calcul des stats à tous les rosters de l'équipe. Le changement s'applique après un redémarrage de l'app.
+- **Déconnexion** — Te déconnecte, efface tes données locales et te ramène à l'écran de connexion.
+- **Fonctionnement sans connexion** — Tes données restent consultables hors ligne (elles sont enregistrées sur ton téléphone). La war en cours, elle, se met à jour en temps réel dès que tu es connecté·e, ce qui permet à toute l'équipe de la suivre.
+
+---
+
+## 16. Questions fréquentes
+
+**Puis-je suivre plusieurs wars à la fois ?**
+Non. L'application ne gère qu'**une war en cours à la fois**. Il faut valider ou annuler la war courante avant d'en créer une nouvelle.
+
+**Je ne vois pas le bouton pour créer une war. Pourquoi ?**
+Soit une war est déjà en cours (le bouton est alors caché), soit ton rôle ne le permet pas (il faut être Admin ou Leader).
+
+**Un adversaire s'affiche « Équipe inconnue ». C'est grave ?**
+Non. Cela arrive quand une équipe adverse a disparu du registre ou n'a jamais été synchronisée. La war reste valable et ses scores sont intacts ; seul le nom ne peut plus être retrouvé.
+
+**Les éclairs (shocks) me font-ils gagner ?**
+Pas directement : ils **n'entrent pas** dans le calcul du score. Ils mesurent la qualité de ton *bagging*, une stratégie précieuse, mais indépendante de ta position finale.
+
+**Pourquoi certaines statistiques ne s'affichent pas ?**
+Beaucoup de stats demandent un **minimum de wars ou de courses** pour être fiables. Si l'échantillon est trop petit, l'app préfère ne rien afficher plutôt que de donner un chiffre trompeur. Utilise le filtre de période ou le curseur d'occurrences pour ajuster.
+
+**Le mode 24 joueurs est-il pris en charge ?**
+Tu peux enregistrer et consulter des wars 24 joueurs, mais les **statistiques détaillées** ne couvrent aujourd'hui que le mode 12 joueurs. Le 24 joueurs sera enrichi plus tard.
+
+---
+
+*Bon jeu, et bonnes wars !*
