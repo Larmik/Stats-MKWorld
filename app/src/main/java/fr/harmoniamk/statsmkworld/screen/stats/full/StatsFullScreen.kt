@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -278,9 +279,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
                     IconLine(
                         // Icône champignon illustrant la part de POINTS de l'équipe (#91 pt.11).
                         // tinted = false → dessinée en Image (couleurs d'origine, pas d'aplat par le tint).
+                        // iconSize = 34dp : compense le padding interne transparent du PNG pour un rendu
+                        // visuellement proche du shock (reste sous les 44dp du médaillon).
                         icon = R.drawable.ic_mushroom,
                         accent = Colors.yellow,
                         tinted = false,
+                        iconSize = 34.dp,
                         title = stringResource(R.string.stats_contribution_value, contributor.pointsShare),
                         subtitle = meContributorRank
                             ?.let { stringResource(R.string.stats_contribution_rank, it + 1) }
@@ -807,18 +811,20 @@ private fun BalanceCard(stats: Stats, showResultsLink: Boolean, onResults: (() -
  * Ligne icône + gros titre + sous-titre (contribution). [tinted] = true : l'icône est
  * teintée par [accent] (`Icon`, cas monochrome comme le shock). false : icône dessinée en
  * couleurs d'origine (`Image`) — pour une image multicolore comme le champignon (#91), qu'un
- * tint aplatirait. Taille de l'icône (22 dp) et médaillon accent identiques dans les deux cas.
+ * tint aplatirait. [iconSize] = taille de rendu de l'icône (défaut 22 dp, comme le shock ;
+ * augmentée pour un asset à padding interne transparent, ex. champignon 34 dp) — bornée par le
+ * médaillon accent de 44 dp, identique dans les deux cas.
  */
 @Composable
-private fun IconLine(icon: Int, accent: Color, title: String, subtitle: String, tinted: Boolean = true) {
+private fun IconLine(icon: Int, accent: Color, title: String, subtitle: String, tinted: Boolean = true, iconSize: Dp = 22.dp) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(
             Modifier.size(44.dp).clip(CircleShape).background(accent.copy(alpha = 0.25f)).border(1.dp, accent.copy(alpha = 0.5f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             when (tinted) {
-                true -> Icon(painter = painterResource(icon), contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
-                else -> Image(painter = painterResource(icon), contentDescription = null, modifier = Modifier.size(22.dp))
+                true -> Icon(painter = painterResource(icon), contentDescription = null, tint = accent, modifier = Modifier.size(iconSize))
+                else -> Image(painter = painterResource(icon), contentDescription = null, modifier = Modifier.size(iconSize))
             }
         }
         Column(Modifier.weight(1f)) {

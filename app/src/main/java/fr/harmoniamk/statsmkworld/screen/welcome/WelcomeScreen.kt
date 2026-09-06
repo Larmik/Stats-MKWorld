@@ -317,28 +317,33 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
             // contenus hauts (sparkline 44dp vs texte delta) restent en haut, les DEUX hints sont
             // poussés en bas et **alignés sur la même ligne basse** (retour utilisateur), même si un
             // hint wrappe sur deux lignes (maxLines non forcé). Styles inchangés (white66, NunitoBD).
+            // Deux demi-colonnes ÉGALES (weight(1f)), CONTENU CENTRÉ dans chacune (#91, retour user),
+            // séparées par un gap réel au centre (spacedBy 12dp) → sparkline centrée à gauche, forme
+            // centrée à droite, espace au milieu.
             Row(
                 Modifier.height(IntrinsicSize.Min),
                 verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(13.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Colonne GAUCHE : graphe en haut, hint poussé en bas.
-                Column(Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
+                // Colonne GAUCHE : graphe en haut (centré), hint poussé en bas (centré).
+                Column(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
                     Sparkline(values, trendColor, Modifier.width(110.dp).height(44.dp))
                     MKText(
                         text = stringResource(R.string.home_score_evolution_cap, count),
                         textColor = Colors.white66,
                         fontSize = 12,
-                        textAlign = TextAlign.Start,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                // Colonne DROITE : delta en haut, hint poussé en bas (aligné sur celui de gauche).
-                // Contenu aligné à DROITE (#91, retour user) → vrai « space between » avec le graphe :
-                // sparkline collée à gauche, delta+hint collés à droite, espace au milieu.
+                // Colonne DROITE : delta en haut (centré), hint poussé en bas (centré, aligné bas gauche).
                 Column(
                     Modifier.weight(1f).fillMaxHeight(),
-                    horizontalAlignment = Alignment.End,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     form?.winrateDelta?.let { delta ->
@@ -347,14 +352,14 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                             font = Fonts.NunitoBD,
                             textColor = if (delta >= 0) Colors.green else Colors.red,
                             fontSize = 20,
-                            textAlign = TextAlign.End
+                            textAlign = TextAlign.Center
                         )
                     }
                     MKText(
                         text = stringResource(R.string.home_form_delta_cap, count),
                         textColor = Colors.white66,
                         fontSize = 12,
-                        textAlign = TextAlign.End,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
