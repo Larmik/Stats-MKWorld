@@ -183,21 +183,20 @@ data class Stats(
     // l'indicateur (position : plus bas = mieux) et est géré à l'affichage.
 
     /** Forme all-time (toutes les wars) : base des deltas des fenêtres récentes. */
-    val allTimeForm: FormStats? = formStats(chronologicalScores, requestedSize = null)
+    val allTimeForm: FormStats? = formStats(chronologicalScores)
 
     /** Forme sur les 5 dernières wars ; null si aucune war. */
-    val recentForm5: FormStats? = formStats(chronologicalScores.takeLast(5), requestedSize = 5)
+    val recentForm5: FormStats? = formStats(chronologicalScores.takeLast(5))
 
     /** Forme sur les 10 dernières wars ; null si aucune war. */
-    val recentForm10: FormStats? = formStats(chronologicalScores.takeLast(10), requestedSize = 10)
+    val recentForm10: FormStats? = formStats(chronologicalScores.takeLast(10))
 
     /**
      * Construit une [FormStats] sur une fenêtre de wars (déjà triée chrono).
-     * [requestedSize] = taille demandée (5/10) pour signaler un petit échantillon ;
-     * null pour l'all-time. Les deltas sont mesurés vs [allTimeForm] (null pour
-     * l'all-time lui-même, ou si l'un des termes manque).
+     * Les deltas sont mesurés vs [allTimeForm] (null pour l'all-time lui-même, ou si
+     * l'un des termes manque).
      */
-    private fun formStats(scores: List<WarScore>, requestedSize: Int?): FormStats? {
+    private fun formStats(scores: List<WarScore>): FormStats? {
         if (scores.isEmpty()) return null
         val wars = scores.map { it.war }
         val tracks = wars.flatMap { it.warTracks }
@@ -263,7 +262,6 @@ data class Stats(
         val base = allTimeForm
         return FormStats(
             sampleSize = scores.size,
-            requestedSize = requestedSize,
             winrate = winrate,
             averageScore = avgScore,
             averagePosition = avgPosition,
@@ -362,9 +360,8 @@ data class Stats(
 
 /**
  * Forme d'une fenêtre de wars (all-time, 5 ou 10 dernières), avec deltas vs
- * l'all-time. [sampleSize] = nb de wars réellement disponibles ; [requestedSize] =
- * taille demandée (5/10) ou null pour l'all-time (sert à signaler un petit
- * échantillon). Les deltas sont null pour l'all-time et si un terme manque.
+ * l'all-time. [sampleSize] = nb de wars réellement disponibles. Les deltas sont null
+ * pour l'all-time et si un terme manque.
  *
  * Indicateurs (12p) : winrate, score moyen par war, position moyenne du joueur
  * (vue joueur ⇒ [averagePosition]) OU score moyen par manche (vue équipe ⇒
@@ -373,7 +370,6 @@ data class Stats(
  */
 data class FormStats(
     val sampleSize: Int,
-    val requestedSize: Int?,
     val winrate: Int?,
     val averageScore: Int?,
     val averagePosition: Int?,
