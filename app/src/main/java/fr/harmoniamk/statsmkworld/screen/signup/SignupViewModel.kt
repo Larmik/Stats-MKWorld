@@ -56,7 +56,6 @@ class SignupViewModel @AssistedInject constructor(
     }
 
     data class State(
-        val launched: Boolean = false,
         val currentPage: Int = 0
     )
 
@@ -142,7 +141,7 @@ class SignupViewModel @AssistedInject constructor(
             _state.value = _state.value.copy(currentPage = 5)
             delay(2000.milliseconds)
             _onNext.emit(Unit)
-            _state.value.copy(launched = true)
+            _state.value
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)

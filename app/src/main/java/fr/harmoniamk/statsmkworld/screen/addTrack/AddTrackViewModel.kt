@@ -67,7 +67,6 @@ class AddTrackViewModel @AssistedInject constructor(
         val selectedPositions: List<PlayerPosition> = listOf(),
         val teamHostWarScore: Int? = null,
         val teamHostTrackScore: Int? = null,
-        val trackOrder: Int? = null,
         val shocks: Map<String, Int> = mutableMapOf(),
         val rosterName: String? = null,
         val rosterId: String? = null,
@@ -119,7 +118,6 @@ class AddTrackViewModel @AssistedInject constructor(
                 players = players,
                 teamHostWarScore = details.war.scores.firstOrNull { it.teamId == rosterId.toString() }?.score,
                 currentPlayer = players.firstOrNull(),
-                trackOrder = details.warTracks.size + 1,
                 rosterName = rosterName,
                 rosterId = rosterId.toString(),
                 totalPositions = when (teamOpponents.size > 1) {

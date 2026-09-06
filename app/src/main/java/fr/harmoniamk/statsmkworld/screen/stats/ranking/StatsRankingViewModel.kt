@@ -190,8 +190,8 @@ class StatsRankingViewModel @Inject constructor(
             }
             loadedSeasons = seasons
             loadedSelectedSeasonNumber = activeSeason?.number
-            // Rankings recalculés à la volée sur les wars filtrées par saison (remplace le cache
-            // all-time de StatsRepository). Filtres alignés sur InitStatsWorker : host/roster + 12p/24p.
+            // Rankings recalculés à la volée sur les wars filtrées par saison.
+            // Filtres : host/roster + mode 12p/24p.
             computeRankings(warEntities.filterBySeason(activeSeason), is24p)
             _state.value.copy(
                 loading = false,
@@ -204,7 +204,7 @@ class StatsRankingViewModel @Inject constructor(
 
     /**
      * Recalcule les listes brutes (membres/alliés/adversaires/circuits) sur les [wars] filtrées
-     * par saison. Réplique `InitStatsWorker` (rule 32) : filtre host/roster + 12p/24p.
+     * par saison : filtre host/roster + mode 12p/24p.
      */
     private suspend fun computeRankings(warEntities: List<WarEntity>, is24p: Boolean) = withContext(Dispatchers.Default) {
         val currentPlayer = currentUser

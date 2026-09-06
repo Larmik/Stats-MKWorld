@@ -422,7 +422,7 @@ fun Int.trackScoreToDiff(is24p: Boolean = false): String // milieu 41  (12p) / 7
 
 ## 9. Moteur de statistiques
 
-Cœur dans `extension/ListExtension.kt` (`withFullStats`, `withTrackStats`, `withFullTeamStats`, `sizeOrOne`), `extension/WarExtension.kt` (`War.withPlayersList`), `extension/IntegerExtension.kt` (barème `positionToPoints` / inverse `pointsToPosition`, `*ScoreToDiff`) et les classes de `model/local/` (`Stats.kt`, `WarDetails.kt`). Les résultats des classements globaux sont mis en cache en mémoire par `InitStatsWorker` dans `StatsRepository`.
+Cœur dans `extension/ListExtension.kt` (`withFullStats`, `withTrackStats`, `withFullTeamStats`, `sizeOrOne`), `extension/WarExtension.kt` (`War.withPlayersList`), `extension/IntegerExtension.kt` (barème `positionToPoints` / inverse `pointsToPosition`, `*ScoreToDiff`) et les classes de `model/local/` (`Stats.kt`, `WarDetails.kt`). Les classements globaux sont **recalculés à la demande** par les ViewModels stats (`StatsRankingViewModel`, `StatsFullViewModel`) sur les wars filtrées par saison (l'ancien cache mémoire `StatsRepository` peuplé par `InitStatsWorker` a été supprimé, #51 — cf. §9.10).
 
 > **Note historique (nettoyage #51).** Dans les tableaux de stats ci-dessous, la colonne
 > « Où on la trouve dans l'appli » cite parfois d'anciennes cellules de l'écran générique
@@ -743,32 +743,11 @@ marges via `scoreMargin(is24p)` (mode-aware, cf. 9.7).
 | `trackPlayed` | Nb de courses où le joueur a une `WarPosition` | `WarTrack.positions` | `WarPlayersCell` : suffixe `"(n)"` du nom si `trackPlayed < trackCount` (lignes 51-53) |
 | `shockCount` | `Σ shocks.filter { playerId == id }.count` | `Shock` | `WarPlayersCell` : icône éclair + compteur si > 0 (ligne 68) |
 
-### 9.10 Rôle de `InitStatsWorker` et cache `StatsRepository`
+### 9.10 Rôle de `InitStatsWorker` (hydratation des saisons)
 
-`InitStatsWorker` (WorkManager, `@HiltWorker`) précalcule les **classements globaux** et les stocke dans `StatsRepository` (cache mémoire, non persistant). Déroulé (`doWork`) :
+`InitStatsWorker` (WorkManager, `@HiltWorker`) est enfilé à chaque démarrage (`MainViewModel`) et à la connexion (`DataStoreRepository`). Son **unique** rôle est désormais l'**hydratation eager des saisons (#73)** : `dataStoreRepository.mkcTeam.firstOrNull()?.id?.let { seasonRepository.fetchSeasons(it.toString()) }` (rule 60). Tournant à chaque `MainActivity.onCreate`, il synchronise les saisons RTDB → Room (avec self-seed si le nœud est vide) sans attendre `UpdateDataWorker` (délai initial 18-28h) — c'est ce qui garantit l'affichage du `MKSeasonDropdown` dès le 1er lancement. `DataStoreRepositoryInterface` + `SeasonRepositoryInterface` injectés au constructeur `@AssistedInject`. Idempotent.
 
-- **hydratation eager des saisons (#73)** — tout en tête de `doWork`, **avant** le bloc wars et **indépendamment** du `rosterId` : `dataStoreRepository.mkcTeam.firstOrNull()?.id?.let { seasonRepository.fetchSeasons(it.toString()) }` (rule 60). Ce worker tournant à **chaque** `MainActivity.onCreate`, les saisons sont synchronisées RTDB → Room (avec self-seed si le nœud est vide) **à chaque démarrage** pour les utilisateurs existants, sans attendre `UpdateDataWorker` (délai initial 18-28h) — c'est ce qui garantit l'affichage du `MKSeasonDropdown` dès le 1er lancement. `SeasonRepositoryInterface` est injecté au constructeur `@AssistedInject` du worker (comme les autres repos). Idempotent ;
-- filtre les wars selon `multiRosterEnabled` / `rosterId` (équipe hôte) et le mode `is24PEnabled` (`teamOpponent.size` 1 vs > 1) ;
-- **circuits** : `trackRankList = withTrackStats().map { TrackRanking(it) }` ; `playerTrackRankList = withTrackStats(currentPlayerId)…` ;
-- **perf (#29)** : `WarDetails(War(WarEntity))` (reparse des manches + calcul des scores dérivés) est **calculé une seule fois** (`warDetailsList = warList.map { WarDetails(War(it)) }`) puis filtré par joueur, au lieu d'être reconstruit pour chaque couple (joueur × war) dans la boucle joueurs — redondance amplifiée par les tables croisées de la refonte. L'ordre chronologique est préservé (garanti par `getWars`) ;
-- **joueurs** : pour chaque joueur, `warDetailsList.filter { it.war.hasPlayer(userId) }.withFullStats(userId)` → `PlayerRanking(player, stats, participationRate)` ; ne garde que `warsPlayed > 0` ; groupe par `Pair(ordre, nom de roster)` (`(1,"Allies")` si roster inconnu) → `playersRankList`. Le **taux de participation** (#78) = `warsPlayed × 100 ÷ warDetailsList.size` (wars de l'équipe, garde-fou dénominateur nul → 0 %) est porté par le champ `PlayerRanking.participationRate` (calculé dans le VM/worker, absent du modèle `Stats` — rule 32) ; il est recalculé à l'identique dans `StatsRankingViewModel.computeRankings` sur la fenêtre saison filtrée, et affiché en **4ᵉ ligne** de la cellule podium joueur (sous « Wars jouées »). Côté écran Stats individuelles, `StatsFullViewModel` expose `participationRateByWindow: Map<Int, Int>` (par fenêtre all-time/5/10 : `windowWars.count { hasPlayer } × 100 ÷ windowWars.size`), rendu en tuile « Taux de participation » de la section Indicateurs ;
-- **adversaires** : sur les équipes (hors équipe courante) via `withFullTeamStats(...)` (qui appelle `withFullStats` par équipe), trié par `warsPlayed` décroissant → `opponentRankList` (équipe) et `playerOpponentRankList` (avec `userId`).
-
-### Cache : `StatsRepository`
-
-Cinq champs mutables en mémoire (pas de persistance) :
-
-```kotlin
-var playersRankList: Map<Pair<Int, String>, List<RankingItem.PlayerRanking>>  // groupés par (ordre, nom de roster)
-var opponentRankList: List<RankingItem>
-var playerOpponentRankList: List<RankingItem>
-var trackRankList: List<RankingItem>
-var playerTrackRankList: List<RankingItem>
-```
-
-`RankingItem` (interface scellée) : `PlayerRanking(player, stats)`, `OpponentRanking(team, stats)` (expose `winrate`, labels), `TrackRanking(stats: TrackStats)`.
-
-> **Filtrage par saison — le pôle Classements ne lit plus ce cache (#70).** Depuis l'ajout du filtre par saison, `StatsRankingViewModel` **recalcule lui-même** les classements (Joueurs/Membres/Alliés, Adversaires, Circuits) sur les wars **filtrées par saison** (recalcul à la volée), au lieu de lire `StatsRepository`. Il réplique les filtres du worker (host/roster + 12p) et applique en plus `List<WarEntity>.filterBySeason(season)` avant `withTrackStats` / `withFullStats` / `withFullTeamStats`. **Conséquence** : `InitStatsWorker` + `StatsRepository` continuent d'être exécutés/peuplés mais **plus aucun écran ne lit ce cache** (dette technique assumée à nettoyer dans un ticket ultérieur — le worker et le repository peuvent être supprimés une fois qu'aucun autre consommateur n'en dépend).
+> **Cache de classements `StatsRepository` supprimé (#51).** Historiquement, `InitStatsWorker` précalculait 5 classements globaux (joueurs/adversaires/circuits, vues équipe et joueur) et les stockait dans un cache mémoire `StatsRepository`. Depuis le filtrage par saison (#70), **plus aucun écran ne lisait ce cache** : `StatsRankingViewModel` (Classements) et `StatsFullViewModel` (Stats) **recalculent** les classements à la demande sur les wars **filtrées par saison** (`filterBySeason` avant `withTrackStats`/`withFullStats`/`withFullTeamStats`), avec les mêmes filtres (host/roster + mode) et la même logique (un item **par roster** via `withFullTeamStats`, **taux de participation** #78 = `warsPlayed × 100 ÷ wars équipe` porté par `RankingItem.PlayerRanking.participationRate`, rule 32). Le cache étant du code mort, `StatsRepository` (interface + impl + module Hilt) **et tout le bloc de calcul de `InitStatsWorker`** ont été **supprimés** ; le worker ne conserve que l'hydratation des saisons. `RankingItem` (interface scellée : `PlayerRanking`/`OpponentRanking`/`TrackRanking`) reste utilisé par les VM stats.
 
 ### 9.11 Écran Statistiques (`screen/stats/full/`, tickets #25 & #36)
 
@@ -888,7 +867,7 @@ Schémas `.proto` en `proto3`, option lite. `WarProto` → `WarTrackProto`(index
 | `firstTimeAskingNotifications` | Boolean | `notifAlreadyRequested` / `setNotifAlreadyRequested` | — |
 | `is24PEnabled` | Boolean | `is24PEnabled` / `set24PEnabled` | false |
 
-`set24PEnabled` déclenche `InitStatsWorker` (recalcul du cache stats pour le nouveau mode).
+`set24PEnabled` déclenche `InitStatsWorker` (hydratation des saisons ; le calcul des stats du mode se fait à la demande dans les VM stats).
 
 ---
 
@@ -934,9 +913,6 @@ Repository **dédié** à la notion de **saison** (#30). Agrège deux sources sa
 - **`fetchSeasons(teamId)`** — synchro RTDB → Room, **quatre appelants** : `FetchUseCase.fetchData` (synchro périodique, après les wars) ; **hydratation eager (#73)** de `InitStatsWorker.doWork` (à chaque démarrage, utilisateurs existants) et de `SignupViewModel` (dans la chaîne de fetch, nouveaux utilisateurs — `InitStatsWorker` ayant déjà tourné à l'onCreate **avant** que le player existe) ; l'écran Debug. Toujours rattachée à l'**équipe** (`team.id`, pas le roster, comme `newAllies`/`users`). **Seeding-si-vide** : si `seasons/{teamId}` est vide en RTDB, délègue à `seedInitialSeasons` (écrit l'historique réel + peuple Room) ; sinon rafraîchit simplement le cache Room depuis RTDB (`clearSeasons()` + `writeSeasons(List<SeasonEntity>)`). **Idempotent** → sûr à appeler à chaque démarrage.
 - **`seedInitialSeasons(teamId)`** — écrit **inconditionnellement** l'historique réel des 3 saisons **en RTDB ET en Room** (l'app est déjà en **saison 3**, S3 laissée **ouverte** `end == null`) : S1 `1749081600000 → 1766275200000` (05/06/2025 → 21/12/2025), S2 `1766361600000 → 1777766400000` (22/12/2025 → 03/05/2026), S3 `1777852800000 → null` (04/05/2026 → en cours), timestamps 00:00 UTC (ms). Une saison commence toujours **le lendemain** de la fin de la précédente. **Deux appelants** : le seeding-si-vide de `fetchSeasons` **et** l'outil de maintenance de l'écran **Debug** (`DebugViewModel.onSeedSeasons`) — le littéral partagé des 6 dates y est donc **légitime** (un seul site de définition, empêche la divergence entre les deux usages, rule 61).
 - **`startNewSeason(teamId)`** — action **leader strict** « Démarrer une nouvelle saison » : lit `getSeasons`, **clôt** la dernière saison en cours (`end == null`) et **ajoute** une nouvelle saison (`number` incrémenté, `end = null`) avec des **bornes « propres » autour de minuit** (règle des bornes) : à partir du **jour du clic** (`System.currentTimeMillis()` → `LocalDate`), `end = ce jour à 23:59` et `start = le lendemain à 00:01` (précision minute). Calcul via **`java.time`** (`Instant.ofEpochMilli(...).atZone(zone).toLocalDate()`, `.atTime(23,59)` / `.plusDays(1).atTime(0,1)` → `.atZone(zone).toInstant().toEpochMilli()`), **dans le fuseau horaire de l'appareil** (`ZoneId.systemDefault()`) — décision utilisateur : les bornes suivent l'heure locale du téléphone (le **seeding**, dates historiques figées à 00:00 UTC, reste inchangé ; seul `startNewSeason` est en local). Pas d'arithmétique brute de millisecondes. Puis écrit le tableau complet **en RTDB (`writeSeasons`) ET en Room** (`clearSeasons` + `writeSeasons`). Irréversible (d'où la confirmation `MKDialog` côté UI). Déclenchée depuis l'**onglet Équipe** du pôle Profil (`TeamProfileViewModel`).
-
-### StatsRepository
-Cache mémoire (cf. §9).
 
 ### RemoteConfigRepository
 `minimumVersion(): Int` — `setMinimumFetchIntervalInSeconds(0)` (toujours frais), `fetch(0)` puis `activate()`, lit la clé string `minimumVersion` (défaut 0). Défauts dans `res/xml/remote_config_defaults.xml` (`minimumVersion = 16`). Utilisé au démarrage pour le gating de version.
@@ -1040,18 +1016,10 @@ Base `worker/MKCoroutineWorker` : abstrait `task()`, `doWork()` l'appelle puis r
 
 | Worker | Type | Rôle |
 |---|---|---|
-| **InitStatsWorker** | one-time (tag `InitStats`) | Recalcule et met en cache les 5 classements de `StatsRepository` |
+| **InitStatsWorker** | one-time (tag `InitStats`) | Hydratation eager des saisons (RTDB → Room) — cf. §9.10 |
 | **UpdateDataWorker** | périodique | `fetchUseCase.fetchData(playerId)` puis notification « Données mises à jour » si `notifEnabled` |
 
-**InitStatsWorker** (`doWork`) : commence par l'**hydratation eager des saisons** (`seasonRepository.fetchSeasons(mkcTeam.id)`, #73 — cf. §9.10), puis lit `mkcPlayer`, `multiRosterEnabled`, `is24PEnabled`, `rosterId`. Filtre les wars :
-- multi-roster : si désactivé, ne garde que `teamHost == rosterId` ;
-- mode : `is24PEnabled ? teamOpponent.size > 1 : teamOpponent.size == 1`.
-
-Puis :
-1. `trackRankList` = `warList.withTrackStats()` → `TrackRanking`.
-2. `playerTrackRankList` = idem filtré par joueur courant.
-3. `playersRankList` = pour chaque joueur, `withFullStats(userId=…)`, conservés si `warsPlayed > 0`, groupés par nom de roster (`Pair(0, rosterName)`, sinon `Pair(1, "Allies")`).
-4. `opponentRankList` / `playerOpponentRankList` = toutes les équipes (hors la sienne) via `withFullTeamStats`, triées par `warsPlayed` desc → `OpponentRanking`.
+**InitStatsWorker** (`doWork`) : **hydratation eager des saisons** (`seasonRepository.fetchSeasons(mkcTeam.id)`, #73 — cf. §9.10) et rien d'autre. Son ancien bloc de précalcul des classements + le cache `StatsRepository` ont été supprimés (#51, code mort : les VM stats recalculent à la demande).
 
 **Planification périodique** : intervalle **24 h**, `setInitialDelay(24 + 4 − HOUR_OF_DAY)` h (vise **~4 h du matin**), contraintes `NetworkType.CONNECTED` + `requiresBatteryNotLow = true` (pas de charge requise), politique `CANCEL_AND_REENQUEUE`, nom unique = `simpleName` du worker. Enregistrée par `RootScreen` (`LaunchedEffect`).
 

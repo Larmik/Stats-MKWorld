@@ -15,7 +15,7 @@ import javax.inject.Singleton
 
 /**
  * Abstraction d'accès à WorkManager pour enfiler des tâches d'arrière-plan ponctuelles
- * (ex. `InitStatsWorker` de recalcul des stats). Interface + module Hilt (convention DI).
+ * (ex. `InitStatsWorker` d'hydratation des saisons). Interface + module Hilt (convention DI).
  */
 interface WorkerRepositoryInterface {
     /**
