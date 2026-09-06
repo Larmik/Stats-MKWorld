@@ -35,8 +35,6 @@ data class Stats(
         "${(it.filter { (it.teamScore ?: 0) > 41 }.size * 100 / it.size)}%"
     }
 
-    val shockCount = averageForMaps.map { it.shockCount }.sum()
-
     // Wars triées chronologiquement (war.id = timestamp). Source UNIQUE de tri pour toutes
     // les stats temporelles (séries, forme récente) — ne pas réintroduire de tri parallèle.
     val chronologicalWars: List<WarDetails> =
@@ -110,25 +108,6 @@ data class Stats(
         }
         return streak
     }
-
-    // ---------------------------------------------------------------------
-    // Lot A — Top6/Bot6 global (12p)
-    // ---------------------------------------------------------------------
-    // Une manche est « Top6 » quand les 6 joueurs de l'équipe occupent les
-    // positions 1..6 (teamScore == 61 : 15+12+10+9+8+7, barème 12p), et « Bot6 »
-    // quand ils occupent 7..12 (teamScore == 21 : 6+5+4+3+2+1). C'est une égalité
-    // EXACTE sur le score d'équipe de la manche — même définition que la table
-    // équipe MapStats.topsTable["Top 6"] / bottomsTable["Bot 6"] (les 6 positions
-    // toutes <= 6, resp. >= 7).
-
-    /** Nombre de manches Top6 (les 6 joueurs en positions 1..6, teamScore == 61). */
-    val top6Count: Int = chronologicalWars
-        .flatMap { it.warTracks }
-        .count { it.teamScore == 61 }
-    /** Nombre de manches Bot6 (les 6 joueurs en positions 7..12, teamScore == 21). */
-    val bot6Count: Int = chronologicalWars
-        .flatMap { it.warTracks }
-        .count { it.teamScore == 21 }
 
     // ---------------------------------------------------------------------
     // Lot B — Meilleures/pires maps par winrate ET par score moyen
@@ -298,35 +277,6 @@ data class Stats(
         .takeIf { it.isNotEmpty() }
         ?.let { list -> list.sumOf { it.score } / list.size }
 
-    // --- Vague 1 : régularité (écart-type ET amplitude min/max des scores) ----
-    private val scoreValues: List<Int> = chronologicalScores.map { it.score }
-
-    /** Écart-type (population) des scores par war ; null si < 2 wars. */
-    val scoreStdDev: Int? = scoreValues
-        .takeIf { it.size >= 2 }
-        ?.let { values ->
-            val mean = values.average()
-            val variance = values.sumOf { (it - mean) * (it - mean) } / values.size
-            Math.round(Math.sqrt(variance)).toInt()
-        }
-
-    /** Amplitude min/max des scores par war (null si aucune war). */
-    val scoreMin: Int? = scoreValues.minOrNull()
-    val scoreMax: Int? = scoreValues.maxOrNull()
-
-    // --- Vague 2 : distribution complète des positions P1→P12 (vue joueur) ---
-    /**
-     * Nombre de manches où le joueur a fini à chaque position (1..12 en 12p,
-     * 1..24 en 24p). Vide hors vue joueur. Étend le principe des tables
-     * individuelles de MapStats à l'ensemble des positions. L'étendue suit le
-     * mode ([is24p]) pour ne pas tronquer les positions 13..24 en 24p.
-     *
-     * NB : le RENDU de cette distribution (histogramme P1→P24, couleurs 24p)
-     * relève du ticket UI dédié — ici on garantit seulement la justesse des
-     * données produites.
-     */
-    val positionDistribution: List<Pair<Int, Int>> = positionDistributionFor(lastN = null)
-
     /**
      * Distribution des positions du joueur sur une FENÊTRE : [lastN] = null (all-time),
      * 5 ou 10 dernières wars (triées chrono). Vide hors vue joueur. Alimente le
@@ -342,12 +292,6 @@ data class Stats(
             val range = if (is24p) 1..24 else 1..12
             range.map { pos -> pos to positions.count { it == pos } }
         }
-    }
-
-    // --- Vague 3 : points perdus en pénalités --------------------------------
-    /** Total des points de pénalité subis par l'équipe hôte sur l'historique. */
-    val penaltyPointsLost: Int = chronologicalWars.sumOf { war ->
-        war.war.penalties.filter { it.teamId == war.war.teamHost }.sumOf { it.amount }
     }
 
 
