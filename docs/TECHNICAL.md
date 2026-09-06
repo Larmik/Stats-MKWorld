@@ -548,8 +548,9 @@ Point d'entrée du calcul d'un bloc `Stats` (stats joueur, équipe, adversaire o
 > → **dénominateurs différents**. En conséquence, la **part de points de la contribution indiv
 > a été alignée sur le total/total** de `computeContributors` (elle n'est **plus** la moyenne
 > war par war `Stats.playerContribution` — cette dernière n'était consommée que par l'ancienne
-> cellule `MKAdvancedStatsCell`/`StatsScreen`, **supprimés #51** ; le champ `Stats.playerContribution`
-> subsiste mais est désormais sans consommateur d'affichage). `computeContributors` calcule `pointsShare` =
+> cellule `MKAdvancedStatsCell`/`StatsScreen` ; **le champ `Stats.playerContribution` a été supprimé
+> comme code mort (#51)**, `computeContributors` étant la source unique de la contribution).
+> `computeContributors` calcule `pointsShare` =
 > `points membre × 100 ÷ Σ points des membres` et `shockShare` =
 > `windowWars.totalShocks(membre) × 100 ÷ windowWars.totalShocks()` sur **la même fenêtre de
 > wars d'équipe** pour tous les membres. La contribution indiv ne s'affiche que pour un
@@ -602,6 +603,18 @@ moyenne par war des points du joueur. Les podiums adversaires de `StatsFullScree
 >   `lessDefeatedTeam` + la data class `TeamStats` + composant
 >   `MKTeamStatsCell`/`MKTeamStatsView` ;
 > - `bestPlayerPosition`/`worstPlayerPosition` (info peu utile : quasi toujours 1 et 12).
+>
+> **Nettoyage symboles morts (#51, 2ᵉ passe) :** propriétés/helpers calculés dont l'unique
+> consommateur d'affichage (cellules `MKAdvancedStatsCell`/`MKMapsRankingCell`/`MKTopBottomCell`,
+> supprimées) avait déjà disparu — **retirés de `Stats`** (aucun autre lecteur, vérifié par
+> analyse d'occurrences sur tout `app/src/main` + tests) : `streaksByOpponent`/`streaksByTrack`
+> (+ helpers `currentStreakOfOutcomes`/`longestStreakOfOutcomes` + data class `StreakStats`),
+> `bestMapByWinrate`/`worstMapByWinrate`, `bestMapByScore`/`worstMapByScore`,
+> `playerContribution`, `averageWinMargin`/`averageLossMargin` (+ helper `warMargins`),
+> `firstHalfAvgPosition`/`secondHalfAvgPosition` (+ helper `halfAveragePosition`),
+> `unbeatenStreak` ; et dans `MapStats` : `indivTopsTable`/`indivBottomsTable`. `trackOutcome`
+> est **conservé** (encore lu par `MapDetailViewModel`). Ces calculs sont trivialement
+> reconstructibles si un futur écran les réaffiche.
 
 | Stat | Comment elle est calculée | Donnée(s) source | Où on la trouve dans l'appli |
 |---|---|---|---|
@@ -614,22 +627,14 @@ moyenne par war des points du joueur. Les podiums adversaires de `StatsFullScree
 | `shockCount` | `Σ averageForMaps.shockCount` (shocks filtrés joueur si `userId != null`) | `averageForMaps` | `MKWarDetailsStatsView` « Shocks/War » (vue circuit + détail adversaire) |
 | `currentStreak` | parcours chronologique inversé des wars (`warScores` triés par `war.war.id` croissant) ; signé (>0 victoires, <0 défaites, 0 aucune) | `warScores`, `WarDetails.outcome()` (12p : `displayedDiff` ; **24p : signe de `scoreMargin(is24p=true)`**) | `MKRecordsCell` « Série en cours » |
 | `bestWinStreak` / `worstLossStreak` | plus longue série consécutive de victoires / de défaites (parcours chronologique) | idem | `MKRecordsCell` « Record de victoires / de défaites » |
-| `streaksByOpponent` | `Map<opponentId, StreakStats>` : séries (courante + records) par adversaire, wars groupées par `teamOpponent` puis triées | `chronologicalWars` | Calculé (base API stats) — surfacé selon besoin |
-| `streaksByTrack` | `Map<trackIndex, StreakStats>` : séries de manches par circuit, via `WarTrackDetails.trackOutcome()` (12p) | `chronologicalWars` warTracks | Calculé (base API stats) |
 | `top6Count` / `bot6Count` | compte brut de manches 12p Top6 (`teamScore == 61`, les 6 joueurs en positions 1..6) resp. Bot6 (`teamScore == 21`, positions 7..12) — égalité EXACTE, même définition que `MapStats.topsTable["Top 6"]` / `bottomsTable["Bot 6"]` | `chronologicalWars` warTracks | `MKRecordsCell` « Nombre de Top6 / Bot6 », lignes conditionnelles (affichées si `> 0`) |
-| `bestMapByWinrate` / `worstMapByWinrate` | max / min `winRate` sur `mapsRankable` (maps ≥ `MIN_RANKING_SAMPLE` = 3 matchs) | `maps` (`TrackStats.winRate`) | `MKMapsRankingCell` |
-| `bestMapByScore` / `worstMapByScore` | max / min `rankingScore` sur `mapsRankable` — `rankingScore` = `playerScore` en **vue joueur** (score du joueur sur le circuit), `teamScore` en vue équipe | `maps` (`TrackStats.playerScore`/`teamScore`) | `MKMapsRankingCell` |
 | `topMapsByWinrate` / `flopMapsByWinrate` / `topMapsByScore` / `flopMapsByScore` | top 3 / flop 3 des maps triées par winrate ou score (seuil ≥ 3). Le tri « par score » utilise `rankingScore` (score joueur en vue joueur, sinon score d'équipe) pour rester cohérent avec la valeur affichée par `MapCell` (position moyenne du joueur en vue joueur) | `mapsRankable` | `MKMapsRankingCell` (double critère, par lignes) |
 | `allTimeForm` | `FormStats` sur **toutes** les wars (`formStats(chronologicalScores, null)`) : base des deltas des fenêtres récentes | `chronologicalScores`, `chronologicalWars` warTracks | `MKRecentFormCell` (colonne « All-time ») |
 | `recentForm5` / `recentForm10` | `FormStats` sur les 5 / 10 **dernières** wars (`chronologicalScores.takeLast(n)`), produites par le même `formStats(...)`. Champs : `winrate`, `averageScore` (points/war), `averagePosition` (vue joueur, position brute moyenne), `averageMapScore` (vue équipe, points/manche), `mapsWonPercent` (teamScore manche > 41), `shocksPerWar` (Σ shocks filtrés joueur / nb wars), `sampleSize`, `requestedSize`, + deltas vs `allTimeForm`. Deltas null pour l'all-time et si un terme manque. `averageScore`/`averageMapScore` restent en **points bruts** ; la conversion en écart (`warScoreToDiff`/`trackScoreToDiff`) et le doublement du delta correspondant en vue équipe se font **à l'affichage** (`MKRecentFormCell`). Sens des deltas géré à l'affichage : winrate/%maps/score → hausse=vert ; position → baisse=vert (inversé) ; shocks → neutre (pas de couleur) | `chronologicalScores`, `chronologicalWars` warTracks | `MKRecentFormCell` (une ligne par indicateur, 3 fenêtres ; icône éclair pour shocks) |
-| `playerContribution` | **vue joueur** : moyenne war par war de `playerScore / scoreHost` (%, 12p) | `chronologicalScores`, `WarDetails.scoreHost` | `MKAdvancedStatsCell` (vue joueur) |
-| `scoreStdDev` | écart-type (population) des scores par war ; null si < 2 wars | `chronologicalScores.score` | `MKAdvancedStatsCell` |
-| `scoreMin` / `scoreMax` | amplitude min/max des scores par war | idem | `MKAdvancedStatsCell` |
-| `positionDistribution` | **vue joueur** : `List<Pair<pos, count>>` sur **1..12 en 12p, 1..24 en 24p** (étendue mode-aware via `Stats.is24p`, ne tronque plus les positions 13..24 en 24p) depuis les `WarPosition` du joueur | `chronologicalWars.tracks` | `MKPositionDistributionCell` (histogramme, vue joueur — rendu couleurs P1→P24 : ticket UI dédié) |
-| `averageWinMargin` / `averageLossMargin` | marge moyenne (écart de score) des victoires / défaites, séparées ; **mode-aware** : `scoreMargin(is24p)` (12p = hôte − adversaire unique ; 24p = hôte − meilleur score adverse depuis `War.scores`, pénalités nettées par équipe) | `chronologicalWars`, `WarDetails.scoreMargin(is24p)` | `MKAdvancedStatsCell` |
-| `firstHalfAvgPosition` / `secondHalfAvgPosition` | **vue joueur** : position moyenne du joueur sur les tracks de la 1ʳᵉ / 2ᵉ moitié de war. Coupure à `tracks.size / 2` par war (war 12 manches → 6/6) | `chronologicalWars.tracks` | `MKAdvancedStatsCell` (vue joueur) |
-| `unbeatenStreak` | série W+T en cours (outcome ≥ 0), variante de `currentStreak` | `chronologicalWars` | `MKAdvancedStatsCell` (« Invaincu depuis ») |
-| `penaltyPointsLost` | Σ des `WarPenalty` de l'équipe hôte sur l'historique | `War.penalties` | `MKAdvancedStatsCell` |
+| `scoreStdDev` | écart-type (population) des scores par war ; null si < 2 wars | `chronologicalScores.score` | Régularité (fenêtre via `FormStats`) |
+| `scoreMin` / `scoreMax` | amplitude min/max des scores par war | idem | Amplitude (fenêtre via `FormStats`) |
+| `positionDistribution` | **vue joueur** : `List<Pair<pos, count>>` sur **1..12 en 12p, 1..24 en 24p** (étendue mode-aware via `Stats.is24p`, ne tronque plus les positions 13..24 en 24p) depuis les `WarPosition` du joueur | `chronologicalWars.tracks` | `MKDistributionCard` (histogramme, vue joueur — rendu couleurs P1→P24 : ticket UI dédié) |
+| `penaltyPointsLost` | Σ des `WarPenalty` de l'équipe hôte sur l'historique | `War.penalties` | Section Records & séries (fenêtre via `FormStats`) |
 
 > **Périmètre 24p (prérequis de calcul, #29) :** le **moteur** de ces nouvelles
 > stats prend désormais en charge le mode 24p là où le calcul l'exige — `outcome`
@@ -665,15 +670,13 @@ adversaires** dédié reste alimenté par `opponentRankList`/`playerOpponentRank
 | `teamScore` | `Σ warTrack.teamScore / list.sizeOrOne()` | `WarTrackDetails.teamScore` | Écran Statistiques de circuit : `MKWarDetailsStatsView` « Moyenne map » (fallback quand `stats == null`, ligne 89) |
 | `playerPosition` | `(Σ playerScoreList / sizeOrOne()).pointsToPosition(is24p)` | `playerScoreList` | Alimente `averagePlayerPosLabel` |
 | `averagePlayerPosLabel` | unique → `"N"` ; sinon `"first - last"` | `playerPosition` | Écran Statistiques de circuit (mode joueur) : `MKWarDetailsStatsView` « Position moyenne » (fallback `mapStats`, ligne 90) |
-| `topsTable` | équipe : `count { positions.count { pos ≤ N } == N }` pour N=6..2 ; indiv : `0` | `WarPosition.position` | Écran Statistiques de circuit : `MKTopBottomCell(indiv=false)` colonne « Tops » (affiché seulement si au moins une valeur > 0) |
-| `bottomsTable` | équipe : `count { positions.count { pos ≥ 13−N } == N }` pour N=6..2 (Bot 6 → ≥ 7 … Bot 2 → ≥ 11) ; indiv : `0` | `WarPosition.position` | Écran Statistiques de circuit : `MKTopBottomCell(indiv=false)` colonne « Bottoms » |
+| `topsTable` | équipe : `count { positions.count { pos ≤ N } == N }` pour N=6..2 ; indiv : `0` | `WarPosition.position` | `ui/stats/MKTopBottomStatsCard.kt` colonne « Tops » (fiches Circuit/Adversaire + section Équipe de `StatsFullScreen` ; lignes vides masquées) |
+| `bottomsTable` | équipe : `count { positions.count { pos ≥ 13−N } == N }` pour N=6..2 (Bot 6 → ≥ 7 … Bot 2 → ≥ 11) ; indiv : `0` | `WarPosition.position` | `ui/stats/MKTopBottomStatsCard.kt` colonne « Bottoms » |
 | `opponentTopsTable` | équipe 12p : positions adverses = **complément** `(1..12) − teamPositions` par manche, puis `count { oppPositions.count { pos ≤ N } == N }` pour N=6..2 ; indiv **ou 24p** : `0` | `WarPosition.position` (complément) | Section **« Top/Bot adversaire »** (`ui/stats/MapStatsSections.kt`) — fiches Adversaire/Circuit ET page Stats équipe (`StatsFullScreen.teamSections`) |
 | `opponentBottomsTable` | idem, `count { oppPositions.count { pos ≥ 13−N } == N }` pour N=6..2 ; indiv **ou 24p** : `0` | `WarPosition.position` (complément) | idem — colonne « Bottoms » de « Top/Bot adversaire » |
-| `indivTopsTable` | indiv : `count { positions.singleOrNull { pos == N }?.playerId == userId }` pour N=1..6 ; équipe : `0` | `WarPosition` du `userId` | Écran Statistiques de circuit (mode joueur) : `MKTopBottomCell(indiv=true)` colonne « Tops » (positions 1→6) |
-| `indivBottomsTable` | idem pour N=7..12 | `WarPosition` du `userId` | Écran Statistiques de circuit (mode joueur) : `MKTopBottomCell(indiv=true)` colonne « Bottoms » (positions 7→12) |
 | `shockCount` | `Σ warTrack.track.shocks.filter { !isIndiv \|\| playerId == userId }.count` | `Shock` | Écran Statistiques de circuit : `MKWarDetailsStatsView` « Shocks » (fallback `mapStats`, ligne 101) |
 
-> Les tables d'équipe (`topsTable`/`bottomsTable`) ne comptent que quand `!isIndiv` (sinon `0`), et inversement pour les tables individuelles : un `MapStats` est soit « équipe », soit « joueur », jamais les deux. Côté UI, ces tables sont rendues par `ui/stats/MKTopBottomStatsCard.kt` (`MapDetailScreen`/`OpponentDetailScreen` et section Équipe de `StatsFullScreen`), qui masque les lignes vides (cf. §9.8 « Filtrage d'affichage »). *(L'ancien `MKTopBottomCell` de `StatsScreen` a été supprimé, #51.)*
+> Les tables d'équipe (`topsTable`/`bottomsTable`) ne comptent que quand `!isIndiv` (sinon `0`). Côté UI, elles sont rendues par `ui/stats/MKTopBottomStatsCard.kt` (`MapDetailScreen`/`OpponentDetailScreen` et section Équipe de `StatsFullScreen`), qui masque les lignes vides (cf. §9.8 « Filtrage d'affichage »). *(Les tables individuelles `indivTopsTable`/`indivBottomsTable` et l'ancien composant `MKTopBottomCell` — seuls consommateurs — ont été supprimés comme code mort, #51.)*
 
 > **Tops/bots adversaire (#64)** : `opponentTopsTable`/`opponentBottomsTable` appliquent la même logique de comptage aux **positions adverses**, dérivées comme le **complément** `(1..12) − teamPositions` des 6 positions de l'équipe hôte sur chaque manche (12p ⇒ 6v6 se partagent 1..12). Neutralisées à `0` en vue individuelle **et** en 24p (le complément n'a de sens qu'en 12p). Rendues via le même composable `TopBottomColumns` dans une 2ᵉ carte « Top/Bot adversaire » (sous « Top/Bot équipe »). Point de contrôle : pour **N=6** l'opponent Top6 == team Bot6 et opponent Bot6 == team Top6 (strict complément) ; pour N=2..5 les tables diffèrent réellement.
 >

@@ -113,66 +113,6 @@ data class Stats(
         return streak
     }
 
-    /**
-     * Séries déclinées par adversaire (id d'opposant = rosterId/teamId) : pour
-     * chaque adversaire, la série en cours, le record de victoires et le record
-     * de défaites, calculés sur ses wars triées chronologiquement.
-     */
-    val streaksByOpponent: Map<String, StreakStats> = chronologicalWars
-        .flatMap { war -> war.war.teamOpponent.map { it to war } }
-        .groupBy({ it.first }, { it.second })
-        .mapValues { (_, wars) ->
-            StreakStats(
-                current = currentStreakOf(wars),
-                bestWin = longestStreak(wars) { it > 0 },
-                worstLoss = longestStreak(wars) { it < 0 }
-            )
-        }
-
-    /**
-     * Séries déclinées par circuit (index de map) : la série de manches
-     * gagnées/perdues sur chaque circuit, triées chronologiquement.
-     */
-    val streaksByTrack: Map<String, StreakStats> = chronologicalWars
-        .flatMap { war -> war.warTracks.map { it to it.trackOutcome() } }
-        .groupBy({ it.first.index.joinToString("-") }, { it.second })
-        .mapValues { (_, outcomes) ->
-            StreakStats(
-                current = currentStreakOfOutcomes(outcomes),
-                bestWin = longestStreakOfOutcomes(outcomes) { it > 0 },
-                worstLoss = longestStreakOfOutcomes(outcomes) { it < 0 }
-            )
-        }
-
-    private fun currentStreakOfOutcomes(outcomes: List<Int>): Int {
-        var streak = 0
-        for (outcome in outcomes.reversed()) {
-            when {
-                outcome == 0 -> if (streak != 0) break
-                streak == 0 -> streak = outcome
-                streak > 0 && outcome > 0 -> streak++
-                streak < 0 && outcome < 0 -> streak--
-                else -> return streak
-            }
-        }
-        return streak
-    }
-
-    private fun longestStreakOfOutcomes(outcomes: List<Int>, predicate: (Int) -> Boolean): Int {
-        var best = 0
-        var current = 0
-        outcomes.forEach { outcome ->
-            when (predicate(outcome)) {
-                true -> {
-                    current++
-                    if (current > best) best = current
-                }
-                else -> current = 0
-            }
-        }
-        return best
-    }
-
     // ---------------------------------------------------------------------
     // Lot A — Top6/Bot6 global (12p)
     // ---------------------------------------------------------------------
@@ -200,18 +140,11 @@ data class Stats(
     // ---------------------------------------------------------------------
     private val mapsRankable: List<TrackStats> = maps.filter { it.totalPlayed >= MIN_RANKING_SAMPLE }
 
-    val bestMapByWinrate: TrackStats? = mapsRankable.maxByOrNull { it.winRate ?: 0 }
-    val worstMapByWinrate: TrackStats? = mapsRankable.minByOrNull { it.winRate ?: 0 }
-
-    // Score d'un circuit pour le classement « par score » : en vue joueur, c'est le
-    // score DU JOUEUR sur ce circuit (playerScore), pas le score d'équipe — le
-    // MapCell affiche déjà la position moyenne du joueur, le tri doit suivre la même
-    // base. En vue équipe, teamScore.
+    // Score d'un circuit pour le classement « par score » : en vue joueur, le score DU
+    // JOUEUR (playerScore, aligné sur la position moyenne affichée par MapCell) ; en vue
+    // équipe, teamScore.
     private val TrackStats.rankingScore: Int
         get() = (if (userId != null) playerScore else teamScore) ?: 0
-
-    val bestMapByScore: TrackStats? = mapsRankable.maxByOrNull { it.rankingScore }
-    val worstMapByScore: TrackStats? = mapsRankable.minByOrNull { it.rankingScore }
 
     /** Top 3 / Flop 3 des maps par winrate (seuil ≥ 3 matchs appliqué). */
     val topMapsByWinrate: List<TrackStats> =
@@ -369,26 +302,6 @@ data class Stats(
         .takeIf { it.isNotEmpty() }
         ?.let { list -> list.sumOf { it.score } / list.size }
 
-    // --- Vague 1 : contribution du joueur à l'équipe (vue joueur only) -------
-    /**
-     * % moyen des points de l'équipe apportés par le joueur : moyenne, war par
-     * war, du ratio playerScore/teamScore (12p). Null hors vue joueur ou si
-     * aucune war exploitable. playerScore = warScores.score (vue joueur) ;
-     * teamScore = points totaux de l'équipe hôte sur la war ([WarDetails.scoreHost]).
-     */
-    val playerContribution: Int? = when (userId) {
-        null -> null
-        else -> chronologicalScores
-            .mapNotNull { warScore ->
-                warScore.war.scoreHost
-                    .takeIf { it > 0 }
-                    ?.let { team -> (warScore.score * 100f) / team }
-            }
-            .takeIf { it.isNotEmpty() }
-            ?.average()
-            ?.let { Math.round(it).toInt() }
-    }
-
     // --- Vague 1 : régularité (écart-type ET amplitude min/max des scores) ----
     private val scoreValues: List<Int> = chronologicalScores.map { it.score }
 
@@ -433,47 +346,6 @@ data class Stats(
             val range = if (is24p) 1..24 else 1..12
             range.map { pos -> pos to positions.count { it == pos } }
         }
-    }
-
-    // --- Vague 2 : marge moyenne de victoire / défaite (gains/défaites séparés)
-    /** Marge moyenne (écart de score) lors des victoires ; null si aucune. */
-    val averageWinMargin: Int? = warMargins { it > 0 }
-    /** Marge moyenne (écart de score) lors des défaites ; null si aucune. */
-    val averageLossMargin: Int? = warMargins { it < 0 }
-
-    private fun warMargins(predicate: (Int) -> Boolean): Int? = chronologicalWars
-        .map { it.scoreMargin(is24p = is24p) }
-        .filter { predicate(it) }
-        .takeIf { it.isNotEmpty() }
-        ?.let { margins -> margins.sumOf { kotlin.math.abs(it) } / margins.size }
-
-    // --- Vague 3 : perf 1ʳᵉ vs 2ᵉ moitié de war (positions moyennes) ---------
-    // N'a de sens qu'en vue joueur (position du joueur). Index de track ordonné.
-    val firstHalfAvgPosition: Int? = halfAveragePosition(firstHalf = true)
-    val secondHalfAvgPosition: Int? = halfAveragePosition(firstHalf = false)
-
-    private fun halfAveragePosition(firstHalf: Boolean): Int? {
-        if (userId == null) return null
-        val positions = chronologicalWars.flatMap { war ->
-            val tracks = war.war.tracks
-            val mid = tracks.size / 2
-            val half = if (firstHalf) tracks.take(mid) else tracks.drop(mid)
-            half.mapNotNull { track -> track.positions.firstOrNull { it.playerId == userId }?.position }
-        }
-        return positions.takeIf { it.isNotEmpty() }?.let { it.sum() / it.size }
-    }
-
-    // --- Vague 3 : invaincu depuis (série W+T en cours) ----------------------
-    /**
-     * Nombre de wars consécutives sans défaite (victoires + nuls) les plus
-     * récentes. Variante de [currentStreak] : compte outcome >= 0.
-     */
-    val unbeatenStreak: Int = run {
-        var streak = 0
-        for (war in chronologicalWars.reversed()) {
-            if (war.outcome() >= 0) streak++ else break
-        }
-        streak
     }
 
     // --- Vague 3 : points perdus en pénalités --------------------------------
@@ -533,18 +405,6 @@ data class FormStats(
 class WarScore(
     val war: WarDetails,
     val score: Int
-)
-
-/**
- * Séries associées à une entité (globale, adversaire ou circuit) :
- * - [current] série en cours signée (>0 victoires, <0 défaites, 0 aucune) ;
- * - [bestWin] record de série de victoires ;
- * - [worstLoss] record de série de défaites.
- */
-data class StreakStats(
-    val current: Int,
-    val bestWin: Int,
-    val worstLoss: Int
 )
 
 data class TrackStats(
@@ -675,19 +535,6 @@ class MapStats(
         }
     }
 
-    // Tables individuelles : nombre de manches où le joueur a fini à la position N.
-    val indivTopsTable = (1..6).map { n ->
-        n.toString() to when {
-            isIndiv -> list.count { it.warTrack.track.positions.singleOrNull { pos -> pos.position == n }?.playerId == userId }
-            else -> 0
-        }
-    }
-    val indivBottomsTable = (7..12).map { n ->
-        n.toString() to when {
-            isIndiv -> list.count { it.warTrack.track.positions.singleOrNull { pos -> pos.position == n }?.playerId == userId }
-            else -> 0
-        }
-    }
     val shockCount = list.map {
         it.warTrack.track.shocks?.filter { (isIndiv && it.playerId == userId) || !isIndiv }
             ?.sumOf { it.count }

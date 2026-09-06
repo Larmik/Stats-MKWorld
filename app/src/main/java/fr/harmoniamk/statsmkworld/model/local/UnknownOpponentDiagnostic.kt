@@ -31,11 +31,7 @@ data class UnresolvedOpponent(
     val rawId: String,
     /** Issue de la résolution. */
     val resolution: OpponentResolution,
-) {
-    /** Réattribuable si l'équipe source est retrouvée en ligne ET qu'au moins un candidat mkworld existe. */
-    val isReattributable: Boolean
-        get() = resolution is OpponentResolution.Found && resolution.mkworldCandidates.isNotEmpty()
-}
+)
 
 sealed class OpponentResolution {
 
