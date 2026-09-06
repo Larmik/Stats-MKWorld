@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -50,12 +49,9 @@ class TeamProfileViewModel @AssistedInject constructor(
     }
 
     /**
-     * Membre d'une équipe pour l'affichage (ligne `lrow` de la maquette) : identité,
-     * **rattachement au roster** ([rosterId]/[rosterName], pour regrouper par roster
-     * quand l'équipe en a plusieurs), couleur du roster (pastille), [role] **réel**
-     * (valeur du nœud Firebase `users` : 2 = Leader, 1 = Admin, 0 = Membre — un allié
-     * vaut toujours 0), et [avatarUrl] (photo MKCentral déjà préfixée, ou `null` →
-     * fallback initiales).
+     * Membre pour l'affichage : identité, rattachement roster ([rosterId]/[rosterName]),
+     * couleur du roster, [role] réel (nœud Firebase `users` : 2=Leader, 1=Admin, 0=Membre),
+     * [avatarUrl] (photo MKCentral préfixée, ou `null` → initiales).
      */
     data class MemberInfo(
         val playerId: String,
@@ -73,10 +69,9 @@ class TeamProfileViewModel @AssistedInject constructor(
         val allyList: List<PlayerEntity> = listOf(),
         val playerList: List<MKCPlayer> = listOf(),
         val addAllyVisible: Boolean = false,
-        // Leader STRICT (role == 2, pas admin) de mon équipe : conditionne l'action
-        // « Démarrer une nouvelle saison » (#30).
+        // Leader strict (role == 2) de mon équipe : conditionne l'action « nouvelle saison » (#30).
         val newSeasonVisible: Boolean = false,
-        // true = affiche le dialog de confirmation « nouvelle saison » (irréversible).
+        // Affiche le dialog de confirmation « nouvelle saison » (irréversible).
         val newSeasonDialog: Boolean = false
     )
 
@@ -138,14 +133,8 @@ class TeamProfileViewModel @AssistedInject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
     /**
-     * Membres de l'équipe (rosters mkworld) pour l'affichage : rôle **réel** + avatar.
-     *
-     * - **Rôle** : pour mon équipe (`id == "me"`), la valeur du nœud Firebase `users`
-     *   (2 = Leader, 1 = Admin, 0 = Membre) — vraie source, comme la règle « changer
-     *   le rôle ». Pour une équipe publique (pas de nœud `users` côté MKCentral), on
-     *   retombe sur les indicateurs MKCentral leader/manager du roster.
-     * - **Avatar** : photo MKCentral du joueur (`getPlayer`), récupérée en parallèle,
-     *   préfixée par l'hôte MKCentral ; `null` si absente (fallback initiales).
+     * Membres des rosters mkworld : rôle réel (nœud Firebase `users` pour mon équipe, sinon
+     * indicateurs MKCentral leader/manager) + avatar MKCentral résolu en parallèle (rule 30).
      */
     private suspend fun resolveMembers(team: MKCTeam): List<MemberInfo> = coroutineScope {
         val rosters = team.rosters.filter { it.game == "mkworld" }

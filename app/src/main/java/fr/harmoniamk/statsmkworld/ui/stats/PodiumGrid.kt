@@ -6,13 +6,9 @@ import androidx.compose.ui.graphics.Color
 import fr.harmoniamk.statsmkworld.ui.Colors
 
 /**
- * Ajoute à un `LazyListScope` les lignes de 3 `PodiumCell` correspondant à [items]
- * (grille de classement, 3 par ligne). [onClick] reçoit l'entrée métier cliquée.
- *
- * **Mutualisé** (rule 16) entre l'écran Classements (`StatsRankingScreen`) et les
- * classements complets filtrés des fiches détail Adversaire/Circuit (#27). [contentColor]
- * pilote la couleur du texte : BLANC par défaut, les cellules étant désormais posées dans
- * un cadre transparent-noir sur tous les écrans (#50 pt.7).
+ * Ajoute à un `LazyListScope` les lignes de 3 `PodiumCell` pour [items] (grille de classement).
+ * [onClick] reçoit l'entrée métier cliquée. Mutualisé (rule 16) entre Classements et fiches
+ * Adversaire/Circuit (#27). [contentColor] = couleur du texte (blanc par défaut).
  */
 fun <T> LazyListScope.podiumRows(
     items: List<Pair<PodiumEntry, T>>,

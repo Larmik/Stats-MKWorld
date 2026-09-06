@@ -23,13 +23,9 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 /**
- * Histogramme de répartition des positions (P1→P12 en 12p), **mutualisé** entre l'écran
- * Statistiques (`StatsFullScreen`, distribution du joueur) et les fiches détail
- * Adversaire/Circuit (#27, distribution d'équipe). Rendu identique à la maquette : barres
- * ancrées sur une ligne de base commune (hauteur de zone fixe → labels alignés), couleur
- * par position ([Int.positionColor]).
- *
- * [distribution] = liste (position → nombre d'occurrences), quel qu'en soit le scope.
+ * Histogramme de répartition des positions (P1→P12 en 12p), mutualisé (#27) entre Statistiques
+ * et fiches Adversaire/Circuit. Barres ancrées sur une ligne de base commune, couleur par
+ * position ([Int.positionColor]). [distribution] = liste (position → occurrences).
  */
 @Composable
 fun ColumnScope.DistributionChart(distribution: List<Pair<Int, Int>>) {

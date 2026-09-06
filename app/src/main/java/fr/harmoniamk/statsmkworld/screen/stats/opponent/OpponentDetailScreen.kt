@@ -56,18 +56,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Fiche détail ADVERSAIRE (`opp` du prototype, pôle Classements #27). Sélecteur
- * Indiv/Équipe (rule 11 : état réactif du VM, l'écran reste monté). Sections :
- * 1. Sélecteur Indiv/Équipe + en-tête (logo/tag, nb de confrontations, dernière rencontre) ;
- * 2. Bilan face à eux (winrate + V/N/D + barre) ;
- * 3. 5 dernières face à eux (pastilles V/N/D) ;
- * 4. Séries & scores (série en cours, record, différence de score moyenne, shocks obtenus) ;
- * 5. Circuits contre eux (podium Top3/Flop3 par score moyen + « Voir le classement en entier ») ;
- * 6. Sections détaillées (répartition des positions, Top/Bot 2→6), scopées à l'adversaire
- *    et mutualisées avec l'écran Statistiques (rule 16) ;
- * 7. Historique des wars → WarDetailsScreen.
- *
- * Rendu pixel-perfect maquette (rules 13/15), cartes/podiums partagés, données réelles.
+ * Fiche détail adversaire (#27). Sélecteur Indiv/Équipe (rule 11 : état réactif du VM). Sections :
+ * en-tête, Bilan face à eux, 5 dernières, Séries & scores, Circuits/Pilotes/Baggeurs contre eux
+ * (podiums), sections détaillées mutualisées (rule 16) et historique des wars → WarDetailsScreen.
+ * Rules 13/15/16.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -134,7 +126,7 @@ fun OpponentDetailScreen(
                     if (state.recentOutcomes.isNotEmpty()) item {
                         StatCard(title = stringResource(R.string.opponent_detail_recent)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                // Plus récente à droite (ordre chronologique) — cohérent avec la maquette.
+                                // Plus récente à droite (chronologique).
                                 state.recentOutcomes.forEach { OutcomeChipSmall(it) }
                             }
                         }
@@ -149,13 +141,11 @@ fun OpponentDetailScreen(
                             flop = state.flopTracks.map { it.toPodiumEntry(state.isIndiv) },
                             onSeeAll = onTracksRanking,
                             selector = {
-                                // Sélecteur de tri (sur carte sombre → onDark).
                                 TracksSortSelector(state.tracksSort, onDark = true, onSelect = viewModel::onTracksSortSelected)
                             }
                         )
                     }
-                    // 5bis. Pilotes contre eux (podium Top3/Flop3 par score perso moyen) —
-                    //       mode ÉQUIPE uniquement (#67, modèle de « Circuits contre eux »).
+                    // 5bis. Pilotes contre eux — mode Équipe uniquement (#67).
                     if (!state.isIndiv && state.pilots.isNotEmpty()) item {
                         PodiumSectionCard(
                             title = stringResource(R.string.opponent_detail_pilots),
@@ -164,8 +154,7 @@ fun OpponentDetailScreen(
                             onSeeAll = onPilotsRanking
                         )
                     }
-                    // 5ter. Baggeurs contre eux (podium Top3/Flop3 par part de shocks, #69) —
-                    //       mode ÉQUIPE uniquement (même dispositif que « Pilotes contre eux »).
+                    // 5ter. Baggeurs contre eux (part de shocks, #69) — mode Équipe uniquement.
                     if (!state.isIndiv && state.baggers.isNotEmpty()) item {
                         PodiumSectionCard(
                             title = stringResource(R.string.opponent_detail_baggers),
@@ -174,8 +163,7 @@ fun OpponentDetailScreen(
                             onSeeAll = onBaggersRanking
                         )
                     }
-                    // 6. Sections détaillées mutualisées (mêmes calculs que StatsFullScreen,
-                    //    scopées à cet adversaire) : répartition des positions, Top/Bot 2→6.
+                    // 6. Sections détaillées mutualisées, scopées à cet adversaire (répartition, Top/Bot 2→6).
                     state.mapStats?.let { mapStatsDetailSections(it) }
                     // 7. Historique des wars → WarDetailsScreen.
                     if (state.history.isNotEmpty()) {
@@ -239,15 +227,12 @@ private fun streakColor(streak: Int) = when {
 }
 
 /**
- * Section « Séries & scores » — grille **3 lignes × 2 cellules** (points 3/4) :
- * - L1 : Score/diff (mode-aware) · Série en cours
- * - L2 : Record série de victoires · Record série de défaites
- * - L3 : Shocks obtenus · Shocks/War — chacune avec l'**illustration shock** à gauche,
- *   centrée verticalement (uniquement sur cette ligne).
+ * Section « Séries & scores » — grille 3×2 : L1 score/diff (mode-aware) · série en cours ;
+ * L2 records de séries V/D ; L3 shocks obtenus · shocks/war (illustration shock à gauche).
  */
 @Composable
 private fun StreaksScoresCard(state: OpponentDetailViewModel.State, stats: Stats) {
-    // Cellule score : Indiv = score moyen du joueur ; Équipe = différence moyenne signée.
+    // Cellule score : Indiv = score moyen joueur ; Équipe = différence moyenne signée.
     val scoreValue: String
     val scoreColor: Color
     val scoreLabel: String
@@ -321,9 +306,8 @@ private fun RowScope.ShockCell(label: String, value: String) {
 }
 
 /**
- * Sélecteur de tri des circuits (Occurrences / Winrate / Score moy.) — mêmes libellés que
- * l'écran Classements (rule 15/16). [onDark] = sur carte sombre (fiche) ; false = fond clair
- * (écran complet).
+ * Sélecteur de tri des circuits (Occurrences / Winrate / Score moy., rules 15/16). [onDark] =
+ * carte sombre (fiche) ; false = fond clair (écran complet).
  */
 @Composable
 internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int) -> Unit) {
@@ -340,12 +324,8 @@ internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int)
 }
 
 /**
- * Circuit → entrée de podium (illustration + nb joué + winrate + score/position). En vue
- * ÉQUIPE : écart d'équipe (`trackScoreToDiff`), libellé « Score ». En vue INDIVIDUELLE :
- * **position moyenne** (points perso convertis via `pointsToPosition`), libellé « Position
- * moyenne » — même convention que le podium circuits de `StatsFullScreen` et le podium
- * pilotes de la fiche circuit (#67, correction du libellé/valeur en indiv). Partagé avec
- * le classement complet [OpponentTracksRankingScreen].
+ * Circuit → entrée de podium. Vue Équipe : écart d'équipe (`trackScoreToDiff`) ; vue Indiv :
+ * position moyenne (`pointsToPosition`) — #67. Partagé avec [OpponentTracksRankingScreen].
  */
 internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
     val map = map?.firstOrNull()
@@ -366,17 +346,14 @@ internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
 }
 
 /**
- * Pilote → entrée de podium (photo/initiales + **Nb joué / Winrate / Position moy.**), calculé
- * UNIQUEMENT sur les manches jouées contre CET adversaire (`computePilots` scopé aux wars vs
- * l'opposant). Trois métriques alignées sur le podium pilotes de la fiche circuit (#67 retour) —
- * pas de score. Partagé entre la fiche (podium Top3/Flop3) et le classement complet
- * [OpponentPilotsRankingScreen].
+ * Pilote → entrée de podium : Nb joué / Winrate / Position moy. (#67), sur les manches contre
+ * cet adversaire. Partagé fiche ↔ [OpponentPilotsRankingScreen].
  */
 internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
         name = player.name.displayName,
         initials = initialsOf(player.name.displayName),
-        // Photo de profil MKCentral si dispo (#50 pt.4), sinon initiales sur pastille colorée.
+        // Photo si dispo (#50 pt.4), sinon initiales.
         avatar = player.avatar,
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
@@ -387,9 +364,8 @@ internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
     )
 
 /**
- * Baggeur → entrée de podium (#69) : photo/initiales + **Nb joué / Shocks / % shocks**.
- * Part de shocks = ses shocks / total shocks de l'équipe face à eux (total/total). Partagé
- * entre la fiche (podium Top3/Flop3) et le classement complet [OpponentBaggersRankingScreen].
+ * Baggeur → entrée de podium (#69) : Nb joué / Shocks / % shocks (ses shocks / total équipe face
+ * à eux). Partagé fiche ↔ [OpponentBaggersRankingScreen].
  */
 internal fun OpponentDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(

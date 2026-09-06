@@ -25,10 +25,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Classement COMPLET des pilotes sur un circuit (« Voir le classement en entier » de la
- * fiche circuit #27), du meilleur au pire score perso moyen. Réutilise le même
- * [MapDetailViewModel] (même clé de nav → mêmes données) et la grille `podiumRows`
- * mutualisée (rule 16), texte des cellules en NOIR sur le fond clair du BaseScreen.
+ * Classement complet des pilotes sur un circuit (#27), par score perso moyen décroissant.
+ * Réutilise le même [MapDetailViewModel] et la grille `podiumRows` (rule 16).
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -53,8 +51,7 @@ fun MapPilotsRankingScreen(
                     .padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Cellules en BLANC dans un cadre transparent-noir (#50 pt.7) —
-                // harmonisation avec les autres écrans.
+                // Cellules blanches sur cadre transparent-noir (#50 pt.7).
                 podiumRows(
                     items = state.pilots.map { pilot -> pilot.toPodiumEntry() to pilot },
                     contentColor = Colors.white

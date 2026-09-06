@@ -25,10 +25,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Classement COMPLET des pilotes ayant joué contre un adversaire (« Voir le classement en
- * entier » de la section « Pilotes contre eux » #67), du meilleur au pire score perso moyen.
- * Réutilise le même [OpponentDetailViewModel] (même clé de nav → mêmes données) et la grille
- * `podiumRows` mutualisée (rule 16), cellules en BLANC sur cadre transparent-noir.
+ * Classement complet des pilotes contre un adversaire (#67), par score perso moyen décroissant.
+ * Réutilise le même [OpponentDetailViewModel] et la grille `podiumRows` (rule 16).
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable

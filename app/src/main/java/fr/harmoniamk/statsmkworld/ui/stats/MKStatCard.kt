@@ -35,11 +35,8 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 val StatCardRadius = RoundedCornerShape(6.dp)
 
 /**
- * Carte translucide standard du pôle Stats (fond sombre, bordure blanche, radius 6,
- * padding 13) — style « card » de la maquette 5 pôles. Titre en eyebrow optionnel.
- *
- * Extrait de `StatsFullScreen` (rule 16 : mutualisé dès un 2ᵉ écran consommateur — ici
- * les fiches Adversaire/Circuit #27).
+ * Carte translucide standard du pôle Stats (fond sombre, bordure blanche, radius 6). Titre en
+ * eyebrow optionnel. Mutualisée (rule 16) avec les fiches Adversaire/Circuit (#27).
  */
 @Composable
 fun StatCard(
@@ -83,13 +80,9 @@ fun Eyebrow(text: String) {
 }
 
 /**
- * En-tête de fiche : pastille (avatar/logo ou initiales/tag) + nom (Bungee) + sous-titre.
- *
- * - [logo] = URL MKCentral **déjà préfixée** (`https://mkcentral.com…`) → avatar affiché ;
- *   sinon pastille [color]. Les appelants disposant d'un chemin brut (TeamEntity.logo) le
- *   préfixent AVANT de le passer.
- * - [pictureRes] = illustration (circuit) prioritaire sur [logo].
- * - [fallbackText] = texte de la pastille quand ni logo ni picture (initiales joueur / tag).
+ * En-tête de fiche : pastille + nom (Bungee) + sous-titre. [logo] = URL MKCentral déjà préfixée
+ * (sinon pastille [color]) ; [pictureRes] (circuit) prioritaire sur [logo] ; [fallbackText] =
+ * texte de la pastille sans logo/picture (initiales joueur / tag).
  */
 @Composable
 fun StatHeaderCard(

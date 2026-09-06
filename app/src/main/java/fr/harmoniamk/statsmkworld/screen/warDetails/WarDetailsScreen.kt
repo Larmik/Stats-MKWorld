@@ -24,22 +24,10 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarScoreCard
 import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
 
 /**
- * Détail d'une **war terminée** (pôle Wars, écran `wardetails` de la maquette 5 pôles,
- * ticket #48). Écran-frère de `CurrentWarScreen` : il en réutilise les composants de résumé
- * partagés ([WarScoreCard], [WarTracksSection] — rule 16). Rendu pixel-perfect (rules 13/15).
- *
- * Structure (maquette) :
- * 1. **Carte score** hôte VS adversaire(s) ([WarScoreCard], sans sous-titre — war terminée).
- * 2. **Classement joueurs** ([WarPlayerRankingCard]) : tuiles nom + points, classées par
- *    points décroissants.
- * 3. Deux **boutons** (`MKButton` à icône) : « Générer le Tab (PDF) » (→ EditTab, **12 j / 1v1
- *    uniquement** — masqué en 24 j) et « Voir l'adversaire » (→ fiche adversaire).
- * 4. **Courses jouées · N** ([WarTracksSection]) : grille des courses, chacune → TrackDetails.
- *
- * Écran du **graphe racine** (poussé par-dessus WarList / CurrentWar / fiche adversaire) →
- * **pas de bottombar**, aucune marge basse requise (rule 17).
- *
- * Nom/tag = roster (rule 12) : résolus côté ViewModel (avatar équipe, nom/tag du roster).
+ * Détail d'une war terminée (#48), écran-frère de `CurrentWarScreen` dont il réutilise les
+ * composants ([WarScoreCard], [WarTracksSection], rule 16) : carte score, classement joueurs,
+ * boutons « Tab (PDF) » (12p uniquement) / « Voir l'adversaire », courses jouées. Graphe racine
+ * → pas de bottombar (rule 17). Nom/tag = roster (rule 12).
  */
 @Composable
 fun WarDetailsScreen(

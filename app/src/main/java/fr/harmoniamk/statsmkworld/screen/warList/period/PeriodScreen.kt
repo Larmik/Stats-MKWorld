@@ -49,13 +49,9 @@ import fr.harmoniamk.statsmkworld.ui.stats.initialsOf
 import java.util.Date
 
 /**
- * Écran « Voir par période » (#80) — aide à la composition des line-ups. Deux sélecteurs
- * de dates (plage `[dateA, dateB]`, semée sur la saison en cours), puis deux onglets
- * (`MKSegmentedSelector`) : historique des wars (`WarCell`) et classement des joueurs de la
- * période (`PodiumRow`/`MKPodiumCell` réutilisés). 12p uniquement, données réelles (rule 13).
- *
- * Écran **hors prototype** (ajout à l'epic, cf. ticket) : pas de critère de conformité
- * structurelle maquette, mais rendu pixel-perfect en réutilisant les composants existants.
+ * Écran « Voir par période » (#80) — aide à la composition des line-ups. Plage `[dateA, dateB]`
+ * (semée sur la saison en cours) + deux onglets : historique (`WarCell`) et classement des
+ * joueurs de la période (`PodiumRow`). 12p uniquement. Hors prototype.
  */
 @Composable
 fun PeriodScreen(
@@ -146,9 +142,8 @@ private fun WarsTab(wars: List<WarDetails>, onWarDetailsClick: (WarDetails) -> U
 }
 
 /**
- * Onglet Joueurs : classement des joueurs de la période (nb wars, taux de participation en
- * ligne dédiée, score moyen par war, shocks) via la cellule podium mutualisée
- * (`PodiumRow`/`MKPodiumCell`, rules 15/16), 3 par ligne.
+ * Onglet Joueurs : classement de la période (nb wars, taux de participation, score moyen,
+ * shocks) via la cellule podium mutualisée (`PodiumRow`, rule 16), 3 par ligne.
  */
 @Composable
 private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
@@ -158,7 +153,7 @@ private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
     ) {
         // Clé de ligne stable (String primitive, rule 10) : concat des ids de la ligne.
         items(players.chunked(3), key = { row -> row.joinToString("-") { it.player.id } }) { row ->
-            // PodiumRow est une extension de ColumnScope → l'appeler dans un Column.
+            // PodiumRow est une extension de ColumnScope.
             Column {
                 PodiumRow(
                     entries = row.map { it.toPodiumEntry() },
@@ -169,12 +164,7 @@ private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
     }
 }
 
-/**
- * Adapte un agrégat joueur en `PodiumEntry` (médaillon + stats), libellés #80. Le taux de
- * participation est une **ligne dédiée** (`participation_rate_short` → « X % ») — même
- * présentation que la cellule de classement joueur de #78/#81 (`StatsRankingScreen`), pas
- * un % entre parenthèses accolé au nb de wars.
- */
+/** Adapte un agrégat joueur en `PodiumEntry` (médaillon + stats), taux de participation en ligne dédiée (#80). */
 @Composable
 private fun PeriodViewModel.PlayerPeriodStats.toPodiumEntry(): PodiumEntry = PodiumEntry(
     name = player.name.displayName,
@@ -189,9 +179,8 @@ private fun PeriodViewModel.PlayerPeriodStats.toPodiumEntry(): PodiumEntry = Pod
 )
 
 /**
- * Deux champs de date cliquables (Du / Au) ouvrant un `DatePickerDialog` Material3 (pas de
- * composant date maison — écart maquette documenté, rule 13). Chaque validation remonte la
- * plage complète au VM (`dateA ≤ dateB` borné côté VM).
+ * Deux champs Du / Au ouvrant un `DatePickerDialog` Material3 (écart maquette documenté, rule 13).
+ * Chaque validation remonte la plage au VM (`dateA ≤ dateB` borné côté VM).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

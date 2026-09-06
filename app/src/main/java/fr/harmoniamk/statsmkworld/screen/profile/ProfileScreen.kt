@@ -37,18 +37,9 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import kotlinx.coroutines.launch
 
 /**
- * Pôle **Profil** (ticket #28) — profil unique à **onglets fusionnés Joueur / Équipe**
- * (écran `profile` du prototype, cf. `docs/PROTOTYPE_UX.md`). Un seul écran, un seul
- * `BaseScreen`, un segmented partagé ([MKSegmentedSelector]) bascule dynamiquement
- * entre les deux onglets (état interne réactif, sans re-navigation — rule 11/14).
- *
- * Le contenu de chaque onglet **réutilise** le contenu existant des fiches profil :
- * - onglet Joueur → [PlayerProfileContent] (identité, infos, équipe, réglages,
- *   règles métier ally/rôle, entrée Debug) ;
- * - onglet Équipe → [TeamProfileContent] (logo, roster, alliés + ajout).
- *
- * Les deux profils portent sur « moi » / mon équipe (`id = "me"`). Le sheet « Ajouter
- * un ally » est hébergé ici (au-dessus des deux onglets).
+ * Pôle Profil (#28) — onglets fusionnés Joueur / Équipe (segmented partagé, sans re-navigation,
+ * rule 11/14). Chaque onglet réutilise [PlayerProfileContent] / [TeamProfileContent] sur « moi »
+ * (`id = "me"`). Le sheet « Ajouter un ally » est hébergé ici.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -67,8 +58,7 @@ fun ProfileScreen(
         creationCallback = { factory: TeamProfileViewModel.Factory -> factory.create("me") }
     )
 
-    // 0 = Joueur, 1 = Équipe. État interne réactif (rule 11) : le segmented bascule
-    // l'onglet sans re-navigation. Survit à la rotation.
+    // 0 = Joueur, 1 = Équipe. État réactif (rule 11) survivant à la rotation.
     var tabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)

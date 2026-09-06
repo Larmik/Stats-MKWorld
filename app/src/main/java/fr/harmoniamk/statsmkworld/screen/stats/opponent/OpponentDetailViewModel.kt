@@ -35,22 +35,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
 /**
- * Fiche détail d'un ADVERSAIRE (`opp` du prototype, pôle Classements #27). Deux modes
- * (rule 11, sélecteur `MKSegmentedSelector`) : **Équipe** (toutes les wars face à cet
- * adversaire) et **Individuel** (les wars du joueur courant face à eux). Le mode est un
- * état interne réactif ([isIndiv]) semé par [initialUserId] (non-null ⇒ Individuel) ; le
- * toggle bascule les données SANS re-navigation (l'écran reste monté). 12p uniquement.
- *
- * Le [teamId] est un identifiant d'opposant (rosterId, ou teamId legacy). L'affichage du
- * nom/tag suit le roster ciblé et l'avatar l'équipe parente (rule 12).
+ * Fiche détail d'un adversaire (#27). Deux modes (rule 11) : Équipe (toutes les wars face à eux)
+ * et Individuel (celles du joueur courant). Mode = état réactif ([isIndiv]) semé par
+ * [initialUserId], toggle sans re-nav. 12p uniquement. [teamId] = opposant (rosterId ou teamId
+ * legacy) ; nom/tag du roster, avatar de l'équipe parente (rule 12).
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel(assistedFactory = OpponentDetailViewModel.Factory::class)
 class OpponentDetailViewModel @AssistedInject constructor(
     @Assisted val teamId: String,
     @Assisted("initialUserId") val initialUserId: String?,
-    // Saison sélectionnée à l'origine (#91 pt.5) : null = tout l'historique. Filtre les wars
-    // AVANT tout calcul pour que la fiche soit filtrée comme le classement d'origine.
+    // Saison d'origine (#91 pt.5) : null = tout l'historique. Filtre les wars avant tout calcul.
     @Assisted val seasonNumber: Int?,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface
@@ -68,19 +63,18 @@ class OpponentDetailViewModel @AssistedInject constructor(
     /** Un pilote de l'équipe classé face à cet adversaire (12p). */
     data class PilotRanking(
         val player: PlayerEntity,
-        // Score perso moyen (points) face à l'adversaire — critère de TRI et valeur affichée.
+        // Score perso moyen (points) — critère de tri et valeur affichée.
         val averageScore: Int,
-        // Position moyenne réelle (1..12) face à l'adversaire — info secondaire affichée.
+        // Position moyenne réelle (1..12).
         val averagePosition: Int,
-        // Nombre de manches courues face à l'adversaire (seuil MIN_RANKING_SAMPLE).
+        // Nb de manches courues (seuil MIN_RANKING_SAMPLE).
         val played: Int,
         val winrate: Int
     )
 
     /**
-     * Un baggeur de l'équipe classé face à cet adversaire (#69) : part de shocks = ses
-     * shocks / total shocks de l'équipe face à eux (ratio TOTAL/TOTAL — critère de TRI et
-     * valeur affichée). [shockCount] = nb de shocks obtenus ; [played] = nb de wars vs eux.
+     * Un baggeur classé face à cet adversaire (#69) : shockShare = ses shocks / total shocks
+     * équipe face à eux (critère de tri et valeur affichée). [shockCount] = nb shocks ; [played] = nb wars.
      */
     data class BaggerRanking(
         val player: PlayerEntity,
@@ -116,11 +110,9 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val allTracks: List<TrackStats> = listOf(),
         // Stats de manche (Top/Bot 2→6, distribution) scopées à l'adversaire et au mode.
         val mapStats: MapStats? = null,
-        // Classement des pilotes (MEMBRES) ayant joué contre cet adversaire (du meilleur au
-        // pire score perso moyen) — affiché en mode ÉQUIPE uniquement (#67).
+        // Pilotes (membres) face à cet adversaire — mode Équipe uniquement (#67).
         val pilots: List<PilotRanking> = listOf(),
-        // Classement des baggeurs (MEMBRES) face à cet adversaire par part de shocks (#69),
-        // affiché en mode ÉQUIPE uniquement.
+        // Baggeurs (membres) par part de shocks (#69) — mode Équipe uniquement.
         val baggers: List<BaggerRanking> = listOf(),
         // Historique des wars face à eux (plus récente en premier).
         val history: List<WarDetails> = listOf()
@@ -134,13 +126,11 @@ class OpponentDetailViewModel @AssistedInject constructor(
 
     val state = databaseRepository.getWars()
         .combine(databaseRepository.getSeasons()) { wars, seasons ->
-            // Filtre saison (#91 pt.5) appliqué AVANT tout : la fiche est filtrée comme le
-            // classement d'origine. `seasonNumber` null → tout l'historique (aucun filtre).
+            // Filtre saison (#91 pt.5) avant tout ; `seasonNumber` null → tout l'historique.
             val season = seasonNumber?.let { number -> seasons.firstOrNull { it.number == number } }
             wars.filterBySeason(season)
                 .filter { it.hasTeam(teamId) }
-                // 12p uniquement (24p relève d'un ticket dédié).
-                .filter { it.teamOpponent.size == 1 }
+                .filter { it.teamOpponent.size == 1 }  // 12p uniquement
                 .map { WarDetails(War(it)) }
         }
         .combine(isIndiv) { wars, indiv -> wars to indiv }
@@ -160,9 +150,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
         }
         .combine(tracksSort) { data, sort -> data to sort }
         .map { (data, sort) ->
-            // Calcul CPU-lourd (MapStats, tri des circuits, classements pilotes/baggeurs,
-            // historique) déporté sur `Dispatchers.Default` via `withContext` — et NON `flowOn`
-            // (cf. rule 21, #73). `getTeam` (Room) n'est pas main-affine, sûr sur Default.
+            // Calcul CPU-lourd déporté sur `Dispatchers.Default` — pas `flowOn` (rule 21, #73).
             withContext(Dispatchers.Default) {
             val (wars, indiv, userIdAndStats) = data
             val (userId, stats) = userIdAndStats
@@ -203,15 +191,12 @@ class OpponentDetailViewModel @AssistedInject constructor(
             val warsPlayed = chronological.size.takeIf { it > 0 } ?: 1
             val shocksPerWar = shockCount.toFloat() / warsPlayed
 
-            // Circuits triés selon le sélecteur (Occurrences / Winrate / Score moy.), même
-            // logique que l'écran Classements (rule 16). Score = perso en indiv, équipe sinon.
+            // Circuits triés selon le sélecteur (rule 16). Score = perso en indiv, équipe sinon.
             val sortedTracks = stats.maps.sortedWith(trackComparator(sort, userId != null))
 
-            // Classement des pilotes (MEMBRES) face à cet adversaire — indépendant du mode
-            // (classement par pilote), affiché en mode ÉQUIPE uniquement côté UI (#67).
+            // Pilotes (membres) face à cet adversaire, mode Équipe côté UI (#67).
             val pilots = computePilots(chronological)
-            // Classement des baggeurs (MEMBRES) face à cet adversaire (#69) — part de shocks
-            // (total/total), indépendant du mode, affiché en mode ÉQUIPE uniquement côté UI.
+            // Baggeurs (membres, #69) : part de shocks (total/total), mode Équipe côté UI.
             val baggers = computeBaggers(chronological)
 
             _state.value.copy(
@@ -251,21 +236,14 @@ class OpponentDetailViewModel @AssistedInject constructor(
     }
 
     /**
-     * Classement des pilotes de l'équipe face à cet adversaire — **calculé UNIQUEMENT sur les
-     * wars jouées contre cet adversaire** ([wars] est déjà filtré `hasTeam(teamId)` + 12p, cf.
-     * #67 round 3). Pour CHAQUE pilote, on n'agrège que SES manches dans ces wars :
-     * - `played` = **nombre de wars** (distinctes) vs cet adversaire où le pilote a couru ;
-     * - `winrate` = manches en top 6 (points > 6) / total de SES manches vs cet adversaire ;
-     * - `averagePosition` = position moyenne sur SES manches vs cet adversaire ;
-     * - `averageScore` = score perso moyen (critère de tri).
-     *
-     * **Alliés exclus** (rosterId « -1 ») : membres uniquement. **Seuil** [Stats.MIN_RANKING_SAMPLE]
-     * (en manches) aligné sur les autres rankings. Rule 32 : logique mono-consommateur, non extraite.
+     * Pilotes de l'équipe face à cet adversaire, sur les seules wars vs eux ([wars] déjà filtré
+     * `hasTeam(teamId)` + 12p, #67). `played` = nb de wars distinctes où le pilote a couru ;
+     * `winrate` = manches en top 6 / total ; `averageScore` = critère de tri. Alliés exclus
+     * (rosterId « -1 »). Seuil [Stats.MIN_RANKING_SAMPLE].
      */
     private suspend fun computePilots(wars: List<WarDetails>): List<PilotRanking> {
         if (wars.isEmpty()) return listOf()
-        // Positions du pilote (manches) ET nb de wars distinctes, agrégées SUR CES WARS
-        // (déjà restreintes à l'adversaire) — pas de fuite hors-adversaire possible.
+        // Positions (manches) et nb de wars distinctes par pilote, sur ces wars (déjà scopées).
         val positionsByPlayer = mutableMapOf<String, MutableList<Int>>()
         val warsByPlayer = mutableMapOf<String, Int>()
         wars.forEach { war ->
@@ -304,17 +282,14 @@ class OpponentDetailViewModel @AssistedInject constructor(
     }
 
     /**
-     * Classement des baggeurs de l'équipe face à cet adversaire (#69) — **calculé sur les
-     * wars jouées contre cet adversaire** ([wars] déjà filtré `hasTeam(teamId)` + 12p). Part
-     * de shocks de chaque membre = ses shocks / total shocks de l'ÉQUIPE face à eux (ratio
-     * TOTAL/TOTAL, jamais une moyenne). **Alliés exclus** (rosterId « -1 ») ; on ne garde que
-     * les baggeurs ayant au moins un shock (0 % n'a pas de sens dans un classement de bag).
-     * Rule 32 : logique mono-consommateur, non extraite.
+     * Baggeurs de l'équipe face à cet adversaire (#69), sur les wars vs eux ([wars] déjà filtré
+     * `hasTeam(teamId)` + 12p). shockShare = ses shocks / total shocks équipe face à eux
+     * (total/total). Alliés exclus (rosterId « -1 ») ; baggeurs avec ≥ 1 shock seulement.
      */
     private suspend fun computeBaggers(wars: List<WarDetails>): List<BaggerRanking> {
         val totalTeamShocks = wars.totalShocks().takeIf { it > 0 } ?: return listOf()
         val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
-        // Nb de wars vs cet adversaire où chaque joueur a couru (pour l'info « joué »).
+        // Nb de wars vs cet adversaire par joueur (info « joué »).
         val warsByPlayer = mutableMapOf<String, Int>()
         wars.forEach { war ->
             war.war.tracks
@@ -340,11 +315,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
             .sortedByDescending { it.shockShare }
     }
 
-    /**
-     * Comparateur de circuits selon le tri courant (décroissant) — aligné sur l'écran
-     * Classements : Occurrences = nb de fois joué, Winrate = winRate, Score = score perso
-     * (indiv) ou d'équipe (équipe).
-     */
+    /** Comparateur de circuits (décroissant) : Occurrences / Winrate / Score (perso en indiv, équipe sinon). */
     private fun trackComparator(sort: SortType, isIndiv: Boolean): Comparator<TrackStats> = when (sort) {
         SortType.WINRATE -> compareByDescending { it.winRate ?: 0 }
         SortType.AVERAGE -> compareByDescending { (if (isIndiv) it.playerScore else it.teamScore) ?: 0 }

@@ -38,26 +38,21 @@ class WelcomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     data class State(
-        // Chargement de la zone de données du dashboard : true au 1er chargement ET remis à
-        // true au changement de saison (#73) pour un ressenti immédiat pendant le compute
-        // off-main ; le compute émet ensuite `loading = false`.
+        // true au 1er chargement ET au changement de saison (#73), pour un ressenti immédiat
+        // pendant le compute off-main ; le compute émet ensuite `loading = false`.
         val loading: Boolean = true,
         val teamName: String? = null,
         val teamLogo: String? = null,
-        // Couleur d'équipe (ARGB, source MKCentral) : fond de la pastille joueur.
         val teamColor: Long? = null,
         val playerName: String? = null,
         val playerLogo: String? = null,
         val currentWar: War? = null,
-        // Les deux vues de stats 12p sont calculées une seule fois ; le segmenté
-        // Moi/Équipe du dashboard choisit celle affichée (pas de recalcul au switch).
+        // Deux vues de stats 12p calculées d'emblée ; le segmenté Moi/Équipe choisit sans recalcul.
         val playerStats: Stats? = null,
         val teamStats: Stats? = null,
-        // 3 dernières wars 12p (résultats récents → WarDetails). Réutilise WarCell.
+        // 3 dernières wars 12p (résultats récents).
         val recentResults: List<WarDetails> = listOf(),
-        // Filtre par saison (#70) : liste des saisons + saison sélectionnée (null = tout
-        // l'historique, défaut = saison en cours). Filtre TOUS les agrégats du dashboard
-        // (momentum, séries, records, chiffres clés, derniers résultats).
+        // Filtre par saison (#70) : liste + sélection (null = tout, défaut = saison en cours).
         val seasons: List<SeasonEntity> = listOf(),
         val selectedSeasonNumber: Int? = null
     )
@@ -81,30 +76,20 @@ class WelcomeViewModel @Inject constructor(
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
-                // Saisons (cache Room) observées en Flow réactif (#73) : le dropdown apparaît
-                // dès que l'hydratation eager (InitStatsWorker/Signup) écrit les saisons, sans
-                // redémarrage. Liste pour le dropdown + résolution de la saison effective
+                // Saisons observées en Flow réactif (#73) ; résolution de la saison effective
                 // (défaut = saison en cours ; null = tout l'historique).
                 val activeSeason = when (seasonFilter) {
                     is SeasonFilter.AllTime -> null
                     is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
                     is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
                 }
-                // Firebase (potentiellement main-affine) résolu sur le collecteur, HORS du
-                // `withContext(Default)` — cf. rule 21 (#73).
+                // Firebase résolu sur le collecteur, HORS du `withContext(Default)` (rule 21, #73).
                 val currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty())
-                // TOUTE la partie CPU-lourde du dashboard est déportée sur `Dispatchers.Default`
-                // via `withContext` (et NON `flowOn`, qui, sur une chaîne à `mergeWith`/
-                // `flattenMerge`, laissait gagner l'état vide → dropdown disparu). Cela inclut
-                // la construction de `wars` — `map { WarDetails(War(it)) }` reparse toutes les
-                // manches/scores de chaque war, coûteux (#73) — en plus des agrégats
-                // `withFullStats` et de `recentResults`. `seasons`/`activeSeason` et les
-                // métadonnées équipe/joueur restent sur le collecteur (légers, `seasons` peuplé).
+                // Toute la partie CPU-lourde (construction de `wars`, `withFullStats`,
+                // `recentResults`) déportée sur `Dispatchers.Default` via `withContext` (pas
+                // `flowOn` — rule 21, #73) ; métadonnées et `seasons` restent sur le collecteur.
                 val (teamStats, playerStats, recentResults) = withContext(Dispatchers.Default) {
-                    // Dashboard 12p uniquement (le support 24p relève de tickets dédiés) : wars à
-                    // un seul adversaire. Filtre par SAISON (#70) appliqué en premier ⇒ momentum,
-                    // séries, records, chiffres clés et derniers résultats reflètent la saison
-                    // choisie (ou tout l'historique en mode « Tout l'historique »).
+                    // Dashboard 12p uniquement, filtre par saison (#70) appliqué en premier.
                     val wars = databaseRepository.getWars()
                         .firstOrNull()
                         ?.filterBySeason(activeSeason)
@@ -114,8 +99,7 @@ class WelcomeViewModel @Inject constructor(
                         ?.filter { it.war.teamOpponent.size == 1 }
                         ?.sortedByDescending { it.war.id }
                         .orEmpty()
-                    // Vue équipe (userId = null) et vue joueur (userId = id MKCentral du joueur
-                    // courant) calculées d'emblée, sur les wars de la saison.
+                    // Vues équipe (userId = null) et joueur calculées d'emblée sur les wars de la saison.
                     val teamStats = wars.takeIf { it.isNotEmpty() }
                         ?.withFullStats(databaseRepository, is24p = false)
                         ?.firstOrNull()
@@ -145,9 +129,8 @@ class WelcomeViewModel @Inject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 
-    /** Sélection de saison depuis l'UI : `number` null = tout l'historique. Pose `loading`
-     * IMMÉDIATEMENT (via `_state`, mergé dans `state`) pour un ressenti instantané pendant le
-     * compute off-main (#73) ; la branche `combine` émet ensuite `loading = false`. */
+    /** Sélection de saison (null = tout l'historique). Pose `loading` immédiatement (#73) ; le
+     * `combine` émet ensuite `loading = false`. */
     fun onSeasonSelected(number: Int?) {
         _state.value = _state.value.copy(loading = true)
         _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
@@ -158,8 +141,7 @@ class WelcomeViewModel @Inject constructor(
             .mapNotNull { it.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() }
             .flatMapLatest { firebaseRepository.listenToCurrentWar(it) }
             .onEach {
-                // Réhydrate le DataStore du créateur si celui-ci est vide, pour
-                // qu'il retrouve ses droits d'édition sur la war courante.
+                // Réhydrate le DataStore du créateur si vide (restaure ses droits d'édition).
                 firebaseRepository.restoreCurrentWarIfHost(it)
                 _state.value = state.value.copy(currentWar = it)
             }

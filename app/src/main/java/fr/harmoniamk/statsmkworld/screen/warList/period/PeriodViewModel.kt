@@ -21,14 +21,9 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 /**
- * ViewModel de l'écran « Voir par période » (#80) : aide à la composition des line-ups.
- *
- * Filtre les wars de l'équipe (roster hôte, **12p uniquement** — cohérent avec #37/#78)
- * dont le timestamp (`War.id`, epoch ms) tombe dans `[dateA, dateB]`, puis produit
- * l'historique (onglet Wars) et un classement des joueurs de la période (onglet Joueurs).
- *
- * Logique **mono-consommateur** → portée dans le VM (rule 32), pas dans `FetchUseCase`.
- * Lectures one-shot (`firstOrNull`) et `Flow` Room streaming (rule 30).
+ * ViewModel de « Voir par période » (#80). Filtre les wars de l'équipe (roster hôte, 12p) dont
+ * le timestamp (`War.id`, epoch ms) tombe dans `[dateA, dateB]`, produit l'historique et le
+ * classement des joueurs de la période. Logique mono-consommateur → dans le VM (rule 32).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -39,10 +34,9 @@ class PeriodViewModel @Inject constructor(
 ) : ViewModel() {
 
     /**
-     * Agrégat par joueur sur la période. [warsPlayed] = nb de wars de la période où le
-     * joueur a joué ; [participationRate] = `warsPlayed × 100 / nb wars équipe de la période`
-     * (#78, garde-fou dénominateur nul → 0 %) ; [averageScore] = `somme des points du joueur
-     * / warsPlayed` (moyenne PAR WAR, décidée #80) ; [shockCount] = cumul des shocks.
+     * Agrégat par joueur sur la période : [warsPlayed] (wars jouées), [participationRate]
+     * (`warsPlayed × 100 / nb wars équipe`, 0 % si dénominateur nul), [averageScore] (points /
+     * warsPlayed, moyenne par war, #80), [shockCount] (cumul des shocks).
      */
     data class PlayerPeriodStats(
         val player: PlayerEntity,
@@ -71,8 +65,8 @@ class PeriodViewModel @Inject constructor(
         val rosterId = dataStoreRepository.mkcPlayer.firstOrNull()
             ?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
 
-        // Bornes par défaut = saison en cours (borne haute plafonnée à aujourd'hui). Une fois
-        // la plage semée, on garde la sélection utilisateur (élargie/rétrécie).
+        // Bornes par défaut = saison en cours (borne haute plafonnée à aujourd'hui), puis
+        // sélection utilisateur une fois la plage semée.
         val effectiveRange = range ?: run {
             val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()
             val currentSeason = seasons.lastOrNull { it.end == null } ?: seasons.maxByOrNull { it.number }
@@ -83,8 +77,7 @@ class PeriodViewModel @Inject constructor(
         }
         val (dateA, dateB) = effectiveRange
 
-        // 12p only (teamOpponent.size == 1, comme #78) + roster hôte + plage de dates
-        // (sur le `war.id` brut, epoch ms — pas la string formatée).
+        // 12p only + roster hôte + plage de dates (sur le `war.id` brut, epoch ms).
         val periodWars = warEntities
             .filter { it.teamOpponent.size == 1 }
             .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
@@ -94,9 +87,8 @@ class PeriodViewModel @Inject constructor(
 
         val warDetails = periodWars.map { WarDetails(it) }
 
-        // Agrégats par joueur : une passe unique par war via withPlayersList (source de vérité
-        // score/shocks/présence). Un joueur avec trackPlayed > 0 « a joué » cette war → cohérent
-        // avec la somme de points agrégée. Dénominateur participation = nb wars équipe période.
+        // Agrégats par joueur via withPlayersList (score/shocks/présence). trackPlayed > 0 = « a
+        // joué » la war. Dénominateur participation = nb wars équipe de la période.
         val teamWarsCount = periodWars.size
         val scoreSum = HashMap<String, Int>()
         val shockSum = HashMap<String, Int>()

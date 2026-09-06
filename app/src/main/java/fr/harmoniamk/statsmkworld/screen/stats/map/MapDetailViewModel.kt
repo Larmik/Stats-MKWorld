@@ -31,21 +31,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
 /**
- * Fiche détail d'un CIRCUIT (`map` du prototype, pôle Classements #27). Deux modes
- * (rule 11, `MKSegmentedSelector`) : **Équipe** (toutes les manches jouées sur ce circuit)
- * et **Individuel** (les manches du joueur courant). Le mode est un état interne réactif
- * ([isIndiv]) semé par [initialUserId] ; le toggle bascule les données SANS re-navigation.
- * 12p uniquement.
- *
- * [trackIndex] identifie le circuit (liste d'index de map — 1 pour un circuit classique).
+ * Fiche détail d'un circuit (#27). Deux modes (rule 11) : Équipe (toutes les manches) et Individuel
+ * (celles du joueur courant). Mode = état réactif ([isIndiv]) semé par [initialUserId], toggle sans
+ * re-nav. 12p uniquement. [trackIndex] identifie le circuit.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel(assistedFactory = MapDetailViewModel.Factory::class)
 class MapDetailViewModel @AssistedInject constructor(
     @Assisted val trackIndex: List<Int>,
     @Assisted("initialUserId") val initialUserId: String?,
-    // Saison sélectionnée à l'origine (#91 pt.5) : null = tout l'historique. Filtre les wars
-    // AVANT tout calcul pour que la fiche soit filtrée comme le classement d'origine.
+    // Saison d'origine (#91 pt.5) : null = tout l'historique. Filtre les wars avant tout calcul.
     @Assisted val seasonNumber: Int?,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface
@@ -63,19 +58,18 @@ class MapDetailViewModel @AssistedInject constructor(
     /** Un pilote de l'équipe classé sur ce circuit. */
     data class PilotRanking(
         val player: PlayerEntity,
-        // Score perso moyen (points) sur le circuit — critère de TRI **et** valeur affichée.
+        // Score perso moyen (points) — critère de tri et valeur affichée.
         val averageScore: Int,
-        // Position moyenne réelle (1..12) sur le circuit — info secondaire affichée.
+        // Position moyenne réelle (1..12).
         val averagePosition: Int,
-        // Nombre de manches courues par le pilote sur ce circuit (seuil MIN_RANKING_SAMPLE).
+        // Nb de manches courues (seuil MIN_RANKING_SAMPLE).
         val played: Int,
         val winrate: Int
     )
 
     /**
-     * Un baggeur de l'équipe classé sur ce circuit (#69) : part de shocks = ses shocks sur
-     * ce circuit / total shocks de l'ÉQUIPE sur ce circuit (ratio TOTAL/TOTAL — critère de
-     * TRI et valeur affichée). [shockCount] = nb de shocks ; [played] = nb de manches courues.
+     * Un baggeur classé sur ce circuit (#69) : shockShare = ses shocks / total shocks équipe sur
+     * ce circuit (critère de tri et valeur affichée). [shockCount] = nb shocks ; [played] = nb manches.
      */
     data class BaggerRanking(
         val player: PlayerEntity,
@@ -87,10 +81,9 @@ class MapDetailViewModel @AssistedInject constructor(
     /** Un adversaire rencontré sur ce circuit (12p, opposant unique). */
     data class OpponentRanking(
         val team: TeamEntity,
-        // Score moyen de l'ÉQUIPE sur le circuit face à cet adversaire — critère de TRI et
-        // valeur affichée (via `trackScoreToDiff` à l'affichage).
+        // Score moyen d'équipe face à cet adversaire — critère de tri et valeur affichée (`trackScoreToDiff`).
         val averageTeamScore: Int,
-        // Nombre de manches jouées sur ce circuit contre cet adversaire (seuil MIN_RANKING_SAMPLE).
+        // Nb de manches contre cet adversaire (seuil MIN_RANKING_SAMPLE).
         val played: Int,
         val winrate: Int
     )
@@ -100,20 +93,16 @@ class MapDetailViewModel @AssistedInject constructor(
         val isIndiv: Boolean = false,
         val maps: List<Maps> = listOf(),
         val mapStats: MapStats? = null,
-        // « Scores moyens » — indépendants du mode (point 4) :
-        // score moyen de l'ÉQUIPE et position moyenne du JOUEUR courant sur ce circuit.
+        // « Scores moyens » indépendants du mode : score équipe + position du joueur courant.
         val teamScore: Int = 0,
         val playerPositionLabel: String = "-",
-        // Nombre de shocks obtenus — DYNAMIQUE (suit le mode Indiv/Équipe).
+        // Shocks obtenus — suit le mode Indiv/Équipe.
         val shockCount: Int = 0,
-        // Classement des pilotes sur ce circuit (du meilleur au pire score moyen), MEMBRES
-        // uniquement (alliés exclus).
+        // Pilotes classés (membres uniquement), indépendant du mode.
         val pilots: List<PilotRanking> = listOf(),
-        // Classement des baggeurs sur ce circuit par part de shocks (#69), MEMBRES uniquement,
-        // indépendant du mode (affiché en mode ÉQUIPE côté UI).
+        // Baggeurs par part de shocks (#69), membres uniquement.
         val baggers: List<BaggerRanking> = listOf(),
-        // Classement des adversaires rencontrés sur ce circuit (du meilleur au pire score
-        // moyen de l'équipe face à eux) — indépendant du mode.
+        // Adversaires rencontrés, indépendant du mode.
         val opponents: List<OpponentRanking> = listOf()
     )
 
@@ -124,26 +113,21 @@ class MapDetailViewModel @AssistedInject constructor(
 
     val state = databaseRepository.getWars()
         .combine(databaseRepository.getSeasons()) { wars, seasons ->
-            // Filtre saison (#91 pt.5) appliqué AVANT tout : la fiche est filtrée comme le
-            // classement d'origine. `seasonNumber` null → tout l'historique (aucun filtre).
+            // Filtre saison (#91 pt.5) avant tout ; `seasonNumber` null → tout l'historique.
             val season = seasonNumber?.let { number -> seasons.firstOrNull { it.number == number } }
             wars.filterBySeason(season)
-                // 12p uniquement (24p relève d'un ticket dédié).
-                .filter { it.teamOpponent.size == 1 }
+                .filter { it.teamOpponent.size == 1 }  // 12p uniquement
                 .map { WarDetails(War(it)) }
         }
         .combine(isIndiv) { warDetails, indiv -> warDetails to indiv }
         .map { (warDetails, indiv) ->
-            // Joueur courant : toujours résolu (nécessaire pour la position moyenne du
-            // JOUEUR affichée en permanence dans « Scores moyens », point 4). En mode
-            // Équipe, il ne scope pas les sections (userId de scope = null).
+            // Joueur courant toujours résolu (position moyenne joueur affichée en permanence) ;
+            // en mode Équipe il ne scope pas les sections (scope = null).
             val currentUserId = dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
-            // Calcul CPU-lourd (MapStats, classements pilotes/baggeurs/adversaires) déporté sur
-            // `Dispatchers.Default` via `withContext` — et NON `flowOn` (cf. rule 21, #73).
+            // Calcul CPU-lourd déporté sur `Dispatchers.Default` — pas `flowOn` (rule 21, #73).
             withContext(Dispatchers.Default) {
             val scopeUserId = if (indiv) currentUserId else null
-            // Manches jouées sur ce circuit (toutes les manches, pour le scope équipe et le
-            // classement pilotes ; en indiv on ne garde que celles où le joueur a couru).
+            // Toutes les manches du circuit (scope équipe + pilotes) ; en indiv, filtrées ensuite.
             val allTrackDetails = mutableListOf<MapDetails>()
             warDetails.forEach { war ->
                 war.warTracks.filter { it.index == trackKey }.forEach { track ->
@@ -160,8 +144,7 @@ class MapDetailViewModel @AssistedInject constructor(
                 // Sections détaillées (distribution/Top-Bot) + shocks : scopées au mode.
                 val mapStats = MapStats(list = scopedDetails, userId = scopeUserId, is24p = false)
                 val maps = allTrackDetails.first().warTrack.track.index.map { Maps.entries[it.toInt()] }
-                // « Scores moyens » figés (point 4) : score d'ÉQUIPE + position du JOUEUR
-                // courant, calculés sur TOUTES les manches (indépendants du mode).
+                // « Scores moyens » figés : score équipe + position joueur, sur toutes les manches.
                 val teamMapStats = MapStats(list = allTrackDetails, userId = currentUserId, is24p = false)
                 _state.value.copy(
                     loading = false,
@@ -173,14 +156,11 @@ class MapDetailViewModel @AssistedInject constructor(
                         ?.let { teamMapStats.averagePlayerPosLabel }
                         ?: (teamMapStats.teamAveragePosition?.toString() ?: "-"),
                     shockCount = mapStats.shockCount,
-                    // Classement des pilotes : toutes les manches, MEMBRES uniquement (alliés
-                    // exclus), indépendant du mode (classement par pilote).
+                    // Pilotes : toutes les manches, membres uniquement.
                     pilots = computePilots(allTrackDetails),
-                    // Classement des baggeurs sur ce circuit (#69) : part de shocks (total/total),
-                    // toutes les manches, MEMBRES uniquement, indépendant du mode.
+                    // Baggeurs (#69) : part de shocks (total/total), membres uniquement.
                     baggers = computeBaggers(allTrackDetails),
-                    // Classement des adversaires rencontrés sur ce circuit (toutes les manches),
-                    // indépendant du mode (classement par adversaire).
+                    // Adversaires rencontrés, toutes les manches.
                     opponents = computeOpponents(allTrackDetails)
                 )
             }
@@ -195,12 +175,9 @@ class MapDetailViewModel @AssistedInject constructor(
     }
 
     /**
-     * Classement des pilotes de l'équipe sur ce circuit, **du meilleur au pire score perso
-     * moyen** (points 12p) — critère de tri ET valeur affichée (transparence). Winrate perso
-     * = manches en top 6 (points > 6) / total. Nom résolu via le cache local des joueurs.
-     * **Alliés exclus** (rosterId « -1 ») : seuls les MEMBRES figurent. **Seuil**
-     * [Stats.MIN_RANKING_SAMPLE] : un pilote avec trop peu de manches sur ce circuit ne fausse
-     * pas le classement (aligné sur les autres rankings).
+     * Pilotes de l'équipe sur ce circuit, triés par score perso moyen décroissant. Winrate =
+     * manches en top 6 (points > 6) / total. Alliés exclus (rosterId « -1 »). Seuil
+     * [Stats.MIN_RANKING_SAMPLE] pour ne pas fausser le classement.
      */
     private suspend fun computePilots(details: List<MapDetails>): List<PilotRanking> {
         val positionsByPlayer = details
@@ -232,15 +209,13 @@ class MapDetailViewModel @AssistedInject constructor(
     }
 
     /**
-     * Classement des baggeurs de l'équipe sur ce circuit (#69) : part de shocks de chaque
-     * membre = ses shocks sur ce circuit / total shocks de l'ÉQUIPE sur ce circuit (ratio
-     * TOTAL/TOTAL, jamais une moyenne). **Alliés exclus** (rosterId « -1 ») ; on ne garde que
-     * les baggeurs ayant au moins un shock. Rule 32 : logique mono-consommateur, non extraite.
+     * Baggeurs de l'équipe sur ce circuit (#69) : shockShare = ses shocks / total shocks équipe
+     * (total/total). Alliés exclus (rosterId « -1 »), baggeurs avec ≥ 1 shock seulement.
      */
     private suspend fun computeBaggers(details: List<MapDetails>): List<BaggerRanking> {
         val allShocks = details.flatMap { it.warTrack.track.shocks.orEmpty() }
         val totalTeamShocks = allShocks.sumOf { it.count }.takeIf { it > 0 } ?: return listOf()
-        // Nb de manches courues par chaque joueur sur ce circuit (info « joué »).
+        // Nb de manches courues par joueur.
         val runsByPlayer = details
             .flatMap { it.warTrack.track.positions }
             .groupingBy { it.playerId }
@@ -267,15 +242,12 @@ class MapDetailViewModel @AssistedInject constructor(
     }
 
     /**
-     * Classement des adversaires rencontrés sur ce circuit (12p, opposant unique), **du
-     * meilleur au pire score moyen d'équipe** face à eux — critère de tri ET valeur affichée
-     * (via `trackScoreToDiff` à l'affichage, transparence). Winrate = manches gagnées
-     * (`trackOutcome > 0`) / total. Nom/tag du roster + logo de l'équipe parente résolus via
-     * le cache local (rule 12, adversaire non résolu dégradé en « Équipe inconnue »).
-     * **Seuil** [Stats.MIN_RANKING_SAMPLE] aligné sur le classement pilotes.
+     * Adversaires rencontrés sur ce circuit (12p), triés par score moyen d'équipe décroissant.
+     * Winrate = manches gagnées (`trackOutcome > 0`) / total. Rule 12 (non résolu → « Équipe
+     * inconnue »). Seuil [Stats.MIN_RANKING_SAMPLE].
      */
     private suspend fun computeOpponents(details: List<MapDetails>): List<OpponentRanking> {
-        // 12p : chaque war a un opposant unique. On groupe les manches du circuit par opposant.
+        // 12p : opposant unique par war → groupe les manches du circuit par opposant.
         val tracksByOpponent = details
             .mapNotNull { detail -> detail.war.war.teamOpponent.firstOrNull()?.let { it to detail.warTrack } }
             .groupBy({ it.first }, { it.second })

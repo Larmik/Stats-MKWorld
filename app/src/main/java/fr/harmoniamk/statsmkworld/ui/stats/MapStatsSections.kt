@@ -8,19 +8,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Sections « détaillées » d'une sélection de manches ([MapStats]), **mutualisées** par
- * les fiches détail Adversaire (scopé adversaire) et Circuit (scopé circuit) — #27. Elles
- * reprennent les mêmes calculs/rendus que l'écran Statistiques (`StatsFullScreen`) :
- *
- * 1. **Répartition des positions** — histogramme P1→P12 ([DistributionChart]) + pied
- *    Top6/Bot6 ([DistributionFooter]), sur les positions du joueur (indiv) ou de l'ÉQUIPE ;
- * 2. **Top / Bot** — compteurs Top 2→6 et Bot 2→6 ([TopBottomColumns]).
- *
- * (Les shocks ne sont PLUS une section autonome : ils sont intégrés à « Séries & scores »
- * de la fiche adversaire / aux « Scores moyens » de la fiche circuit.)
- *
- * Chaque bloc est ajouté comme un `item` distinct (espacement vertical du LazyColumn hôte
- * conservé). Rien n'est ajouté si la sélection est vide.
+ * Sections détaillées d'une sélection de manches ([MapStats]), mutualisées (#27) par les fiches
+ * Adversaire et Circuit (mêmes rendus que `StatsFullScreen`) : répartition des positions
+ * (histogramme + pied Top6/Bot6) et Top/Bot 2→6. Chaque bloc = un `item`. Rien si la sélection est vide.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 fun LazyListScope.mapStatsDetailSections(mapStats: MapStats) {
@@ -32,16 +22,14 @@ fun LazyListScope.mapStatsDetailSections(mapStats: MapStats) {
         }
     }
 
-    // Top/Bot 5→2 (compteurs d'ÉQUIPE) — masqué si aucune ligne affichable (N=6 retirée +
-    // zéros masqués, #64).
+    // Top/Bot 5→2 équipe — masqué si aucune ligne affichable (#64).
     if (hasDisplayableTopBottom(mapStats.topsTable, mapStats.bottomsTable)) item {
         StatCard(title = stringResource(R.string.stats_top_bottom_team_title)) {
             TopBottomColumns(tops = mapStats.topsTable, bottoms = mapStats.bottomsTable)
         }
     }
 
-    // Top/Bot 5→2 de l'ADVERSAIRE (complément des positions, 12p/vue équipe uniquement —
-    // les tables sont neutralisées à 0 sinon) — masqué si aucune ligne affichable.
+    // Top/Bot 5→2 adversaire (12p/vue équipe uniquement) — masqué si aucune ligne affichable.
     if (hasDisplayableTopBottom(mapStats.opponentTopsTable, mapStats.opponentBottomsTable)) item {
         StatCard(title = stringResource(R.string.stats_top_bottom_opponent_title)) {
             TopBottomColumns(tops = mapStats.opponentTopsTable, bottoms = mapStats.opponentBottomsTable)
