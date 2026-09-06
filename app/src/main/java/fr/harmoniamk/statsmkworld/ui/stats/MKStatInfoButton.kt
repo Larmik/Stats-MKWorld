@@ -34,8 +34,7 @@ import fr.harmoniamk.statsmkworld.ui.MKDialog
  * Réutilisé par toutes les sections de stats (rule 16). L'écran RÉELLEMENT rendu du
  * pôle Stats est [fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen] : ses
  * sections « Indicateurs / Détails équipe » (`IndicatorsCard`) et « Records & séries »
- * (`RecordsTilesCard`) émettent ce bouton sur CHAQUE tuile via `MetricTile.info`. Il est
- * aussi câblé dans le chemin legacy `MKWarDetailsStatsView` et `MKRecentFormCell`.
+ * (`RecordsTilesCard`) émettent ce bouton sur CHAQUE tuile via `MetricTile.info`.
  */
 @Composable
 fun MKStatInfoButton(title: String, message: String, modifier: Modifier = Modifier) {

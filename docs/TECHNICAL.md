@@ -161,7 +161,7 @@ when {
 
 ### Graphe `RootScreen.kt`
 
-`NavHost` avec transitions slide (700 ms). Les objets complexes (`WarDetails`, `WarTrackDetails`, `StatsType`) transitent par `savedStateHandle` plutôt que par la route (ils sont `Parcelable`/`Serializable`). `RootScreen` enregistre aussi la tâche périodique `UpdateDataWorker` dans un `LaunchedEffect`.
+`NavHost` avec transitions slide (700 ms). Les objets complexes (`WarDetails`, `WarTrackDetails`) transitent par `savedStateHandle` plutôt que par la route (ils sont `Parcelable`/`Serializable`). `StatsType` (`screen/stats/StatsType.kt`) n'est **plus** transporté par `savedStateHandle` : émis par `StatsRankingScreen`, il est immédiatement **dispatché en segments de route** par `RootScreen.onStats` vers les fiches dédiées Joueur/Adversaire/Circuit (la route `Stats` générique a été supprimée, #51). `RootScreen` enregistre aussi la tâche périodique `UpdateDataWorker` dans un `LaunchedEffect`.
 
 | Route | Écran | Argument(s) |
 |---|---|---|
@@ -176,7 +176,6 @@ when {
 | `Home/WarDetails/Tab` | Génération du tableau (PDF) | `details` (savedState) |
 | `Home/TrackDetails/{editing}` | Relecture d'une course (lecture seule) | `track` + `courseNumber` (Int), savedState ; `editing` (Bool) en route |
 | `Home/EditTrack/{is24p}` | Édition d'une course | `track` + `Bool` |
-| `Stats` | Stats d'une catégorie (détail adversaire/circuit, via classements) | `type: StatsType` |
 | `Statsfull/{userId}` | Stats détaillées d'un joueur donné (vue Individuelles paramétrée) | `String` |
 | `Home/WarList/{userId}` | Historique des wars **filtré sur un joueur** (#65 ; `userId` = id du joueur ou `me`) | `String` |
 | `Home/Period` | « Voir par période » (#80 ; historique + classement joueurs sur une plage de dates) | — |
@@ -277,7 +276,7 @@ Distinction structurante (source de confusion fréquente) :
 - **Résolution `rosterId → équipe/roster`** (affichage & stats adverses) : `War.teamOpponent` contient des `rosterId`, alors que `TeamEntity` reste **clé par teamId**. Pour éviter toute restructuration de la table équipes / de la chaîne de fetch, `TeamEntity` porte une colonne **`rosters: List<RosterInfo>`** (Room **v6**, `RosterInfoConverter` Moshi) = métadonnées `{id, nom, tag}` des rosters mkworld de l'équipe, renseignée par `TeamEntity(MKCTeam)` (les rosters sont déjà dans la réponse liste `getTeams`, **aucun appel réseau supplémentaire**). `FetchUseCase.fetchTeams()` **ne persiste pas** une équipe sans roster mkworld (`rosters` vide) — sauf l'équipe spéciale « 6v6 Squad », conservée volontairement hors filtre. Deux mécanismes distincts en découlent :
   - **Affichage (nom/tag du roster, avatar de l'équipe)** : `databaseRepository.getTeam(id)` matche d'abord par teamId (clé primaire), à défaut par l'équipe dont l'un des `rosters` porte l'`id` → on remonte l'équipe parente. L'extension `War.opponentTeams(databaseRepository)` **remplace alors nom/tag par ceux du roster** (avatar/couleur de l'équipe conservés) **en gardant le rosterId comme `TeamEntity.id`** (indispensable pour apparier adversaire ↔ score/pénalité dans `WarScoreView`). Côté **hôte**, les VMs (`WarCell`, `CurrentWarCell`, `WarDetails`, `CurrentWar`, `AddTrack`, `CurrentWarActions`) posent `teamHost = TeamEntity(host).copy(name = rosterName, tag = rosterTag)` (avatar équipe, nom/tag roster). **Résolution non destructive** : si `getTeam(id)` renvoie `null` (équipe/roster disparu du cache, war legacy jamais synchronisée), `opponentTeams` ne **supprime plus** l'adversaire (fin du `mapNotNull` silencieux) — il retombe sur une `TeamEntity` **dégradée** (`name = "Équipe inconnue"`, `tag = "???"`, `logo = null`) conservant l'id, pour ne jamais faire disparaître l'adversaire (nom + logo absents). Principe général : cf. rule `.claude/rules/12-ui-roster-display.md`.
   - **Classement adverse — un item PAR ROSTER** (`InitStatsWorker` → `withFullTeamStats`) : pour chaque `RosterInfo` de chaque `TeamEntity`, un `OpponentRanking` distinct est produit, clé par le **rosterId**, agrégeant les wars dont l'opposant = ce rosterId (`hasTeam(rosterId)`), affiché avec le **nom/tag du roster** et l'avatar de l'équipe (`team.copy(id = rosterId, name = roster.name, tag = roster.tag)`). Les rosters d'une même équipe ne sont **pas** fusionnés (ex. équipe à 2 rosters, 4 wars → 2 items de 2 wars). Un **item de niveau équipe** (clé teamId) capte en plus les **wars legacy** (opposant = teamId, avant la granularité roster) pour ne pas les perdre. `toTeamStats` (sous-stat « adversaire le plus joué ») résout un id par teamId **ou** rosterId → équipe parente. Le worker n'applique **aucune** normalisation préalable.
-  - **Détail d'un adversaire** (`StatsViewModel`, `OpponentStats`) : le classement fournit désormais un **rosterId** (ou un teamId pour l'item legacy) ; les wars sont filtrées **directement** par cet id (`hasTeam(id)`), **sans** normalisation rosterId→teamId (sinon les rosters seraient re-fusionnés). L'en-tête du détail affiche le nom/tag du roster (avatar de l'équipe).
+  - **Détail d'un adversaire** (`OpponentDetailViewModel`, `StatsType.OpponentStats`) : le classement fournit désormais un **rosterId** (ou un teamId pour l'item legacy) ; les wars sont filtrées **directement** par cet id (`hasTeam(id)`), **sans** normalisation rosterId→teamId (sinon les rosters seraient re-fusionnés). L'en-tête du détail affiche le nom/tag du roster (avatar de l'équipe).
   - **Migration teamId → rosterId de l'historique (Ticket 4)** : action **manuelle** de l'écran Debug (« Migrer les adversaires (teamId → roster) » → `DebugViewModel.onMigrateOpponents()` → `FetchUseCase.migrateOpponentsToRoster()`), sur le patron de « Gérer les transferts ». Objectif : fusionner le doublon d'une équipe **mono-roster** affrontée avant ET après le passage rosterId (item équipe legacy + item roster) en réécrivant le `teamId` en `rosterId` dans les wars **historiques**. Mécanisme : à partir du cache local des équipes, on construit la map `teamId → rosterId` **uniquement pour les équipes à exactement un roster mkworld** (`TeamEntity.rosters.size == 1`) **dont le rosterId cible est résolvable localement** (`getTeam(rosterId) != null`) — garde-fou évitant d'écrire un rosterId qui ne se résoudrait plus au nom/logo à l'affichage ; pour chaque nœud hôte (`wars/{rosterId}` des rosters mkworld de l'équipe courante), on lit `getWars(host)`, on remappe chaque entrée de `War.teamOpponent` (24p : les 3 opposants indépendamment), et on réécrit via `writeWar(host, war)` **seulement si `teamOpponent` a changé**. **Idempotent** : une valeur déjà rosterId ne matche aucun teamId connu, une équipe multi-rosters est ignorée (roster joué à l'époque inconnu — limite assumée) → 2ᵉ exécution sans écriture. `currentWars` **volontairement exclu**. Aucun appel réseau MKCentral (s'appuie sur les équipes déjà synchronisées). Après migration, une équipe mono-roster ne produit plus qu'un seul `OpponentRanking` (roster), legacy et nouvelles wars réunies.
 - ⚠️ **Limite (Ticket 4)** : les équipes **multi-rosters** restent en `teamId` dans l'historique (migration impossible sans connaître le roster joué à l'époque). Un adversaire dont l'équipe n'est pas (encore) en cache local (`rosters` vide/absent) n'est pas résolu tant que l'historique n'est pas migré. Voir [AUDIT.md §2 B11](AUDIT.md#2-bugs--correctness).
   - **Diagnostic des adversaires « Équipe inconnue »** : action **manuelle non destructive** de l'écran Debug (« Diagnostiquer les adversaires inconnus » → `DebugViewModel.onDiagnoseUnknownOpponents()` → `DiagnosticRepository.diagnoseUnknownOpponents()`). Toute la logique de diagnostic debug (adversaires + joueurs manquants) vit dans `repository/DiagnosticRepository.kt` — interface + module `@Binds @Singleton` injectant Firebase/MKCentral/Room/DataStore — et **non** dans `FetchUseCase`, car consommée par le **seul** `DebugViewModel` (cf. rule `.claude/rules/32-usecase-vs-repository.md`). Étape 0 du ticket : lister les wars dont un id de `War.teamOpponent` ne se résout à **aucune** `TeamEntity` locale (même échec que `War.opponentTeams`), puis tenter pour chaque id une résolution MKCentral dédiée. Le diagnostic réutilise l'**unique endpoint liste** `MKCentralApi.getTeams(page)` = `registry/teams?game=mkworld&mode=150cc&is_historical=false&is_active=true&min_player_count=6` — le **même** que la synchro registre (l'endpoint `getAllTeams` distinct a été supprimé après convergence du filtre), **miroir du filtre par défaut du site MKCentral « Équipes actives avec plus de 6 joueurs »**. Il charge **une seule fois** la liste des équipes mkworld actives, non historiques et à effectif ≥ 6 (toutes pages, via `fetchAllMkworldTeams`), réutilisée en mémoire pour résoudre chaque id distinct (pas de balayage réseau par id). **Domaine exclusivement mkworld** (cf. rule `.claude/rules/31-mkworld-only.md`) : aucun accès mk8dx. **Conséquence assumée** : les équipes dissoutes/historiques/à faible effectif ne sont **pas** candidates — seules les équipes actives mkworld ≥ 6 joueurs (celles visibles sur le site) le sont ; les cas hors périmètre passent par l'**override manuel** ou la suppression. **Résolution en deux temps** : (1) l'id brut est résolu en une **équipe source** mkworld (`rawId == roster.id` ou `== teamId`) ; (2) à partir du **nom/tag** de cette source, on cherche des **candidats mkworld** : les équipes mkworld (ayant au moins un `roster.game == "mkworld"`) dont le `tag` **ou** le `name` matche en sous-chaîne insensible à la casse **dans les deux sens** (même style que `AddWarViewModel.onSearchTeam` ; le tag est le signal le plus fiable, le nom en complément). L'adversaire ayant souvent **recréé une équipe mkworld** avec un nom/tag proche, ce rebond retrouve la cible réattribuable. Résultat par id : `Found(teamId, teamName, teamTag, mkworldCandidates)` où chaque `MkworldCandidate` porte ses `rosters` mkworld (`CandidateRoster{rosterId, name, tag}`) — 0, 1 ou plusieurs, **jamais choisi automatiquement** ; `NotFound` (id source introuvable dans la liste mkworld actives 6+ — équipe dissoute/historique/à faible effectif, ou d'origine mk8dx pure, non couverte par l'override → à traiter par override ou suppression) ; `Error` (réseau). **Override manuel expert prioritaire** : une table `DiagnosticRepository.opponentOverrides: Map<rawId, teamId cible>` (correspondances relevées à la main dans les données historiques de l'équipe) **prend le pas** sur l'heuristique nom/tag ; si `rawId` y figure, l'équipe cible est cherchée par son `teamId` dans `mkworldTeams` et **tous ses rosters mkworld** sont listés comme candidats (toujours sans choix automatique). Si le teamId cible est absent de la liste (équipe hors périmètre actives 6+), on retombe proprement sur l'heuristique. Modèle : `model/local/UnknownOpponentDiagnostic.kt`. **Aucune écriture** : produit uniquement le rapport d'arbitrage affiché dans `DebugScreen` (`UnknownOpponentCell` : liste des candidats + un bouton « Réattribuer » **par roster mkworld candidat**).
@@ -289,7 +288,7 @@ Distinction structurante (source de confusion fréquente) :
 
 MKCentral peut concaténer **plusieurs pseudonymes** d'un joueur dans l'unique champ `name` (`MKCPlayer.name`/`MKCTeamPlayer.name`, persistés dans `PlayerEntity.name` et `User.name`), séparés par des **slashs** (`"A / B / C"`). À l'affichage, on ne montre que le **premier** pseudo via l'extension `String.displayName` (`extension/StringExtension.kt`) : `substringBefore("/").trim()` si un `/` est présent, sinon la chaîne inchangée (aucun slash → comportement d'origine ; chaîne vide → vide).
 
-- **Surcharge d'affichage uniquement** (non destructive) : la donnée brute reste stockée telle quelle en Room/DataStore/Firebase — aucune normalisation au fetch/écriture. L'extension est appliquée **à tous les sites d'affichage du nom de joueur** (médaillon `PlayerCell`, line-up `WarPlayersCell`/`WarSummaryCells`/`CurrentWarScreen`, podiums/classements `MKPodiumCell` via les `toPodiumEntry` de `StatsRankingScreen`/`OpponentDetailScreen`/`MapDetailScreen`/`PeriodScreen`, fiche joueur `PlayerProfileScreen`, membres/alliés `TeamProfileScreen`, sélection de line-up `AddWarScreen`/`CurrentWarActionsScreen`, cartes course `AddTrackScreen`/`EditTrackScreen`/`TrackDetailsScreen`, `StatsFullScreen`, salutation `WelcomeScreen`, et le tab PDF via `PlayerScoreForTab`).
+- **Surcharge d'affichage uniquement** (non destructive) : la donnée brute reste stockée telle quelle en Room/DataStore/Firebase — aucune normalisation au fetch/écriture. L'extension est appliquée **à tous les sites d'affichage du nom de joueur** (médaillon `PlayerCell`, line-up `WarSummaryCells`/`CurrentWarScreen`, podiums/classements `MKPodiumCell` via les `toPodiumEntry` de `StatsRankingScreen`/`OpponentDetailScreen`/`MapDetailScreen`/`PeriodScreen`, fiche joueur `PlayerProfileScreen`, membres/alliés `TeamProfileScreen`, sélection de line-up `AddWarScreen`/`CurrentWarActionsScreen`, cartes course `AddTrackScreen`/`EditTrackScreen`/`TrackDetailsScreen`, `StatsFullScreen`, salutation `WelcomeScreen`, et le tab PDF via `PlayerScoreForTab`).
 - **Cohérence intra-listing** (rule 12) : appliquée à **tous** les joueurs d'un même listing, sans cas particulier (y compris le joueur courant).
 - N'est **pas** appliquée aux noms d'**équipe/roster** (qui peuvent légitimement contenir un `/`) ni au nom saisi à l'onboarding (`Signup`, écriture de `User.name` brute — pas de format MKCentral concaténé). L'écran Debug affiche volontairement le nom brut (diagnostic).
 
@@ -425,6 +424,18 @@ fun Int.trackScoreToDiff(is24p: Boolean = false): String // milieu 41  (12p) / 7
 
 Cœur dans `extension/ListExtension.kt` (`withFullStats`, `withTrackStats`, `withFullTeamStats`, `sizeOrOne`), `extension/WarExtension.kt` (`War.withPlayersList`), `extension/IntegerExtension.kt` (barème `positionToPoints` / inverse `pointsToPosition`, `*ScoreToDiff`) et les classes de `model/local/` (`Stats.kt`, `WarDetails.kt`). Les résultats des classements globaux sont mis en cache en mémoire par `InitStatsWorker` dans `StatsRepository`.
 
+> **Note historique (nettoyage #51).** Dans les tableaux de stats ci-dessous, la colonne
+> « Où on la trouve dans l'appli » cite parfois d'anciennes cellules de l'écran générique
+> `StatsScreen` : `MKWarStatsView`, `MKWinTieLossCell`, `MKAdvancedStatsCell`, `MKRecordsCell`,
+> `MKMapsRankingCell`, `MKPositionDistributionCell`, `MKWarDetailsStatsView`, `MKRecentFormCell`,
+> `MKStatRow`, `MKOpponentsRankingCell`, `MKLineChart`. Ces composants et l'écran
+> `StatsScreen`/`StatsViewModel` ont été **supprimés** (#51 : plus aucun émetteur de navigation
+> ne les atteignait, la refonte ayant remplacé cet écran par `StatsFullScreen`, `MapDetailScreen`
+> et `OpponentDetailScreen`). Ont aussi été supprimés d'autres composants UI orphelins non liés à
+> `StatsScreen` : `ui/VerticalGrid.kt`, `ui/cells/WarPlayersCell.kt`, `ui/stats/MKExpandableSection.kt`
+> (aucun consommateur). Ces références restent listées à titre **historique** pour tracer l'origine
+> du calcul de chaque stat ; l'affichage réel vit désormais dans les écrans de la refonte (§9.11/§9.12).
+
 ### 9.0 Données sources et chaîne de transformation
 
 Toutes les stats dérivent en dernier ressort des modèles firebase (source de vérité) :
@@ -536,8 +547,9 @@ Point d'entrée du calcul d'un bloc `Stats` (stats joueur, équipe, adversaire o
 > `hasPlayer`), tandis que le classement équipe agrège sur **toutes les wars de la fenêtre**
 > → **dénominateurs différents**. En conséquence, la **part de points de la contribution indiv
 > a été alignée sur le total/total** de `computeContributors` (elle n'est **plus** la moyenne
-> war par war `Stats.playerContribution`, qui reste seulement utilisée par l'ancienne cellule
-> `MKAdvancedStatsCell`/`StatsScreen`). `computeContributors` calcule `pointsShare` =
+> war par war `Stats.playerContribution` — cette dernière n'était consommée que par l'ancienne
+> cellule `MKAdvancedStatsCell`/`StatsScreen`, **supprimés #51** ; le champ `Stats.playerContribution`
+> subsiste mais est désormais sans consommateur d'affichage). `computeContributors` calcule `pointsShare` =
 > `points membre × 100 ÷ Σ points des membres` et `shockShare` =
 > `windowWars.totalShocks(membre) × 100 ÷ windowWars.totalShocks()` sur **la même fenêtre de
 > wars d'équipe** pour tous les membres. La contribution indiv ne s'affiche que pour un
@@ -562,20 +574,17 @@ Chaque `TrackStats` est encapsulé dans un `RankingItem.TrackRanking` et affich�
 ### 9.6 Classement des adversaires (top3/flop3 par winrate & score)
 
 Les classements « meilleurs/pires adversaires » (top3/flop3 par winrate ET score
-moyen) sont calculés **dans `StatsViewModel.computeOpponentRankings(userId?)`** au
-périmètre de la vue courante (les wars déjà filtrées) : pour chaque équipe locale
-(hors équipe courante), `List<TeamEntity>.withFullTeamStats(wars, …, userId)`
-produit un `OpponentRanking` (nom/tag du roster, avatar équipe, stats), puis on
-filtre `warsPlayed >= Stats.MIN_RANKING_SAMPLE` (3 matchs) et on trie par winrate
-puis par `averagePoints` (top3/flop3). `userId != null` ⇒ point de vue du joueur
-affiché : `withFullStats(userId)` renseigne alors `WarScore.score` avec le **score
-du joueur** (et non le score d'équipe), si bien que `averagePoints` est la moyenne
-par war des points du joueur. Côté affichage, `MKOpponentsRankingCell` reçoit ce
-`userId` et le transmet à `TeamCell` — exactement comme l'écran StatsRankings —
-pour que la colonne « score moyen » utilise `stats.averagePoints` (score joueur)
-en vue joueur, et `stats.averagePointsLabel` (écart d'équipe) en vue équipe.
-Calcul dans le VM (mono-consommateur, périmètre dépendant de la vue) et non dans
-le cache worker (rule 32).
+moyen) sont calculés **dans `StatsFullViewModel.computeOpponentRankings(...)`** (l'ancienne
+copie de `StatsViewModel` a disparu avec cet écran, #51) au périmètre de la vue courante
+(les wars déjà filtrées) : pour chaque équipe locale (hors équipe courante),
+`List<TeamEntity>.withFullTeamStats(wars, …, userId)` produit un `OpponentRanking` (nom/tag
+du roster, avatar équipe, stats), puis on filtre `warsPlayed >= Stats.MIN_RANKING_SAMPLE`
+(3 matchs) et on trie par winrate puis par `averagePoints` (top3/flop3). `userId != null` ⇒
+point de vue du joueur affiché : `withFullStats(userId)` renseigne alors `WarScore.score`
+avec le **score du joueur** (et non le score d'équipe), si bien que `averagePoints` est la
+moyenne par war des points du joueur. Les podiums adversaires de `StatsFullScreen`
+(`MKPodiumCell`) consomment ces classements par fenêtre. Calcul dans le VM
+(mono-consommateur, périmètre dépendant de la vue) et non dans le cache worker (rule 32).
 
 > L'ancien `topOpponentByCount()` (adversaire dominant « top 1 » par catégorie) a
 > été supprimé avec l'ancien bloc adversaires.
@@ -635,15 +644,17 @@ le cache worker (rule 32).
 > ces nouvelles stats) est intact.
 
 Le classement des adversaires (top3/flop3 par winrate & score) est désormais porté
-par `StatsViewModel.computeOpponentRankings` (voir 9.6) et affiché par
-`MKOpponentsRankingCell` (vues équipe ET joueur). L'onglet **Classement des
+par `StatsFullViewModel.computeOpponentRankings` (voir 9.6) et affiché par les podiums
+`MKPodiumCell` de `StatsFullScreen` (vues équipe ET joueur). L'onglet **Classement des
 adversaires** dédié reste alimenté par `opponentRankList`/`playerOpponentRankList`.
 
 ### 9.8 `MapStats` — détail statistique d'un circuit
 
 `MapStats(list: List<MapDetails>, userId?, is24p)` où `MapDetails(war, warTrack, position?)`. `isIndiv = userId != null`. `playerScoreList` = points du joueur sur chaque course où il figure. Toutes les tables sont calculées **en une seule passe** avec `count { }` (optimisation A5).
 
-`MapStats` alimente l'**écran Statistiques de circuit** (`StatsType.MapStats`, `screen/stats/StatsScreen.kt`).
+`MapStats` alimente les stats de circuit (`StatsType.MapStats`) — désormais affichées par
+`MapDetailScreen` / `OpponentDetailScreen` et la section `ui/stats/MapStatsSections.kt` (l'ancien
+`screen/stats/StatsScreen.kt` a été supprimé, #51 ; cf. note historique en tête de §9).
 
 | Stat | Comment elle est calculée | Donnée(s) source | Où on la trouve dans l'appli |
 |---|---|---|---|
@@ -662,7 +673,7 @@ adversaires** dédié reste alimenté par `opponentRankList`/`playerOpponentRank
 | `indivBottomsTable` | idem pour N=7..12 | `WarPosition` du `userId` | Écran Statistiques de circuit (mode joueur) : `MKTopBottomCell(indiv=true)` colonne « Bottoms » (positions 7→12) |
 | `shockCount` | `Σ warTrack.track.shocks.filter { !isIndiv \|\| playerId == userId }.count` | `Shock` | Écran Statistiques de circuit : `MKWarDetailsStatsView` « Shocks » (fallback `mapStats`, ligne 101) |
 
-> Les tables d'équipe (`topsTable`/`bottomsTable`) ne comptent que quand `!isIndiv` (sinon `0`), et inversement pour les tables individuelles : un `MapStats` est soit « équipe », soit « joueur », jamais les deux. Côté UI, `StatsScreen` n'affiche `MKTopBottomCell` que si la table concernée contient au moins une valeur > 0 (lignes 83-90).
+> Les tables d'équipe (`topsTable`/`bottomsTable`) ne comptent que quand `!isIndiv` (sinon `0`), et inversement pour les tables individuelles : un `MapStats` est soit « équipe », soit « joueur », jamais les deux. Côté UI, ces tables sont rendues par `ui/stats/MKTopBottomStatsCard.kt` (`MapDetailScreen`/`OpponentDetailScreen` et section Équipe de `StatsFullScreen`), qui masque les lignes vides (cf. §9.8 « Filtrage d'affichage »). *(L'ancien `MKTopBottomCell` de `StatsScreen` a été supprimé, #51.)*
 
 > **Tops/bots adversaire (#64)** : `opponentTopsTable`/`opponentBottomsTable` appliquent la même logique de comptage aux **positions adverses**, dérivées comme le **complément** `(1..12) − teamPositions` des 6 positions de l'équipe hôte sur chaque manche (12p ⇒ 6v6 se partagent 1..12). Neutralisées à `0` en vue individuelle **et** en 24p (le complément n'a de sens qu'en 12p). Rendues via le même composable `TopBottomColumns` dans une 2ᵉ carte « Top/Bot adversaire » (sous « Top/Bot équipe »). Point de contrôle : pour **N=6** l'opponent Top6 == team Bot6 et opponent Bot6 == team Top6 (strict complément) ; pour N=2..5 les tables diffèrent réellement.
 >
@@ -690,69 +701,37 @@ Le résultat est affiché par `ui/cells/WarPlayerRankingCard` (grille 2 colonnes
 
 **Cellule joueur avec compteur de shocks** (`PlayerShockCell`, `ui/cells/PlayerShockCell.kt`) : carte translucide `white30`/radius 6/padding 11, en **colonne verticale centrée** (`horizontalAlignment = CenterHorizontally`) — **nom** (Nunito bold) en haut, puis une **petite grille alignée en 3 colonnes centrée** : colonne des `−` | colonne centrale (**position** en haut — numéro `MKPosition` + couleur `position.positionColor(is24p)`, **sans encadré blanc** ; **[icône `R.drawable.shock` collée à gauche + compteur]** en bas) | colonne des `+`. Les rangées ont une **hauteur fixe** (`StepperSlot` : 34 dp position / 22 dp shock) → tous les `−` alignés sur une colonne, tous les `+` sur une autre, position et shock partageant la colonne centrale. Boutons carrés 22 dp `.shk` via le helper `StepperButton`. Édite les shocks **hors calcul du score**. Initialement privée à `AddTrackScreen` (`SummaryPlayerCell`), **extraite en composant partagé** (rule 16) dès son 2ᵉ consommateur : la section Positions/Shocks d'`EditTrackScreen` (ticket #46). Sur cette section (retour utilisateur), le composant porte en plus une **édition de position** optionnelle : quand `onDecreasePosition`/`onIncreasePosition` sont fournis, la ligne de position porte des boutons − / + (bornés à 1..`maxPosition`, désactivés aux extrémités) — le même helper `StepperButton` sert aux deux contrôles ±, sans duplication (rule 16) ; sinon (Résumé d'AddTrack) la place est réservée mais vide (position en lecture seule). La grille de ces cellules est **englobée dans un conteneur `blackAlphaed`** (même style que la grille de circuits) pour le contraste ; l'aperçu circuit en tête de l'étape Positions d'AddTrack est en **pleine largeur** (`MKTrackCell`). **`ui/cells/PositionCell.kt`** expose un paramètre optionnel **`fontSize`** (défaut = rendu historique 70/50 ; `AddTrack` passe une valeur réduite 48/34 pour un rendu plus harmonieux dans sa grille) ; il n'est plus utilisé par `EditTrackScreen` depuis la refonte #46. **Épuration (round 4)** : tous les hints/eyebrows décoratifs (petit texte blanc) de l'écran AddTrack ont été supprimés (divergence assumée vs maquette, demande utilisateur) ; les chaînes `addtrack_*_hint` / `addtrack_summary_positions` / `addtrack_skip_summary` correspondantes ont été retirées.
 
-#### Sections enrichies (records/séries, classements winrate/score)
+#### Sections enrichies (records/séries, classements winrate/score) — historique
 
-`StatsScreen` affiche, sous les stats de base, des **sections accordéon**
-(`MKExpandableSection` : en-tête cliquable + `AnimatedVisibility`/`animateContentSize`,
-état d'ouverture en `rememberSaveable`) :
+> **Supprimées avec `StatsScreen` (#51).** Les sections accordéon de l'ancien écran
+> générique (`MKExpandableSection`, `MKRecentFormCell`, `MKRecordsCell`,
+> `MKAdvancedStatsCell`, `MKStatRow`, `MKPositionDistributionCell`, `MKMapsRankingCell`,
+> `MKOpponentsRankingCell`) ont été retirées en même temps que `StatsScreen`/`StatsViewModel` :
+> aucun émetteur de navigation ne menait plus à cet écran (la refonte affiche désormais ces
+> indicateurs via `StatsFullScreen`, cf. §9.11). Les **calculs sous-jacents** (`Stats.allTimeForm`/
+> `recentForm5`/`recentForm10`, records/séries, contribution, marges…) restent inchangés dans
+> `model/local/Stats.kt` et sont consommés par `StatsFullScreen`.
 
-- **`MKRecentFormCell`** — **vue de référence** des stats : compare 3 fenêtres
-  (all-time / 5 / 10 dernières wars) sur les mêmes indicateurs (winrate, score
-  moyen/war, position moyenne [vue joueur] ou score moyen/manche [vue équipe], %
-  manches gagnées, shocks/war avec icône éclair), une ligne par indicateur. Delta
-  des fenêtres récentes vs all-time (**chiffre + flèche + couleur**), sens dépendant
-  de l'indicateur (position → baisse=vert ; shocks → neutre). Petit échantillon
-  signalé (`sampleSize < requestedSize`). Alimenté par `Stats.allTimeForm`/
-  `recentForm5`/`recentForm10`. Reprend les indicateurs de l'ancienne section
-  historique (`MKPlayerScoreCell` supprimé, `MKWarDetailsStatsView` limité au circuit).
-- **`MKRecordsCell`** (Lot A) — série en cours, records de séries V/D, comptes
-  Top6/Bot6 (affichés si > 0).
-- **`MKAdvancedStatsCell`** (bis, Vagues 1/2/3) — contribution joueur (vue joueur),
-  régularité (`scoreStdDev` + amplitude), marges moyennes victoire/défaite, perf
-  1ʳᵉ/2ᵉ moitié (vue joueur), invaincu depuis (`unbeatenStreak`), points perdus en
-  pénalités. Lignes via le composant partagé `MKStatRow`.
-- **Bouton info sur chaque indicateur (#87)** — composant partagé unique
-  `ui/stats/MKStatInfoButton.kt` (rule 16) : petite icône ronde `ic_info.xml`
-  (ⓘ, 16 dp, tint `white70`, `CircleShape` cliquable) posée à côté du libellé d'une
-  stat ; au clic, **réutilise `MKDialog`** (aucun nouveau dialog) avec `title` =
-  libellé, `message` = explication de la stat, bouton **Fermer** + `onDismiss`.
-  État d'ouverture en `rememberSaveable` **local au bouton** (rule 11, pur état UI
-  éphémère, pas de re-navigation). **Chemin de rendu réel = `screen/stats/full/
-  StatsFullScreen.kt`** (l'écran Stats de l'epic) : la data class `MetricTile` porte
-  un champ optionnel `info: String? = null` et `MetricTileCell` émet le bouton à côté
-  du libellé quand il est renseigné → couvre `IndicatorsCard` (Détails équipe /
-  Indicateurs) **et** `RecordsTilesCard` (Records & séries) d'un seul câblage. ⚠️ Le
-  legacy `screen/stats/StatsScreen.kt` (→ `MKWarDetailsStatsView` de
-  `ui/stats/MKWarDetailsStatsCell.kt`, `MKStatRow.info`, `MKRecentFormCell`) conserve
-  son propre câblage mais **n'est plus l'écran affiché** ; le rendu visible passe
-  par `StatsFullScreen`. Message **contextuel** là où le libellé varie (position
-  moyenne joueur vs score moyen/manche équipe). Les 22 explications sont
-  des string resources `info_*` (`res/values/` + `values-fr/`), reprises/adaptées
-  de la section « Tableau récapitulatif — toutes les statistiques » de
-  `docs/FUNCTIONAL.md` (nuances : position basse = mieux ; shocks/war neutre, aucune
-  corrélation avec la position finale). **Écart maquette assumé (rules 13/15)** : le
-  prototype ne prévoit pas de bouton info sur les cellules de stats → ⓘ discret
-  approximé.
-- **`MKPositionDistributionCell`** (bis, Vague 2, **vue joueur**) — mini-histogramme
-  P1→P12 de la distribution des positions du joueur.
-- **`MKMapsRankingCell`** (Lot B/C) — top3/flop3 des circuits par **winrate ET
-  score moyen** (double critère via `MapCell`), seuil ≥ 3 matchs.
-- **`MKOpponentsRankingCell`** (vues **équipe ET joueur/individuelle**) — top3/flop3
-  des adversaires par winrate ET score moyen (via `TeamCell`, qui affiche wars
-  jouées + winrate + score moyen), wording produit « (winrate|score moyen) face à ».
-  Calculé dans `StatsViewModel.computeOpponentRankings(userId?)` au périmètre de la
-  vue (équipe = tous ; joueur = du point de vue du joueur affiché), filtre
-  `warsPlayed ≥ Stats.MIN_RANKING_SAMPLE` (voir 9.6). Exposé via `StatsViewModel.State`.
+**Bouton info sur chaque indicateur (#87) — TOUJOURS actif.** Composant partagé unique
+`ui/stats/MKStatInfoButton.kt` (rule 16, **conservé**) : petite icône ronde `ic_info.xml`
+(ⓘ) posée à côté du libellé d'une stat ; au clic, **réutilise `MKDialog`** (aucun nouveau
+dialog) avec `title` = libellé, `message` = explication, bouton **Fermer** + `onDismiss`.
+État d'ouverture en `rememberSaveable` **local au bouton** (rule 11, pur état UI éphémère,
+pas de re-navigation). **Chemin de rendu réel = `screen/stats/full/StatsFullScreen.kt`** :
+la data class `MetricTile` porte un champ optionnel `info: String? = null` et `MetricTileCell`
+émet le bouton à côté du libellé quand il est renseigné → couvre `IndicatorsCard` (Détails
+équipe / Indicateurs) **et** `RecordsTilesCard` (Records & séries) d'un seul câblage. Les 22
+explications sont des string resources `info_*` (`res/values/` + `values-fr/`). **Écart maquette
+assumé (rules 13/15)** : le prototype ne prévoit pas de bouton info → ⓘ discret approximé.
 
-**Périmètre 12p** : ces sections enrichies sont **12p uniquement** (retour
-utilisateur). Le comparatif 12p vs 24p (`MKModeComparisonCell`, `computeModeStats`)
-et les branches 24p de ces nouvelles stats ont été retirés — ticket dédié à venir.
+**Périmètre 12p** : les stats de l'app restent **12p uniquement** (retour utilisateur ; support
+24p différé à un ticket dédié).
 
 **Tri chronologique (garanti en amont + factorisé)** : `war.id` est un timestamp
 (`WarDetails.date = Date(war.id)`). L'ordre chronologique est **garanti à la source**
 par `WarDao.getAll()` — `SELECT * FROM WarEntity ORDER BY CAST(id AS INTEGER) ASC`
 (`id` stocké en TEXT ; `CAST` en INTEGER pour un tri **numérique** et non
-lexicographique) — donc tous les consommateurs (`InitStatsWorker`, `StatsViewModel`)
+lexicographique) — donc tous les consommateurs (`InitStatsWorker`, VM stats)
 reçoivent les wars déjà triées. `Stats.chronologicalWars` (et le miroir
 `chronologicalScores`) re-trie `warScores` par `war.war.id` croissant par sécurité
 (idempotent) : c'est la **source unique de tri** partagée par les séries et la forme
@@ -815,7 +794,7 @@ var playerTrackRankList: List<RankingItem>
   - `playerStatsByWindow[i]` / `teamStatsByWindow[i]` (12p) ;
   - `playerLogo` (avatar MKCentral du joueur COURANT via `mkcPlayer.userSettings.avatar` ; null → fallback initiales pour un autre joueur) et `teamLogo` (`mkcTeam.logo`), préfixés `https://mkcentral.com` ;
   - `contributors` : chaque **membre du roster** (`getPlayers()` filtré par `rosterId` du roster mkworld courant) avec sa **part de points** (points du joueur ÷ total cumulé des membres) et son winrate, trié décroissant ;
-  - `topOpponentsByWinrate`/`flop…`/`…ByScore` **et** `playerTop…`/`playerFlop…` : top3/flop3 adversaires (équipe ET joueur) via `withFullTeamStats` (comme `StatsViewModel`, seuil `MIN_RANKING_SAMPLE`, rule 32) — alimentent les podiums adversaires.
+  - `topOpponentsByWinrate`/`flop…`/`…ByScore` **et** `playerTop…`/`playerFlop…` : top3/flop3 adversaires (équipe ET joueur) via `withFullTeamStats` (seuil `MIN_RANKING_SAMPLE`, rule 32) — alimentent les podiums adversaires.
 - **Correction V/N/D & compteur de wars** : le décompte vient de `Stats.warStats` calculé sur la liste **filtrée** (cf. §9.4) → en Individuelles il ne compte que les wars du joueur, en Équipe toutes celles de l'équipe. Distinction stricte indiv/équipe pour chaque indicateur.
 - **Sélecteur de période GLOBAL (#68)** — un **unique** état `windowIndex` (`rememberSaveable`, rule 11) hissé dans `StatsFullScreen`, rendu par **un seul** `MKSegmentedSelector` (all-time / 5 / 10) placé **sous le sélecteur Indiv/Équipe** et au-dessus des sections, **visible même quand `showTabs == false`**. Il change l'état ⇒ recomposition de **toutes** les sections (pas de re-nav). `SectionSelectors` ne porte donc plus que ce `windowIndex` global + les deux **tris podium** (axe indépendant, conservé). Les 4 anciens sélecteurs de période locaux (Indicateurs, Records, Distribution, Contributeurs) et le composable `WindowSelector` ont été **supprimés**.
   - **Sections FormStats (Indicateurs / Records / Forme & séries)** : reçoivent les stats **all-time** (`…ByWindow[0]`) et sélectionnent la `FormStats` de la fenêtre via `Stats.windowForm(windowIndex)` (`allTimeForm`/`recentForm5`/`recentForm10`) → valeur de la fenêtre + **delta % vs all-time** (flèche ↗/↘ colorée ; valeurs en blanc). On garde ainsi les deltas corrects (les `FormStats` d'un objet Stats déjà fenêtré perdraient toute comparaison). `FormStats` porte par fenêtre `scoreStdDev`, `scoreMin`/`scoreMax`, `winMargin`/`lossMargin`, `bestWinStreak`/`worstLossStreak`/`top6Count`/`bot6Count`, **`penaltyPointsLost`**, en plus de winrate/score/mapsWon/shocks. En vue **Équipe**, « Score moyen » = **écart** (`averageScore.warScoreToDiff(false)`) ; **Individuelles** = points/war bruts.
@@ -844,7 +823,7 @@ Fiches profil pixel-perfect (écrans `opp`/`map` du prototype), atteintes depuis
 - **`MapDetailScreen` + `MapDetailViewModel`** (route `Map/{trackIndex}/{userId}/{season}`, `Factory(trackIndex, initialUserId, seasonNumber)`) : `getWars()` **combiné à `getSeasons()`** puis **`filterBySeason(season)` AVANT tout** (#91, cf. fiche adversaire) × `isIndiv`. **Scores moyens** = *score d'ÉQUIPE* + *position du JOUEUR courant* **FIXES** (via un `MapStats(userId = currentUserId)` indépendant du mode) + *shocks obtenus* **DYNAMIQUE** (`mapStats.shockCount` scopé mode). Plus de carte/label **coupe**. **Classement des pilotes** (`computePilots`, **membres uniquement** — alliés `rosterId == "-1"` exclus —, **seuil `Stats.MIN_RANKING_SAMPLE`** de manches, tri par **score perso moyen décroissant** = critère **affiché** en stat principale de la `PodiumCell` ; `averagePosition` + `played` en infos secondaires) → podium Top3/Flop3 + liste complète, **mode Équipe uniquement** (masqué en Indiv). Sections détaillées mode-scopées.
 - **Sections détaillées mutualisées** (`ui/stats/MapStatsSections.kt`, `LazyListScope.mapStatsDetailSections(MapStats)`, aux deux fiches) : **Répartition des positions** (`ui/stats/MKDistributionCard.kt` : `DistributionChart`/`DistributionFooter` **extraits** de `StatsFullScreen`) et **Top/Bot 2→6** (`ui/stats/MKTopBottomStatsCard.kt` : `TopBottomColumns`). Les **shocks** ne sont plus une section autonome (intégrés à « Séries & scores » / « Scores moyens »). Alimentées par `MapStats.positionDistribution` (positions du joueur en Indiv, de l'ÉQUIPE hôte sinon) et `topsTable`/`bottomsTable`. `MapStats.teamAveragePosition` porte la position moyenne d'équipe.
 - **Classements complets** (`OpponentTracksRankingScreen` et `MapPilotsRankingScreen`, **texte des cellules en noir** sur les deux) : réutilisent le **même VM** que la fiche (même clé de nav → mêmes données/mode/tri) et la grille **`ui/stats/PodiumGrid.kt` `podiumRows`** (extraite de `StatsRankingScreen`, rule 16). `OpponentTracksRankingScreen` affiche le **même sélecteur de tri** (`TracksSortSelector` interne au package, `onDark=false`). Cartes podium Top3/Flop3 des fiches via **`ui/stats/MKPodiumSectionCard.kt` `PodiumSectionCard`** (mutualisée, param `selector` optionnel pour héberger le sélecteur de tri sur la fiche adversaire).
-- **Routage** : `RootScreen.onStats` dispatche `PlayerStats`→`Statsfull/{userId}` (#65 : `StatsFullScreen(showTabs = false)` centré sur le joueur cliqué, sélecteur Indiv/Équipe masqué ; le `is24p` de `PlayerStats` n'est pas consommé — `StatsFullViewModel` fige `is24p = false`, #37), `OpponentStats`→`Opponent/{teamId}/{userId}/{season}`, `MapStats`→`Map/{trackIndex}/{userId}/{season}` ; sous-routes `…/{season}/Tracks`, `…/{season}/Pilots`, `…/{season}/Baggers`, `…/{season}/Opponents` (arg `userId` **nullable**, `season` **`StringType`**). **Propagation de la saison (#91)** : `StatsType.OpponentStats`/`MapStats` portent désormais `seasonNumber: Int?` (défaut `null`), rempli par `StatsRankingScreen` avec `state.selectedSeasonNumber` ; `RootScreen` l'encode en segment de route (`seasonNumber ?: "all"`) et le redécode côté factory via le helper top-level `String?.toSeasonNumber()` (`"all"`/null → `null`, sinon le numéro). Retour par `BackHandler`. Les trois `StatsType` émis par `StatsRankingScreen` (seul émetteur d'`onStats`) sont désormais tous routés vers des fiches dédiées : la branche `else` (route `Stats` → `StatsScreen` générique) n'est **plus atteinte** — `StatsScreen`/`StatsViewModel` et la route `Stats` deviennent **inutilisés** (conservés en attendant validation de leur suppression).
+- **Routage** : `RootScreen.onStats` dispatche `PlayerStats`→`Statsfull/{userId}` (#65 : `StatsFullScreen(showTabs = false)` centré sur le joueur cliqué, sélecteur Indiv/Équipe masqué ; le `is24p` de `PlayerStats` n'est pas consommé — `StatsFullViewModel` fige `is24p = false`, #37), `OpponentStats`→`Opponent/{teamId}/{userId}/{season}`, `MapStats`→`Map/{trackIndex}/{userId}/{season}` ; sous-routes `…/{season}/Tracks`, `…/{season}/Pilots`, `…/{season}/Baggers`, `…/{season}/Opponents` (arg `userId` **nullable**, `season` **`StringType`**). **Propagation de la saison (#91)** : `StatsType.OpponentStats`/`MapStats` portent désormais `seasonNumber: Int?` (défaut `null`), rempli par `StatsRankingScreen` avec `state.selectedSeasonNumber` ; `RootScreen` l'encode en segment de route (`seasonNumber ?: "all"`) et le redécode côté factory via le helper top-level `String?.toSeasonNumber()` (`"all"`/null → `null`, sinon le numéro). Retour par `BackHandler`. Les trois `StatsType` émis par `StatsRankingScreen` (seul émetteur d'`onStats`) sont tous routés vers des fiches dédiées ; le `when(type)` de `RootScreen.onStats` est donc **exhaustif sur les 3 membres** (plus de branche `else`). **Nettoyage #51** : l'ancien écran générique `StatsScreen`/`StatsViewModel`, la route `Stats`, le membre `StatsType.TeamStats` et les 6 cellules `ui/stats/` qui n'étaient consommées que par cet écran (`MKWarStatsCell`, `MKWarDetailsStatsCell`, `MKAdvancedStatsCell`, `MKRecordsCell`, `MKMapsRankingCell`, `MKPositionDistributionCell`) + `MKRecentFormCell` et `MKStatRow` ont été **supprimés**. La sealed class `StatsType` (allégée à `PlayerStats`/`OpponentStats`/`MapStats`) a été **extraite** dans `screen/stats/StatsType.kt` (même package `screen.stats` → imports inchangés).
 - **Lien « Résultats → » de `StatsFullScreen` (#65)** : `BalanceCard(showResultsLink = true)` → **toujours visible** (pôle Stats `showTabs=true` ET fiche `statsfull` `showTabs=false`). Son `onResults` ouvre l'**historique filtré par joueur** via la route **du graphe racine** `Home/WarList/{userId}` (résolvant le crash : l'ancienne cible `Home/WarList` n'existe QUE dans le NavHost interne de `HomeScreen`, introuvable depuis le graphe racine où vit `Statsfull`). Câblage : la route `Statsfull/{userId}` passe `Home/WarList/$userId` (ce joueur) ; le pôle Stats (`Home/Stats`) remonte au graphe racine via un nouveau callback `HomeScreen.onResults` → `Home/WarList/me` (joueur courant). Filtrage côté `WarListViewModel` (`@AssistedInject`, `@Assisted userId: String?`) : `userId` `null`/`me` = pas de filtre participation (ou joueur courant selon le contexte), sinon `WarEntity.hasPlayer(userId)`. **War en cours & historique** : la war en cours **n'apparaît jamais** dans `WarListScreen` — non par un filtre, mais parce qu'elle **n'est écrite dans Room qu'à la VALIDATION** (`CurrentWarViewModel.onValidateWar` → `databaseRepository.writeWar(WarEntity(war))`) ; tant qu'elle est « en cours » elle vit seulement dans `currentWars/{rosterId}` (Firebase) + DataStore, donc hors de `getWars()`. La **bannière « Reprendre »** (`CurrentWarBanner`) a en outre été **retirée** de `WarListScreen` (#65) → la reprise se fait uniquement depuis l'Accueil (`WelcomeScreen`). `WarListViewModel` conserve `state.currentWar` (issu de `listenToCurrentWar(rosterId)`, combiné à `getWars()` via `flatMapLatest { combine(...) }`) **uniquement pour le gating** du bouton « Créer une war » (masqué si `currentWar != null`) — pas pour filtrer la liste. Le premier « correctif » (filtre `.filter { it.id != currentWar?.id?.toString() }`) était **dead code** — la war en cours n'étant jamais dans Room — et a été retiré (rule 61). Back = `popBackStack` → retour à `StatsFullScreen` (rule 14). **Écarts maquette assumés** (décisions produit) : (a) le prototype ne montre le lien « Résultats → » que sur `statsfull`, pas sur l'onglet Individuelles du pôle Stats ; (b) le prototype prévoit une bannière « Reprendre » sur le pôle Wars, retirée ici.
 - **Écarts documentés** : pas de flèche `←` dans l'app bar (`BaseScreen` n'en propose pas).
 
@@ -970,8 +949,7 @@ Cache mémoire (cf. §9).
 - `requestAuthorization(): Boolean` : sur Android 13+, si `permissionCheck() == CanAsk`, mémorise la demande puis lance le launcher de `MainActivity`. `PermissionStatus` = `Granted` / `CanAsk` / `Denied` (selon `shouldShowRequestPermissionRationale` et le flag `notifAlreadyRequested`).
 
 ### WorkerRepository
-- `launchBackgroundTask(workerClass, tag, data?)` : `OneTimeWorkRequest` ; **annule d'abord** `cancelAllWorkByTag(tag)` puis `enqueue` (anti-doublon).
-- `cancelAllTask()`.
+- `launchBackgroundTask(workerClass, tag, data?)` : `OneTimeWorkRequest` ; **annule d'abord** `cancelAllWorkByTag(tag)` puis `enqueue` (anti-doublon). (La méthode `cancelAllTask()` a été supprimée, #51 : aucun appelant.)
 
 ### PDFRepository, WorldRecordsRepository
 Détaillés en §15 et §17.

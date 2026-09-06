@@ -32,7 +32,6 @@ import fr.harmoniamk.statsmkworld.screen.playerProfile.PlayerProfileViewModel
 import fr.harmoniamk.statsmkworld.screen.registry.RegistryScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupScreen
 import fr.harmoniamk.statsmkworld.screen.signup.SignupViewModel
-import fr.harmoniamk.statsmkworld.screen.stats.StatsScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerMapsRankingScreen
 import fr.harmoniamk.statsmkworld.screen.stats.full.PlayerOpponentsRankingScreen
@@ -116,19 +115,15 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 // « Voir par période » (#80) : écran de graphe racine poussé par-dessus le pôle Wars.
                 onPeriodView = { navController.navigate("Home/Period") },
                 onStats = { type ->
-                    // Fiches dédiées Joueur (#65 : StatsFullScreen centré sur le joueur cliqué,
-                    // sans sélecteur Indiv/Équipe), Adversaire (#27) et Circuit (#27) ; les autres
-                    // portées (ex. équipe) restent sur l'écran Stats générique. Le userId (nullable)
+                    // Fiches dédiées selon la portée émise par les Classements : Joueur
+                    // (#65 : StatsFullScreen centré sur le joueur cliqué, sans sélecteur
+                    // Indiv/Équipe), Adversaire (#27) et Circuit (#27). Le userId (nullable)
                     // sème le mode initial Indiv/Équipe de la fiche (rule 11) ; « null » = Équipe.
                     when (type) {
                         is StatsType.PlayerStats -> navController.navigate("Statsfull/${type.userId}")
                         // Saison propagée (#91 pt.5) en segment de route : « all » = tout l'historique.
                         is StatsType.OpponentStats -> navController.navigate("Opponent/${type.teamId}/${type.userId ?: "null"}/${type.seasonNumber ?: "all"}")
                         is StatsType.MapStats -> navController.navigate("Map/${type.trackIndex?.joinToString(",").orEmpty()}/${type.userId ?: "null"}/${type.seasonNumber ?: "all"}")
-                        else -> {
-                            navController.currentBackStackEntry?.savedStateHandle?.set("type", type)
-                            navController.navigate("Stats")
-                        }
                     }
                 },
                 onSearch = { navController.navigate("Home/Registry") },
@@ -151,23 +146,6 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onBack = { navController.popBackStack() },
                 onPlayerProfile = { navController.navigate("Player/Profile/$it") },
                 onTeamProfile = { navController.navigate("Team/Profile/$it") }
-            )
-        }
-
-        composable("Stats") {
-            val type =
-                navController.previousBackStackEntry?.savedStateHandle?.get<StatsType>("type")
-            StatsScreen(
-                viewModel = hiltViewModel(
-                    creationCallback = { factory: fr.harmoniamk.statsmkworld.screen.stats.StatsViewModel.Factory ->
-                        factory.create(type)
-                    }
-                ),
-                onBack = { navController.popBackStack() },
-                onWarDetailsClick = {
-                    navController.currentBackStackEntry?.savedStateHandle?.set("war", it)
-                    navController.navigate("Home/WarDetails")
-                }
             )
         }
 
