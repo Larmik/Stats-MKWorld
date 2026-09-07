@@ -17,11 +17,16 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 @Composable
-fun PositionCell(position: Int, modifier: Modifier = Modifier, isVisible: Boolean = true, is24p: Boolean, onClick: (Int) -> Unit) {
+fun PositionCell(
+    position: Int,
+    modifier: Modifier = Modifier,
+    isVisible: Boolean = true,
+    is24p: Boolean,
+    // Défaut = grand rendu (EditTrack) ; AddTrack passe une taille réduite pour sa grille.
+    fontSize: Int = if (is24p) 50 else 70,
+    onClick: (Int) -> Unit
+) {
     Column(modifier.background(if (isVisible) Colors.blackAlphaed else Colors.transparent, RoundedCornerShape(5.dp)).border(1.dp, if (isVisible) Colors.white else Colors.transparent, RoundedCornerShape(5.dp)).clickable { if (isVisible) onClick(position) }.alpha(if (isVisible) 1f else 0f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        MKText(text = position.toString(), textColor = position.positionColor(is24p), fontSize = when (is24p) {
-            true -> 50
-            else -> 70
-        }, font = Fonts.MKPosition)
+        MKText(text = position.toString(), textColor = position.positionColor(is24p), fontSize = fontSize, font = Fonts.MKPosition)
     }
 }

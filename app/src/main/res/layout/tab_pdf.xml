@@ -108,6 +108,7 @@
                         android:orientation="vertical">
 
                     <LinearLayout
+                        android:id="@+id/tab_winner_team_first_player_layout"
                         android:background="#BB000000"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -169,6 +170,7 @@
 
                     </LinearLayout>
                     <LinearLayout
+                        android:id="@+id/tab_winner_team_second_player_layout"
                         android:background="#BB000000"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -229,6 +231,7 @@
 
                     </LinearLayout>
                     <LinearLayout
+                        android:id="@+id/tab_winner_team_third_player_layout"
                         android:background="#BB000000"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -289,6 +292,7 @@
 
                         </LinearLayout>
                         <LinearLayout
+                            android:id="@+id/tab_winner_team_fourth_player_layout"
                             android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -338,6 +342,7 @@
 
                         </LinearLayout>
                         <LinearLayout
+                            android:id="@+id/tab_winner_team_fifth_player_layout"
                             android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -386,6 +391,7 @@
 
                         </LinearLayout>
                         <LinearLayout
+                            android:id="@+id/tab_winner_team_sixth_player_layout"
                             android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -697,6 +703,7 @@
                         android:orientation="vertical">
 
                     <LinearLayout
+                        android:id="@+id/tab_loser_team_first_player_layout"
                         android:background="#BB000000"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -757,6 +764,7 @@
 
                     </LinearLayout>
                     <LinearLayout
+                        android:id="@+id/tab_loser_team_second_player_layout"
                         android:background="#BB000000"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -817,6 +825,7 @@
 
                     </LinearLayout>
                     <LinearLayout
+                        android:id="@+id/tab_loser_team_third_player_layout"
                         android:background="#BB000000"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -876,6 +885,7 @@
 
                         </LinearLayout>
                         <LinearLayout
+                            android:id="@+id/tab_loser_team_fourth_player_layout"
                             android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -925,6 +935,7 @@
 
                         </LinearLayout>
                         <LinearLayout
+                            android:id="@+id/tab_loser_team_fifth_player_layout"
                             android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -973,6 +984,7 @@
 
                         </LinearLayout>
                         <LinearLayout
+                            android:id="@+id/tab_loser_team_sixth_player_layout"
                             android:background="#BB000000"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

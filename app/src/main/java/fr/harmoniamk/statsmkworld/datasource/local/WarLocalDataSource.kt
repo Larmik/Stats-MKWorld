@@ -16,10 +16,8 @@ import javax.inject.Singleton
 
 interface WarLocalDataSourceInterface {
     fun getAll(): Flow<List<WarEntity>>
-    fun getById(id: String): Flow<WarEntity?>
     suspend fun insert(wars: List<WarEntity>)
     suspend fun insert(war: WarEntity)
-    suspend fun delete(war: WarEntity)
     suspend fun clear()
 }
 
@@ -41,13 +39,9 @@ class WarLocalDataSource @Inject constructor(@ApplicationContext private val con
 
     override fun getAll(): Flow<List<WarEntity>> = dao.getAll()
 
-    override fun getById(id: String): Flow<WarEntity?> = dao.getById(id)
-
     override suspend fun insert(wars: List<WarEntity>) = dao.bulkInsert(wars)
 
     override suspend fun insert(war: WarEntity) = dao.insert(war)
-
-    override suspend fun delete(war: WarEntity) = dao.delete(war)
 
     override suspend fun clear() = dao.clear()
 

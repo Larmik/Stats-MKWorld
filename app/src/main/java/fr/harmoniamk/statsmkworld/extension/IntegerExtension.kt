@@ -4,6 +4,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 
+/**
+ * Couleur d'accent d'une équipe/opposant à partir de son index (1..39) : palette fixe
+ * de teintes distinctes pour différencier visuellement les équipes (line-ups, cellules).
+ * Index hors plage (ou `null`) → noir.
+ */
 fun Int?.toTeamColor() = Color(
     when (this) {
         1 -> "#ef5350"
@@ -49,6 +54,13 @@ fun Int?.toTeamColor() = Color(
     }.toColorInt()
 )
 
+/**
+ * Couleur associée à une position d'arrivée : or/argent/bronze pour le podium puis
+ * dégradé chaud décroissant. Deux barèmes selon le mode : 24 joueurs (positions 1..24,
+ * regroupées) ou 12 joueurs (1..12). Position hors plage (ou `null`) → noir.
+ *
+ * @param is24p `true` pour le barème 24 joueurs, `false` (défaut) pour 12 joueurs.
+ */
 fun Int?.positionColor(is24p: Boolean = false) = Color(
     when (is24p) {
         true -> when (this) {
@@ -82,6 +94,27 @@ fun Int?.positionColor(is24p: Boolean = false) = Color(
         .toColorInt()
 )
 
+/**
+ * Couleur d'un différentiel de score (du point de vue de l'hôte) : **vert** si positif,
+ * **rouge** si négatif, **blanc** si nul. Mutualisé (rules 16/61) : diff de la carte score
+ * `CurrentWar`, diff de la manche dans le résumé d'`AddTrack`. Reprend les couleurs de la
+ * maquette (`--win`/`--loss`/`--tie`).
+ */
+fun Int.diffColor(): Color = Color(
+    when {
+        this > 0 -> "#81C995" // --win (vert)
+        this < 0 -> "#F28B82" // --loss (rouge)
+        else -> "#FFFFFF"     // --tie (blanc)
+    }.toColorInt()
+)
+
+/**
+ * Convertit une position d'arrivée en points marqués sur la course (barème Mario Kart :
+ * 15 pour la 1ʳᵉ, décroissant jusqu'à 1 pour la dernière). Barème distinct 24 j / 12 j.
+ * Position invalide (`null` / hors plage) → 0 point.
+ *
+ * @param is24p `true` pour le barème 24 joueurs, `false` pour 12 joueurs.
+ */
 fun Int?.positionToPoints(is24p: Boolean) = when (is24p) {
     true ->  when (this) {
         1 -> 15
@@ -119,6 +152,13 @@ fun Int?.positionToPoints(is24p: Boolean) = when (is24p) {
 
 
 
+/**
+ * Formate l'écart d'une war par rapport au score d'équilibre (`MID_WAR_SCORE`) sous forme
+ * signée « +N » / « -N » / « 0 ». L'écart total est le double de la distance au milieu (les
+ * points gagnés par l'un sont perdus par l'autre). Barème distinct 24 j / 12 j.
+ *
+ * @param is24p `true` pour le score d'équilibre 24 joueurs, `false` (défaut) pour 12 joueurs.
+ */
 fun Int.warScoreToDiff(is24p: Boolean = false): String {
     val mid = when (is24p) {
         true -> ScoringConstants.MID_WAR_SCORE_24P
@@ -136,6 +176,12 @@ fun Int.warScoreToDiff(is24p: Boolean = false): String {
     }
 }
 
+/**
+ * Formate l'écart d'une COURSE par rapport au score d'équilibre de course (`MID_TRACK_SCORE`)
+ * en « +N » / « -N » / « 0 » (double de la distance au milieu). Barème distinct 24 j / 12 j.
+ *
+ * @param is24p `true` pour le score d'équilibre de course 24 joueurs, `false` (défaut) pour 12 joueurs.
+ */
 fun Int.trackScoreToDiff(is24p: Boolean = false): String {
     val mid = when (is24p) {
         true -> ScoringConstants.MID_TRACK_SCORE_24P
@@ -153,6 +199,13 @@ fun Int.trackScoreToDiff(is24p: Boolean = false): String {
     }
 }
 
+/**
+ * Opération inverse de [positionToPoints] : à partir d'un nombre de points, retourne la ou
+ * les positions correspondantes (plusieurs positions partagent le même total dans le barème
+ * 24 j). Points inconnus → `listOf(0)`.
+ *
+ * @param is24p `true` pour le barème 24 joueurs, `false` pour 12 joueurs.
+ */
 fun Int?.pointsToPosition(is24p: Boolean) = when (is24p) {
     true -> when (this) {
         15 -> listOf(1)

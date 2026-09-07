@@ -1,35 +1,33 @@
 # Domaine exclusivement mkworld : aucun accès à un autre jeu (mk8dx)
 
-**Portée** : tout accès aux données équipes/rosters MKCentral — `api/MKCentralApi.kt`,
-`datasource/network/MKCentralDataSource.kt`, la synchro `usecase/FetchUseCase.kt`,
-et **tout futur accès** aux équipes/rosters (endpoint, requête, cache local Room,
+**Portée** : tout accès aux données équipes/rosters MKCentral —
+`api/MKCentralApi.kt`, `datasource/network/MKCentralDataSource.kt`,
+`usecase/FetchUseCase.kt`, et **tout futur accès** (endpoint, requête, cache Room,
 DataStore).
 
-Le domaine métier de l'application est **exclusivement mkworld**. On ne doit
-**jamais** accéder à, récupérer, ni stocker une équipe ou un roster d'un autre
-jeu (`game=mk8dx` ou tout `game != "mkworld"`).
+Le domaine métier est **exclusivement mkworld**. Ne **jamais** accéder à, récupérer,
+ni stocker une équipe/roster d'un autre jeu (`game=mk8dx` ou tout `game != "mkworld"`).
 
 Interdictions fermes :
 
-- **Ne pas ajouter/réintroduire** un endpoint ou un filtre ciblant `game=mk8dx`
-  (ou tout jeu ≠ mkworld). L'endpoint historique `MKCentralApi.getMK8Teams`
-  (`registry/teams?game=mk8dx…`) a été **supprimé** et ne doit **pas** revenir,
-  pas plus que sa méthode de data source ou ses appels dans `FetchUseCase`.
+- **Ne pas ajouter/réintroduire** un endpoint ou filtre ciblant `game=mk8dx` (ou
+  tout jeu ≠ mkworld). L'endpoint historique `MKCentralApi.getMK8Teams`
+  (`registry/teams?game=mk8dx…`) a été **supprimé** et ne doit **pas** revenir, ni
+  sa méthode de data source, ni ses appels dans `FetchUseCase`.
 - **Ne jamais persister** en cache local (Room `TeamEntity`, DataStore) une
-  équipe/roster non-mkworld. `fetchTeams()` ne récupère et n'écrit que les
-  équipes mkworld ; on conserve le filtre `TeamEntity.rosters.isNotEmpty()`
-  (rosters mkworld) et l'équipe spéciale « 6v6 Squad ».
+  équipe/roster non-mkworld. `fetchTeams()` ne récupère/écrit que les équipes
+  mkworld ; conserver le filtre `TeamEntity.rosters.isNotEmpty()` (rosters mkworld)
+  et l'équipe spéciale « 6v6 Squad ».
 - **Toute récupération d'équipes filtre `game=mkworld`.** L'unique endpoint liste
-  `getTeams` (utilisé par la synchro registre ET le diagnostic) fige
-  `game=mkworld` côté URL, avec le filtre par défaut du site MKCentral
-  (`is_active=true&is_historical=false&min_player_count=6` — équipes actives, non
+  `getTeams` (synchro registre ET diagnostic) fige `game=mkworld` côté URL, avec le
+  filtre par défaut MKCentral
+  (`is_active=true&is_historical=false&min_player_count=6` — actives, non
   historiques, ≥ 6 joueurs) ; côté modèle, tout balayage de `rosters` filtre
-  `it.game == "mkworld"`. (L'ancien endpoint `getAllTeams`, dédoublonné après
-  convergence du filtre, a été supprimé — ne pas le réintroduire.)
+  `it.game == "mkworld"`. (L'ancien endpoint `getAllTeams` a été supprimé — ne pas
+  le réintroduire.)
 
-Conséquence assumée pour le **diagnostic des adversaires « Équipe inconnue »**
-(`FetchUseCase.diagnoseUnknownOpponents`) : un id d'adversaire d'origine mk8dx
-pure, non couvert par la table d'override manuel `opponentOverrides`, tombe en
-`NotFound` — c'est **voulu** (ces cas relèvent soit de l'override manuel, soit
-d'une suppression de la war). L'override manuel et l'heuristique nom/tag ne
+Conséquence assumée pour le diagnostic `FetchUseCase.diagnoseUnknownOpponents` : un
+id d'adversaire mk8dx pur, non couvert par la table d'override manuel
+`opponentOverrides`, tombe en `NotFound` — c'est **voulu** (relève de l'override
+manuel ou d'une suppression de war). L'override manuel et l'heuristique nom/tag ne
 s'appuient que sur la liste mkworld.

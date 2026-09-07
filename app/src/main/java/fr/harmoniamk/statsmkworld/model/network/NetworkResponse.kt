@@ -8,7 +8,4 @@ sealed class NetworkResponse<T> {
     val successResponse: T?
         get() = (this as? Success)?.response
 
-    val errorResponse: String?
-        get() = (this as? Error)?.message
-
 }

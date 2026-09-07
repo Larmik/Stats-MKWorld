@@ -20,6 +20,9 @@ import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,7 +36,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = AddWarViewModel.Factory::class)
 class AddWarViewModel @AssistedInject constructor(
-    @Assisted val is24p: Boolean,
+    @Assisted initialIs24p: Boolean,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
@@ -45,60 +48,66 @@ class AddWarViewModel @AssistedInject constructor(
         fun create(is24p: Boolean): AddWarViewModel
     }
 
-    /**
-     * État de l'étape intermédiaire de choix du roster adverse.
-     *
-     * N'est renseigné que lorsque l'équipe sélectionnée possède plusieurs
-     * rosters mkworld : le bottomSheet s'ouvre alors pour laisser choisir
-     * lequel affronter. [selectedRoster] porte la preview de la sélection.
-     */
-    data class RosterSelection(
-        val team: TeamEntity,
-        val rosters: List<MKCTeamRoster>,
-        val selectedRoster: MKCTeamRoster? = null
+    // Mode 12/24 : état interne réactif (semé par la nav) ; [onModeChange] le bascule
+    // sans re-navigation (rule 11).
+    private var is24p: Boolean = initialIs24p
+
+    /** Preview d'un adversaire au récap : nom/tag du roster, avatar de l'équipe parente (rule 12). */
+    data class OpponentPreview(
+        val name: String,
+        val tag: String,
+        val logo: String?,
+        val color: Int?
     )
 
     data class State(
+        // Étape courante (0 = Adversaire, 1 = Joueurs, 2 = Récap), pilotée dans le VM.
+        val step: Int = 0,
+        // Mode courant : pilote le nombre d'adversaires (1 en 12p, 3 en 24p).
+        val is24p: Boolean = false,
         val teamList: List<TeamEntity> = listOf(),
         val playerList: Map<String, List<PlayerSelector>> = mapOf(),
         val teamSelected: List<TeamEntity>? = null,
-        // Rosters adverses retenus, alignés sur teamSelected (null = équipe sans
-        // roster mkworld). Portent le nom/tag du roster pour l'affichage (preview
-        // de l'adversaire), l'avatar restant celui de l'équipe (teamSelected).
+        // Rosters adverses retenus, alignés sur teamSelected (null = équipe sans roster
+        // mkworld). Portent le nom/tag du roster ; l'avatar reste celui de l'équipe.
         val rostersSelected: List<MKCTeamRoster?> = listOf(),
+        val opponentPreviews: List<OpponentPreview> = listOf(),
         val buttonEnabled: Boolean = false,
         val nextButtonEnabled: Boolean = false,
         val warName: String? = null,
-        val rosterSelection: RosterSelection? = null
+        // id de l'équipe dont le sélecteur de roster multi-rosters est déplié inline (null = aucun).
+        val expandedRosterTeamId: String? = null,
+        val expandedRosters: List<MKCTeamRoster> = listOf(),
+        // Photos MKCentral des joueurs (playerId → url préfixée), résolues une fois en
+        // parallèle ; initiales en fallback tant qu'absentes (rule 12).
+        val playerAvatars: Map<String, String> = emptyMap()
     ) {
-        /**
-         * Équipe à afficher dans l'emplacement adverse [index] : avatar de l'équipe
-         * mais **nom du roster** sélectionné (principe « afficher le roster »).
-         */
-        fun opponentSlot(index: Int): TeamEntity? {
-            val team = teamSelected?.getOrNull(index) ?: return null
-            val roster = rostersSelected.getOrNull(index)
-            return team.copy(name = roster?.name ?: team.name, tag = roster?.tag ?: team.tag)
-        }
+        /** Nombre d'adversaires attendus selon le mode (1 en 12p, 3 en 24p). */
+        val opponentCount: Int get() = if (is24p) 3 else 1
+
+        /** Nombre de joueurs actuellement sélectionnés (sur les 6 attendus). */
+        val selectedPlayerCount: Int get() = playerList.values.flatten().count { it.isSelected }
+
+        /** Joueurs actuellement sélectionnés (pour le récap de l'étape 3). */
+        val selectedPlayers: List<PlayerEntity>
+            get() = playerList.values.flatten().filter { it.isSelected }.map { it.player }
     }
 
-    private val _state = MutableStateFlow(State())
+    private val _state = MutableStateFlow(State(is24p = initialIs24p))
     private var teams = listOf<TeamEntity>()
     private var players = listOf<PlayerEntity>()
     private var currentTeam: MKCTeam? = null
     private var rosterId: String? = null
 
-    // rosterId adverse retenu pour chaque équipe sélectionnée (index aligné sur teamSelected).
-    private var selectedRosterIds = listOf<String>()
+    // Photos MKCentral résolues (playerId → url), portée hors du `zip` pour survivre à ses
+    // ré-émissions. `@Volatile` : écrite depuis une coroutine, lue dans le mapping du flow.
+    @Volatile
+    private var playerAvatars: Map<String, String> = emptyMap()
+    // Garde-fou : résolution des avatars lancée une seule fois.
+    private var avatarsRequested = false
 
     private val _goToCurrent = MutableSharedFlow<Unit>()
     val goToCurrent = _goToCurrent.asSharedFlow()
-
-    private val _openRosterSheet = MutableSharedFlow<Unit>()
-    val openRosterSheet = _openRosterSheet.asSharedFlow()
-
-    private val _dismissRosterSheet = MutableSharedFlow<Unit>()
-    val dismissRosterSheet = _dismissRosterSheet.asSharedFlow()
 
     val state = databaseRepository.getTeams()
         .zip(databaseRepository.getPlayers()) { teams, players ->
@@ -106,16 +115,108 @@ class AddWarViewModel @AssistedInject constructor(
             this.teams = teams
             this.players = players
             this.currentTeam = team
+            // Résout (une fois) les photos de profil des joueurs, en parallèle.
+            resolvePlayerAvatars(players)
             State(
+                is24p = is24p,
                 teamList = teams,
                 playerList = players.map { PlayerSelector(it, false) }.groupBy { selector ->
                     val roster = team?.rosters?.firstOrNull { it.id.toString() == selector.player.rosterId }
                     roster?.name.orEmpty()
-                }
+                },
+                playerAvatars = playerAvatars
             )
         }
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+
+    /**
+     * Résout une fois, en parallèle (rule 30), les photos MKCentral des joueurs et pousse la
+     * `Map<playerId, url>` dans `_state` (les cellules passent des initiales à la photo).
+     */
+    private fun resolvePlayerAvatars(players: List<PlayerEntity>) {
+        if (avatarsRequested || players.isEmpty()) return
+        avatarsRequested = true
+        viewModelScope.launch {
+            val resolved = coroutineScope {
+                players.map { player ->
+                    async {
+                        val avatar = mkCentralDataSource.getPlayer(player.id).successResponse
+                            ?.userSettings?.avatar?.takeIf { it.isNotEmpty() }
+                            ?.let { "https://mkcentral.com$it" }
+                        player.id to avatar
+                    }
+                }.awaitAll()
+            }.mapNotNull { (id, url) -> url?.let { id to it } }.toMap()
+            if (resolved.isNotEmpty()) {
+                playerAvatars = resolved
+                _state.value = state.value.copy(playerAvatars = resolved)
+            }
+        }
+    }
+
+    /**
+     * Bascule 12↔24 sans re-navigation (rule 11) : le nombre d'adversaires change (1 vs 3),
+     * d'où la remise à zéro complète de la sélection (retour à l'étape 1).
+     */
+    fun onModeChange(is24p: Boolean) {
+        if (is24p == this.is24p) return
+        this.is24p = is24p
+        resetOpponentSelection()
+    }
+
+    /**
+     * Navigation entre étapes (rule 11) : un retour en arrière annule la sélection de l'étape
+     * rejointe (Adversaire = reset complet, Joueurs = line-up) ; aller en avant ne réinitialise rien.
+     */
+    fun onStepChange(step: Int) {
+        val current = state.value.step
+        when {
+            step >= current -> _state.value = state.value.copy(step = step)
+            step == 0 -> resetOpponentSelection()
+            else -> resetPlayerSelection()
+        }
+    }
+
+    /**
+     * Retour à l'étape Adversaire = remise à zéro complète (adversaires ET line-up). Mutualisé
+     * entre [onModeChange] et [onStepChange] (≥ 2 appelants, rules 30/61).
+     */
+    private fun resetOpponentSelection() {
+        _state.value = state.value.copy(
+            step = 0,
+            is24p = is24p,
+            teamList = teams,
+            teamSelected = null,
+            rostersSelected = listOf(),
+            opponentPreviews = listOf(),
+            nextButtonEnabled = false,
+            warName = null,
+            expandedRosterTeamId = null,
+            expandedRosters = listOf(),
+            // Repart d'une line-up vierge (retour à la première étape = restart complet).
+            playerList = state.value.playerList.mapValues { (_, list) ->
+                list.map { it.copy(isSelected = false) }
+            },
+            buttonEnabled = false
+        )
+    }
+
+    /** Remet la line-up à zéro (retour arrière vers l'étape Joueurs). */
+    private fun resetPlayerSelection() {
+        _state.value = state.value.copy(
+            step = 1,
+            playerList = state.value.playerList.mapValues { (_, list) ->
+                list.map { it.copy(isSelected = false) }
+            },
+            buttonEnabled = false
+        )
+    }
+
+    /** Replie le sélecteur de roster inline éventuellement déplié (étape 1). */
+    fun collapseRosterPicker() {
+        _state.value = state.value.copy(expandedRosterTeamId = null, expandedRosters = listOf())
+    }
 
     fun onSearchTeam(search: String) {
         val query = search.lowercase()
@@ -134,35 +235,20 @@ class AddWarViewModel @AssistedInject constructor(
                 ?.rosters?.filter { it.game == "mkworld" }
                 .orEmpty()
             when {
-                // Plusieurs rosters mkworld : étape intermédiaire de sélection.
-                rosters.size > 1 -> {
-                    _state.value = state.value.copy(
-                        rosterSelection = RosterSelection(team = team, rosters = rosters)
-                    )
-                    _openRosterSheet.emit(Unit)
-                }
-                // Un seul roster mkworld : on retient directement son rosterId.
-                // Fallback sur le teamId si l'équipe n'expose aucun roster mkworld.
+                // Plusieurs rosters mkworld : déplie le sélecteur inline (2ᵉ clic → replie).
+                rosters.size > 1 -> _state.value = state.value.copy(
+                    expandedRosterTeamId = team.id.takeIf { it != state.value.expandedRosterTeamId },
+                    expandedRosters = rosters
+                )
+                // Un seul roster (ou aucun → fallback teamId) : retenu directement.
                 else -> commitTeam(team, rosters.firstOrNull())
             }
         }
     }
 
-    /** Preview d'un roster dans le bottomSheet, sans valider la sélection. */
-    fun onRosterSelected(roster: MKCTeamRoster) {
-        val selection = state.value.rosterSelection ?: return
-        _state.value = state.value.copy(
-            rosterSelection = selection.copy(selectedRoster = roster)
-        )
-    }
-
-    /** Valide le roster choisi dans le bottomSheet et ferme celui-ci. */
-    fun onRosterValidated() {
-        val selection = state.value.rosterSelection ?: return
-        val roster = selection.selectedRoster ?: return
-        commitTeam(selection.team, roster)
-        _state.value = state.value.copy(rosterSelection = null)
-        viewModelScope.launch { _dismissRosterSheet.emit(Unit) }
+    /** Valide le roster [roster] choisi dans le sélecteur inline d'une équipe multi-rosters. */
+    fun onRosterSelected(team: TeamEntity, roster: MKCTeamRoster) {
+        commitTeam(team, roster)
     }
 
     /** Tag du roster hôte mkworld (à défaut, tag de l'équipe) pour le nom de war. */
@@ -178,39 +264,47 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     private fun commitTeam(team: TeamEntity, roster: MKCTeamRoster?) {
-        val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { add(team) }
-        val selectedRosterMetas = state.value.rostersSelected.toMutableList().apply { add(roster) }
-        // rosterId retenu = id du roster mkworld, sinon fallback sur le teamId.
-        selectedRosterIds = selectedRosterIds.toMutableList().apply { add(roster?.id?.toString() ?: team.id) }
-        val buttonEnabled = when (is24p) {
-            true -> selectedTeams.size == 3
-            else -> selectedTeams.size == 1
-        }
-        _state.value = state.value.copy(
-            teamList = when (buttonEnabled) {
+        val current = state.value
+        // Garde d'unicité (#91 pt.9) : pas d'ajout en double (double-clic). État courant =
+        // source de vérité unique → teamSelected/rostersSelected restent alignés.
+        if (current.teamSelected.orEmpty().any { it.id == team.id }) return
+        val selectedTeams = current.teamSelected.orEmpty() + team
+        val selectedRosterMetas = current.rostersSelected + roster
+        // Preview de l'adversaire : nom/tag du roster (rule 12), avatar de l'équipe.
+        val previews = current.opponentPreviews + OpponentPreview(
+            name = roster?.name ?: team.name,
+            tag = roster?.tag ?: team.tag,
+            logo = team.logo,
+            color = roster?.color?.toInt() ?: team.color
+        )
+        val allOpponentsPicked = selectedTeams.size == current.opponentCount
+        _state.value = current.copy(
+            // À l'issue de la sélection complète, on bascule sur l'étape Joueurs.
+            step = if (allOpponentsPicked) 1 else 0,
+            teamList = when (allOpponentsPicked) {
                 false -> teams.filterNot { selectedTeams.contains(it) }
                 else -> listOf()
             },
             teamSelected = selectedTeams,
             rostersSelected = selectedRosterMetas,
-            nextButtonEnabled = buttonEnabled,
-            warName = warName(selectedRosterMetas, selectedTeams)
+            opponentPreviews = previews,
+            nextButtonEnabled = allOpponentsPicked,
+            warName = warName(selectedRosterMetas, selectedTeams),
+            expandedRosterTeamId = null,
+            expandedRosters = listOf()
         )
     }
 
     fun onRemoveTeam() {
-        val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { removeAt(lastIndex) }
+        val selectedTeams = state.value.teamSelected.orEmpty().toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
         val selectedRosterMetas = state.value.rostersSelected.toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
-        selectedRosterIds = selectedRosterIds.toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
-        val buttonEnabled = when (is24p) {
-            true -> selectedTeams.size == 3
-            else -> selectedTeams.size == 1
-        }
+        val previews = state.value.opponentPreviews.toMutableList().apply { if (isNotEmpty()) removeAt(lastIndex) }
         _state.value = state.value.copy(
             teamList = teams.filterNot { selectedTeams.contains(it) },
             teamSelected = selectedTeams,
             rostersSelected = selectedRosterMetas,
-            nextButtonEnabled = buttonEnabled,
+            opponentPreviews = previews,
+            nextButtonEnabled = selectedTeams.size == state.value.opponentCount,
             warName = warName(selectedRosterMetas, selectedTeams)
         )
     }
@@ -227,9 +321,12 @@ class AddWarViewModel @AssistedInject constructor(
             }
             newValues[pair.key] = newList
         }
+        // 6 joueurs → bascule auto sur le Récap ; en retirer un ramène à l'étape Joueurs.
+        val complete = newValues.flatMap { it.value }.count { it.isSelected } == 6
         _state.value = state.value.copy(
+            step = if (complete) 2 else 1,
             playerList = newValues,
-            buttonEnabled = newValues.flatMap { it.value }.filter { it.isSelected }.size == 6
+            buttonEnabled = complete
         )
     }
 
@@ -238,7 +335,13 @@ class AddWarViewModel @AssistedInject constructor(
             val roster = dataStoreRepository.mkcPlayer.firstOrNull()
                 ?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString() ?: return@launch
             rosterId = roster
-            val opponents = selectedRosterIds
+            // Ids d'opposant dérivés de l'état (#91 pt.9) : rosterId mkworld retenu, sinon
+            // fallback teamId, alignés index par index sur teamSelected.
+            val currentState = state.value
+            val selectedTeams = currentState.teamSelected.orEmpty()
+            val opponents = currentState.rostersSelected.mapIndexed { index, rosterMeta ->
+                rosterMeta?.id?.toString() ?: selectedTeams.getOrNull(index)?.id.orEmpty()
+            }
             val teams = listOf(roster) + opponents
             val war = War(
                 id = System.currentTimeMillis(),

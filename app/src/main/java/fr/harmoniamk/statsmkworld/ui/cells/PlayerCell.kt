@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.countryFlag
+import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -73,7 +74,7 @@ fun PlayerCell(
         ) {
             MKText(text = finalPlayer?.country?.countryFlag.orEmpty(), fontSize = 30)
             MKText(
-                text = finalPlayer?.name.orEmpty(),
+                text = finalPlayer?.name.orEmpty().displayName,
                 font = Fonts.NunitoBD,
                 textColor = textColor,
                 maxLines = 1
@@ -201,13 +202,11 @@ fun PlayerCellPreview() {
             ),
             stats = Stats(
                 WarStats(listOf()),
-                null,
-                null,
-                null,
                 listOf(),
                 listOf(),
                 listOf(),
-            )
+            ),
+            participationRate = 0
         )
     )
 }

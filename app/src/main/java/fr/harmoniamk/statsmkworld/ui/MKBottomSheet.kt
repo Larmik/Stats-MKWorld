@@ -8,16 +8,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * Wrapper maison autour du [ModalBottomSheetLayout] de Material2.
- *
- * Expose trois slots :
- *  - [sheetState] : l'état du sheet piloté par l'appelant ;
- *  - [sheetContent] : le contenu personnalisé affiché dans le sheet ;
- *  - [content] : le corps de l'écran, englobé par le sheet.
- *
- * Le [BackHandler] est géré ici : si le sheet est visible il le ferme,
- * sinon il délègue à [onBack]. Passer [onBack] à `null` désactive ce
- * comportement (l'appelant gère alors lui-même le back).
+ * Wrapper maison autour du [ModalBottomSheetLayout] Material2. Le back ferme le sheet s'il
+ * est visible, sinon délègue à [onBack] (`null` = l'appelant gère le back).
  */
 @Composable
 fun MKBottomSheet(

@@ -11,22 +11,14 @@ import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
 import kotlinx.coroutines.flow.firstOrNull
 
 /**
- * Résout les adversaires d'une war pour l'**affichage** : chaque `rosterId` de
- * `teamOpponent` est remonté à son équipe parente via
- * [DatabaseRepositoryInterface.getTeam], puis, si le roster est identifiable,
- * le **nom et le tag du roster** remplacent ceux de l'équipe (l'**avatar** et la
- * couleur de l'équipe parente sont conservés — principe : dès qu'une distinction
- * équipe/roster est possible, afficher le roster). Le **rosterId est conservé
- * comme `TeamEntity.id`** : indispensable pour apparier un adversaire à son
- * score/pénalité par identifiant (tableau des scores 24p, pénalités), à l'image
- * de l'hôte (`teamHost` = rosterId).
+ * Résout les adversaires d'une war pour l'affichage. Chaque `rosterId` de `teamOpponent`
+ * est remonté à son équipe parente : si le roster est identifiable, nom/tag du **roster**
+ * (avatar/couleur de l'équipe conservés, rule 12). L'`id` reste le **rosterId** (appariement
+ * score/pénalité par identifiant, comme l'hôte).
  *
- * **Résolution non destructive** : un adversaire dont l'id ne se résout plus
- * localement (équipe/roster disparu du cache, war legacy jamais synchronisée)
- * n'est **pas** supprimé — on retombe sur une [TeamEntity] dégradée (nom
- * « Équipe inconnue », tag « ??? », sans logo) afin que l'adversaire reste
- * visible plutôt que d'être silencieusement effacé (nom + logo absents). L'id
- * (rosterId/teamId) est conservé pour l'appariement score/pénalité.
+ * **Non destructif** (rule 12) : un id irrésoluble (roster/équipe hors cache, war legacy)
+ * n'est pas effacé mais dégradé en [TeamEntity] « Équipe inconnue » / « ??? » / sans logo,
+ * en conservant l'id pour l'appariement.
  */
 suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): List<TeamEntity> =
     teamOpponent.map { rosterId ->

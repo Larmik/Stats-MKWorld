@@ -16,6 +16,7 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamList
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,7 +58,8 @@ class FetchUseCase @Inject constructor(
     private val firebaseRepository: FirebaseRepositoryInterface,
     private val mkCentralDataSource: MKCentralDataSourceInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val databaseRepository: DatabaseRepositoryInterface
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val seasonRepository: SeasonRepositoryInterface
 ) : FetchUseCaseInterface, CoroutineScope {
 
     override suspend fun fetchData(playerId: String) = fetchPlayer(playerId)
@@ -68,6 +70,8 @@ class FetchUseCase @Inject constructor(
             fetchTeams()
             val rostersId = team?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
             rostersId?.forEach { fetchWars(it) }
+            // Saisons (#30) : RTDB seasons/{teamId} → Room (rattaché à l'ÉQUIPE, pas au roster).
+            team?.id?.let { seasonRepository.fetchSeasons(it.toString()) }
             dataStoreRepository.setLastUpdate(Date().time)
         } ?: Unit
 
@@ -84,10 +88,18 @@ class FetchUseCase @Inject constructor(
         team?.let {
             dataStoreRepository.setMKCTeam(it)
             databaseRepository.clearPlayers()
-            it.rosters.filter { it.game == "mkworld" }.forEach { roster ->
+            // Avatar des membres (#50) : seul registry/players/{id} le porte (pas les endpoints
+            // équipe) → résolu PAR membre, SÉQUENTIELLEMENT (rule 30 : une rafale parallèle se
+            // fait throttler par MKCentral → successResponse=null sans exception). Chaque appel
+            // tolérant aux échecs (runCatching → avatar null = initiales), tous traités pareil.
+            it.rosters.filter { roster -> roster.game == "mkworld" }.forEach { roster ->
                 roster.players.forEach { player ->
-                    val user = firebaseRepository.getUser(teamId, player.playerId)
-                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString())
+                    val user = runCatching { firebaseRepository.getUser(teamId, player.playerId) }.getOrNull()
+                    val avatar = runCatching {
+                        mkCentralDataSource.getPlayer(player.playerId).successResponse
+                            ?.userSettings?.avatar?.takeIf { avatar -> avatar.isNotEmpty() }
+                    }.getOrNull()
+                    val playerEntity = PlayerEntity(player = player, role = user?.role ?: 0, currentWar = user?.currentWar.orEmpty(), discordId = user?.discordId.orEmpty(), rosterId = roster.id.toString(), avatar = avatar)
                     databaseRepository.writePlayer(playerEntity)
                 }
             }
@@ -117,34 +129,25 @@ class FetchUseCase @Inject constructor(
     }
 
     override suspend fun fetchTeams(): String  {
-        // Domaine exclusivement mkworld (cf. rule 31-mkworld-only) : on ne récupère
-        // et ne stocke QUE les équipes mkworld.
+        // Domaine exclusivement mkworld (rule 31) : on ne récupère/stocke QUE des équipes mkworld.
         val teams = mutableListOf<TeamEntity>()
         var teamPage = 1
         val firstResponse = getTeams(teamPage)
-        // TeamEntity(MKCTeam) renseigne aussi rosters {id, nom, tag} (rosters mkworld) —
-        // aucune requête supplémentaire, les rosters sont déjà dans la réponse liste.
+        // TeamEntity(MKCTeam) porte aussi ses rosters {id, nom, tag} (déjà dans la réponse liste).
         teams.addAll(firstResponse.second?.map { TeamEntity(it) }.orEmpty())
         while (teamPage < (firstResponse.first ?: 1)) {
             teamPage++
             val teamsToAdd = getTeams(teamPage)
             teams.addAll(teamsToAdd.second?.map { TeamEntity(it) }.orEmpty())
         }
-        // Purge + réécriture : le cache reflète EXACTEMENT la récupération mkworld
-        // courante (flushe tout reliquat périmé keyé par un ancien id — rosterId
-        // d'un schéma antérieur, équipe mk8dx d'avant la purge — cause des doublons
-        // de registre, ex. deux « Rozando la Katástrofe »). GARDE-FOU anti-wipe :
-        // on ne purge QUE si la récupération réseau a réussi (page 1 renvoyée non
-        // nulle) ; sinon on n'écrit rien pour ne pas effacer le registre sur une
-        // erreur réseau.
+        // Purge + réécriture : le cache reflète EXACTEMENT la récupération courante (flushe les
+        // reliquats périmés → doublons de registre). GARDE-FOU anti-wipe : on ne purge que si la
+        // page 1 est revenue non nulle (sinon rien, pour ne pas effacer sur erreur réseau).
         firstResponse.second?.let {
             databaseRepository.clearTeams()
-            // Ne persiste pas une équipe sans roster mkworld : elle ne serait pas
-            // résoluble à la granularité roster (et n'a pas de line-up mkworld à jouer).
+            // Pas d'équipe sans roster mkworld (non résoluble à la granularité roster).
             databaseRepository.writeTeams(teams.filter { it.rosters.isNotEmpty() })
-            // L'équipe spéciale « 6v6 Squad » (wars amicales sans adversaire MKCentral)
-            // est conservée volontairement après la purge, hors filtre roster (aucun
-            // roster mkworld).
+            // « 6v6 Squad » (wars amicales sans adversaire MKCentral) conservée hors filtre roster.
             databaseRepository.writeTeams(listOf(
                 TeamEntity(
                     name = "6v6 Squad",
@@ -195,26 +198,17 @@ class FetchUseCase @Inject constructor(
         }
 
 
-    // Migration idempotente teamId → rosterId des adversaires dans les wars
-    // historiques (nœud wars/{host}/{warId}), pilotée par le cache local des
-    // équipes. currentWars volontairement exclu.
-    //
-    // Pour chaque identifiant présent dans War.teamOpponent :
-    //  - s'il correspond à un teamId d'une équipe possédant EXACTEMENT un roster
-    //    mkworld → remplacé par ce rosterId (cas non ambigu) ;
-    //  - équipe multi-rosters → conservé en teamId (roster joué inconnu) ;
-    //  - déjà un rosterId → ne matche aucun teamId connu → laissé tel quel.
-    // Garde-fou : on ne remplace un teamId par son rosterId que si ce rosterId
-    // se résout effectivement à l'instant T (databaseRepository.getTeam(rosterId)
-    // != null). Sinon on ne migre pas — écrire un rosterId non résolvable ferait
-    // disparaître le nom/logo de l'adversaire à l'affichage. La war n'est réécrite
-    // que si son teamOpponent a réellement changé (idempotent : une 2ᵉ exécution
-    // ne produit aucune écriture).
+    // Migration idempotente teamId → rosterId des adversaires des wars historiques
+    // (wars/{host}/{warId} ; currentWars exclu). Pour chaque id de War.teamOpponent :
+    //  - teamId d'une équipe MONO-roster mkworld → remplacé par ce rosterId ;
+    //  - équipe multi-rosters (roster joué inconnu) ou rosterId déjà → laissé tel quel.
+    // Garde-fou : remplacement seulement si le rosterId cible se résout (getTeam != null) —
+    // sinon le nom/logo disparaîtrait à l'affichage. War réécrite uniquement si teamOpponent
+    // change réellement (idempotent).
     override fun migrateOpponentsToRoster() = dataStoreRepository.mkcTeam
         .map { it.rosters.filter { roster -> roster.game == "mkworld" }.map { roster -> roster.id.toString() } }
         .zip(databaseRepository.getTeams()) { hostRosterIds, teams ->
-            // teamId → rosterId, uniquement pour les équipes mono-roster mkworld
-            // dont le rosterId cible est résolvable localement (getTeam != null).
+            // teamId → rosterId pour les équipes mono-roster dont le rosterId cible se résout.
             val monoRosterMap = teams
                 .filter { it.rosters.size == 1 }
                 .mapNotNull { team ->

@@ -34,7 +34,6 @@ import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
-import fr.harmoniamk.statsmkworld.ui.MKButtonStyle
 import fr.harmoniamk.statsmkworld.ui.MKDialog
 import fr.harmoniamk.statsmkworld.ui.MKLoaderDialog
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -85,7 +84,7 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
         )
     }
 
-    BaseScreen(title = "Debug") {
+    BaseScreen(title = "Debug", onBack = onBack) {
         LazyColumn {
             item {
                 Row(
@@ -112,6 +111,25 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
                         .clickable { viewModel.onUpdateBotData() }) {
                     MKText(
                         text = "Mettre à jour les données LariisBot",
+                        font = Fonts.Urbanist,
+                        modifier = Modifier.padding(vertical = 20.dp)
+                    )
+                }
+                Spacer(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Colors.blackAlphaed)
+                )
+            }
+            // Inscrit rétroactivement l'historique des 3 saisons dans RTDB + Room (#30).
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.onSeedSeasons() }) {
+                    MKText(
+                        text = "Inscrire les saisons existantes",
                         font = Fonts.Urbanist,
                         modifier = Modifier.padding(vertical = 20.dp)
                     )
@@ -341,7 +359,6 @@ private fun UnknownOpponentCell(
                                         fontSize = 12
                                     )
                                     MKButton(
-                                        style = MKButtonStyle.Gradient,
                                         text = "Réattribuer",
                                         onClick = { onReattribute(opponent.rawId, roster.rosterId) }
                                     )
@@ -362,7 +379,6 @@ private fun UnknownOpponentCell(
         }
         Spacer(Modifier.height(6.dp))
         MKButton(
-            style = MKButtonStyle.Minor(Colors.black),
             text = "Supprimer la war",
             onClick = onDelete
         )
@@ -393,7 +409,6 @@ private fun MissingPlayerCell(
         )
         Spacer(Modifier.height(6.dp))
         MKButton(
-            style = MKButtonStyle.Gradient,
             text = "Ajouter en ally",
             onClick = onAddAsAlly
         )

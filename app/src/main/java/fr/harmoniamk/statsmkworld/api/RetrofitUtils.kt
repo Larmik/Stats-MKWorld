@@ -9,12 +9,12 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitUtils {
 
-    // Construits une seule fois et réutilisés entre tous les appels (pool de connexions / DNS / threads partagés).
+    // Réutilisés entre tous les appels (pool de connexions / DNS / threads partagés).
     private val baseClient: OkHttpClient by lazy { OkHttpClient.Builder().build() }
     private val defaultFactory: Converter.Factory by lazy { MoshiConverterFactory.create() }
     private val callAdapterFactory by lazy { NetworkResponseCallAdapterFactory() }
 
-    // Une instance Retrofit (et son client) par couple (url, timeout), réutilisée d'un appel à l'autre.
+    // Une instance Retrofit (et son client) par couple (url, timeout).
     private val retrofitCache = ConcurrentHashMap<String, Retrofit>()
 
     fun <T> createRetrofit(
@@ -24,7 +24,7 @@ object RetrofitUtils {
         timeout: Long? = null
     ): T {
         val retrofit = retrofitCache.getOrPut("$url|${timeout ?: 0}|${System.identityHashCode(factory)}") {
-            // newBuilder() dérive un client en partageant le pool de connexions / dispatcher du client de base.
+            // newBuilder() partage le pool de connexions / dispatcher du client de base.
             val client = timeout?.let {
                 baseClient.newBuilder()
                     .callTimeout(it, TimeUnit.SECONDS)

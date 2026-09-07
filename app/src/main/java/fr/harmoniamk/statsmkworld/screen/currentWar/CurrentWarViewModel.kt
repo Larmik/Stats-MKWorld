@@ -54,12 +54,10 @@ class CurrentWarViewModel @Inject constructor(
     private val _state = MutableStateFlow(State())
     private val _backToHome = MutableSharedFlow<Unit>()
 
-    private val _onPage = MutableSharedFlow<Int>()
     private val _onToast = MutableSharedFlow<String>()
 
     val backToHome = _backToHome.asSharedFlow()
 
-    val onPage = _onPage.asSharedFlow()
     val onToast = _onToast.asSharedFlow()
 
     val state = _state
@@ -95,12 +93,6 @@ class CurrentWarViewModel @Inject constructor(
                 }
             }
             .launchIn(viewModelScope)
-    }
-
-    fun onPageChange(index: Int) {
-        viewModelScope.launch {
-            _onPage.emit(index)
-        }
     }
 
     fun onValueChange(key: String, value: String) {

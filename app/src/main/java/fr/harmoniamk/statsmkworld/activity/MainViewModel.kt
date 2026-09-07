@@ -40,9 +40,8 @@ class MainViewModel @Inject constructor(
 
     val state = flowOf(Unit)
         .map {
-            //Re-authentification anonyme Firebase au démarrage : l'UID est perdu après une
-            //réinstallation, on le régénère s'il manque. Échec (réseau) toléré, ne bloque pas
-            //la navigation (le résultat ne conditionne pas le startDestination).
+            // Re-auth anonyme Firebase : l'UID est perdu après réinstallation. Échec réseau
+            // toléré (ne conditionne pas le startDestination).
             if (!firebaseRepository.isUserConnected())
                 firebaseRepository.signInAnonymously()
             val player = dataStoreRepository.mkcPlayer.firstOrNull()

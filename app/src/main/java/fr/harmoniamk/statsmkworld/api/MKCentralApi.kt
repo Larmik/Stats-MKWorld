@@ -35,13 +35,10 @@ interface MKCentralApi {
         @Path("teamId") teamId: String
     ): NetworkResponse<MKCTeam>
 
-    // Liste des équipes mkworld pour la synchro du registre ET le diagnostic des
-    // adversaires « Équipe inconnue ». Miroir du filtre PAR DÉFAUT du site MKCentral
-    // « Équipes actives avec plus de 6 joueurs » : is_active=true, is_historical=false
-    // et min_player_count=6. Une équipe dont tous les rosters mkworld ont < 6 joueurs
-    // est donc exclue (min_player_count élague l'équipe entière, sans amputer les
-    // sous-rosters d'une équipe qui qualifie). Domaine exclusivement mkworld (cf.
-    // rule 31-mkworld-only) : game figé à mkworld.
+    // Équipes mkworld (synchro registre + diagnostic « Équipe inconnue »). Miroir du
+    // filtre par défaut MKCentral « actives, ≥ 6 joueurs » : min_player_count élague
+    // l'équipe entière, sans amputer les rosters d'une équipe qualifiante. game figé
+    // mkworld (rule 31).
     @GET("registry/teams?game=mkworld&mode=150cc&is_historical=false&is_active=true&min_player_count=6")
     suspend fun getTeams(@Query("page") page: Int): NetworkResponse<MKCTeamResponse>
 

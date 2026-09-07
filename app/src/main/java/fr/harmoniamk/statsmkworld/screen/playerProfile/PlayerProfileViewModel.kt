@@ -261,6 +261,7 @@ class PlayerProfileViewModel @AssistedInject constructor(
             databaseRepository.clearTeams()
             databaseRepository.clearPlayers()
             databaseRepository.clearWars()
+            databaseRepository.clearSeasons()
             authDataSource.revokeToken(dataStoreRepository.accessToken.firstOrNull().orEmpty())
             dataStoreRepository.clearPlayer()
             dataStoreRepository.clearTeam()

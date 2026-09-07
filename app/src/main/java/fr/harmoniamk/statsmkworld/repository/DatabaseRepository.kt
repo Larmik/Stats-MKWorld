@@ -5,9 +5,11 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.datasource.local.PlayerLocalDataSourceInterface
+import fr.harmoniamk.statsmkworld.datasource.local.SeasonLocalDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.local.TeamLocalDataSourceInterface
 import fr.harmoniamk.statsmkworld.datasource.local.WarLocalDataSource
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +17,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -39,10 +40,13 @@ interface DatabaseRepositoryInterface {
     suspend fun clearTeams()
 
     fun getWars(): Flow<List<WarEntity>>
-    fun getWar(id: String?): Flow<WarEntity?>
     suspend fun writeWars(list: List<WarEntity>)
     suspend fun writeWar(war: WarEntity)
     suspend fun clearWars()
+
+    fun getSeasons(): Flow<List<SeasonEntity>>
+    suspend fun writeSeasons(list: List<SeasonEntity>)
+    suspend fun clearSeasons()
 }
 
 @FlowPreview
@@ -61,6 +65,7 @@ class DatabaseRepository @Inject constructor(
     private val playerLocalDataSource: PlayerLocalDataSourceInterface,
     private val teamLocalDataSource: TeamLocalDataSourceInterface,
     private val warLocalDataSource: WarLocalDataSource,
+    private val seasonLocalDataSource: SeasonLocalDataSourceInterface,
 ) : DatabaseRepositoryInterface {
 
     override fun getPlayers(): Flow<List<PlayerEntity>> = playerLocalDataSource.getAll().flowOn(Dispatchers.IO)
@@ -76,10 +81,8 @@ class DatabaseRepository @Inject constructor(
 
     override fun getTeams(): Flow<List<TeamEntity>> = teamLocalDataSource.getAll().flowOn(Dispatchers.IO)
 
-    // Résout un identifiant d'équipe adverse : d'abord par teamId (clé primaire),
-    // à défaut par le rosterId (War.teamOpponent contient un rosterId depuis le
-    // passage à la granularité roster) en cherchant l'équipe dont l'un des rosters
-    // porte cet id → on remonte à l'équipe parente pour l'affichage/regroupement.
+    // Résout un id adverse par teamId (clé primaire), à défaut par rosterId (équipe dont
+    // l'un des rosters porte cet id) → remonte à l'équipe parente.
     override suspend fun getTeam(id: String): TeamEntity? = withContext(Dispatchers.IO) {
         val teams = teamLocalDataSource.getAll().firstOrNull().orEmpty()
         teams.firstOrNull { it.id == id } ?: teams.firstOrNull { team -> team.rosters.any { it.id == id } }
@@ -88,9 +91,12 @@ class DatabaseRepository @Inject constructor(
     override suspend fun clearTeams() = withContext(Dispatchers.IO) { teamLocalDataSource.clear() }
 
     override fun getWars(): Flow<List<WarEntity>> = warLocalDataSource.getAll().flowOn(Dispatchers.IO)
-    override fun getWar(id: String?): Flow<WarEntity?> = id?.let { warLocalDataSource.getById(it).flowOn(Dispatchers.IO) } ?: flowOf(null)
     override suspend fun writeWars(list: List<WarEntity>) = withContext(Dispatchers.IO) { warLocalDataSource.insert(list) }
     override suspend fun writeWar(war: WarEntity) = withContext(Dispatchers.IO) { warLocalDataSource.insert(war) }
     override suspend fun clearWars() = withContext(Dispatchers.IO) { warLocalDataSource.clear() }
+
+    override fun getSeasons(): Flow<List<SeasonEntity>> = seasonLocalDataSource.getAll().flowOn(Dispatchers.IO)
+    override suspend fun writeSeasons(list: List<SeasonEntity>) = withContext(Dispatchers.IO) { seasonLocalDataSource.insert(list) }
+    override suspend fun clearSeasons() = withContext(Dispatchers.IO) { seasonLocalDataSource.clear() }
 
 }

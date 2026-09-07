@@ -29,9 +29,7 @@ object MKWorkerBuilder {
             repeatIntervalTimeUnit = TimeUnit.HOURS
         )
             .setConstraints(constraint)
-            // Add 24h for the next day
-            // Add startingHour hours to execute at 4AM
-            // Minus actual hours
+            // Délai jusqu'au prochain passage à 4h (24h + 4h - heure actuelle).
             .setInitialDelay(
                 duration = delay,
                 timeUnit = TimeUnit.HOURS

@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RegistryScreen(
     viewModel: RegistryViewModel = hiltViewModel(),
+    onBack: (() -> Unit)? = null,
     onPlayerProfile: (String) -> Unit,
     onTeamProfile: (String) -> Unit
 ) {
@@ -40,7 +41,7 @@ fun RegistryScreen(
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
     val state = viewModel.state.collectAsStateWithLifecycle()
-    BaseScreen(title = stringResource(R.string.registre)) {
+    BaseScreen(title = stringResource(R.string.registre), onBack = onBack) {
 
         MKSegmentedSelector(
             items = listOf(stringResource(R.string.joueurs), stringResource(R.string.equipes)),

@@ -1,7 +1,6 @@
 package fr.harmoniamk.statsmkworld.database.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -32,9 +31,6 @@ interface PlayerDao {
 
     @Upsert
     suspend fun upsert(player: PlayerEntity)
-
-    @Delete
-    suspend fun delete(team: PlayerEntity)
 
     @Query("DELETE FROM PlayerEntity")
     suspend fun clear()

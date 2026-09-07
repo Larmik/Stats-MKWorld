@@ -47,16 +47,23 @@ fun MKDialog(
                fontSize = 18,
            )
            MKText(text = message)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+            // Deux boutons → largeurs égales (weight 1f, rule 16) ; un seul → centré.
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = if (secondButtonText != null) Arrangement.spacedBy(9.dp) else Arrangement.Center
+            ) {
+                    // Surface claire du dialog → libellé Colors.black pour rester lisible (#50).
                     MKButton(
-                        style = MKButtonStyle.Gradient,
+                        modifier = if (secondButtonText != null) Modifier.weight(1f) else Modifier,
                         text = buttonText,
+                        textColor = Colors.black,
                         onClick = onButtonClick
                     )
                 secondButtonText?.let {
                     MKButton(
-                        style = MKButtonStyle.Minor(Colors.black),
+                        modifier = Modifier.weight(1f),
                         text = it,
+                        textColor = Colors.black,
                         onClick = onSecondButtonClick
                     )
                 }
