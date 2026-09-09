@@ -455,4 +455,14 @@
     <string name="info_penalty_points_lost">Total points removed from your team by penalties over the whole history. A marker of the cumulative cost of penalties; only counts your team’s penalties.</string>
     <string name="info_points_per_war">Raw points you score on average per war (player view), over the selected window. Higher is better.</string>
     <string name="info_participation_rate">Share of the team\'s wars you actually played over the selected window. 100% = you played every war; higher is better.</string>
+    <string name="rci1">Choco Island 1</string>
+    <string name="rci2">Choco Island 2</string>
+    <string name="rgv1">Ghost Valley 1</string>
+    <string name="rgv2">Ghost Valley 2</string>
+    <string name="rgv3">Ghost Valley 3</string>
+    <string name="rkp1">Koopa Beach 1</string>
+    <string name="rmc1">Mario Circuit 1</string>
+    <string name="rmc2">Mario Circuit 2</string>
+    <string name="rmc3">Mario Circuit 3</string>
+    <string name="rvl1">Vanilla Lake 1</string>
 </resources>

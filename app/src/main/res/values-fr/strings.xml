@@ -455,4 +455,14 @@
     <string name="info_penalty_points_lost">Total des points retirés à ton équipe par les pénalités sur tout l\'historique. Un repère du coût cumulé des pénalités ; ne compte que les pénalités de ton équipe.</string>
     <string name="info_points_per_war">Points bruts que tu marques en moyenne par war (vue joueur), sur la fenêtre choisie. Plus haut = mieux.</string>
     <string name="info_participation_rate">Part des wars de l\'équipe que tu as réellement jouées sur la fenêtre choisie. 100 % = tu es présent sur toutes les wars ; plus haut = mieux.</string>
+    <string name="rci1">Île Choco 1</string>
+    <string name="rci2">Île Choco 2</string>
+    <string name="rgv1">Vallée Fantôme 1</string>
+    <string name="rgv2">Vallée Fantôme 2</string>
+    <string name="rgv3">Vallée Fantôme 3</string>
+    <string name="rkp1">Plage Koopa 1</string>
+    <string name="rmc1">Circuit Mario 1</string>
+    <string name="rmc2">Circuit Mario 2</string>
+    <string name="rmc3">Circuit Mario 3</string>
+    <string name="rvl1">Lac Vanille 1</string>
 </resources>
