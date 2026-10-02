@@ -46,7 +46,8 @@ existe déjà : `rg "fun <Nom>\(" app/src/main` et un nom voisin (`Chip`, `Crest
 `Eyebrow`, `Card`, `Tile`, `initialsOf`…) dans `ui/`, `ui/cells/`, `ui/stats/` **et** dans les
 autres écrans. S'il existe en public → le réutiliser ; en privé ailleurs → l'extraire (règle
 ci-dessus), ne pas en écrire une 3ᵉ copie. Cf. audit D16/D35 : `OutcomeChip` ×3, `Eyebrow`
-×2, `initialsOf` ×3, écusson d'équipe ×5 nés de cette omission.
+×3, `initialsOf` ×3, écusson d'équipe ×4 (+ blocs en ligne), 3 conteneurs de carte
+identiques, nés de cette omission.
 
 ## `MKSegmentedSelector` : segmented UNIQUE et partagé
 
