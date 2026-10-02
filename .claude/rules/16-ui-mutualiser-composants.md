@@ -28,9 +28,9 @@ Exigences à l'extraction :
   via des **paramètres optionnels** (`onClick: (() -> Unit)? = null`, variantes de
   contenu, `onDark`…) plutôt que dupliquer une variante. Cf. `MKSegmentedSelector`
   (param `onDark`), `PodiumCell` (support initiales joueur + `onClick` optionnel).
-- **Rester cohérent avec les rules composants** (`15` : réutiliser/adapter l'existant,
-  segmented partagé unique ; `13` : pixel-perfect ; `12` : roster/avatar). L'extraction
-  ne doit pas régresser l'écran d'origine.
+- **Rester cohérent avec les rules composants** (`13` : cohérence visuelle avec
+  l'existant ; `12` : roster/avatar ; segmented partagé unique, ci-dessous).
+  L'extraction ne doit pas régresser l'écran d'origine.
 
 **Exemple appliqué (#26)** : `PodiumCell` (initialement `private` dans
 `StatsFullScreen.kt`) réutilisé par l'écran Classements pour les cellules
@@ -38,6 +38,18 @@ Joueurs/Adversaires/Circuits → **extrait vers `ui/stats/MKPodiumCell.kt`**
 (`PodiumEntry`/`PodiumRow`/`PodiumCell`/`initialsOf` publics, ajout initiales +
 `onClick`), la version locale de `StatsFullScreen` supprimée au profit de l'import
 partagé.
+
+## `MKSegmentedSelector` : segmented UNIQUE et partagé
+
+`ui/MKSegmentedSelector.kt` (style « pill » : conteneur arrondi, item actif = pastille
+blanche/texte sombre, inactif = texte contrasté) est **LE** composant segmented de
+l'app. **Ne pas recréer** de segmented local (fonction privée `Segmented` d'écran,
+`Row` de `Box` cliquables ad hoc…) : le réutiliser partout (Accueil, Wars/AddWar,
+Stats, Classements, Annuaire…). Il est **stateless** (sélection pilotée par `page`,
+`onClick` remonte l'index) et porte un paramètre **`onDark`** : `true` sur carte
+sombre (`blackAlphaed`, dashboard Accueil → texte inactif blanc), `false` (défaut) sur
+le fond clair du dégradé de `BaseScreen` (texte inactif sombre). Adapter les couleurs
+via `onDark` plutôt que de dupliquer le composant.
 
 ## `MKButton` : style UNIQUE dans toute l'app (pas de variante primaire/secondaire)
 
@@ -57,11 +69,9 @@ l'adversaire »). **`textColor` s'adapte au fond hôte** : blanc par défaut (su
 de `MKDialog`, fond blanc) où le blanc serait illisible ; l'état désactivé atténue la
 couleur demandée (`textColor.copy(alpha = 0.4f)`), lisible quel que soit le fond.
 
-- **Divergence assumée vs maquette (rules 13/15)** : le prototype propose un CTA dégradé
-  (`.cta`) et un secondaire translucide bordé (`.btn2`) ; l'app retient **un unique bouton
-  translucide sans bordure** (ni dégradé, ni bordé) — hiérarchie primaire/secondaire
-  aplatie. Ne pas « rétablir » la bordure, le dégradé ni la hiérarchie au nom du
-  pixel-perfect.
+- **Hiérarchie aplatie assumée** : l'app retient **un unique bouton translucide sans
+  bordure** (ni CTA dégradé, ni secondaire bordé). Ne pas « rétablir » la bordure, le
+  dégradé ni une hiérarchie primaire/secondaire.
 - **Besoin non couvert par `MKButton`** (icône, largeur, contenu…) → **généraliser
   `MKButton` par un paramètre optionnel** (ex. `icon`), **jamais** créer un second
   composant bouton (ce fut l'erreur corrigée avec `WarActionButton`).

@@ -7,7 +7,7 @@ Guide de référence pour travailler sur **Stats MKWorld** — application Andro
 App Android native (Kotlin + Jetpack Compose) qui permet à des équipes compétitives de Mario Kart World d'enregistrer leurs *wars* course par course, de les synchroniser en temps réel via Firebase, et d'en tirer des statistiques détaillées (joueurs, équipes, circuits, adversaires). L'identité du joueur et les rosters proviennent de **MKCentral** ; la connexion se fait via **Discord OAuth2**.
 
 - **Package / applicationId** : `fr.harmoniamk.statsmkworld`
-- **Version** : 3.0.0 (`versionCode` 23)
+- **Version de travail** : 4.0.2 (code actuel : `versionName` 4.0.0 / `versionCode` 24 — bump à la release)
 - **minSdk** 28 · **targetSdk / compileSdk** 35 · **Java 17**
 - **Éditeur** : Harmonia
 - Documentation détaillée : [docs/TECHNICAL.md](docs/TECHNICAL.md) (architecture) · [docs/FUNCTIONAL.md](docs/FUNCTIONAL.md) (fonctionnel)

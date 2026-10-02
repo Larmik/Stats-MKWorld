@@ -94,15 +94,12 @@ validation** :
    message par :
 
    ```
-   Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+   Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
    ```
 2. `git push -u origin <nom-de-branche>`.
 3. **Crée la PR si elle n'existe pas encore** (`gh pr view <branche>` pour vérifier).
-   Base = branche d'intégration du ticket : **`master`** par défaut, ou la **branche
-   epic** si le ticket appartient à une epic dotée d'une branche d'intégration (ex.
-   `epic/refonte-ux-stats-resultats`) — en cas de doute, demander. Titre = titre du
-   ticket ; corps = résumé du changement + `Closes #N` (si issue GitHub) + report du
-   milestone (`--milestone`) si pertinent. Termine le corps par :
+   Base = **`master`** (toujours). Titre = titre du ticket ; corps = résumé du
+   changement + `Closes #N` (si issue GitHub). Termine le corps par :
 
    ```
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -131,16 +128,14 @@ Tant que l'utilisateur donne des retours :
 > **Périmètre du commit.** Les **rules enrichies pendant le ticket** (`.claude/rules/`)
 > sont committées **sur la branche du ticket** (dans sa PR) — elles ont évolué à cause
 > de ce ticket, c'est cohérent. Ne PAS les isoler ailleurs (pas de ballet de branches).
-> Seuls les **artefacts fondationnels pré-existants** non liés au ticket (prototype,
-> skills eux-mêmes, docs de référence transverses) se committent hors de la PR ticket.
+> Seuls les **artefacts fondationnels pré-existants** non liés au ticket
+> (skills eux-mêmes, docs de référence transverses) se committent hors de la PR ticket.
 
-## 7. Critère de validation / fusion — conformité maquette
+## 7. Validation / fusion
 
 La **validation finale** de l'utilisateur sert à **fusionner** la PR. Avant de la
-proposer comme « fait » : si le ticket touche un écran décrit dans
-`docs/PROTOTYPE_UX.md`, **vérifier explicitement la conformité à la maquette écran par
-écran** (sections/onglets/insights, rattachement de pôle, libellés FR, navigation) ET
-le respect des règles composants (`13`/`15` : réutiliser/adapter, ne pas recréer).
-Lister les écarts : tant qu'il en reste, le ticket **n'est pas « fait »** (rester en
-boucle de retours). Un ticket **purement technique / sans écran** est exempté de ce
-critère. Cf. `.claude/rules/15-ui-prototype-reference.md`.
+proposer comme « fait », vérifier que le ticket est couvert (critères d'acceptation de
+l'issue) et que les rules sont respectées — notamment la cohérence visuelle avec
+l'existant et la justesse des calculs (`13`), la réutilisation des composants
+partagés (`16`). Lister les écarts éventuels : tant qu'il en reste, rester en boucle
+de retours.

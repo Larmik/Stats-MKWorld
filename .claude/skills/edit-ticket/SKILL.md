@@ -94,7 +94,7 @@ Règles de fusion :
 - Le corps d'origine est **récupérable** via l'historique d'édition GitHub — pas besoin
   de conserver une trace du texte remplacé dans le corps lui-même.
 
-## 4. Ajuster titre / labels / milestone si pertinent
+## 4. Ajuster titre / labels si pertinent
 
 Si les précisions **changent la nature ou le rattachement** du ticket, ajuste-les
 (sinon, laisse-les tels quels) — et **signale toujours** ce que tu changes :
@@ -103,12 +103,6 @@ Si les précisions **changent la nature ou le rattachement** du ticket, ajuste-l
   `[BUG]` / `[FEATURE]` (il sert au nommage de branche par `/ticket-dev`). Une
   requalification bug↔feature change le préfixe **et** le label de type.
 - **Label de type** : `bug` ↔ `enhancement` selon la nature.
-- **Epic refonte UX** : si la modif fait entrer/sortir le ticket de l'epic (nav 5
-  pôles / stats-résultats — cf. `docs/PROTOTYPE_UX.md`), ajoute/retire le label
-  `epic:refonte-ux`, le label de pôle (`pole:accueil` | `pole:wars` | `pole:stats` |
-  `pole:classements` | `pole:profil`) et le **milestone** « Refonte UX — 5 pôles ».
-- En cas de doute sur le pôle/rattachement, demande (`AskUserQuestion`).
-
 ## 5. Livraison — éditer l'issue (directement)
 
 Applique la mise à jour **directement** (pas d'étape d'aperçu/validation : l'historique
@@ -119,16 +113,15 @@ here-doc pour préserver le Markdown :
 gh issue edit <N> \
   --body-file - \
   --title "[BUG] Nouveau titre si changé" \
-  --add-label enhancement --remove-label bug \
-  --milestone "Refonte UX — 5 pôles (stats & résultats)" <<'BODY'
+  --add-label enhancement --remove-label bug <<'BODY'
 ## 🎯 Contexte
 …corps Markdown intégral re-rédigé…
 BODY
 ```
 
-- N'inclure `--title` / `--add-label` / `--remove-label` / `--milestone` **que** si tu
+- N'inclure `--title` / `--add-label` / `--remove-label` **que** si tu
   changes réellement ces champs (sinon les omettre : `--body-file` seul suffit à
   réécrire le corps).
 - **Ne crée aucun fichier `.md`** dans le dépôt : le ticket vit dans l'issue.
 - Après édition, **affiche l'URL** de l'issue et un **résumé de ce qui a changé** (corps
-  + éventuels titre/labels/milestone), en confirmant le numéro `#N`.
+  + éventuels titre/labels), en confirmant le numéro `#N`.

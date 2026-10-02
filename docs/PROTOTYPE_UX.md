@@ -1,3 +1,5 @@
+> **Archive** — maquette de référence de l'epic « Refonte UX 5 pôles », terminée et livrée en 4.0.0. Ne fait plus foi pour les nouveaux tickets.
+
 # Prototype UX — Refonte navigation 5 pôles
 
 Cette spécification décrit **fidèlement** le prototype UX navigable qui sert de référence pour l'epic de refonte de la navigation en 5 pôles. La maquette HTML navigable est disponible dans `docs/prototype/stats-mkworld-5poles.html` et en ligne sur l'artifact <https://claude.ai/code/artifact/58f3218f-3d51-4af4-8ff1-620dc3beac2d>.
