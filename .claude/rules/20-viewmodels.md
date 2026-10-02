@@ -28,3 +28,20 @@ NullPointerException: Attempt to invoke interface method
 
 Correction type = **réordonnancement uniquement**, sans changer la logique. Ne pas
 masquer le symptôme par un accès null-safe si l'ordre est en cause.
+
+## Recherche déclenchée à la saisie : annuler la requête précédente
+
+**Portée** : toute recherche réseau (ou calcul coûteux) lancée à chaque frappe.
+
+Ne pas faire `viewModelScope.launch { … }` à chaque caractère : les requêtes s'empilent,
+une réponse lente d'un terme ancien écrase celle du terme courant, et la rafale fait
+throttler MKCentral (rule 30). Exposer le terme dans un `MutableStateFlow`, puis
+`debounce(300)` + `distinctUntilChanged()` + `flatMapLatest { … }` (ou garder le `Job` et
+l'annuler avant d'en relancer un). Cf. audit B30 (`RegistryViewModel`/`TeamProfileViewModel`).
+
+## Pas de `Context` statique ni de libellé en dur dans un ViewModel
+
+Ne pas lire `MainApplication.instance?.applicationContext` ni émettre de texte UI en dur
+depuis un VM : exposer des ids `R.string` (avec arguments) résolus par l'écran, ou injecter
+`@ApplicationContext` si une résolution côté VM est indispensable (filtre de recherche sur
+un libellé). Les chaînes utilisateur restent en français dans `res/values*/`. Cf. audit C10.

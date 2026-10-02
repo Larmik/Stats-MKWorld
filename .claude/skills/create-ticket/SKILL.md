@@ -20,7 +20,7 @@ Ton objectif : créer **une issue GitHub** propre et actionnable sur le dépôt
 ## 1. Comprendre la demande
 
 1. Si `$0` est vide, **arrête-toi** et demande à l'utilisateur la description du bug ou de la feature.
-2. Détermine s'il s'agit d'un **bug** ou d'une **feature** (en cas de doute, demande, ou déduis-le du ton de la description).
+2. Détermine s'il s'agit d'un **bug**, d'une **feature** ou d'un sujet **technique** (refactoring, dette, config, audit — sans changement fonctionnel visible) ; en cas de doute, demande, ou déduis-le du ton de la description.
 3. **Enquête dans le code** avant d'écrire le ticket (sauf si la demande est purement organisationnelle) :
    - Pour un **bug** : localise le ou les fichiers concernés, comprends le flux de données, et formule des hypothèses sur la cause racine. Cite les fichiers en `chemin:ligne`.
    - Pour une **feature** : identifie où elle s'intègrerait (écran, ViewModel, repository…) et les contraintes existantes.
@@ -61,9 +61,13 @@ le compromis (effort / risque / portée). Mets en avant la solution recommandée
 
 ## 3. Titre & labels
 
-- **Titre de l'issue** = titre court et explicite **préfixé `[BUG]` ou `[FEATURE]`**
+- **Titre de l'issue** = titre court et explicite **préfixé `[BUG]`, `[FEATURE]` ou `[TECH]`**
   (le préfixe sert au nommage de branche par `/ticket-dev`).
-- **Labels de type** : `bug` (bug) ou `enhancement` (feature).
+- **Labels de type** : `bug` (bug) ou `enhancement` (feature et technique).
+- **Pistes et solutions conformes aux rules** : une solution proposée ne doit pas
+  contredire `.claude/rules/*.md` (ex. pas de parallélisme non borné vers MKCentral,
+  rule 30 ; pas de composant dupliqué, rule 16). Si le ticket découle d'une entrée de
+  `docs/AUDIT.md`, citer son identifiant (ex. « audit B27 ») dans les Notes.
 - Pas d'epic, de milestone ni de label de pôle : uniquement le label de type.
 
 ## 4. Livraison — créer l'issue

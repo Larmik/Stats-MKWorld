@@ -42,6 +42,16 @@ State(seasons = seasons, currentWar = currentWar, teamStats = teamStats, …)
 Appliqué en #73 sur les 6 VM ci-dessus. Aucune valeur affichée ne change (rule 13) :
 même code de calcul, seul le dispatcher de la portion CPU change.
 
+**Points de contrôle** (audit P8 : la règle avait été appliquée partiellement) :
+
+- la construction `map { WarDetails(War(it)) }` est du calcul lourd → **dans** le
+  `withContext`, jamais dans le `combine` amont ;
+- un `flatMapLatest { wars.withFullStats(…) }` hors `withContext` viole aussi la règle ;
+- vaut pour **tout** VM qui agrège des wars, y compris hors liste ci-dessus
+  (`PeriodViewModel`, futurs écrans) ;
+- une lecture de source (`getPlayers()`, Firebase) ne se répète pas **par war** dans une
+  boucle : la lire une fois avant.
+
 ## À préférer à `flowOn(Dispatchers.Default)` sur la chaîne de calcul
 
 Éviter `.flowOn(Dispatchers.Default)` sur la branche de calcul d'un tel VM. `flowOn`

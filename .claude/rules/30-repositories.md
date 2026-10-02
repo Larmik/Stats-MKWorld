@@ -46,6 +46,22 @@ explicitement** (ne pas s'appuyer sur une résolution transitive fragile), utili
 Un accès purement **synchrone** (ex. `Firebase.auth.currentUser != null`) reste
 **non-suspend** : ni `suspend`, ni `Flow`.
 
+## Écriture destructive (`clear*`) : jamais dans une méthode appelée par élément
+
+Un `clear*()` (Room `DELETE FROM …` sans filtre) vide **toute** la table. Il ne doit pas
+vivre dans une méthode qui traite **un** élément (une roster, une équipe) et qu'on appelle
+en boucle : chaque itération effacerait les précédentes. Faire **un seul** clear avant la
+boucle, ou purger + réécrire l'ensemble en une passe (cf. `fetchTeams`, garde-fou anti-wipe).
+Cf. audit B27 : `fetchWars(rosterId)` fait `clearWars()` puis est appelé par roster → seule
+la dernière roster survit.
+
+## La couche données ne dépend pas de l'UI
+
+Un repository / data source ne référence ni `Activity`, ni launcher de permission, ni
+`currentActivity` : les interactions système liées à l'écran (demande de permission,
+intent) se font dans l'UI (`rememberLauncherForActivityResult`), le repository n'exposant
+que l'état (permission accordée ou non). Cf. audit B28.
+
 ## Ne pas extraire de fonction privée pour une logique à un seul appelant
 
 Dans un `repository/`/`datasource/`, **ne pas extraire** de helper privé pour une
@@ -53,6 +69,9 @@ logique **appelée une seule fois** : l'**inliner**. N'extraire que si **réelle
 réutilisé (≥ 2 appelants distincts)** ou si l'extraction clarifie nettement un bloc
 long/complexe. Un one-liner trivial (ex. `dataStoreRepository.mkcPlayer
 .firstOrNull()?.id ?: 0L`) ne justifie pas un helper même appelé deux fois.
+Vaut aussi à grande échelle : les ~39 lectures `mkcPlayer`/`mkcTeam.firstOrNull()` restent
+inlinées (helpers `currentTeam()`/`currentPlayer()` écartés, ex-audit D29) ; à rouvrir
+seulement si les valeurs de repli divergent.
 
 ## Résolution réseau par élément d'une collection : parallèle SI l'API tient la charge, sinon séquentiel
 

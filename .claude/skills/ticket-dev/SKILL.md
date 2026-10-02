@@ -36,7 +36,7 @@ peut arriver sous trois formes :
   numéro `#N`** : il servira à lier la PR à l'issue (étape 5). Si le numéro
   n'existe pas, **arrête-toi et demande**.
 - **Texte brut collé** (souvent au format `create-ticket` : titre préfixé
-  `[BUG]`/`[FEATURE]`, sections Contexte / Description / Solutions proposées) →
+  `[BUG]`/`[FEATURE]`/`[TECH]`, sections Contexte / Description / Solutions proposées) →
   utilise-le tel quel. Il n'y a alors pas d'issue à lier (sauf si l'utilisateur en
   fournit le numéro). Propose éventuellement de créer d'abord l'issue via
   `/create-ticket`.
@@ -56,7 +56,7 @@ que ce point de départ n'est pas garanti.
    projet est **master** — ignore `main`. Ne crée jamais la branche depuis une
    autre branche courante : reviens explicitement sur `master` à jour d'abord.
 2. **Condense le titre** du ticket en un nom de branche :
-   - retire le préfixe `[BUG]` / `[FEATURE]` et les emojis ;
+   - retire le préfixe `[BUG]` / `[FEATURE]` / `[TECH]` et les emojis ;
    - garde **4 à 5 mots** signifiants (les mots-clés du titre) ;
    - `snake_case`, minuscules, sans accents ni caractères spéciaux, **sans
      préfixe de type**.
@@ -74,16 +74,36 @@ avec un prompt contenant :
 - le **nom de la branche** ;
 - la consigne : lire **toutes** les rules dans `.claude/rules/*.md` et les
   respecter, faire les modifications nécessaires, **ne faire aucune opération
-  git**, puis retourner un résumé (fichiers touchés + décisions + rules
-  appliquées).
+  git** (lecture `git diff`/`git status` permise), exécuter la **relecture finale
+  anti-audit** de son § 4 sur son diff, puis retourner un résumé (fichiers touchés +
+  décisions + rules appliquées + résultat de la relecture).
 
 **Conserve l'identifiant de l'agent** : les rounds de feedback suivants doivent
 continuer *le même* agent via `SendMessage` (il garde le contexte du ticket, des
 fichiers déjà modifiés et des rules).
 
-Quand l'agent rend la main (première passe), **enchaîne directement sur l'étape 5**
-(commit = nom de branche + push + PR si absente), **puis** relaie son résumé à
-l'utilisateur et **attends** ses retours.
+Quand l'agent rend la main (première passe), passe par l'**étape 4** (contrôle
+anti-audit), puis **enchaîne directement sur l'étape 5** (commit = nom de branche +
+push + PR si absente), **puis** relaie son résumé à l'utilisateur et **attends** ses
+retours.
+
+## 4. Contrôle anti-audit avant chaque commit
+
+Objectif : ne pas réalimenter `docs/AUDIT.md`. Avant **chaque** commit (première passe
+et rounds de retours) :
+
+1. Vérifie que le résumé du worker contient le résultat de sa relecture anti-audit
+   (§ 4 de `.claude/agents/ticket-worker.md`). S'il manque, renvoie-le via
+   `SendMessage` pour qu'il l'exécute.
+2. Relis toi-même `git diff master...HEAD` + `git diff` (non commité) au regard de la
+   matrice § 9 de `docs/AUDIT.md`, en ciblant les patterns les plus récurrents :
+   composable/helper recréé alors qu'il existe (`rg "fun <Nom>"`), littéral métier
+   recopié (`"-1"`, rôles, `teamOpponent.size`, `https://mkcentral.com`, `90.dp`),
+   calcul de wars hors `withContext`, one-shot en `Flow`, `clear*()` en boucle, code
+   commenté, secret/token ajouté.
+3. Un écart → renvoie-le au worker (même agent) avant de commiter. Un écart
+   **assumé** (hors périmètre, décision utilisateur) → il doit figurer dans
+   `docs/AUDIT.md` avec sa ligne *Prévention* et être signalé à l'utilisateur.
 
 ## 5. Commit / push / PR (systématique, dès la fin du worker)
 
@@ -119,10 +139,12 @@ Tant que l'utilisateur donne des retours :
   1. appliquer les corrections directement ;
   2. **enrichir les rules** : si un retour correspond à une rule existante dans
      `.claude/rules/`, la mettre à jour ; s'il exprime une préférence générale et
-     durable sans rule correspondante, en créer une nouvelle (format : voir
-     `.claude/rules/README.md`). Un retour purement spécifique à ce ticket ne doit
-     **pas** créer de rule.
-- Puis **re-commit (message = nom de branche) + push** sur la même branche (la PR se
+     durable sans rule correspondante, l'ajouter au fichier de la catégorie
+     existante (tableau de `.claude/rules/README.md`) — une **nouvelle dizaine** ne
+     se crée qu'après confirmation de l'utilisateur. Un retour purement spécifique à
+     ce ticket ne doit **pas** créer de rule.
+  3. refaire la relecture anti-audit (§ 4 du worker) sur le nouveau diff.
+- Puis **contrôle anti-audit (étape 4)**, **re-commit (message = nom de branche) + push** sur la même branche (la PR se
   met à jour automatiquement), relaie le résumé et **attends** de nouveau.
 
 > **Périmètre du commit.** Les **rules enrichies pendant le ticket** (`.claude/rules/`)
@@ -137,5 +159,5 @@ La **validation finale** de l'utilisateur sert à **fusionner** la PR. Avant de 
 proposer comme « fait », vérifier que le ticket est couvert (critères d'acceptation de
 l'issue) et que les rules sont respectées — notamment la cohérence visuelle avec
 l'existant et la justesse des calculs (`13`), la réutilisation des composants
-partagés (`16`). Lister les écarts éventuels : tant qu'il en reste, rester en boucle
+partagés (`16`) — et que le dernier contrôle anti-audit (étape 4) est propre. Lister les écarts éventuels : tant qu'il en reste, rester en boucle
 de retours.

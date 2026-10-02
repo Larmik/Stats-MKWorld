@@ -19,6 +19,9 @@ la bottombar (**≈ 90 dp**, valeur déjà utilisée par `StatsFullScreen`) :
 - contenu non-lazy → `Modifier.padding(bottom = 90.dp)` (cf. `StatsFullScreen` en mode
   `showTabs`).
 
+La valeur est aujourd'hui recopiée en littéral (audit G7) : une constante partagée dans
+`ui/` est à créer ; dès qu'elle existe, l'utiliser plutôt que `90.dp` (rule 61).
+
 Points d'attention :
 
 - **Composant de contenu mutualisé** entre un pôle (avec bottombar) et un écran du graphe

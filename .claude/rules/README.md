@@ -9,14 +9,17 @@ Les rules sont classées **par couche / thème**, avec un préfixe numérique pa
 dizaine (`10`, `20`, `30`…) laissant de la place pour en ajouter dans chaque
 catégorie :
 
-| Fichier | Catégorie | Portée |
+| Dizaine | Catégorie | Fichiers |
 |---|---|---|
-| `10-ui-compose.md` | **UI / Compose** | composants, LazyList/LazyGrid, recompositions |
-| `20-viewmodels.md` | **ViewModels** | init des Flow, `StateFlow`, ordre des propriétés |
-| `30-repositories.md` | **Repositories / data sources** | `suspend` vs `Flow`, accès Room/Firebase/réseau |
-| `40-build-release.md` | **Build / release** | R8/ProGuard, DTO Moshi, signature |
-| `50-process-doc.md` | **Process / documentation** | doc `docs/` à jour, workflow |
-| `60-kotlin-style.md` | **Style / idiomes Kotlin** | idiomes transverses (`?.let` vs `if (x == null) return`…) |
+| `1x` | **UI / Compose** | `10-ui-compose` (clés de liste) · `11-compose-state` (type de State, switch, wizard) · `12-ui-roster-display` (roster vs équipe, médaillon) · `13-ui-coherence-visuelle` (style établi, justesse des calculs) · `14-ui-back-onglets` (retour bottom-nav) · `16-ui-mutualiser-composants` (composant partagé, chercher l'existant, `MKButton`/segmented uniques) · `17-ui-bottombar-inset` (marge basse des pôles) |
+| `2x` | **ViewModels** | `20-viewmodels` (ordre d'init, recherche à la saisie, pas de Context statique) · `21-vm-offload-compute` (calcul hors thread UI) |
+| `3x` | **Repositories / data sources / UseCases** | `30-repositories` (`suspend` vs `Flow`, clear hors boucle, pas d'UI, réseau par élément) · `31-mkworld-only` (domaine mkworld) · `32-usecase-vs-repository` (placement d'une logique) |
+| `4x` | **Build / release** | `40-build-release` (R8/Moshi, secrets et backup côté client) |
+| `5x` | **Process / documentation** | `50-process-doc` (doc `docs/` à jour, tenue de l'audit, références croisées) |
+| `6x` | **Style / idiomes Kotlin** | `60-kotlin-style` (`?.let`, `var` capturée, saisie) · `61-no-single-use-constant` (constantes, littéraux métier, placement des extensions) · `62-fonctions-locales` · `63-noms-parametres` · `64-commentaires-documentaires` (commentaires, code commenté) |
+
+La correspondance entre ces rules et les entrées de `docs/AUDIT.md` est tenue dans la
+matrice du § 9 de l'audit.
 
 Pour ajouter une rule, la ranger dans la catégorie qui correspond (ex.
 `20-viewmodels.md` = 21, 22… ou une seconde rule VM dans un fichier voisin) et,
