@@ -53,7 +53,7 @@ fun HomeScreen(
     onPeriodView: () -> Unit,
     onStats: (StatsType) -> Unit,
     onSearch: () -> Unit,
-    // « Résultats → » du pôle Stats : historique filtré sur « me » sur le graphe racine (#65).
+    // Historique filtré sur « me » sur le graphe racine : « Résultats → » des Stats (#65), « Voir tout » Accueil vue Moi (#98).
     onResults: () -> Unit,
     // « Classement entier » Circuits/Adversaires du pôle Stats → classement scopé (#67 round 3).
     // `isTeam` = portée courante (Équipe vs Individuel).
@@ -121,7 +121,14 @@ fun HomeScreen(
                         onTeamProfile = { onTeamProfile("me") },
                         onCurrentWar = onCurrentWar,
                         onWarDetailsClick = onWarDetailsClick,
-                        onWarListClick = { navController.navigate("Home/WarList") },
+                        // Vue Moi → historique filtré « me » (graphe racine, comme « Résultats → » des Stats) ;
+                        // vue Équipe → pôle Wars (#98).
+                        onWarListClick = { isPlayer ->
+                            when (isPlayer) {
+                                true -> onResults()
+                                else -> navController.navigate("Home/WarList")
+                            }
+                        },
                         onSearch = onSearch
                     )
                 }

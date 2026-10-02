@@ -235,6 +235,7 @@
     <string name="home_greeting">Salut, %1$s</string>
     <string name="home_profile_subtitle">%1$s · voir mon profil →</string>
     <string name="home_scope_me">Moi</string>
+    <string name="home_no_player_results">Tu n\'as participé à aucune war sur cette période.</string>
     <string name="home_scope_team">Équipe</string>
     <string name="home_momentum">Momentum</string>
     <string name="home_last_5">5 dernières</string>

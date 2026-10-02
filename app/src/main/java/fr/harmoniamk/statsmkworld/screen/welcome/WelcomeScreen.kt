@@ -67,7 +67,8 @@ fun WelcomeScreen(
     onTeamProfile: () -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
-    onWarListClick: () -> Unit,
+    // `isPlayer` = vue Moi : historique filtré sur le joueur courant (#98).
+    onWarListClick: (isPlayer: Boolean) -> Unit,
     onSearch: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -92,10 +93,14 @@ fun WelcomeScreen(
             // 1er chargement (aucune métadonnée encore) : spinner plein écran.
             state.value.playerName.isNullOrEmpty() -> CircularProgressIndicator()
             else -> {
-                // Vue Moi ou Équipe : deux jeux de Stats déjà calculés côté VM (switch sans recalcul).
+                // Vue Moi ou Équipe : stats et résultats récents déjà calculés côté VM (switch sans recalcul).
                 val selectedStats = when (profileIndex) {
                     0 -> state.value.playerStats
                     else -> state.value.teamStats
+                }
+                val selectedRecentResults = when (profileIndex) {
+                    0 -> state.value.playerRecentResults
+                    else -> state.value.teamRecentResults
                 }
                 LazyColumn(
                     Modifier.fillMaxWidth().weight(1f),
@@ -150,8 +155,9 @@ fun WelcomeScreen(
                             }
 
                             // 6. Derniers résultats (→ WarDetails) + « Voir tout » (→ historique).
-                            when (state.value.recentResults.isEmpty()) {
-                                true -> item {
+                            // Bienvenue seulement si l'équipe n'a aucune war ; vue Moi vide → message dédié (#98).
+                            when {
+                                state.value.teamRecentResults.isEmpty() -> item {
                                     Column(Modifier.padding(top = 15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                         MKText(text = stringResource(R.string.welcome_title), font = Fonts.NunitoBD, fontSize = 16)
                                         MKText(text = stringResource(R.string.welcome_text), fontSize = 16)
@@ -166,18 +172,28 @@ fun WelcomeScreen(
                                                 font = Fonts.NunitoBD,
                                                 textColor = Colors.yellow,
                                                 fontSize = 13,
-                                                modifier = Modifier.clickable(onClick = onWarListClick)
+                                                modifier = Modifier.clickable { onWarListClick(profileIndex == 0) }
                                             )
                                         }
                                     }
-                                    items(state.value.recentResults, key = { it.war.id }) { war ->
-                                        WarCell(
-                                            viewModel = hiltViewModel(
-                                                key = war.war.id.toString(),
-                                                creationCallback = { factory: WarCellViewModel.Factory -> factory.create(war) }
-                                            ),
-                                            onClick = onWarDetailsClick
-                                        )
+                                    when (selectedRecentResults.isEmpty()) {
+                                        true -> item {
+                                            MKText(
+                                                text = stringResource(R.string.home_no_player_results),
+                                                textColor = Colors.white66,
+                                                fontSize = 14,
+                                                modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                                            )
+                                        }
+                                        else -> items(selectedRecentResults, key = { it.war.id }) { war ->
+                                            WarCell(
+                                                viewModel = hiltViewModel(
+                                                    key = war.war.id.toString(),
+                                                    creationCallback = { factory: WarCellViewModel.Factory -> factory.create(war) }
+                                                ),
+                                                onClick = onWarDetailsClick
+                                            )
+                                        }
                                     }
                                 }
                             }
