@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import fr.harmoniamk.statsmkworld.extension.percentOf
+import fr.harmoniamk.statsmkworld.extension.percentShares
 import fr.harmoniamk.statsmkworld.extension.positionColor
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -64,9 +64,11 @@ fun ColumnScope.DistributionFooter(distribution: List<Pair<Int, Int>>) {
     val total = distribution.sumOf { it.second }
     val top6 = distribution.filter { it.first in 1..6 }.sumOf { it.second }
     val bot6 = distribution.filter { it.first in 7..12 }.sumOf { it.second }
+    // Plus grand reste (#99) : Top 6 + Bot 6 = 100 % pile quand ils couvrent toutes les positions (12p).
+    val (top6Percent, bot6Percent) = listOf(top6, bot6).percentShares(total)
     Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        DistributionFooterStat(top6, "Top 6", top6.percentOf(total), Colors.green)
-        DistributionFooterStat(bot6, "Bot 6", bot6.percentOf(total), Colors.red)
+        DistributionFooterStat(top6, "Top 6", top6Percent, Colors.green)
+        DistributionFooterStat(bot6, "Bot 6", bot6Percent, Colors.red)
     }
 }
 

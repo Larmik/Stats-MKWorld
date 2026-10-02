@@ -13,6 +13,7 @@ import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.percentOf
+import fr.harmoniamk.statsmkworld.extension.percentShares
 import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
@@ -345,16 +346,20 @@ class StatsFullViewModel @AssistedInject constructor(
                 ?.takeIf { it.warStats.warsPlayed > 0 }
                 ?.let { player to it }
         }
-        val totalPoints = perPlayer.sumOf { it.second.warScores.sumOf { score -> score.score } }
-            .takeIf { it > 0 } ?: return listOf()
-        // Dénominateur shocks (#69) : total shocks de l'équipe sur la fenêtre (part membre = ses shocks / ce total).
-        val totalTeamShocks = windowWars.totalShocks()
+        val pointsByPlayer = perPlayer.map { (_, stats) -> stats.warScores.sumOf { it.score } }
+        if (pointsByPlayer.sum() <= 0) return listOf()
+        // Plus grand reste (#99) : parts de points des membres = 100 % pile. Dénominateur shocks
+        // (#69) = total équipe sur la fenêtre (les shocks des alliés forment la part implicite).
+        val pointsShares = pointsByPlayer.percentShares()
+        val shockShares = perPlayer
+            .map { (player, _) -> windowWars.totalShocks(player.id) }
+            .percentShares(windowWars.totalShocks())
         return perPlayer
-            .map { (player, stats) ->
+            .mapIndexed { index, (player, stats) ->
                 Contributor(
                     player = player,
-                    pointsShare = stats.warScores.sumOf { it.score }.percentOf(totalPoints),
-                    shockShare = windowWars.totalShocks(player.id).percentOf(totalTeamShocks),
+                    pointsShare = pointsShares[index],
+                    shockShare = shockShares[index],
                     winrate = stats.allTimeForm?.winrate ?: 0.0,
                     isMe = player.id == meId
                 )

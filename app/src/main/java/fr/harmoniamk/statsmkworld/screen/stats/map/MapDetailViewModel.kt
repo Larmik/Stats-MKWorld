@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.percentOf
+import fr.harmoniamk.statsmkworld.extension.percentShares
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
@@ -226,17 +227,23 @@ class MapDetailViewModel @AssistedInject constructor(
             .mapValues { (_, shocks) -> shocks.sumOf { it.count } }
 
         val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
-        return shocksByPlayer
+        val baggers = shocksByPlayer
             .mapNotNull { (playerId, shockCount) ->
                 if (shockCount == 0) return@mapNotNull null
                 val player = players.firstOrNull { it.id == playerId } ?: return@mapNotNull null
                 // Membres uniquement (alliés = rosterId sentinelle « -1 »).
                 if (player.rosterId == "-1") return@mapNotNull null
+                player to shockCount
+            }
+        // Plus grand reste (#99) : les parts affichées ensemble somment au total équipe (alliés = part implicite).
+        val shockShares = baggers.map { it.second }.percentShares(totalTeamShocks)
+        return baggers
+            .mapIndexed { index, (player, shockCount) ->
                 BaggerRanking(
                     player = player,
-                    shockShare = shockCount.percentOf(totalTeamShocks),
+                    shockShare = shockShares[index],
                     shockCount = shockCount,
-                    played = runsByPlayer[playerId] ?: 0
+                    played = runsByPlayer[player.id] ?: 0
                 )
             }
             .sortedByDescending { it.shockShare }

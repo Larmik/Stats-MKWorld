@@ -243,7 +243,7 @@ fun Int?.pointsToPosition(is24p: Boolean) = when (is24p) {
 /**
  * Part de [total] représentée par ce nombre, en %, arrondie à 2 décimales (#99) : la valeur
  * stockée = la valeur affichée, donc tris, seuils et deltas se font sur le chiffre lu. 0.0 si
- * [total] == 0. Seule formule de pourcentage de l'app (plus de `* 100 /` entier tronqué).
+ * [total] == 0. Pourcentage isolé ; parts d'un même total → `List<Int>.percentShares`.
  */
 fun Int.percentOf(total: Int): Double = when (total) {
     0 -> 0.0

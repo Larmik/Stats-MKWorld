@@ -159,6 +159,25 @@ fun List<WarDetails>.shockShare(playerId: String): Double? =
     totalShocks().takeIf { it > 0 }?.let { totalShocks(playerId).percentOf(it) }
 
 /**
+ * Parts en % de chaque élément sur [total] (défaut : leur somme), au centième, par la méthode du
+ * plus grand reste (Hamilton, 10 000 unités) : des parts couvrant tout le total somment exactement
+ * à 100 % (#99). Si [total] dépasse la somme, l'écart compte comme une part implicite, non renvoyée
+ * (ex. Top 6 / Bot 6 hors positions 13-24, shocks des alliés). Que des 0.0 si [total] == 0.
+ */
+fun List<Int>.percentShares(total: Int = sum()): List<Double> {
+    if (total <= 0) return map { 0.0 }
+    val parts = this + (total - sum()).coerceAtLeast(0)
+    val hundredths = parts.map { it * 10_000L / total }
+    val leftover = (10_000L - hundredths.sum()).toInt().coerceAtLeast(0)
+    // À reste égal, la part implicite (dernière) est servie d'abord : des parts visibles égales restent égales.
+    val roundedUpIndexes = parts.indices
+        .sortedWith(compareByDescending<Int> { parts[it] * 10_000L % total }.thenByDescending { it == parts.lastIndex })
+        .take(leftover)
+        .toSet()
+    return indices.map { index -> (hundredths[index] + if (index in roundedUpIndexes) 1 else 0) / 100.0 }
+}
+
+/**
  * Stats par adversaire : un item par ROSTER (wars où l'opposant = ce rosterId, nom/tag du roster
  * + avatar de l'équipe) puis un item ÉQUIPE pour les wars legacy (opposant = teamId). Seuls les
  * adversaires ayant au moins une war (jouée par [userId] si non-null) sont émis.

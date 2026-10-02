@@ -436,23 +436,37 @@ Cœur dans `extension/ListExtension.kt` (`withFullStats`, `withTrackStats`, `wit
 > (aucun consommateur). Ces références restent listées à titre **historique** pour tracer l'origine
 > du calcul de chaque stat ; l'affichage réel vit désormais dans les écrans de la refonte (§9.11/§9.12).
 
-> **Pourcentages : calcul et format uniques (#99).** Tout pourcentage passe par deux fonctions :
-> `Int.percentOf(total): Double` (`extension/IntegerExtension.kt`) — `part × 100 ÷ total` **arrondi
-> à 2 décimales** (plus de division entière tronquée), `0.0` si `total == 0` — et
-> `Double.toPercentString(signed = false)` (`extension/DoubleExtension.kt`) —
-> `String.format(Locale.getDefault(), "%.2f\u00A0%%")` : séparateur décimal de la locale (`33,33 %`
-> en français), **espace insécable** avant `%` (le `%` ne passe jamais seul à la ligne), `signed`
-> préfixe `+` pour les deltas. Les champs de pourcentage sont des **`Double`** dès le modèle
-> (`FormStats.winrate`/`mapsWonPercent`/`winrateDelta`/`mapsWonDelta`, `TrackStats.winRate`,
-> `RankingItem.winratePercent`, `PlayerRanking.participationRate`, `Contributor.*Share`/`winrate`,
-> `Pilot/BaggerRanking`, `PeriodViewModel.PlayerPeriodStats.participationRate`). Comme la valeur
-> est arrondie **au calcul**, la valeur stockée = la valeur affichée : tris, seuil de `winrateColor`
-> (50) et deltas portent sur le chiffre lu, et deux taux égaux donnent un delta exactement nul.
-> Les strings à pourcentage reçoivent la chaîne formatée (`%1$s`, plus de `%1$d %%`).
-> **Pas de répartition par plus grand reste** : une répartition (Top 6 / Bot 6…) peut sommer à
-> `99,99 %` ou `100,01 %` dans de rares cas — écart accepté par le ticket. Les cellules compactes
-> (`KeyTile` de l'Accueil, `MetricTile`, `PodiumCell`) affichent la valeur sur une ligne :
-> `MKText(maxLines = 1)` réduit la police au lieu de tronquer.
+> **Pourcentages : calcul et format uniques (#99).** Tout pourcentage passe par trois fonctions :
+> - `Int.percentOf(total): Double` (`extension/IntegerExtension.kt`) : pourcentage **isolé**,
+>   `part × 100 ÷ total` **arrondi au centième** (plus de division entière tronquée), `0.0` si
+>   `total == 0` ;
+> - `List<Int>.percentShares(total = sum()): List<Double>` (`extension/ListExtension.kt`) :
+>   **répartition** par plus grand reste (méthode de Hamilton sur 10 000 centièmes de %). Des
+>   parts qui couvrent tout le total somment **exactement à 100 %**. Si `total` dépasse la somme,
+>   l'écart est une part implicite non renvoyée (prioritaire à reste égal, pour que des parts
+>   visibles égales le restent) ;
+> - `Double.toPercentString(signed = false)` (`extension/DoubleExtension.kt`) : `NumberFormat` de
+>   la locale (0 à 2 décimales, `HALF_UP`, sans séparateur de milliers), donc un format **compact** :
+>   `50 %`, `33,5 %`, `33,33 %`. Espace **insécable** avant `%` ; `signed` préfixe `+` les valeurs
+>   ≥ 0 (deltas).
+>
+> **Classement des sites.** Passent par `percentShares` (parts affichées ensemble d'un même
+> total) : Top 6 / Bot 6 de `DistributionFooter` (positions 1-6 / 7-12 sur toutes les positions,
+> soit 100 % en 12p), parts de points des contributeurs (total = points des membres, 100 %), parts
+> de shocks des contributeurs et des baggeurs des fiches Circuit/Adversaire (total = shocks de
+> l'équipe, alliés compris : ceux-ci forment la part implicite). Restent en `percentOf`
+> (pourcentages isolés) : winrates (bilan, classements, podiums, pilotes, adversaires, circuits),
+> taux de participation (chaque joueur sur le nombre de wars de l'équipe, pas une répartition),
+> `% maps gagnées` et leurs deltas. V/N/D et histogramme des positions : comptes, sans %.
+>
+> Les champs de pourcentage sont des **`Double`** dès le modèle (`FormStats.winrate`/
+> `mapsWonPercent`/`winrateDelta`/`mapsWonDelta`, `TrackStats.winRate`, `RankingItem.winratePercent`,
+> `PlayerRanking.participationRate`, `Contributor.*Share`/`winrate`, `Pilot/BaggerRanking`,
+> `PeriodViewModel.PlayerPeriodStats.participationRate`). La valeur étant arrondie **au calcul**,
+> la valeur stockée = la valeur affichée : tris, seuil de `winrateColor` (50) et deltas portent sur
+> le chiffre lu. Les strings à pourcentage reçoivent la chaîne formatée (`%1$s`, plus de
+> `%1$d %%`). Les cellules compactes (`KeyTile` de l'Accueil, `MetricTile`, `PodiumCell`)
+> affichent la valeur sur une ligne : `MKText(maxLines = 1)` réduit la police au lieu de tronquer.
 
 ### 9.0 Données sources et chaîne de transformation
 
@@ -547,13 +561,13 @@ Point d'entrée du calcul d'un bloc `Stats` (stats joueur, équipe, adversaire o
 >   tous les shocks de l'équipe hôte ;
 > - `List<WarDetails>.shockShare(playerId)` = `totalShocks(playerId).percentOf(totalShocks())`,
 >   **`null`** si l'équipe n'a obtenu aucun shock (pas de dénominateur). **Sans appelant** à ce
->   jour (audit D37) : les VM ci-dessous refont le ratio avec un total hissé hors boucle.
+>   jour (audit D37) : les VM ci-dessous calculent les parts en une passe via `percentShares`.
 >
 > La **part de shocks** est donc un **ratio de TOTAUX** (shocks du joueur / shocks de
 > l'équipe), **jamais une moyenne par war** (≠ `FormStats.shocksPerWar`, moyenne). Les
 > ViewModels consommateurs (`StatsFullViewModel.computeContributors` — points ET shocks ;
 > `OpponentDetailViewModel.computeBaggers` ; `MapDetailViewModel.computeBaggers`, ce dernier
-> agrégeant les `Shock` au niveau des manches du circuit) appliquent cette règle (`totalShocks` + `percentOf`). Les
+> agrégeant les `Shock` au niveau des manches du circuit) appliquent cette règle (`totalShocks` + `percentShares`, plus grand reste #99). Les
 > classements baggeurs excluent les **alliés** (rosterId « -1 ») et les joueurs à 0 shock.
 >
 > **Cohérence indiv ↔ équipe (retour PR #75) — source de vérité UNIQUE.** La section indiv
@@ -570,8 +584,8 @@ Point d'entrée du calcul d'un bloc `Stats` (stats joueur, équipe, adversaire o
 > cellule `MKAdvancedStatsCell`/`StatsScreen` ; **le champ `Stats.playerContribution` a été supprimé
 > comme code mort (#51)**, `computeContributors` étant la source unique de la contribution).
 > `computeContributors` calcule `pointsShare` =
-> `(points membre).percentOf(Σ points des membres)` et `shockShare` =
-> `windowWars.totalShocks(membre).percentOf(windowWars.totalShocks())` sur **la même fenêtre de
+> les points des membres `.percentShares()` (somme exacte à 100 %) et `shockShare` =
+> les `windowWars.totalShocks(membre)` `.percentShares(windowWars.totalShocks())` sur **la même fenêtre de
 > wars d'équipe** pour tous les membres. La contribution indiv ne s'affiche que pour un
 > **membre du roster** (ligne `isMe` présente).
 
