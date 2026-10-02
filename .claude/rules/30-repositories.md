@@ -69,6 +69,9 @@ logique **appelée une seule fois** : l'**inliner**. N'extraire que si **réelle
 réutilisé (≥ 2 appelants distincts)** ou si l'extraction clarifie nettement un bloc
 long/complexe. Un one-liner trivial (ex. `dataStoreRepository.mkcPlayer
 .firstOrNull()?.id ?: 0L`) ne justifie pas un helper même appelé deux fois.
+Vaut aussi à grande échelle : les ~39 lectures `mkcPlayer`/`mkcTeam.firstOrNull()` restent
+inlinées (helpers `currentTeam()`/`currentPlayer()` écartés, ex-audit D29) ; à rouvrir
+seulement si les valeurs de repli divergent.
 
 ## Résolution réseau par élément d'une collection : parallèle SI l'API tient la charge, sinon séquentiel
 
