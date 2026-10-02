@@ -231,9 +231,9 @@ class StatsFullViewModel @AssistedInject constructor(
                     0 -> 0
                     else -> windowWars.count { it.war.hasPlayer(targetUserId) } * 100 / teamCount
                 }
-                windowWars.withFullStats(databaseRepository, userId = targetUserId, is24p = is24p)
+                windowWars.withFullStats(userId = targetUserId, is24p = is24p)
                     .firstOrNull()?.let { playerStatsByWindow[index] = it }
-                windowWars.withFullStats(databaseRepository, is24p = is24p)
+                windowWars.withFullStats(is24p = is24p)
                     .firstOrNull()?.let { teamStatsByWindow[index] = it }
                 // MapStats (vue équipe, userId null) : tables Top/Bot 2→6 équipe ET adversaire.
                 teamMapStatsByWindow[index] = MapStats(
@@ -291,9 +291,8 @@ class StatsFullViewModel @AssistedInject constructor(
         userId: String?
     ): OpponentPodiums {
         if (wars.isEmpty()) return OpponentPodiums()
-        val warEntities = wars.map { WarEntity(it.war) }
         val all = opponentTeams
-            .withFullTeamStats(wars = warEntities, databaseRepository = databaseRepository, userId = userId, is24p = is24p)
+            .withFullTeamStats(wars = wars, userId = userId, is24p = is24p)
             .firstOrNull()
             .orEmpty()
             .map { RankingItem.OpponentRanking(it.first, it.second) }
@@ -340,8 +339,8 @@ class StatsFullViewModel @AssistedInject constructor(
     ): List<Contributor> {
         val windowWars = lastN?.let { wars.takeLast(it) } ?: wars
         val perPlayer = members.mapNotNull { player ->
-            windowWars.filter { it.war.hasPlayer(player.id) }
-                .withFullStats(databaseRepository, userId = player.id, is24p = is24p)
+            // `withFullStats` filtre déjà les wars jouées par `player.id`.
+            windowWars.withFullStats(userId = player.id, is24p = is24p)
                 .firstOrNull()
                 ?.takeIf { it.warStats.warsPlayed > 0 }
                 ?.let { player to it }

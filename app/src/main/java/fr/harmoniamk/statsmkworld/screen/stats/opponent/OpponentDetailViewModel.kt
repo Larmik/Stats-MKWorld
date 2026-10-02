@@ -145,7 +145,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 null -> wars
                 else -> wars.filter { it.war.hasPlayer(userId) }
             }
-            scopedWars.withFullStats(databaseRepository, teamId = teamId, userId = userId)
+            scopedWars.withFullStats(teamId = teamId, userId = userId)
                 .map { stats -> Triple(scopedWars, indiv, Pair(userId, stats)) }
         }
         .combine(tracksSort) { data, sort -> data to sort }
