@@ -64,12 +64,7 @@ le compromis (effort / risque / portée). Mets en avant la solution recommandée
 - **Titre de l'issue** = titre court et explicite **préfixé `[BUG]` ou `[FEATURE]`**
   (le préfixe sert au nommage de branche par `/ticket-dev`).
 - **Labels de type** : `bug` (bug) ou `enhancement` (feature).
-- **Rattachement à l'epic refonte** : si le ticket concerne la refonte UX (navigation
-  5 pôles / stats-résultats — cf. `docs/PROTOTYPE_UX.md`), ajoute le label `epic:refonte-ux`,
-  le label de pôle concerné (`pole:accueil` | `pole:wars` | `pole:stats` |
-  `pole:classements` | `pole:profil`), et le **milestone** « Refonte UX — 5 pôles ».
-  Sinon, ne mets ni milestone ni label de pôle.
-- En cas de doute sur le pôle/rattachement epic, demande à l'utilisateur (`AskUserQuestion`).
+- Pas d'epic, de milestone ni de label de pôle : uniquement le label de type.
 
 ## 4. Livraison — créer l'issue
 
@@ -80,15 +75,13 @@ gh issue create \
   --title "[FEATURE] Titre court" \
   --body-file - \
   --project "Stats MKWorld" \
-  --label enhancement --label epic:refonte-ux --label pole:stats \
-  --milestone "Refonte UX — 5 pôles (stats & résultats)" <<'BODY'
+  --label enhancement <<'BODY'
 ## 🎯 Contexte
 …corps Markdown intégral…
 BODY
 ```
 
-- `--project "Stats MKWorld"` est **systématique** (tout ticket, epic ou non).
-- Pour un ticket **hors epic**, retire `--milestone` et les labels `epic:*`/`pole:*` (mais garde `--project` et le label de type).
+- `--project "Stats MKWorld"` est **systématique** (tout ticket).
 - La nouvelle carte arrive sans **Status** (colonne « No Status » du board) : c'est normal, elle sera classée dans une colonne au démarrage.
 - Après création, **affiche l'URL de l'issue** renvoyée par `gh` et confirme le numéro `#N`.
 - **Ne crée aucun fichier `.md` dans le dépôt** : le ticket vit dans l'issue GitHub, pas dans un fichier versionné.
