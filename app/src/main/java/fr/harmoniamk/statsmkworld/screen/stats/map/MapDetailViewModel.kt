@@ -10,6 +10,8 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.percentOf
+import fr.harmoniamk.statsmkworld.extension.percentShares
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
@@ -64,7 +66,7 @@ class MapDetailViewModel @AssistedInject constructor(
         val averagePosition: Int,
         // Nb de manches courues (seuil MIN_RANKING_SAMPLE).
         val played: Int,
-        val winrate: Int
+        val winrate: Double
     )
 
     /**
@@ -73,7 +75,7 @@ class MapDetailViewModel @AssistedInject constructor(
      */
     data class BaggerRanking(
         val player: PlayerEntity,
-        val shockShare: Int,
+        val shockShare: Double,
         val shockCount: Int,
         val played: Int
     )
@@ -85,7 +87,7 @@ class MapDetailViewModel @AssistedInject constructor(
         val averageTeamScore: Int,
         // Nb de manches contre cet adversaire (seuil MIN_RANKING_SAMPLE).
         val played: Int,
-        val winrate: Int
+        val winrate: Double
     )
 
     data class State(
@@ -196,7 +198,7 @@ class MapDetailViewModel @AssistedInject constructor(
                 val averageScore = positions.sumOf { it.positionToPoints(false) } / positions.size
                 val averagePosition = positions.sum() / positions.size
                 val wonCount = positions.count { it.positionToPoints(false) > 6 }
-                val winrate = (wonCount * 100) / positions.size
+                val winrate = wonCount.percentOf(positions.size)
                 PilotRanking(
                     player = player,
                     averageScore = averageScore,
@@ -225,17 +227,23 @@ class MapDetailViewModel @AssistedInject constructor(
             .mapValues { (_, shocks) -> shocks.sumOf { it.count } }
 
         val players = databaseRepository.getPlayers().firstOrNull().orEmpty()
-        return shocksByPlayer
+        val baggers = shocksByPlayer
             .mapNotNull { (playerId, shockCount) ->
                 if (shockCount == 0) return@mapNotNull null
                 val player = players.firstOrNull { it.id == playerId } ?: return@mapNotNull null
                 // Membres uniquement (alliés = rosterId sentinelle « -1 »).
                 if (player.rosterId == "-1") return@mapNotNull null
+                player to shockCount
+            }
+        // Plus grand reste (#99) : les parts affichées ensemble somment au total équipe (alliés = part implicite).
+        val shockShares = baggers.map { it.second }.percentShares(totalTeamShocks)
+        return baggers
+            .mapIndexed { index, (player, shockCount) ->
                 BaggerRanking(
                     player = player,
-                    shockShare = shockCount * 100 / totalTeamShocks,
+                    shockShare = shockShares[index],
                     shockCount = shockCount,
-                    played = runsByPlayer[playerId] ?: 0
+                    played = runsByPlayer[player.id] ?: 0
                 )
             }
             .sortedByDescending { it.shockShare }
@@ -258,7 +266,7 @@ class MapDetailViewModel @AssistedInject constructor(
                 if (tracks.size < Stats.MIN_RANKING_SAMPLE) return@mapNotNull null
                 val averageTeamScore = tracks.sumOf { it.teamScore } / tracks.size
                 val wonCount = tracks.count { it.trackOutcome() > 0 }
-                val winrate = (wonCount * 100) / tracks.size
+                val winrate = wonCount.percentOf(tracks.size)
                 // Rule 12 : nom/tag du roster, logo de l'équipe parente ; non résolu → dégradé.
                 val team = databaseRepository.getTeam(opponentId)?.let { resolved ->
                     val roster = resolved.rosters.firstOrNull { it.id == opponentId }

@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.displayedString
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -172,7 +173,7 @@ private fun PeriodViewModel.PlayerPeriodStats.toPodiumEntry(): PodiumEntry = Pod
     avatar = player.avatar,
     stats = listOf(
         R.string.period_players_wars_short to warsPlayed.toString(),
-        R.string.participation_rate_short to "$participationRate %",
+        R.string.participation_rate_short to participationRate.toPercentString(),
         R.string.period_players_average_short to averageScore.toString(),
         R.string.period_players_shocks_short to shockCount.toString()
     )

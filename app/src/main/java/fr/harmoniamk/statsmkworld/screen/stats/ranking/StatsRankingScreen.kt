@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayName
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -208,7 +209,7 @@ private fun RankingItem.TrackRanking.toPodiumEntry(is24p: Boolean): Pair<PodiumE
         pictureRes = map?.picture,
         stats = listOf(
             R.string.times_played_short to stats.totalPlayed.toString(),
-            R.string.form_winrate to "${stats.winRate ?: 0}%",
+            R.string.form_winrate to (stats.winRate ?: 0.0).toPercentString(),
             R.string.form_score to scoreValue
         )
     ) to this

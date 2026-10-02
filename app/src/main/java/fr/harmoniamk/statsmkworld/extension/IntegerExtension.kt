@@ -3,6 +3,7 @@ package fr.harmoniamk.statsmkworld.extension
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
+import kotlin.math.roundToLong
 
 /**
  * Couleur d'accent d'une équipe/opposant à partir de son index (1..39) : palette fixe
@@ -237,4 +238,14 @@ fun Int?.pointsToPosition(is24p: Boolean) = when (is24p) {
         1 -> listOf(12)
         else -> listOf(0)
     }
+}
+
+/**
+ * Part de [total] représentée par ce nombre, en %, arrondie à 2 décimales (#99) : la valeur
+ * stockée = la valeur affichée, donc tris, seuils et deltas se font sur le chiffre lu. 0.0 si
+ * [total] == 0. Pourcentage isolé ; parts d'un même total → `List<Int>.percentShares`.
+ */
+fun Int.percentOf(total: Int): Double = when (total) {
+    0 -> 0.0
+    else -> (this * 10_000.0 / total).roundToLong() / 100.0
 }

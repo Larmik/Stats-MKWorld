@@ -28,6 +28,24 @@ Le niveau de finition visuel ne dispense **jamais** de la correction des donnée
 - **Données réelles uniquement** : ne jamais coder en dur de valeurs de démo
   (noms, scores, %).
 
+## Pourcentages : fonctions centrales, format compact, répartitions exactes
+
+Tout pourcentage passe par les fonctions centrales de `extension/` (#99), jamais par un
+`* 100 /` entier ni un `"$x%"` local :
+
+- **Calcul isolé** (un winrate, un taux de participation, `% maps gagnées`) → `Int.percentOf(total)`
+  (`Double` arrondi au centième, `0.0` si total nul).
+- **Répartition** (plusieurs parts affichées ensemble d'un même total : Top 6 / Bot 6, parts de
+  points ou de shocks d'un classement) → `List<Int>.percentShares(total)` (plus grand reste,
+  10 000 unités) : les parts qui couvrent tout le total somment **exactement** à 100 %, jamais
+  99,99 / 100,01. Si les parts ne couvrent pas tout (alliés exclus, positions 13-24), passer le
+  vrai `total` : l'écart reste une part implicite et les parts visibles ne somment pas à 100.
+- **Affichage** → `Double.toPercentString(signed)` : format **compact** (`50 %`, `33,5 %`,
+  `33,33 %` — au plus 2 décimales, zéros finaux retirés), séparateur de la locale, espace
+  insécable avant `%`, `+` pour les deltas. Les strings reçoivent la chaîne formatée (`%1$s`).
+- Les champs de pourcentage sont des `Double` ; tris, seuils (`winrateColor`) et deltas portent
+  sur ces valeurs arrondies.
+
 ## Combinaison avec les autres rules
 
 Les autres rules UI (`10` clés de liste, `11` state, `12` roster, `14` back

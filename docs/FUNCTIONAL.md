@@ -375,6 +375,8 @@ Une fois validée, la war rejoint ton **historique** (pôle Wars) et l'écran de
 
 Cette section explique, en langage simple, **ce que veut dire chaque statistique**, comment la lire et comment t'en servir. Toutes portent sur les wars 12 joueurs. Rappels : une **war** = un match, une **course** = une course d'une war, le **winrate** = le pourcentage de wars gagnées, **all-time** = sur tout l'historique.
 
+Tous les pourcentages sont **arrondis au centième** et affichés au même format partout, sans zéros inutiles : `50 %`, `33,5 %`, `33,33 %`. Quand des parts couvrent tout un ensemble (Top 6 / Bot 6, parts de points des contributeurs), leur somme affichée fait **exactement 100 %**.
+
 Beaucoup de stats existent en deux versions selon l'angle choisi (« Individuelles » = **toi**, « Équipe » = **le collectif**). Quand la lecture diffère, c'est précisé.
 
 ### Les stats de bilan

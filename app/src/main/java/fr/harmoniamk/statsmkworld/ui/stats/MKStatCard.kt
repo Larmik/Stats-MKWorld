@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -147,10 +148,10 @@ fun WinTieLossBar(won: Int, tied: Int, loss: Int) {
  * Adversaire (« Bilan face à eux ») et Circuit (« Performance »).
  */
 @Composable
-fun BalanceCard(title: String, winrate: Int, won: Int, tied: Int, loss: Int, subtitle: String) {
+fun BalanceCard(title: String, winrate: Double, won: Int, tied: Int, loss: Int, subtitle: String) {
     StatCard(title = title) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-            MKText(text = "$winrate%", font = Fonts.Urbanist, textColor = winrateColor(winrate), fontSize = 30, textAlign = TextAlign.Start)
+            MKText(text = winrate.toPercentString(), font = Fonts.Urbanist, textColor = winrateColor(winrate), fontSize = 30, textAlign = TextAlign.Start)
             MKText(text = subtitle, textColor = Colors.white66, fontSize = 12, textAlign = TextAlign.End, maxLines = 2)
         }
         Spacer(Modifier.height(6.dp))
@@ -200,7 +201,7 @@ class StatTile(
  * Couleur d'un pourcentage de winrate selon le seuil (mutualisé, fiches Adversaire &
  * Circuit) : **rouge** si < 50 %, **blanc** si = 50 %, **vert** si > 50 %.
  */
-fun winrateColor(winrate: Int): Color = when {
+fun winrateColor(winrate: Double): Color = when {
     winrate > 50 -> Colors.green
     winrate < 50 -> Colors.red
     else -> Colors.white
