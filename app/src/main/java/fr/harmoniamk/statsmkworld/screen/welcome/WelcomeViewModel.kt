@@ -50,8 +50,9 @@ class WelcomeViewModel @Inject constructor(
         // Deux vues de stats 12p calculées d'emblée ; le segmenté Moi/Équipe choisit sans recalcul.
         val playerStats: Stats? = null,
         val teamStats: Stats? = null,
-        // 3 dernières wars 12p (résultats récents).
-        val recentResults: List<WarDetails> = listOf(),
+        // 3 dernières wars 12p, vues Équipe et Moi (participation du joueur, #98).
+        val teamRecentResults: List<WarDetails> = listOf(),
+        val playerRecentResults: List<WarDetails> = listOf(),
         // Filtre par saison (#70) : liste + sélection (null = tout, défaut = saison en cours).
         val seasons: List<SeasonEntity> = listOf(),
         val selectedSeasonNumber: Int? = null
@@ -86,9 +87,10 @@ class WelcomeViewModel @Inject constructor(
                 // Firebase résolu sur le collecteur, HORS du `withContext(Default)` (rule 21, #73).
                 val currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty())
                 // Toute la partie CPU-lourde (construction de `wars`, `withFullStats`,
-                // `recentResults`) déportée sur `Dispatchers.Default` via `withContext` (pas
+                // résultats récents) déportée sur `Dispatchers.Default` via `withContext` (pas
                 // `flowOn` — rule 21, #73) ; métadonnées et `seasons` restent sur le collecteur.
-                val (teamStats, playerStats, recentResults) = withContext(Dispatchers.Default) {
+                // Le bloc renvoie un `State` partiel (stats + résultats récents) complété ensuite.
+                val computed = withContext(Dispatchers.Default) {
                     // Dashboard 12p uniquement, filtre par saison (#70) appliqué en premier.
                     val wars = databaseRepository.getWars()
                         .firstOrNull()
@@ -100,16 +102,22 @@ class WelcomeViewModel @Inject constructor(
                         ?.sortedByDescending { it.war.id }
                         .orEmpty()
                     // Vues équipe (userId = null) et joueur calculées d'emblée sur les wars de la saison.
-                    val teamStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(is24p = false)
-                        ?.firstOrNull()
-                    val playerStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(userId = player.id.toString(), is24p = false)
-                        ?.firstOrNull()
-                    Triple(teamStats, playerStats, wars.safeSubList(0, 3))
+                    State(
+                        teamStats = wars.takeIf { it.isNotEmpty() }
+                            ?.withFullStats(is24p = false)
+                            ?.firstOrNull(),
+                        playerStats = wars.takeIf { it.isNotEmpty() }
+                            ?.withFullStats(userId = player.id.toString(), is24p = false)
+                            ?.firstOrNull(),
+                        teamRecentResults = wars.safeSubList(0, 3),
+                        // Vue Moi (#98) : même critère de participation que `playerStats` (`hasPlayer`).
+                        playerRecentResults = wars
+                            .filter { it.war.hasPlayer(player.id.toString()) }
+                            .safeSubList(0, 3)
+                    )
                 }
 
-                State(
+                computed.copy(
                     loading = false,
                     teamName = team.name,
                     teamLogo = team.logo?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
@@ -117,9 +125,6 @@ class WelcomeViewModel @Inject constructor(
                     playerName = player.name,
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     currentWar = currentWar,
-                    teamStats = teamStats,
-                    playerStats = playerStats,
-                    recentResults = recentResults,
                     seasons = seasons,
                     selectedSeasonNumber = activeSeason?.number
                 )

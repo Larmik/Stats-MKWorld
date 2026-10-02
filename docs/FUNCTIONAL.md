@@ -152,7 +152,7 @@ De haut en bas, tu y trouves :
 
 5. **La série en cours** — Si tu es sur une série de victoires (ou de défaites), un bandeau avec une **flamme** l'annonce : « Série de 4 victoires », avec le rappel de ton record. La flamme est verte pour une série de victoires, rouge pour une série de défaites.
 
-6. **Les derniers résultats** — Tes **3 dernières wars**, chacune cliquable pour ouvrir son détail. Un lien **« Voir tout »** t'emmène vers l'historique complet (pôle Wars).
+6. **Les derniers résultats** — Les **3 dernières wars**, chacune cliquable pour ouvrir son détail ; elles suivent le sélecteur **Moi / Équipe** : en **Moi**, uniquement les wars auxquelles tu as participé (message « Tu n'as participé à aucune war sur cette période » si aucune) ; en **Équipe**, toutes les wars de l'équipe. Un lien **« Voir tout »** ouvre l'historique : filtré sur toi en vue Moi, complet (pôle Wars) en vue Équipe.
 
 En haut de l'écran, tu retrouves la **loupe** (vers l'Annuaire) et le **menu de saison** (pour filtrer tout le tableau de bord sur une saison précise).
 
