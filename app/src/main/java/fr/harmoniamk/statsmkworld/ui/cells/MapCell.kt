@@ -130,11 +130,6 @@ fun MapCell(
 
                 else -> mapToDisplay.forEach {
                     Image(
-                        painter = painterResource(it.cup),
-                        modifier = Modifier.size(25.dp),
-                        contentDescription = null
-                    )
-                    Image(
                         painter = painterResource(it.picture),
                         modifier = Modifier
                             .width(90.dp)
