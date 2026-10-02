@@ -44,3 +44,18 @@ Nuances :
   `if (x == null) return` sur une valeur qu'on va ensuite déballer.
 - Ne pas imbriquer les `?.let` au-delà de deux niveaux : préférer un `?:` avec
   valeur par défaut ou décomposer la fonction.
+- Ne pas convertir un nullable en identifiant via `?.toString()` (`team?.id.toString()`
+  produit la chaîne `"null"`) : `team?.let { fetchAllies(it.id.toString()) }`. Cf. audit B33.
+
+## Pas de `var` capturée mutée dans un opérateur de collection
+
+Ne pas réassigner une `var` extérieure dans un `map`/`flatMap`/`forEach` pour la relire dans
+un opérateur suivant : après le premier opérateur, elle ne porte que la valeur du **dernier**
+élément. Porter la valeur dans l'élément (`Pair`, data class) ou la calculer par élément.
+Cf. audit B31 (`withTrackStats` : `var is24p`).
+
+## Saisie utilisateur : conversion tolérante
+
+Toute conversion d'un texte saisi utilise `toIntOrNull()`/`toLongOrNull()` avec un repli
+explicite, jamais `toInt()` — y compris après une validation partielle qui, elle, utilisait
+`toIntOrNull()`. Cf. audit B32 (`EditTabViewModel`).

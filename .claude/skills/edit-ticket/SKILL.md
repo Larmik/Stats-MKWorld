@@ -100,8 +100,8 @@ Si les précisions **changent la nature ou le rattachement** du ticket, ajuste-l
 (sinon, laisse-les tels quels) — et **signale toujours** ce que tu changes :
 
 - **Titre** : reformule si la modif le rend plus juste. **Conserve le préfixe**
-  `[BUG]` / `[FEATURE]` (il sert au nommage de branche par `/ticket-dev`). Une
-  requalification bug↔feature change le préfixe **et** le label de type.
+  `[BUG]` / `[FEATURE]` / `[TECH]` (il sert au nommage de branche par `/ticket-dev`).
+  Une requalification bug↔feature/tech change le préfixe **et** le label de type.
 - **Label de type** : `bug` ↔ `enhancement` selon la nature.
 ## 5. Livraison — éditer l'issue (directement)
 

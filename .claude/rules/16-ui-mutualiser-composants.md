@@ -39,6 +39,15 @@ Joueurs/Adversaires/Circuits → **extrait vers `ui/stats/MKPodiumCell.kt`**
 `onClick`), la version locale de `StatsFullScreen` supprimée au profit de l'import
 partagé.
 
+## Chercher l'existant AVANT de créer un composable
+
+Avant d'écrire un composable (même `private`) ou un helper d'affichage, chercher s'il
+existe déjà : `rg "fun <Nom>\(" app/src/main` et un nom voisin (`Chip`, `Crest`, `Logo`,
+`Eyebrow`, `Card`, `Tile`, `initialsOf`…) dans `ui/`, `ui/cells/`, `ui/stats/` **et** dans les
+autres écrans. S'il existe en public → le réutiliser ; en privé ailleurs → l'extraire (règle
+ci-dessus), ne pas en écrire une 3ᵉ copie. Cf. audit D16/D35 : `OutcomeChip` ×3, `Eyebrow`
+×2, `initialsOf` ×3, écusson d'équipe ×5 nés de cette omission.
+
 ## `MKSegmentedSelector` : segmented UNIQUE et partagé
 
 `ui/MKSegmentedSelector.kt` (style « pill » : conteneur arrondi, item actif = pastille

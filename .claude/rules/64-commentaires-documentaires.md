@@ -44,5 +44,13 @@ suspend fun getUsers(teamId: String): List<User>
 suspend fun getUsers(teamId: String): List<User>
 ```
 
+## Pas de code commenté
+
+Ne pas laisser de code mis en commentaire « pour plus tard » : git garde l'historique.
+Seule exception, une **désactivation assumée et référencée** (ex. segmenté 12/24 d'`AddWar`
+masqué pour la MEP, #91), avec une ligne indiquant le ticket de réactivation. Même principe
+pour le code orphelin : un composant remplacé est supprimé dans le même ticket (hors code
+24p, cf. décision « 12p first, 24p deferred »). Cf. audit C14, D34.
+
 Se combine avec **63** (noms explicites → moins de commentaires nécessaires) et **62/61**
 (pas de helper/fonction mono-usage à sur-documenter).

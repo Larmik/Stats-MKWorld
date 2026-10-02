@@ -22,6 +22,15 @@ l'écriture *et* à un prédicat de lecture : la constante empêche la divergenc
 Généralise à toutes les couches et aux constantes le principe « pas d'extraction pour
 un seul appelant » (`30-repositories.md`).
 
+## Littéraux métier partagés : constante ou enum obligatoire
+
+Inverse de la règle ci-dessus : un littéral **métier** présent à **≥ 2 sites** (sentinelle
+allié `"-1"`, rôles `0/1/2`, test de mode `teamOpponent.size > 1`, préfixe d'URL MKCentral,
+filtre `game == "mkworld"`, marge bottombar `90.dp`) ne doit pas recevoir une nouvelle copie.
+Réutiliser la constante / l'enum / l'extension existante ; si elle n'existe pas encore,
+la créer et y faire pointer les sites touchés par le ticket (signaler les autres dans
+l'audit). Cf. audit G2, G6, G7, D28, D30.
+
 ## Corollaire — placement des fonctions d'extension dans `extension/`
 
 Une nouvelle extension va dans le **fichier existant** correspondant à son récepteur
@@ -43,6 +52,9 @@ issues seulement :
 - **réellement réutilisée** (≥ 2 appelants) → la **déplacer** dans le fichier
   d'extension du récepteur (existant, sinon nouveau `XxxExtension.kt` si le type
   n'est pas couvert).
+
+Cas fréquent à surveiller (audit D36) : les `toPodiumEntry()` posées en top-level dans les
+fichiers d'écran, dont `TrackStats.toPodiumEntry` définie deux fois.
 
 Exception : une extension **membre privée d'une classe** (ex. `private fun
 WarDetails.outcome()` dans `Stats`, qui capture l'état de `Stats`) reste licite —

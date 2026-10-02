@@ -26,3 +26,17 @@ Rester **ciblé** : garder les DTO/adapters concernés, ne jamais désactiver la
 minification globalement. Toute modif R8 ou DTO réseau doit être **validée sur un
 vrai build release** (`./gradlew assembleRelease` + test du flux réseau) —
 `compileDebugKotlin` ne déclenche pas R8.
+
+## Secrets et données sensibles côté client
+
+**Portée** : `app/build.gradle.kts` (`buildConfigField`), ressources, DataStore, manifest.
+
+- **Aucun secret serveur dans l'APK** : un `BuildConfig`/une ressource se lit par
+  décompilation, même minifié. Un *client secret* OAuth (Discord) ou une clé d'API privée
+  relève d'un backend (Cloud Function) ; seuls des identifiants publics (client id) peuvent
+  être embarqués. Cf. audit A4.
+- **Tokens exclus de la sauvegarde** : tout nouveau stockage de token/identité doit être
+  exclu des règles `backup_rules.xml` / `data_extraction_rules.xml` (ou `allowBackup=false`).
+  Cf. audit A5.
+- Ne jamais lire ni afficher `local.properties`, `google-services.json`, keystores
+  (déjà en `deny` dans `.claude/settings.json`).

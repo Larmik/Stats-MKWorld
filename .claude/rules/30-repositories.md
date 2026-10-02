@@ -46,6 +46,22 @@ explicitement** (ne pas s'appuyer sur une résolution transitive fragile), utili
 Un accès purement **synchrone** (ex. `Firebase.auth.currentUser != null`) reste
 **non-suspend** : ni `suspend`, ni `Flow`.
 
+## Écriture destructive (`clear*`) : jamais dans une méthode appelée par élément
+
+Un `clear*()` (Room `DELETE FROM …` sans filtre) vide **toute** la table. Il ne doit pas
+vivre dans une méthode qui traite **un** élément (une roster, une équipe) et qu'on appelle
+en boucle : chaque itération effacerait les précédentes. Faire **un seul** clear avant la
+boucle, ou purger + réécrire l'ensemble en une passe (cf. `fetchTeams`, garde-fou anti-wipe).
+Cf. audit B27 : `fetchWars(rosterId)` fait `clearWars()` puis est appelé par roster → seule
+la dernière roster survit.
+
+## La couche données ne dépend pas de l'UI
+
+Un repository / data source ne référence ni `Activity`, ni launcher de permission, ni
+`currentActivity` : les interactions système liées à l'écran (demande de permission,
+intent) se font dans l'UI (`rememberLauncherForActivityResult`), le repository n'exposant
+que l'état (permission accordée ou non). Cf. audit B28.
+
 ## Ne pas extraire de fonction privée pour une logique à un seul appelant
 
 Dans un `repository/`/`datasource/`, **ne pas extraire** de helper privé pour une
