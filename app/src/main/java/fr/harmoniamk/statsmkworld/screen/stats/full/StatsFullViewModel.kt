@@ -12,6 +12,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
@@ -65,9 +66,9 @@ class StatsFullViewModel @AssistedInject constructor(
      */
     data class Contributor(
         val player: PlayerEntity,
-        val pointsShare: Int,
-        val shockShare: Int,
-        val winrate: Int,
+        val pointsShare: Double,
+        val shockShare: Double,
+        val winrate: Double,
         val isMe: Boolean
     )
 
@@ -87,7 +88,7 @@ class StatsFullViewModel @AssistedInject constructor(
         val teamStatsByWindow: Map<Int, Stats> = mapOf(),
         // Participation du joueur (#78) par fenêtre : % de wars de l'équipe où il est présent.
         // Numérateur et dénominateur sur la même fenêtre filtrée (saison + all-time/5/10).
-        val participationRateByWindow: Map<Int, Int> = mapOf(),
+        val participationRateByWindow: Map<Int, Double> = mapOf(),
         // Tables Top/Bot 2→6 par fenêtre (vue équipe, userId null) : équipe ET adversaire.
         val teamMapStatsByWindow: Map<Int, MapStats> = mapOf(),
         // Contributeurs du roster par fenêtre.
@@ -222,15 +223,14 @@ class StatsFullViewModel @AssistedInject constructor(
             val teamMapStatsByWindow = mutableMapOf<Int, MapStats>()
             val teamOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
             val playerOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
-            // Participation (#78) par fenêtre : wars du joueur / wars de l'équipe. Garde-fou
-            // dénominateur nul → 0 %. Calcul dans le VM (mono-consommateur, rule 32).
-            val participationRateByWindow = mutableMapOf<Int, Int>()
+            // Participation (#78) par fenêtre : wars du joueur / wars de l'équipe (0 % si aucune,
+            // garde de `percentOf`). Calcul dans le VM (mono-consommateur, rule 32).
+            val participationRateByWindow = mutableMapOf<Int, Double>()
             windowSizes.forEach { (index, lastN) ->
                 val windowWars = lastN?.let { chronologicalWars.takeLast(it) } ?: chronologicalWars
-                participationRateByWindow[index] = when (val teamCount = windowWars.size) {
-                    0 -> 0
-                    else -> windowWars.count { it.war.hasPlayer(targetUserId) } * 100 / teamCount
-                }
+                participationRateByWindow[index] = windowWars
+                    .count { it.war.hasPlayer(targetUserId) }
+                    .percentOf(windowWars.size)
                 windowWars.withFullStats(userId = targetUserId, is24p = is24p)
                     .firstOrNull()?.let { playerStatsByWindow[index] = it }
                 windowWars.withFullStats(is24p = is24p)
@@ -300,8 +300,8 @@ class StatsFullViewModel @AssistedInject constructor(
         return OpponentPodiums(
             topByCount = all.sortedByDescending { it.stats.warStats.warsPlayed }.take(3),
             flopByCount = all.sortedBy { it.stats.warStats.warsPlayed }.take(3),
-            topByWinrate = rankable.sortedByDescending { it.winrate }.take(3),
-            flopByWinrate = rankable.sortedBy { it.winrate }.take(3),
+            topByWinrate = rankable.sortedByDescending { it.winratePercent }.take(3),
+            flopByWinrate = rankable.sortedBy { it.winratePercent }.take(3),
             topByScore = rankable.sortedByDescending { it.stats.averagePoints }.take(3),
             flopByScore = rankable.sortedBy { it.stats.averagePoints }.take(3),
             // Liste complète des adversaires affrontés, pour le classement entier (#67).
@@ -353,9 +353,9 @@ class StatsFullViewModel @AssistedInject constructor(
             .map { (player, stats) ->
                 Contributor(
                     player = player,
-                    pointsShare = (stats.warScores.sumOf { it.score } * 100) / totalPoints,
-                    shockShare = if (totalTeamShocks > 0) windowWars.totalShocks(player.id) * 100 / totalTeamShocks else 0,
-                    winrate = stats.allTimeForm?.winrate ?: 0,
+                    pointsShare = stats.warScores.sumOf { it.score }.percentOf(totalPoints),
+                    shockShare = windowWars.totalShocks(player.id).percentOf(totalTeamShocks),
+                    winrate = stats.allTimeForm?.winrate ?: 0.0,
                     isMe = player.id == meId
                 )
             }

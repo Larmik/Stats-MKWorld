@@ -1,10 +1,12 @@
 package fr.harmoniamk.statsmkworld.model.local
 
+import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.extension.sizeOrOne
 import fr.harmoniamk.statsmkworld.extension.sum
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.warScoreToDiff
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -32,7 +34,7 @@ data class Stats(
     }
 
     val mapsWon = averageForMaps.takeIf { it.isNotEmpty() }?.let {
-        "${(it.filter { (it.teamScore ?: 0) > 41 }.size * 100 / it.size)}%"
+        it.count { (it.teamScore ?: 0) > 41 }.percentOf(it.size).toPercentString()
     }
 
     // Wars triées chronologiquement (war.id = timestamp). Source UNIQUE de tri pour toutes
@@ -125,9 +127,9 @@ data class Stats(
 
     /** Top 3 / Flop 3 des maps par winrate (seuil ≥ 3 matchs appliqué). */
     val topMapsByWinrate: List<TrackStats> =
-        mapsRankable.sortedByDescending { it.winRate ?: 0 }.take(3)
+        mapsRankable.sortedByDescending { it.winRate ?: 0.0 }.take(3)
     val flopMapsByWinrate: List<TrackStats> =
-        mapsRankable.sortedBy { it.winRate ?: 0 }.take(3)
+        mapsRankable.sortedBy { it.winRate ?: 0.0 }.take(3)
     val topMapsByScore: List<TrackStats> =
         mapsRankable.sortedByDescending { it.rankingScore }.take(3)
     val flopMapsByScore: List<TrackStats> =
@@ -197,7 +199,7 @@ data class Stats(
         // % de manches gagnées — teamScore de manche > 41 (moitié haute), cf. mapsWon.
         val mapsWonPct = tracks
             .takeIf { it.isNotEmpty() }
-            ?.let { list -> (list.count { it.teamScore > 41 } * 100) / list.size }
+            ?.let { list -> list.count { it.teamScore > 41 }.percentOf(list.size) }
         // Shocks par war — shocks filtrés selon la vue / nb de wars.
         val shocksPerWar = wars
             .takeIf { it.isNotEmpty() }
@@ -258,20 +260,23 @@ data class Stats(
             bot6Count = windowBot6,
             penaltyPointsLost = windowPenalty,
             // Deltas vs all-time : null pour l'all-time (base == null) et si un terme manque.
-            winrateDelta = delta(winrate, base?.winrate),
+            winrateDelta = percentDelta(winrate, base?.winrate),
             scoreDelta = delta(avgScore, base?.averageScore),
             positionDelta = delta(avgPosition, base?.averagePosition),
             mapScoreDelta = delta(avgMapScore, base?.averageMapScore),
-            mapsWonDelta = delta(mapsWonPct, base?.mapsWonPercent)
+            mapsWonDelta = percentDelta(mapsWonPct, base?.mapsWonPercent)
         )
     }
 
     private fun delta(value: Int?, base: Int?): Int? =
         if (value != null && base != null) value - base else null
 
-    private fun winrateOf(wars: List<WarDetails>): Int? = wars
+    private fun percentDelta(value: Double?, base: Double?): Double? =
+        if (value != null && base != null) value - base else null
+
+    private fun winrateOf(wars: List<WarDetails>): Double? = wars
         .takeIf { it.isNotEmpty() }
-        ?.let { list -> (list.count { it.outcome() > 0 } * 100) / list.size }
+        ?.let { list -> list.count { it.outcome() > 0 }.percentOf(list.size) }
 
     private fun averageScoreOf(scores: List<WarScore>): Int? = scores
         .takeIf { it.isNotEmpty() }
@@ -314,11 +319,11 @@ data class Stats(
  */
 data class FormStats(
     val sampleSize: Int,
-    val winrate: Int?,
+    val winrate: Double?,
     val averageScore: Int?,
     val averagePosition: Int?,
     val averageMapScore: Int?,
-    val mapsWonPercent: Int?,
+    val mapsWonPercent: Double?,
     val shocksPerWar: Float?,
     // Ticket #36 — régularité/amplitude/marges + records de série et Top6/Bot6
     // déclinés par fenêtre (all-time/5/10) pour les sélecteurs de fenêtre des
@@ -333,11 +338,11 @@ data class FormStats(
     val top6Count: Int = 0,
     val bot6Count: Int = 0,
     val penaltyPointsLost: Int = 0,
-    val winrateDelta: Int?,
+    val winrateDelta: Double?,
     val scoreDelta: Int?,
     val positionDelta: Int?,
     val mapScoreDelta: Int?,
-    val mapsWonDelta: Int?
+    val mapsWonDelta: Double?
 )
 
 class WarScore(
@@ -352,7 +357,7 @@ data class TrackStats(
     val teamScore: Int? = null,
     val playerScore: Int? = null,
     val totalPlayed: Int = 0,
-    val winRate: Int? = null,
+    val winRate: Double? = null,
     val shockCount: Int? = null
 )
 

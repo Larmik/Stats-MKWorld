@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -57,7 +58,7 @@ fun PlayerMapsRankingScreen(
             .filter { it.totalPlayed > 0 }
             .let { list ->
                 when (sortIndex) {
-                    1 -> list.sortedByDescending { it.winRate ?: 0 }
+                    1 -> list.sortedByDescending { it.winRate ?: 0.0 }
                     2 -> list.sortedByDescending { (if (userId != null) it.playerScore else it.teamScore) ?: 0 }
                     else -> list.sortedByDescending { it.totalPlayed }
                 }
@@ -113,7 +114,7 @@ private fun TrackStats.toPodiumEntry(userId: String?): PodiumEntry {
         pictureRes = map?.picture,
         stats = listOf(
             R.string.times_played_short to totalPlayed.toString(),
-            R.string.form_winrate to "${winRate ?: 0}%",
+            R.string.form_winrate to (winRate ?: 0.0).toPercentString(),
             scoreLabel to scoreValue
         )
     )

@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.percentOf
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -110,11 +112,10 @@ fun OpponentDetailScreen(
                     }
                     // 2. Bilan face à eux.
                     stats?.let { s ->
-                        val played = s.warStats.warsPlayed.takeIf { it > 0 } ?: 1
                         item {
                             BalanceCard(
                                 title = stringResource(R.string.opponent_detail_balance),
-                                winrate = (s.warStats.warsWon * 100) / played,
+                                winrate = s.warStats.warsWon.percentOf(s.warStats.warsPlayed),
                                 won = s.warStats.warsWon,
                                 tied = s.warStats.warsTied,
                                 loss = s.warStats.warsLoss,
@@ -339,7 +340,7 @@ internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
         pictureRes = map?.picture,
         stats = listOf(
             R.string.times_played_short to totalPlayed.toString(),
-            R.string.form_winrate to "${winRate ?: 0}%",
+            R.string.form_winrate to (winRate ?: 0.0).toPercentString(),
             scoreLabel to scoreValue
         )
     )
@@ -358,7 +359,7 @@ internal fun OpponentDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
             R.string.times_played_short to played.toString(),
-            R.string.form_winrate to "$winrate%",
+            R.string.form_winrate to winrate.toPercentString(),
             R.string.average_position_short to averagePosition.toString()
         )
     )
@@ -376,6 +377,6 @@ internal fun OpponentDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry 
         stats = listOf(
             R.string.times_played_short to played.toString(),
             R.string.stats_bag_share_short to shockCount.toString(),
-            R.string.stats_bag_share_pct to "$shockShare%"
+            R.string.stats_bag_share_pct to shockShare.toPercentString()
         )
     )

@@ -17,7 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.positionColor
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
@@ -59,19 +61,19 @@ fun ColumnScope.DistributionChart(distribution: List<Pair<Int, Int>>) {
 /** Pied de la distribution : Top6 / Bot6 (compte + %), sur la distribution fournie. */
 @Composable
 fun ColumnScope.DistributionFooter(distribution: List<Pair<Int, Int>>) {
-    val total = distribution.sumOf { it.second }.takeIf { it > 0 } ?: 1
+    val total = distribution.sumOf { it.second }
     val top6 = distribution.filter { it.first in 1..6 }.sumOf { it.second }
     val bot6 = distribution.filter { it.first in 7..12 }.sumOf { it.second }
     Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        DistributionFooterStat(top6, "Top 6", (top6 * 100) / total, Colors.green)
-        DistributionFooterStat(bot6, "Bot 6", (bot6 * 100) / total, Colors.red)
+        DistributionFooterStat(top6, "Top 6", top6.percentOf(total), Colors.green)
+        DistributionFooterStat(bot6, "Bot 6", bot6.percentOf(total), Colors.red)
     }
 }
 
 @Composable
-private fun DistributionFooterStat(count: Int, label: String, percent: Int, color: Color) {
+private fun DistributionFooterStat(count: Int, label: String, percent: Double, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         MKText(text = count.toString(), font = Fonts.Urbanist, textColor = color, fontSize = 13)
-        MKText(text = "$label · $percent %", textColor = Colors.white70, fontSize = 11)
+        MKText(text = "$label · ${percent.toPercentString()}", textColor = Colors.white70, fontSize = 11)
     }
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
@@ -35,13 +36,13 @@ class PeriodViewModel @Inject constructor(
 
     /**
      * Agrégat par joueur sur la période : [warsPlayed] (wars jouées), [participationRate]
-     * (`warsPlayed × 100 / nb wars équipe`, 0 % si dénominateur nul), [averageScore] (points /
+     * (`warsPlayed.percentOf(nb wars équipe)`, 0 % si dénominateur nul), [averageScore] (points /
      * warsPlayed, moyenne par war, #80), [shockCount] (cumul des shocks).
      */
     data class PlayerPeriodStats(
         val player: PlayerEntity,
         val warsPlayed: Int,
-        val participationRate: Int,
+        val participationRate: Double,
         val averageScore: Int,
         val shockCount: Int
     )
@@ -110,10 +111,7 @@ class PeriodViewModel @Inject constructor(
             PlayerPeriodStats(
                 player = player,
                 warsPlayed = played,
-                participationRate = when (teamWarsCount) {
-                    0 -> 0
-                    else -> played * 100 / teamWarsCount
-                },
+                participationRate = played.percentOf(teamWarsCount),
                 averageScore = when (played) {
                     0 -> 0
                     else -> (scoreSum[player.id] ?: 0) / played

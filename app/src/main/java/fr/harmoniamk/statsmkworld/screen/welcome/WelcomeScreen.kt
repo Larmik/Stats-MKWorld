@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -318,7 +319,7 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
         }
         scores.takeIf { it.size >= 2 }?.let { values ->
             // Couleur de tendance : delta ≥ 0 (ou indisponible) → vert, sinon rouge.
-            val trendColor = if ((form?.winrateDelta ?: 0) < 0) Colors.red else Colors.green
+            val trendColor = if ((form?.winrateDelta ?: 0.0) < 0) Colors.red else Colors.green
             Spacer(Modifier.height(12.dp))
             // Deux demi-colonnes égales (#91 pt.10) : gauche = sparkline + hint « évolution score »,
             // droite = delta de forme + hint. IntrinsicSize.Min + SpaceBetween → hints alignés en bas.
@@ -350,7 +351,7 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                 ) {
                     form?.winrateDelta?.let { delta ->
                         MKText(
-                            text = if (delta >= 0) "↗ +$delta%" else "↘ $delta%",
+                            text = "${if (delta >= 0) "↗" else "↘"} ${delta.toPercentString(signed = true)}",
                             font = Fonts.NunitoBD,
                             textColor = if (delta >= 0) Colors.green else Colors.red,
                             fontSize = 20,
@@ -430,7 +431,7 @@ private fun KeyFiguresCard(stats: Stats, isPlayer: Boolean) {
         Eyebrow(stringResource(R.string.home_key_figures))
         Spacer(Modifier.height(11.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            KeyTile(value = stats.allTimeForm?.winrate?.let { "$it%" } ?: "-", label = stringResource(R.string.form_winrate))
+            KeyTile(value = stats.allTimeForm?.winrate?.toPercentString() ?: "-", label = stringResource(R.string.form_winrate))
             when (isPlayer) {
                 true -> {
                     KeyTile(value = stats.averagePoints.toString(), label = stringResource(R.string.form_score))
@@ -455,7 +456,8 @@ private fun RowScope.KeyTile(value: String, label: String) {
             .padding(vertical = 12.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        MKText(text = value, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 22, textAlign = TextAlign.Center)
+        // maxLines = 1 : MKText réduit la police au lieu de couper « 100,00 % » sur 2 lignes (#99).
+        MKText(text = value, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 22, textAlign = TextAlign.Center, maxLines = 1)
         MKText(text = label, textColor = Colors.white70, fontSize = 11, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
     }
 }

@@ -40,8 +40,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayName
+import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionColor
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.extension.warScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.Stats
@@ -258,7 +260,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
                         accent = Colors.yellow,
                         tinted = false,
                         iconSize = 34.dp,
-                        title = stringResource(R.string.stats_contribution_value, contributor.pointsShare),
+                        title = stringResource(R.string.stats_contribution_value, contributor.pointsShare.toPercentString()),
                         subtitle = meContributorRank
                             ?.let { stringResource(R.string.stats_contribution_rank, it + 1) }
                             ?: ""
@@ -269,7 +271,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.individualSections(
                         IconLine(
                             icon = R.drawable.shock,
                             accent = Colors.yellow,
-                            title = stringResource(R.string.stats_bag_contribution_value, contributor.shockShare),
+                            title = stringResource(R.string.stats_bag_contribution_value, contributor.shockShare.toPercentString()),
                             subtitle = meBaggerRank
                                 ?.let { stringResource(R.string.stats_bag_contribution_rank, it + 1) }
                                 ?: ""
@@ -382,7 +384,7 @@ private fun IndicatorsCard(
     isPlayer: Boolean,
     selectors: SectionSelectors,
     // Taux de participation (#78) par fenêtre — vue joueur uniquement (équipe = 100 %).
-    participationByWindow: Map<Int, Int>? = null
+    participationByWindow: Map<Int, Double>? = null
 ) {
     val window = stats.windowForm(selectors.windowIndex)
     // Deltas seulement hors all-time (index 0 = pas de comparaison).
@@ -394,29 +396,29 @@ private fun IndicatorsCard(
             when (isPlayer) {
                 true -> {
                     // Vue joueur : points/war (brut) + position moyenne.
-                    add(MetricTile(stringResource(R.string.stats_points_per_war), window?.averageScore?.toString() ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_points_per_war)))
-                    add(MetricTile(stringResource(R.string.average_position_short), window?.averagePosition?.toString() ?: "-", if (showDelta) window?.positionDelta else null, "", DeltaPolarity.LOWER, stringResource(R.string.info_average_position)))
+                    add(MetricTile(stringResource(R.string.stats_points_per_war), window?.averageScore?.toString() ?: "-", if (showDelta) window?.scoreDelta?.toDouble() else null, false, DeltaPolarity.HIGHER, stringResource(R.string.info_points_per_war)))
+                    add(MetricTile(stringResource(R.string.average_position_short), window?.averagePosition?.toString() ?: "-", if (showDelta) window?.positionDelta?.toDouble() else null, false, DeltaPolarity.LOWER, stringResource(R.string.info_average_position)))
                     // Participation (#78) : % de wars de l'équipe jouées par le joueur sur la fenêtre.
                     participationByWindow?.let { byWindow ->
                         val participation = byWindow[selectors.windowIndex]
-                        val participationDelta = participation?.minus(byWindow[0] ?: 0)
-                        add(MetricTile(stringResource(R.string.participation_rate), participation?.let { "$it%" } ?: "-", if (showDelta) participationDelta else null, "%", DeltaPolarity.HIGHER, stringResource(R.string.info_participation_rate)))
+                        val participationDelta = participation?.minus(byWindow[0] ?: 0.0)
+                        add(MetricTile(stringResource(R.string.participation_rate), participation?.toPercentString() ?: "-", if (showDelta) participationDelta else null, true, DeltaPolarity.HIGHER, stringResource(R.string.info_participation_rate)))
                     }
                 }
                 else -> {
                     // Vue équipe : « Score moyen » = écart de points (warScoreToDiff), pas le total.
-                    add(MetricTile(stringResource(R.string.form_score), window?.averageScore?.warScoreToDiff(false) ?: "-", if (showDelta) window?.scoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_form_score)))
+                    add(MetricTile(stringResource(R.string.form_score), window?.averageScore?.warScoreToDiff(false) ?: "-", if (showDelta) window?.scoreDelta?.toDouble() else null, false, DeltaPolarity.HIGHER, stringResource(R.string.info_form_score)))
                     // Score/map = écart de points par manche (trackScoreToDiff), pas le total (#67).
-                    add(MetricTile(stringResource(R.string.average_map_score_short), window?.averageMapScore?.trackScoreToDiff(false) ?: "-", if (showDelta) window?.mapScoreDelta else null, "", DeltaPolarity.HIGHER, stringResource(R.string.info_average_map_score)))
+                    add(MetricTile(stringResource(R.string.average_map_score_short), window?.averageMapScore?.trackScoreToDiff(false) ?: "-", if (showDelta) window?.mapScoreDelta?.toDouble() else null, false, DeltaPolarity.HIGHER, stringResource(R.string.info_average_map_score)))
                 }
             }
-            add(MetricTile(stringResource(R.string.maps_gagn_es), window?.mapsWonPercent?.let { "$it%" } ?: "-", if (showDelta) window?.mapsWonDelta else null, "%", DeltaPolarity.HIGHER, stringResource(R.string.info_maps_won)))
-            add(MetricTile(stringResource(R.string.stats_regularity), window?.scoreStdDev?.let { "±$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_score_std_dev)))
-            add(MetricTile(stringResource(R.string.avg_win_margin), window?.winMargin?.let { "+$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_avg_win_margin)))
-            add(MetricTile(stringResource(R.string.avg_loss_margin), window?.lossMargin?.let { "-$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_avg_loss_margin)))
+            add(MetricTile(stringResource(R.string.maps_gagn_es), window?.mapsWonPercent?.toPercentString() ?: "-", if (showDelta) window?.mapsWonDelta else null, true, DeltaPolarity.HIGHER, stringResource(R.string.info_maps_won)))
+            add(MetricTile(stringResource(R.string.stats_regularity), window?.scoreStdDev?.let { "±$it" } ?: "-", null, false, DeltaPolarity.NONE, stringResource(R.string.info_score_std_dev)))
+            add(MetricTile(stringResource(R.string.avg_win_margin), window?.winMargin?.let { "+$it" } ?: "-", null, false, DeltaPolarity.NONE, stringResource(R.string.info_avg_win_margin)))
+            add(MetricTile(stringResource(R.string.avg_loss_margin), window?.lossMargin?.let { "-$it" } ?: "-", null, false, DeltaPolarity.NONE, stringResource(R.string.info_avg_loss_margin)))
             // Pénalités (points perdus par l'équipe hôte) sur la FENÊTRE choisie.
-            add(MetricTile(stringResource(R.string.penalty_points_lost), (window?.penaltyPointsLost ?: 0).takeIf { it > 0 }?.let { "-$it" } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_penalty_points_lost)))
-            add(MetricTile(stringResource(R.string.shocks_per_war_short), window?.shocksPerWar?.let { String.format(java.util.Locale.getDefault(), "%.1f", it) } ?: "-", null, "", DeltaPolarity.NONE, stringResource(R.string.info_shocks_per_war)))
+            add(MetricTile(stringResource(R.string.penalty_points_lost), (window?.penaltyPointsLost ?: 0).takeIf { it > 0 }?.let { "-$it" } ?: "-", null, false, DeltaPolarity.NONE, stringResource(R.string.info_penalty_points_lost)))
+            add(MetricTile(stringResource(R.string.shocks_per_war_short), window?.shocksPerWar?.let { String.format(java.util.Locale.getDefault(), "%.1f", it) } ?: "-", null, false, DeltaPolarity.NONE, stringResource(R.string.info_shocks_per_war)))
         }
         MetricTiles(tiles)
     }
@@ -425,14 +427,14 @@ private fun IndicatorsCard(
 private enum class DeltaPolarity { HIGHER, LOWER, NONE }
 
 /**
- * Tuile d'indicateur : valeur + delta signé optionnel. [info] non-null ⇒ bouton ⓘ
- * ([MKStatInfoButton]) affiché (ticket #87).
+ * Tuile d'indicateur : valeur + delta signé optionnel ([isPercentDelta] ⇒ format % à 2 décimales,
+ * sinon entier). [info] non-null ⇒ bouton ⓘ ([MKStatInfoButton]) affiché (ticket #87).
  */
 private data class MetricTile(
     val label: String,
     val value: String,
-    val delta: Int?,
-    val deltaSuffix: String,
+    val delta: Double?,
+    val isPercentDelta: Boolean,
     val polarity: DeltaPolarity,
     val info: String? = null
 )
@@ -473,11 +475,15 @@ private fun RowScope.MetricTileCell(tile: MetricTile) {
             )
             // Ligne de progression à hauteur réservée (même vide) → hauteur de tuile figée.
             Box(Modifier.height(DeltaSlotHeight).padding(top = 3.dp)) {
-                tile.delta?.takeIf { it != 0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
+                tile.delta?.takeIf { it != 0.0 && tile.polarity != DeltaPolarity.NONE }?.let { delta ->
                     val improved = if (tile.polarity == DeltaPolarity.LOWER) delta < 0 else delta > 0
                     val arrow = if (delta > 0) "↗" else "↘"
+                    val deltaText = when (tile.isPercentDelta) {
+                        true -> delta.toPercentString(signed = true)
+                        else -> "${if (delta > 0) "+" else ""}${delta.toInt()}"
+                    }
                     MKText(
-                        text = "${if (delta > 0) "+" else ""}$delta${tile.deltaSuffix} $arrow",
+                        text = "$deltaText $arrow",
                         font = Fonts.NunitoBD,
                         textColor = if (improved) Colors.green else Colors.red,
                         fontSize = 10,
@@ -515,14 +521,14 @@ private fun RecordsTilesCard(stats: Stats, selectors: SectionSelectors, isTeam: 
     StatCard(title = stringResource(R.string.records_series)) {
         val tiles = buildList {
             // Ligne 1 — Amplitude scindée en min | max (par fenêtre).
-            add(MetricTile(stringResource(R.string.stats_amplitude_min), formatScore(window?.scoreMin), null, "", DeltaPolarity.NONE, stringResource(R.string.info_score_amplitude)))
-            add(MetricTile(stringResource(R.string.stats_amplitude_max), formatScore(window?.scoreMax), null, "", DeltaPolarity.NONE, stringResource(R.string.info_score_amplitude)))
+            add(MetricTile(stringResource(R.string.stats_amplitude_min), formatScore(window?.scoreMin), null, false, DeltaPolarity.NONE, stringResource(R.string.info_score_amplitude)))
+            add(MetricTile(stringResource(R.string.stats_amplitude_max), formatScore(window?.scoreMax), null, false, DeltaPolarity.NONE, stringResource(R.string.info_score_amplitude)))
             // Ligne 2 — records de série (par fenêtre).
-            add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_best_win_streak)))
-            add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_worst_loss_streak)))
+            add(MetricTile(stringResource(R.string.best_win_streak), (window?.bestWinStreak ?: 0).toString(), null, false, DeltaPolarity.NONE, stringResource(R.string.info_best_win_streak)))
+            add(MetricTile(stringResource(R.string.worst_loss_streak), (window?.worstLossStreak ?: 0).toString(), null, false, DeltaPolarity.NONE, stringResource(R.string.info_worst_loss_streak)))
             // Ligne 3 — Top6 / Bot6 (compte, par fenêtre).
-            add(MetricTile(stringResource(R.string.top6_count), (window?.top6Count ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_top6_count)))
-            add(MetricTile(stringResource(R.string.bot6_count), (window?.bot6Count ?: 0).toString(), null, "", DeltaPolarity.NONE, stringResource(R.string.info_bot6_count)))
+            add(MetricTile(stringResource(R.string.top6_count), (window?.top6Count ?: 0).toString(), null, false, DeltaPolarity.NONE, stringResource(R.string.info_top6_count)))
+            add(MetricTile(stringResource(R.string.bot6_count), (window?.bot6Count ?: 0).toString(), null, false, DeltaPolarity.NONE, stringResource(R.string.info_bot6_count)))
         }
         MetricTiles(tiles, columns = 2)
     }
@@ -556,7 +562,7 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
             pictureRes = map?.picture,
             stats = listOf(
                 R.string.times_played_short to track.totalPlayed.toString(),
-                R.string.form_winrate to "${track.winRate ?: 0}%",
+                R.string.form_winrate to (track.winRate ?: 0.0).toPercentString(),
                 scoreLabel to scoreValue
             )
         )
@@ -692,11 +698,10 @@ private fun HeaderCard(name: String, subtitle: String, color: Color, logo: Strin
 /** Carte « bilan » : gros winrate + V/N/D + barre V/N/D (+ lien Résultats optionnel). */
 @Composable
 private fun BalanceCard(stats: Stats, showResultsLink: Boolean, onResults: (() -> Unit)?) {
-    val played = stats.warStats.warsPlayed.takeIf { it > 0 } ?: 1
     val won = stats.warStats.warsWon
     val tied = stats.warStats.warsTied
     val loss = stats.warStats.warsLoss
-    val winrate = stats.allTimeForm?.winrate ?: (won * 100 / played)
+    val winrate = stats.allTimeForm?.winrate ?: won.percentOf(stats.warStats.warsPlayed)
     StatCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Eyebrow(stringResource(R.string.stats_balance_title))
@@ -713,7 +718,7 @@ private fun BalanceCard(stats: Stats, showResultsLink: Boolean, onResults: (() -
         }
         Spacer(Modifier.height(11.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-            MKText(text = "$winrate%", font = Fonts.Urbanist, textColor = Colors.green, fontSize = 30, textAlign = TextAlign.Start)
+            MKText(text = winrate.toPercentString(), font = Fonts.Urbanist, textColor = Colors.green, fontSize = 30, textAlign = TextAlign.Start)
             MKText(text = "$won V · $tied N · $loss D", textColor = Colors.white66, fontSize = 12)
         }
         Spacer(Modifier.height(11.dp))
@@ -769,7 +774,7 @@ private fun FormStreakCard(stats: Stats, title: String) {
             Column(Modifier.weight(1f)) {
                 // Texte de la série en blanc (#50 pt.3) ; la flamme garde sa couleur V/D.
                 MKText(text = streakText, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start)
-                val deltaText = delta?.let { stringResource(R.string.stats_form_delta, if (it >= 0) "+$it" else "$it") } ?: ""
+                val deltaText = delta?.let { stringResource(R.string.stats_form_delta, it.toPercentString(signed = true)) } ?: ""
                 MKText(
                     text = stringResource(R.string.stats_form_record, deltaText, record),
                     textColor = Colors.white66,
@@ -852,13 +857,13 @@ private fun ContributorRow(rank: Int, contributor: StatsFullViewModel.Contributo
                 }
             }
             val shareText = when (axis) {
-                ContributionAxis.POINTS -> stringResource(R.string.stats_points_share, contributor.pointsShare)
-                ContributionAxis.SHOCKS -> stringResource(R.string.stats_shocks_share, contributor.shockShare)
+                ContributionAxis.POINTS -> stringResource(R.string.stats_points_share, contributor.pointsShare.toPercentString())
+                ContributionAxis.SHOCKS -> stringResource(R.string.stats_shocks_share, contributor.shockShare.toPercentString())
             }
             MKText(text = shareText, textColor = Colors.white66, fontSize = 11, textAlign = TextAlign.Start)
         }
         Column(horizontalAlignment = Alignment.End) {
-            MKText(text = "${contributor.winrate}%", font = Fonts.Urbanist, textColor = Colors.white, fontSize = 14)
+            MKText(text = contributor.winrate.toPercentString(), font = Fonts.Urbanist, textColor = Colors.white, fontSize = 14)
             MKText(text = stringResource(R.string.form_winrate).lowercase(), textColor = Colors.white55, fontSize = 9)
         }
     }

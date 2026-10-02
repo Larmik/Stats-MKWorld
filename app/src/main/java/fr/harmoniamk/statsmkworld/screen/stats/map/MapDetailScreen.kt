@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayName
+import fr.harmoniamk.statsmkworld.extension.percentOf
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -87,10 +89,9 @@ fun MapDetailScreen(
                     }
                     // 2. Performance (winrate de manche + V/N/D).
                     item {
-                        val played = mapStats.trackPlayed.takeIf { it > 0 } ?: 1
                         BalanceCard(
                             title = stringResource(R.string.map_detail_performance),
-                            winrate = (mapStats.trackWon * 100) / played,
+                            winrate = mapStats.trackWon.percentOf(mapStats.trackPlayed),
                             won = mapStats.trackWon,
                             tied = mapStats.trackTie,
                             loss = mapStats.trackLoss,
@@ -168,7 +169,7 @@ internal fun MapDetailViewModel.PilotRanking.toPodiumEntry(): PodiumEntry =
         avatarColor = playerAvatarColor(player.id),
         stats = listOf(
             R.string.times_played_short to played.toString(),
-            R.string.form_winrate to "$winrate%",
+            R.string.form_winrate to winrate.toPercentString(),
             R.string.average_position_short to averagePosition.toString()
         )
     )
@@ -186,7 +187,7 @@ internal fun MapDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
         stats = listOf(
             R.string.times_played_short to played.toString(),
             R.string.stats_bag_share_short to shockCount.toString(),
-            R.string.stats_bag_share_pct to "$shockShare%"
+            R.string.stats_bag_share_pct to shockShare.toPercentString()
         )
     )
 
@@ -201,7 +202,7 @@ internal fun MapDetailViewModel.OpponentRanking.toPodiumEntry(): PodiumEntry =
         logo = team.logo,
         stats = listOf(
             R.string.times_played_short to played.toString(),
-            R.string.form_winrate to "$winrate%",
+            R.string.form_winrate to winrate.toPercentString(),
             R.string.form_score to averageTeamScore.trackScoreToDiff(false)
         )
     )

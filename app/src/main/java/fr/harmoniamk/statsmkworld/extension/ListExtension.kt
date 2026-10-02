@@ -155,8 +155,8 @@ fun List<WarDetails>.totalShocks(playerId: String? = null): Int = sumOf { war ->
  * Part de shocks d'un joueur en % (ses shocks / total équipe). `null` si l'équipe n'a aucun
  * shock (pas de dénominateur). Règle unique des 4 classements « baggeurs » (#69).
  */
-fun List<WarDetails>.shockShare(playerId: String): Int? =
-    totalShocks().takeIf { it > 0 }?.let { totalShocks(playerId) * 100 / it }
+fun List<WarDetails>.shockShare(playerId: String): Double? =
+    totalShocks().takeIf { it > 0 }?.let { totalShocks(playerId).percentOf(it) }
 
 /**
  * Stats par adversaire : un item par ROSTER (wars où l'opposant = ce rosterId, nom/tag du roster
@@ -226,7 +226,7 @@ private fun trackStatsOf(tracks: List<WarTrack>, is24p: Boolean, userId: String?
                     map = listOf(Maps.entries[index.toInt()]),
                     trackIndex = listOf(index.toInt()),
                     totalPlayed = played,
-                    winRate = (wonCount * 100) / played,
+                    winRate = wonCount.percentOf(played),
                     teamScore = teamScoreForTrack / played,
                     shockCount = shockCount,
                     playerScore = playerScoreForTrack / played
@@ -237,7 +237,7 @@ private fun trackStatsOf(tracks: List<WarTrack>, is24p: Boolean, userId: String?
                     map = indexes.mapNotNull { it.toIntOrNull() }.mapNotNull { Maps.entries.getOrNull(it) },
                     trackIndex = indexes.mapNotNull { it.toIntOrNull() },
                     totalPlayed = played,
-                    winRate = (wonCount * 100) / played,
+                    winRate = wonCount.percentOf(played),
                     teamScore = teamScoreForTrack,
                     shockCount = shockCount,
                     playerScore = playerScoreForTrack / played

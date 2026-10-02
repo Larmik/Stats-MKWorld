@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
@@ -211,7 +212,7 @@ fun MapCell(
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         MKText(
-                            text = "${trackRanking.stats.winRate}%",
+                            text = (trackRanking.stats.winRate ?: 0.0).toPercentString(),
                             font = Fonts.NunitoBD,
                             fontSize = 12,
                             textColor = Colors.white

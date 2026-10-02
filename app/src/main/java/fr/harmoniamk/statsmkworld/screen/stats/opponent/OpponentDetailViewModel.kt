@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
@@ -69,7 +70,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val averagePosition: Int,
         // Nb de manches courues (seuil MIN_RANKING_SAMPLE).
         val played: Int,
-        val winrate: Int
+        val winrate: Double
     )
 
     /**
@@ -78,7 +79,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
      */
     data class BaggerRanking(
         val player: PlayerEntity,
-        val shockShare: Int,
+        val shockShare: Double,
         val shockCount: Int,
         val played: Int
     )
@@ -268,7 +269,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 val averageScore = positions.sumOf { it.positionToPoints(false) } / positions.size
                 val averagePosition = positions.sum() / positions.size
                 val wonCount = positions.count { it.positionToPoints(false) > 6 }
-                val winrate = (wonCount * 100) / positions.size
+                val winrate = wonCount.percentOf(positions.size)
                 PilotRanking(
                     player = player,
                     averageScore = averageScore,
@@ -307,7 +308,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 if (shockCount == 0) return@mapNotNull null
                 BaggerRanking(
                     player = player,
-                    shockShare = shockCount * 100 / totalTeamShocks,
+                    shockShare = shockCount.percentOf(totalTeamShocks),
                     shockCount = shockCount,
                     played = warsByPlayer[playerId] ?: 0
                 )
@@ -317,7 +318,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
 
     /** Comparateur de circuits (décroissant) : Occurrences / Winrate / Score (perso en indiv, équipe sinon). */
     private fun trackComparator(sort: SortType, isIndiv: Boolean): Comparator<TrackStats> = when (sort) {
-        SortType.WINRATE -> compareByDescending { it.winRate ?: 0 }
+        SortType.WINRATE -> compareByDescending { it.winRate ?: 0.0 }
         SortType.AVERAGE -> compareByDescending { (if (isIndiv) it.playerScore else it.teamScore) ?: 0 }
         SortType.COUNT -> compareByDescending { it.totalPlayed }
     }

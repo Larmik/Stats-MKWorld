@@ -12,6 +12,8 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
+import fr.harmoniamk.statsmkworld.extension.percentOf
+import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.extension.withTrackStats
@@ -46,29 +48,26 @@ enum class SortType { COUNT, WINRATE, AVERAGE }
 sealed interface RankingItem {
 
     /** Winrate en % (0 si aucune war jouée) — base du tri/insight winrate. */
-    val winratePercent: Int
+    val winratePercent: Double
 
     /** Nombre de matchs de l'entrée (wars / confrontations / fois jouée) — base du seuil. */
     val sampleSize: Int
 
     /**
      * [participationRate] (#78) : % de wars de l'équipe où le joueur est présent
-     * (`warsPlayed × 100 / total wars équipe`). Calculé dans le VM (rule 32), absent de [Stats].
+     * (`warsPlayed.percentOf(total wars équipe)`). Calculé dans le VM (rule 32), absent de [Stats].
      */
     class PlayerRanking(
         val player: PlayerEntity,
         val stats: Stats,
-        val participationRate: Int
+        val participationRate: Double
     ) : RankingItem {
 
         override val sampleSize: Int
             get() = stats.warStats.warsPlayed
 
-        override val winratePercent: Int
-            get() = when (stats.warStats.warsPlayed) {
-                0 -> 0
-                else -> (stats.warStats.warsWon * 100) / stats.warStats.warsPlayed
-            }
+        override val winratePercent: Double
+            get() = stats.warStats.warsWon.percentOf(stats.warStats.warsPlayed)
 
         val averageLabel: String
             get() = stats.averagePoints.toString()
@@ -77,10 +76,10 @@ sealed interface RankingItem {
             get() = stats.warStats.warsPlayed.toString()
 
         val winrateLabel: String
-            get() = "$winratePercent %"
+            get() = winratePercent.toPercentString()
 
         val participationRateLabel: String
-            get() = "$participationRate %"
+            get() = participationRate.toPercentString()
     }
 
     class OpponentRanking(val team: TeamEntity, val stats: Stats) : RankingItem {
@@ -94,24 +93,18 @@ sealed interface RankingItem {
         val warsPlayedLabel: String
             get() = stats.warStats.warsPlayed.toString()
 
-        val winrate: Int
-            get() = (stats.warStats.warsWon * 100) / stats.warStats.warsPlayed
-
-        override val winratePercent: Int
-            get() = when (stats.warStats.warsPlayed) {
-                0 -> 0
-                else -> winrate
-            }
+        override val winratePercent: Double
+            get() = stats.warStats.warsWon.percentOf(stats.warStats.warsPlayed)
 
         val winrateLabel: String
-            get() = "$winratePercent %"
+            get() = winratePercent.toPercentString()
     }
 
     class TrackRanking(val stats: TrackStats) : RankingItem {
         override val sampleSize: Int
             get() = stats.totalPlayed
-        override val winratePercent: Int
-            get() = stats.winRate ?: 0
+        override val winratePercent: Double
+            get() = stats.winRate ?: 0.0
     }
 }
 
@@ -233,11 +226,7 @@ class StatsRankingViewModel @Inject constructor(
                     .firstOrNull()
                     ?.takeIf { it.warStats.warsPlayed > 0 }
                     ?.let { stats ->
-                        val participationRate = when (teamWarsCount) {
-                            0 -> 0
-                            else -> stats.warStats.warsPlayed * 100 / teamWarsCount
-                        }
-                        RankingItem.PlayerRanking(user, stats, participationRate)
+                        RankingItem.PlayerRanking(user, stats, stats.warStats.warsPlayed.percentOf(teamWarsCount))
                     }
             }
             .groupBy { ranking ->
@@ -349,7 +338,7 @@ class StatsRankingViewModel @Inject constructor(
         min: Int,
         name: (T) -> String,
         average: (T) -> Int,
-        count: (T) -> Int = { it.sampleSize }
+        count: (T) -> Double = { it.sampleSize.toDouble() }
     ): List<T> = this
         .filter { query.isEmpty() || name(it).lowercase().contains(query) }
         .filter { it.sampleSize >= min }

@@ -70,6 +70,7 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 - [ ] 🟢 **D13 — Tables `when` de `positionToPoints`/`pointsToPosition`/`positionColor`** ([IntegerExtension.kt:64-239](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/IntegerExtension.kt)). → Lookup `mapOf(...)`. *Prévention : —.* **Suivi : #142.**
 - [ ] 🟢 **D14 — `List<Int?>?.sum()` maison** ([ListExtension.kt:72-75](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/ListExtension.kt)), redondant avec `sumOf { it ?: 0 }`. → Supprimer. *Prévention : —.* **Suivi : #142.**
 - [ ] 🟢 **D15 — Boucles manuelles dans `withPlayersList`** ([WarExtension.kt:41-90](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/WarExtension.kt)) remplaçables par `flatMap`/`groupBy`. *Prévention : —.* **Suivi : #142.**
+- [ ] 🟢 **D37 — `List<WarDetails>.shockShare` orphelin, part de shocks recalculée à la main.** [ListExtension.kt:158](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/ListExtension.kt) n'a aucun appelant : `StatsFullViewModel.computeContributors` ([StatsFullViewModel.kt:357](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/full/StatsFullViewModel.kt)), `OpponentDetailViewModel.computeBaggers` ([OpponentDetailViewModel.kt:311](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/opponent/OpponentDetailViewModel.kt)) et `MapDetailViewModel.computeBaggers` ([MapDetailViewModel.kt:237](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/map/MapDetailViewModel.kt)) refont `shocks joueur.percentOf(totalTeamShocks)` avec un total hissé hors de la boucle (plus efficace que l'extension, qui relit `totalShocks()` par joueur). → Supprimer l'extension, ou lui faire prendre le total en paramètre et y faire pointer les 3 sites. *Prévention : rule 16 § chercher l'existant ; checklist (orphelins).*
 
 ### 4.3 Couche UI (`ui/`, `ui/cells/`, `ui/stats/`)
 
@@ -79,6 +80,8 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 - [ ] 🟡 **D19 — Pas de design-system.** [ui/Resources.kt](../app/src/main/java/fr/harmoniamk/statsmkworld/ui/Resources.kt) centralise couleurs/fonts mais pas les espacements (686 littéraux `N.dp`), formes ni presets typographiques (`Colors.white` ×158, dont 98 en `textColor = Colors.white`). Absorbe l'ancien D17 (blocs « label + valeur »). → Objets `Spacing`/`Shapes`/`TextStyles`. *Prévention : rules 13/16.* **Suivi : #134.**
 - [ ] 🟡 **D21 — `CurrentWarCellViewModel` ≈ `WarCellViewModel`** ([ui/cells/](../app/src/main/java/fr/harmoniamk/statsmkworld/ui/cells/)) : même résolution des adversaires + nom/id de roster. → Logique commune. *Prévention : rule 16.* **Suivi : #135.**
 - [~] 🟠 **D34 — Code mort UI conservé.** `ui/WarScoreView.kt` (453 lignes, 0 appelant) volontairement gardé pour le rendu 24p (« 12p first, 24p deferred ») → à trancher au ticket de réactivation 24p. **Nouveau** : `ui/cells/MapCell.kt` (267 lignes) n'est plus appelé que par ses `@Preview` (remplacé par `PodiumCell`). → Supprimer `MapCell` (hors 24p). *Prévention : checklist anti-audit (supprimer ce qui devient orphelin).* **Suivi : #133.**
+- [ ] 🟡 **D38 — `BalanceCard` en double.** Une version privée dans [StatsFullScreen.kt:700](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/full/StatsFullScreen.kt) (winrate vert fixe + lien « Résultats ») fait doublon avec la version publique de [MKStatCard.kt:151](../app/src/main/java/fr/harmoniamk/statsmkworld/ui/stats/MKStatCard.kt) (titre, `winrateColor`, sous-titre). → Généraliser la version partagée par paramètres optionnels (lien, couleur) et supprimer la copie privée. *Prévention : rule 16.*
+- [ ] 🟢 **D39 — String `winrate_placeholder` inutilisée.** [values/strings.xml:156](../app/src/main/res/values/strings.xml) et [values-fr/strings.xml:156](../app/src/main/res/values-fr/strings.xml) : aucune référence `R.string.winrate_placeholder` ; les deux langues divergent en plus (`%s\%` contre `%s`). → Supprimer. *Prévention : rule 64 (code orphelin).*
 
 ### 4.4 Écrans & ViewModels (`screen/`)
 
@@ -151,7 +154,7 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 ### Lot 4 — Refactoring structurel (itératif)
 10. UI : **D16** (#130), **D35** (#131), **D18**, **D19** (#134), **D21** (#135), **D36** (#132).
 11. Données / VM : **C9** (#117), **C10** (#119), **D24** (#136), **D27** (#137), **D2** (#139), **D9**, **D10** (#140).
-12. Reste : **C2** (#125), **C13** (#123), **C4**, **C5**, **C6**, **C8** (#127), **D11** (#141), **D13** (#142), **D15** (#142), **D33** (#143), **G1**, **G3**, **G5** (#108).
+12. Reste : **C2** (#125), **C13** (#123), **C4**, **C5**, **C6**, **C8** (#127), **D11** (#141), **D13** (#142), **D15** (#142), **D37**, **D33** (#143), **G1**, **G3**, **G5** (#108).
 
 ### Lot 5 — Filet de sécurité (selon décision utilisateur)
 13. **T1** (#110 — tests JVM du moteur), **T2** (#110 — CI), **T3** (#110 — bump automatisé).
@@ -174,13 +177,13 @@ Chaque catégorie d'entrée est rattachée à la cause qui la produit et à ce q
 | Calcul sur le thread UI / calcul redondant (P7, P8) | Construction `WarDetails` / agrégats hors `withContext`, reconstruction par élément | rule 21 |
 | Rafales réseau (P2, B30) | Parallélisme non borné vers MKCentral | rule 30 § résolution réseau |
 | I/O au démarrage (P5) | Appel réseau bloquant le routage | checklist anti-audit (perf) |
-| Composants UI dupliqués (D16, D18, D19, D21, D35) | Composable privé recréé sans chercher l'existant | rule 16 § chercher avant de créer ; rule 13 |
-| Logique dupliquée (D2, D9, D10, D24-D28) | Copier-coller d'une branche ou d'un VM voisin | rules 16, 32, 61 ; checklist (duplication) |
+| Composants UI dupliqués (D16, D18, D19, D21, D35, D38) | Composable privé recréé sans chercher l'existant | rule 16 § chercher avant de créer ; rule 13 |
+| Logique dupliquée (D2, D9, D10, D24-D28, D37) | Copier-coller d'une branche ou d'un VM voisin | rules 16, 32, 61 ; checklist (duplication) |
 | Extensions mal placées (D36) | Extension posée dans le fichier qui l'utilise | rule 61 § corollaire extensions |
 | One-shots en `Flow`, paramètres morts (C9) | Signature calquée sur un ancien patron | rule 30 |
 | Contexte statique / libellés en dur (C10) | Raccourci `MainApplication.instance` | rule 20 § ressources dans les VM |
 | Fonctions locales | Helper déclaré dans la fonction appelante | rule 62 |
-| Code mort / commenté (D34, C14) | Remplacement sans suppression de l'ancien | rule 64 § code commenté ; checklist (orphelins) |
+| Code mort / commenté (D34, D39, C14) | Remplacement sans suppression de l'ancien | rule 64 § code commenté ; checklist (orphelins) |
 | Constantes magiques (G1, G2, G6, G7, D28, D30) | Littéral métier recopié à chaque site | rule 61 § littéraux métier partagés ; rule 17 |
 | Documentation obsolète (G8, G9, P8) | Rule ou comportement modifié sans grep des références | rule 50 § références croisées |
 | Tests / CI / version (T1-T3) | Décision utilisateur en attente | hors config — `CLAUDE.md` (pas de tests spontanés) |
