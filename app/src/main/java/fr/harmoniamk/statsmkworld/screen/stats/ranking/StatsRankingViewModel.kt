@@ -227,9 +227,9 @@ class StatsRankingViewModel @Inject constructor(
         val teamWarsCount = warDetailsList.size
         val playersByGroup = userList
             .mapNotNull { user ->
+                // `withFullStats` filtre déjà les wars jouées par `userId`.
                 warDetailsList
-                    .filter { it.war.hasPlayer(user.id) }
-                    .withFullStats(databaseRepository, userId = user.id, is24p = is24p)
+                    .withFullStats(userId = user.id, is24p = is24p)
                     .firstOrNull()
                     ?.takeIf { it.warStats.warsPlayed > 0 }
                     ?.let { stats ->
@@ -254,7 +254,7 @@ class StatsRankingViewModel @Inject constructor(
             .filterNot { it.id == currentTeam?.id.toString() }
             .sortedBy { it.name }
         allOpponents = teams
-            .withFullTeamStats(wars = warList, databaseRepository = databaseRepository, is24p = is24p)
+            .withFullTeamStats(wars = warDetailsList, is24p = is24p)
             .firstOrNull()
             .orEmpty()
             .sortedByDescending { it.second.warStats.warsPlayed }

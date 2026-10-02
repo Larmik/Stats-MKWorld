@@ -6,7 +6,6 @@ import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.model.firebase.Shock
 import fr.harmoniamk.statsmkworld.model.firebase.WarPenalty
 import fr.harmoniamk.statsmkworld.model.firebase.WarPosition
-import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarTrack
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.Stats
@@ -14,13 +13,10 @@ import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarScore
 import fr.harmoniamk.statsmkworld.model.local.WarStats
-import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 
 @Suppress("UNCHECKED_CAST")
 fun Any?.toMapList(): List<Map<*, *>>? = this as? List<Map<*, *>>
@@ -77,8 +73,11 @@ fun List<Int?>?.sum(): Int {
 /** Taille de la liste, ou 1 si elle est vide — évite une division par zéro dans les moyennes. */
 fun List<*>.sizeOrOne(): Int = size.takeIf { it > 0 } ?: 1
 
-@OptIn(ExperimentalCoroutinesApi::class)
-fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterface, userId: String? = null, teamId: String? = null, is24p: Boolean = false): Flow<Stats> {
+/**
+ * Stats (joueur [userId] / face à [teamId] / équipe) des wars. Calcul pur en mémoire, sans
+ * lecture Room : à appeler sous `withContext(Dispatchers.Default)` (rule 21).
+ */
+fun List<WarDetails>.withFullStats(userId: String? = null, teamId: String? = null, is24p: Boolean = false): Flow<Stats> {
 
     val warScores = mutableListOf<WarScore>()
     val averageForMaps = mutableListOf<TrackStats>()
@@ -116,21 +115,14 @@ fun List<WarDetails>.withFullStats(databaseRepository: DatabaseRepositoryInterfa
             warScores.add(WarScore(it.first, currentPoints))
         }
 
-    val maps = when  {
-        userId != null && teamId != null -> this.map { WarEntity(it.war) }
-            .filter { it.hasTeam(teamId) }
-            .filter { it.hasPlayer(userId) }
-            .withTrackStats(teamId = teamId, userId = userId)
-        userId != null -> this.map { WarEntity(it.war) }
-            .filter { it.hasPlayer(userId) }
-            .withTrackStats(userId = userId)
-        teamId != null -> this.map { WarEntity(it.war) }
-            .filter { it.hasTeam(teamId) }
-            .withTrackStats(teamId = teamId)
-        else -> this.map { WarEntity(it.war) }
-            .withTrackStats(userId = userId)
-
-    }
+    // Circuits sur `warList` (mêmes filtres joueur/adversaire) sans repasser par `WarEntity`
+    // (#90 : la conversion formatait la date de chaque war à chaque appel). Mode de la
+    // dernière war conservé à l'identique de `withTrackStats` (B31, #120).
+    val maps = trackStatsOf(
+        tracks = warList.flatMap { it.war.tracks },
+        is24p = warList.lastOrNull()?.war?.teamOpponent?.let { it.size > 1 } == true,
+        userId = userId
+    )
 
     return flowOf(
         Stats(
@@ -166,53 +158,49 @@ fun List<WarDetails>.totalShocks(playerId: String? = null): Int = sumOf { war ->
 fun List<WarDetails>.shockShare(playerId: String): Int? =
     totalShocks().takeIf { it > 0 }?.let { totalShocks(playerId) * 100 / it }
 
+/**
+ * Stats par adversaire : un item par ROSTER (wars où l'opposant = ce rosterId, nom/tag du roster
+ * + avatar de l'équipe) puis un item ÉQUIPE pour les wars legacy (opposant = teamId). Seuls les
+ * adversaires ayant au moins une war (jouée par [userId] si non-null) sont émis.
+ */
 fun List<TeamEntity>.withFullTeamStats(
-    wars: List<WarEntity>,
-    databaseRepository: DatabaseRepositoryInterface,
+    wars: List<WarDetails>,
     userId: String? = null,
     is24p: Boolean = false
 ) = flow {
-    val temp = mutableListOf<Pair<TeamEntity, Stats>>()
-
-    // Stats d'un adversaire pour un id d'opposant (rosterId ou teamId legacy). `display` =
-    // vue affichée (id d'opposant, nom/tag roster, avatar équipe).
-    suspend fun addRankingItem(display: TeamEntity, opponentId: String) {
-        wars
-            .filter { it.hasTeam(opponentId) }
-            .filter { (userId != null && it.hasPlayer(userId)) || userId == null }
-            .map { WarDetails(War(it)) }
-            .withFullStats(databaseRepository, userId, is24p = is24p)
-            .firstOrNull()
-            ?.let {
-                if (it.warStats.list.isNotEmpty())
-                    temp.add(Pair(display, it))
-            }
-    }
-
-    this@withFullTeamStats.forEach { team ->
-        // Un item par ROSTER (ses wars où l'opposant = ce rosterId) : rosters d'une même
-        // équipe non fusionnés, affichés avec nom/tag du roster + avatar de l'équipe.
-        team.rosters.forEach { roster ->
-            addRankingItem(
-                display = team.copy(id = roster.id, name = roster.name, tag = roster.tag),
-                opponentId = roster.id
-            )
+    // Index id d'équipe → wars en une passe (même règle que `War.hasTeam` : hôte ou opposant),
+    // au lieu de rescanner toutes les wars pour chaque roster/équipe du cache (#90).
+    val warsByTeamId = mutableMapOf<String, MutableList<WarDetails>>()
+    wars.filter { userId == null || it.war.hasPlayer(userId) }.forEach { war ->
+        (war.war.teamOpponent + war.war.teamHost).toSet().forEach { id ->
+            warsByTeamId.getOrPut(id) { mutableListOf() }.add(war)
         }
-        // Item ÉQUIPE pour les wars legacy (opposant = teamId, sans rosterId) → à part.
-        addRankingItem(display = team, opponentId = team.id)
     }
-    emit(temp)
+    val rankingItems = this@withFullTeamStats
+        .flatMap { team ->
+            team.rosters.mapNotNull { roster ->
+                warsByTeamId[roster.id]?.let { team.copy(id = roster.id, name = roster.name, tag = roster.tag) to it }
+            } + listOfNotNull(warsByTeamId[team.id]?.let { team to it })
+        }
+        .map { (display, opponentWars) -> display to opponentWars.withFullStats(userId, is24p = is24p).first() }
+    emit(rankingItems)
 }
 
 fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = null): List<TrackStats> {
-    var is24p = false
-    return this
+    val wars = this
         .filter { (teamId != null && it.hasTeam(teamId) || teamId == null) }
         .filter { (userId != null && it.hasPlayer(userId) || userId == null) }
-        .flatMap {
-            is24p = it.teamOpponent.size > 1
-            it.warTracks.orEmpty()
-        }
+    // B31 (#120) : le mode de la DERNIÈRE war s'applique à toutes les manches — conservé tel quel.
+    return trackStatsOf(
+        tracks = wars.flatMap { it.warTracks.orEmpty() },
+        is24p = wars.lastOrNull()?.let { it.teamOpponent.size > 1 } == true,
+        userId = userId
+    )
+}
+
+/** Agrégat par circuit (manches groupées par index), partagé par `withTrackStats` et `withFullStats`. */
+private fun trackStatsOf(tracks: List<WarTrack>, is24p: Boolean, userId: String?): List<TrackStats> =
+    tracks
         .groupBy { it.index }.toList()
         .sortedByDescending { it.second.size }
         .mapNotNull {
@@ -256,8 +244,6 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
                 )
             }
         }
-
-}
 
 /**
  * Filtre les wars sur l'intervalle d'une saison (#70). Rattachement calculé (pas de

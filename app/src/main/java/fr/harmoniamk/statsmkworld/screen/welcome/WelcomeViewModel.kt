@@ -101,10 +101,10 @@ class WelcomeViewModel @Inject constructor(
                         .orEmpty()
                     // Vues équipe (userId = null) et joueur calculées d'emblée sur les wars de la saison.
                     val teamStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(databaseRepository, is24p = false)
+                        ?.withFullStats(is24p = false)
                         ?.firstOrNull()
                     val playerStats = wars.takeIf { it.isNotEmpty() }
-                        ?.withFullStats(databaseRepository, userId = player.id.toString(), is24p = false)
+                        ?.withFullStats(userId = player.id.toString(), is24p = false)
                         ?.firstOrNull()
                     Triple(teamStats, playerStats, wars.safeSubList(0, 3))
                 }
