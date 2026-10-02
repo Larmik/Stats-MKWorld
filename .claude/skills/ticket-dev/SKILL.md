@@ -161,3 +161,18 @@ l'issue) et que les rules sont respectées — notamment la cohérence visuelle 
 l'existant et la justesse des calculs (`13`), la réutilisation des composants
 partagés (`16`) — et que le dernier contrôle anti-audit (étape 4) est propre. Lister les écarts éventuels : tant qu'il en reste, rester en boucle
 de retours.
+
+### Après fusion (obligatoire, ne jamais oublier)
+
+1. `gh pr merge <n> --merge`, puis vérifier que l'issue `#N` est bien **fermée**
+   (`Closes #N`) ; sinon `gh issue close <N>`.
+2. **Passer l'issue dans la colonne « Terminé »** du board « Stats MKWorld »
+   (projet `2`, owner `Larmik`) — la fermeture ne la déplace PAS automatiquement :
+   ```bash
+   ITEM=$(gh project item-list 2 --owner Larmik --limit 300 --format json \
+     -q '.items[] | select(.content.number==<N>) | .id')
+   gh project item-edit --id "$ITEM" --project-id PVT_kwHOAi0L9s4BdjcN \
+     --field-id PVTSSF_lAHOAi0L9s4BdjcNzhYELEw --single-select-option-id 5348c84d
+   ```
+   Vérifier ensuite que le statut lu vaut bien `Terminé`.
+3. Revenir sur `master` à jour (`git checkout master && git pull --ff-only`).
