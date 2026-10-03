@@ -206,6 +206,7 @@ private fun RankingItem.TrackRanking.toPodiumEntry(is24p: Boolean): Pair<PodiumE
     }
     return PodiumEntry(
         labelRes = map?.label,
+        tag = map?.name,
         pictureRes = map?.picture,
         stats = listOf(
             R.string.times_played_short to stats.totalPlayed.toString(),

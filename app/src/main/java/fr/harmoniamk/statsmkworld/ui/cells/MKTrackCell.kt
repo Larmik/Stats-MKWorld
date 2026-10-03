@@ -32,13 +32,17 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 /** Rayon de coin des cartes translucides (aligné sur `CurrentWar`/maquette). */
 private val TrackCellRadius = RoundedCornerShape(6.dp)
 
+/** Hauteur uniforme des [MKTrackCell] (image + nom sur 2 lignes + tag), partagée avec les cellules voisines d'une même grille. */
+val TrackCellHeight = 98.dp
+
 /**
  * Cellule de course/circuit partagée (rule 16). Horizontal : bande colorée (accent) · image + nom ·
  * zone shocks réservée · score + diff. Deux modes :
  * - **course jouée** (`track != null`) : score + diff colorisée, accent selon la diff. → détail.
  * - **sélection** (`map != null`, sans `track`) : image + nom seuls, accent blanc. → sélection.
  *
- * Hauteur uniforme (84 dp) calée sur « nom sur 2 lignes » → cellules alignées.
+ * Le tag du circuit (`Maps.name`, #101) est affiché sous le nom. Hauteur uniforme ([TrackCellHeight])
+ * calée sur « nom sur 2 lignes + tag » → cellules alignées.
  */
 @Composable
 fun MKTrackCell(
@@ -62,7 +66,7 @@ fun MKTrackCell(
     val shockCount = track?.track?.shocks.orEmpty().sumOf { it.count }
     Row(
         modifier
-            .height(84.dp)
+            .height(TrackCellHeight)
             .clip(TrackCellRadius)
             .background(Colors.white30, TrackCellRadius)
             .clickable(onClick = onClick),
@@ -70,7 +74,7 @@ fun MKTrackCell(
     ) {
         // 1. Bande colorée verticale (bord gauche, pleine hauteur).
         Box(Modifier.width(3.dp).fillMaxHeight().background(accent))
-        // 2. Colonne centrale : image du circuit + nom (2 lignes réservées → hauteur égale).
+        // 2. Colonne centrale : image du circuit + nom (2 lignes réservées → hauteur égale) + tag.
         Column(
             Modifier.weight(1f).padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -82,7 +86,10 @@ fun MKTrackCell(
                     modifier = Modifier.size(width = 56.dp, height = 36.dp).clip(RoundedCornerShape(4.dp))
                 )
             }
-            Box(Modifier.height(32.dp).padding(top = 4.dp), contentAlignment = Alignment.TopCenter) {
+            Column(
+                Modifier.height(46.dp).padding(top = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 MKText(
                     text = displayedMap?.label?.let { stringResource(it) } ?: "-",
                     font = Fonts.NunitoBD,
@@ -91,6 +98,9 @@ fun MKTrackCell(
                     maxLines = 2,
                     textAlign = TextAlign.Center
                 )
+                displayedMap?.let {
+                    MKText(text = it.name, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = 10, maxLines = 1)
+                }
             }
         }
         // 3. Zone shocks : largeur TOUJOURS réservée (placeholder invisible si aucun shock).

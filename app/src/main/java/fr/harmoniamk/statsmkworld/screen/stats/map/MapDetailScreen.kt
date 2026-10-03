@@ -84,7 +84,8 @@ fun MapDetailScreen(
                             name = map?.label?.let { stringResource(it) } ?: "-",
                             subtitle = stringResource(R.string.map_detail_header, mapStats.trackPlayed),
                             color = Colors.purple,
-                            pictureRes = map?.picture
+                            pictureRes = map?.picture,
+                            tag = map?.name
                         )
                     }
                     // 2. Performance (winrate de manche + V/N/D).

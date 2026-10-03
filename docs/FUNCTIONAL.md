@@ -70,6 +70,7 @@ Voici les mots que tu croiseras dans l'application. Chacun est expliqué simplem
 | **Équipe** | Ton clan, tel qu'il est enregistré sur MKCentral. Une équipe peut regrouper plusieurs *rosters*. |
 | **Roster** | Une composition précise inscrite sur MKCentral. Une même équipe peut avoir plusieurs rosters (par exemple une équipe principale et une académie). Les wars sont rattachées à un roster. |
 | **Tag** | L'identifiant court d'une équipe (quelques lettres), placé devant le pseudo des joueurs. Il change rarement. |
+| **Tag de circuit** | Le diminutif d'un circuit utilisé par les joueurs (ex. `rDKP`, `MBC`). Il est affiché en petit et en italique sous le nom du circuit, partout où le circuit apparaît avec son image (sélection, courses jouées, podiums, classements, fiches). |
 | **Allié** | Un joueur de renfort qui ne fait pas partie du roster officiel mais qui peut jouer une war avec toi. |
 | **Saison** | Une période de jeu. L'application découpe l'histoire de ton équipe en saisons, et tu peux filtrer tes stats saison par saison. |
 | **Winrate** | Le pourcentage de wars gagnées. Par exemple, 60 % de winrate = 6 wars gagnées sur 10. |

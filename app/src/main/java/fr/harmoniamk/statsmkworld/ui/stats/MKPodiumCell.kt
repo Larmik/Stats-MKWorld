@@ -43,6 +43,7 @@ private val CardRadius = RoundedCornerShape(6.dp)
  */
 class PodiumEntry(
     val labelRes: Int? = null,       // circuit : @StringRes du nom de map
+    val tag: String? = null,         // circuit : tag (`Maps.name`, #101), affiché sous le nom
     val name: String? = null,        // adversaire/joueur : nom (roster > équipe)
     val pictureRes: Int? = null,     // circuit : illustration @DrawableRes
     val logo: String? = null,        // adversaire : chemin logo MKCentral (sans domaine)
@@ -76,8 +77,8 @@ fun ColumnScope.PodiumRow(
 }
 
 /**
- * Cellule podium : image (circuit / logo / initiales / `default_logo`), nom (2 lignes max), puis
- * lignes de stats (libellé + valeur). [contentColor] = couleur du nom et des valeurs (libellé à
+ * Cellule podium : image (circuit / logo / initiales / `default_logo`), nom (2 lignes max), tag
+ * éventuel (circuit), puis lignes de stats (libellé + valeur). [contentColor] = couleur du nom et des valeurs (libellé à
  * 66 % d'alpha) ; les initiales restent blanches sur leur pastille.
  */
 @Composable
@@ -129,6 +130,9 @@ fun RowScope.PodiumCell(
             maxLines = 2,
             textAlign = TextAlign.Center
         )
+        entry.tag?.let {
+            MKText(text = it, font = Fonts.NunitoIT, textColor = contentColor, fontSize = 9, maxLines = 1)
+        }
         Spacer(Modifier.height(6.dp))
         entry.stats.forEach { (labelRes, value) ->
             Row(
