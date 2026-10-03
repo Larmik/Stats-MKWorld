@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -35,7 +36,8 @@ fun WarDetailsScreen(
     onBack: () -> Unit,
     onTrackClick: (WarTrackDetails, Int) -> Unit,
     onTab: (WarDetails) -> Unit,
-    onOpponent: (String) -> Unit
+    onOpponent: (String) -> Unit,
+    onTournament: (Tournament) -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
 
@@ -54,7 +56,8 @@ fun WarDetailsScreen(
                         teamHost = state.value.teamHost,
                         teamOpponent = state.value.teamOpponent,
                         details = details,
-                        is24p = is24p
+                        is24p = is24p,
+                        onTournamentClick = onTournament
                     )
                 }
 

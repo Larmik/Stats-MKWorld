@@ -284,6 +284,11 @@
     <string name="tournament_low_div_cup">Low-Div Cup</string>
     <string name="tournament_mkc_frontier">MKCentral Frontier</string>
     <string name="tournament_euroleague">EuroLeague</string>
+    <string name="tournament_period">From %1$s to %2$s</string>
+    <string name="tournament_description">Description</string>
+    <string name="tournament_ruleset">Rules</string>
+    <string name="tournament_open_mkcentral">View on MKCentral</string>
+    <string name="tournament_unavailable">Official details unavailable for now: they will be retrieved at the next sync (internet connection required).</string>
     <string name="war_kind_friendly">Friendlies</string>
     <string name="war_kind_official">Official</string>
     <string name="addwar_previous">Previous</string>

@@ -14,12 +14,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import fr.harmoniamk.statsmkworld.extension.mkcentralUrl
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
-
-/** Préfixe MKCentral pour les chemins d'avatar/logo relatifs stockés en base. */
-private const val MKCENTRAL_BASE = "https://mkcentral.com"
 
 /**
  * Médaillon joueur **unique et partagé** (rule 16) : pastille colorée [initials] surmontée de la
@@ -47,9 +45,8 @@ fun PlayerMedallion(
     Box(base, contentAlignment = Alignment.Center) {
         MKText(text = initials, font = Fonts.NunitoBD, textColor = Colors.white, fontSize = initialsFontSize, resizable = false)
         avatarPath?.takeIf { it.isNotBlank() }?.let { path ->
-            val model = if (path.startsWith("http")) path else "$MKCENTRAL_BASE$path"
             AsyncImage(
-                model = model,
+                model = path.mkcentralUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(size).clip(CircleShape)

@@ -26,3 +26,12 @@ val String.countryFlag: String
         }
         return ""
     }
+/**
+ * URL absolue d'un chemin MKCentral relatif (logo, avatar, page) ; une URL déjà absolue passe
+ * telle quelle. Préfixe unique de l'app (audit D16 : les anciens sites le recopient encore).
+ */
+val String.mkcentralUrl: String
+    get() = when {
+        startsWith("http") -> this
+        else -> "https://mkcentral.com$this"
+    }

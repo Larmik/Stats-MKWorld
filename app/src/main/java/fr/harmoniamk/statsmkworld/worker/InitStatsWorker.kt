@@ -8,14 +8,18 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.SeasonRepositoryInterface
+import fr.harmoniamk.statsmkworld.repository.TournamentRepositoryInterface
 import kotlinx.coroutines.flow.firstOrNull
 
 /**
  * Worker one-shot enfilé à chaque démarrage (`MainViewModel`) et lors de la connexion
  * (`DataStoreRepository`). Rôle : **hydratation eager des saisons (#73)** — synchro RTDB → Room
- * sans attendre le worker périodique.
+ * sans attendre le worker périodique — et des tournois officiels tant que leur cache est incomplet
+ * (#152 : première installation, montée de version Room).
  *
  * Historique : ce worker peuplait aussi un cache de classements (`StatsRepository`) ; ce cache
  * n'était plus lu par aucun écran (les VM stats recalculent à la demande) et a été retiré comme
@@ -26,7 +30,9 @@ class InitStatsWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted private val workerParams: WorkerParameters,
     private val dataStoreRepository: DataStoreRepositoryInterface,
-    private val seasonRepository: SeasonRepositoryInterface
+    private val seasonRepository: SeasonRepositoryInterface,
+    private val databaseRepository: DatabaseRepositoryInterface,
+    private val tournamentRepository: TournamentRepositoryInterface
 ) : CoroutineWorker(appContext = context, params = workerParams) {
 
     companion object {
@@ -39,6 +45,10 @@ class InitStatsWorker @AssistedInject constructor(
         // Hydratation eager des saisons (#73) : synchro RTDB → Room à chaque onCreate, sans
         // attendre le worker périodique. Idempotent, rattachée à l'équipe (pas au roster).
         dataStoreRepository.mkcTeam.firstOrNull()?.id?.let { seasonRepository.fetchSeasons(it.toString()) }
+        // Le worker périodique ne passe qu'à 4 h : sans cela, badges et fiches resteraient vides
+        // jusqu'à la nuit suivante. Indépendant du joueur (données publiques).
+        if (databaseRepository.getTournaments().firstOrNull().orEmpty().size < Tournament.entries.size)
+            tournamentRepository.fetchTournaments()
         return Result.success()
     }
 }
