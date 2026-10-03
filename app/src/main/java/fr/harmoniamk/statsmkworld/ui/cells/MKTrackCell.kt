@@ -41,21 +41,15 @@ private const val TrackNameFontSize = 12
 private const val TrackTagFontSize = 10
 
 /**
- * Zone réservée au nom (2 lignes) + tag, en sp pour suivre l'échelle de police système. Nunito
- * (bd/it) : line-height = 1,364 × taille (hhea 1011/−353 pour 1000 unités) → (12×2 + 10) × 1,364
- * ≈ 46,4 sp, +1 sp d'arrondi.
- */
-private val TrackLabelZoneHeight: Dp
-    @Composable get() = with(LocalDensity.current) {
-        ((TrackNameFontSize * 2 + TrackTagFontSize) * 1.364f + 1f).sp.toDp()
-    }
-
-/**
- * Hauteur uniforme des [MKTrackCell] : paddings 8 + 8, image 36, marge 4, zone nom + tag
- * (≈ 103 dp à l'échelle de police 1). Partagée avec les cellules voisines d'une même grille.
+ * Hauteur uniforme des [MKTrackCell], dimensionnée pour le cas max (nom sur 2 lignes + tag) :
+ * paddings 8 + 8, image 36, marge 4 (56 dp) + texte en sp pour suivre l'échelle de police.
+ * Nunito (bd/it) : line-height = 1,364 × taille (hhea 1011/−353 pour 1000 unités) → (12×2 + 10)
+ * × 1,364 ≈ 46,4 sp, +1 sp d'arrondi (≈ 103 dp à l'échelle 1). Partagée avec les cellules voisines.
  */
 val TrackCellHeight: Dp
-    @Composable get() = 56.dp + TrackLabelZoneHeight
+    @Composable get() = 56.dp + with(LocalDensity.current) {
+        ((TrackNameFontSize * 2 + TrackTagFontSize) * 1.364f + 1f).sp.toDp()
+    }
 
 /**
  * Cellule de course/circuit partagée (rule 16). Horizontal : bande colorée (accent) · image + nom ·
@@ -64,8 +58,8 @@ val TrackCellHeight: Dp
  * - **sélection** / aperçu (`maps`, sans `track`) : image + nom seuls, accent blanc. → sélection.
  *
  * Intermission : seul le dernier circuit (arrivée) est représenté, sans tag ; sinon le tag
- * (`Maps.name`, #101) est affiché sous le nom. Hauteur uniforme ([TrackCellHeight])
- * calée sur « nom sur 2 lignes + tag » → cellules alignées.
+ * (`Maps.name`, #101) est affiché sous le nom. Hauteur uniforme ([TrackCellHeight]) calée sur
+ * « nom sur 2 lignes + tag » ; le bloc image + nom + tag y est centré verticalement.
  */
 @Composable
 fun MKTrackCell(
@@ -97,7 +91,7 @@ fun MKTrackCell(
     ) {
         // 1. Bande colorée verticale (bord gauche, pleine hauteur).
         Box(Modifier.width(3.dp).fillMaxHeight().background(accent))
-        // 2. Colonne centrale : image du circuit + nom (2 lignes réservées → hauteur égale) + tag.
+        // 2. Colonne centrale : image du circuit + nom + tag, hauteur naturelle centrée (Row).
         Column(
             Modifier.weight(1f).padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -109,21 +103,17 @@ fun MKTrackCell(
                     modifier = Modifier.size(width = 56.dp, height = 36.dp).clip(RoundedCornerShape(4.dp))
                 )
             }
-            Column(
-                Modifier.padding(top = 4.dp).height(TrackLabelZoneHeight),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                MKText(
-                    text = displayedMap?.label?.let { stringResource(it) } ?: "-",
-                    font = Fonts.NunitoBD,
-                    textColor = Colors.white,
-                    fontSize = TrackNameFontSize,
-                    maxLines = 2,
-                    textAlign = TextAlign.Center
-                )
-                trackMaps.displayedTag()?.let {
-                    MKText(text = it, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = TrackTagFontSize, maxLines = 1)
-                }
+            MKText(
+                modifier = Modifier.padding(top = 4.dp),
+                text = displayedMap?.label?.let { stringResource(it) } ?: "-",
+                font = Fonts.NunitoBD,
+                textColor = Colors.white,
+                fontSize = TrackNameFontSize,
+                maxLines = 2,
+                textAlign = TextAlign.Center
+            )
+            trackMaps.displayedTag()?.let {
+                MKText(text = it, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = TrackTagFontSize, maxLines = 1)
             }
         }
         // 3. Zone shocks : largeur TOUJOURS réservée (placeholder invisible si aucun shock).
