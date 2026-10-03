@@ -25,6 +25,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayedMap
+import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
@@ -199,14 +201,14 @@ private fun RankingItem.OpponentRanking.toPodiumEntry(): Pair<PodiumEntry, Ranki
     ) to this
 
 private fun RankingItem.TrackRanking.toPodiumEntry(is24p: Boolean): Pair<PodiumEntry, RankingItem.TrackRanking> {
-    val map = stats.map?.firstOrNull()
+    val map = stats.map.orEmpty().displayedMap()
     val scoreValue = when (is24p) {
         true -> stats.teamScore?.toString() ?: "-"
         else -> stats.teamScore?.trackScoreToDiff(false) ?: "-"
     }
     return PodiumEntry(
         labelRes = map?.label,
-        tag = map?.name,
+        tag = stats.map.orEmpty().displayedTag(),
         pictureRes = map?.picture,
         stats = listOf(
             R.string.times_played_short to stats.totalPlayed.toString(),

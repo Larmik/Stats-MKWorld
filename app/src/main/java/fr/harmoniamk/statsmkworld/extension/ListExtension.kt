@@ -59,6 +59,12 @@ fun List<Map<*, *>>?.parseScores(): List<fr.harmoniamk.statsmkworld.model.fireba
         )
     }
 
+/** Circuit représentant une course : le dernier (arrivée) si intermission (`index` = [intermission, circuit]). */
+fun List<Maps>.displayedMap(): Maps? = lastOrNull()
+
+/** Tag affiché sous le nom du circuit (#101) ; aucun pour une course avec intermission. */
+fun List<Maps>.displayedTag(): String? = singleOrNull()?.name
+
 fun <T> List<T>.safeSubList(from: Int, to: Int): List<T> = when {
     this.size < to -> this
     to < from -> listOf()

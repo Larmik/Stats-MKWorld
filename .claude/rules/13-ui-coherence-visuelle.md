@@ -46,6 +46,15 @@ Tout pourcentage passe par les fonctions centrales de `extension/` (#99), jamais
 - Les champs de pourcentage sont des `Double` ; tris, seuils (`winrateColor`) et deltas portent
   sur ces valeurs arrondies.
 
+## Course avec intermission : dernier circuit, sans tag
+
+Une course 24p avec intermission porte deux circuits (`WarTrack.index` = `[intermission, circuit
+choisi]`). Partout où une **course** est représentée (cellule, en-tête, aperçu, podium/classement
+d'un `TrackStats`), afficher **toujours le dernier circuit** (l'arrivée) et **aucun tag** :
+passer par `List<Maps>.displayedMap()` / `displayedTag()` (`extension/ListExtension.kt`), jamais
+par un `firstOrNull()`/`.name` local. Une grille de **sélection** (un candidat = un circuit) n'est
+pas une course : chaque cellule garde son tag. Cf. #101.
+
 ## Combinaison avec les autres rules
 
 Les autres rules UI (`10` clés de liste, `11` state, `12` roster, `14` back

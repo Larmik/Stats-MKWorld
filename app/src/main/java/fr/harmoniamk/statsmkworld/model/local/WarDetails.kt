@@ -84,6 +84,10 @@ data class WarTrackDetails(val track: WarTrack, val is24p: Boolean): Parcelable,
     val index
         get() = track.index
 
+    /** Circuits de la course dans l'ordre de `index` (2 si intermission). */
+    val maps: List<Maps>
+        get() = track.index.mapNotNull { it.toIntOrNull()?.let(Maps.entries::getOrNull) }
+
     val teamScore: Int = track.positions.sumOf { it.position.positionToPoints(is24p) }
 
     private val opponentScore: Int = run {

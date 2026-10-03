@@ -178,7 +178,7 @@ private fun ColumnScope.CircuitStep(
         // Cellule circuit MUTUALISÉE avec CurrentWar (rule 16 : MKTrackCell), en mode
         // sélection (image + nom, sans score).
         items(state.mapList, key = { it.name }) { map ->
-            MKTrackCell(map = map, onClick = { onMapSelected(map) })
+            MKTrackCell(maps = listOf(map), onClick = { onMapSelected(map) })
         }
     }
 }
@@ -211,7 +211,7 @@ private fun ColumnScope.IntermissionStep(
         // (intermission retenue) est liserée en vert.
         items(state.intermissionList.orEmpty(), key = { it.name }) { intermission ->
             MKTrackCell(
-                map = intermission,
+                maps = listOf(intermission),
                 selected = state.intermissionSelected == intermission,
                 onClick = { onIntermissionSelected(intermission) }
             )
@@ -257,10 +257,9 @@ private fun ColumnScope.PositionsStep(
     onPositionClick: (Int) -> Unit,
     onPrevious: () -> Unit
 ) {
-    // Aperçu circuit en tête (MKTrackCell, rule 16) : circuit d'arrivée en 24p, sinon principal.
-    val headerMap = state.intermissionSelected ?: state.mapSelected
-    headerMap?.let {
-        MKTrackCell(map = it, onClick = {}, modifier = Modifier.fillMaxWidth())
+    // Aperçu de la course en tête (MKTrackCell, rule 16) : dernier circuit si intermission.
+    if (state.trackMaps.isNotEmpty()) {
+        MKTrackCell(maps = state.trackMaps, onClick = {}, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(11.dp))
     }
     // Carte de progression : compteur + barre (style AddWar/maquette) + joueur courant.
@@ -365,7 +364,7 @@ private fun SummaryHeaderCard(state: AddTrackViewModel.State) {
     // Diff signé (hôte − adverse) = points de manche hôte − complément adverse. En 24p,
     // pas de diff par manche (l'adversaire est saisi ailleurs).
     val diff = (state.teamHostTrackScore ?: 0) - (state.teamOpponentScore ?: 0)
-    TrackHeaderCard(map = state.mapSelected ?: state.intermissionSelected) {
+    TrackHeaderCard(maps = state.trackMaps) {
         MKText(text = "${stringResource(R.string.addtrack_summary_score)} · ", textColor = Colors.white66, fontSize = 12)
         MKText(text = summaryScoreLabel(state), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
         // Diff colorisée (12p uniquement : en 24p, pas d'adverse par manche).

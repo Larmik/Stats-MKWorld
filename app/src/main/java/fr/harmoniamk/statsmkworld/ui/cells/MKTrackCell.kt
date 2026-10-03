@@ -23,6 +23,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayedMap
+import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -39,22 +41,23 @@ val TrackCellHeight = 98.dp
  * Cellule de course/circuit partagée (rule 16). Horizontal : bande colorée (accent) · image + nom ·
  * zone shocks réservée · score + diff. Deux modes :
  * - **course jouée** (`track != null`) : score + diff colorisée, accent selon la diff. → détail.
- * - **sélection** (`map != null`, sans `track`) : image + nom seuls, accent blanc. → sélection.
+ * - **sélection** / aperçu (`maps`, sans `track`) : image + nom seuls, accent blanc. → sélection.
  *
- * Le tag du circuit (`Maps.name`, #101) est affiché sous le nom. Hauteur uniforme ([TrackCellHeight])
+ * Intermission : seul le dernier circuit (arrivée) est représenté, sans tag ; sinon le tag
+ * (`Maps.name`, #101) est affiché sous le nom. Hauteur uniforme ([TrackCellHeight])
  * calée sur « nom sur 2 lignes + tag » → cellules alignées.
  */
 @Composable
 fun MKTrackCell(
     modifier: Modifier = Modifier,
     track: WarTrackDetails? = null,
-    map: Maps? = null,
+    maps: List<Maps> = listOf(),
     is24p: Boolean = false,
     selected: Boolean = false,
     onClick: () -> Unit
 ) {
-    // Course jouée : dernier segment (arrivée) d'une éventuelle intermission ; sinon le circuit fourni.
-    val displayedMap = map ?: track?.index?.lastOrNull()?.toInt()?.let { Maps.entries.getOrNull(it) }
+    val trackMaps = track?.maps ?: maps
+    val displayedMap = trackMaps.displayedMap()
     // Accent (liseré + diff) : vert manche gagnée, rouge perdue (blanc = nul / 24 j / sélection).
     val accent: Color = when {
         track == null -> if (selected) Colors.green else Colors.white
@@ -98,8 +101,8 @@ fun MKTrackCell(
                     maxLines = 2,
                     textAlign = TextAlign.Center
                 )
-                displayedMap?.let {
-                    MKText(text = it.name, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = 10, maxLines = 1)
+                trackMaps.displayedTag()?.let {
+                    MKText(text = it, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = 10, maxLines = 1)
                 }
             }
         }

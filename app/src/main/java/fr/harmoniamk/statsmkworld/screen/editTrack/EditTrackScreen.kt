@@ -151,7 +151,7 @@ private fun ColumnScope.CircuitTab(
             ) {
                 items(state.mapList, key = { it.name }) { map ->
                     MKTrackCell(
-                        map = map,
+                        maps = listOf(map),
                         selected = state.mapSelected?.contains(map) == true,
                         onClick = { onMapSelected(map) }
                     )

@@ -26,7 +26,6 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.diffColor
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.positionColor
-import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerPosition
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -148,10 +147,8 @@ private fun PositionShockTile(
 /** Carte en-tête : circuit + sous-titre « Course N · score (±diff) », diff colorisée ([Int.diffColor]). En 24p, pas de score/diff par manche. */
 @Composable
 private fun CourseHeaderCard(track: WarTrackDetails, courseNumber: Int) {
-    // `index` peut lister plusieurs circuits (intermission) : on illustre par le dernier.
-    val lastMap = track.index.lastOrNull()?.toIntOrNull()?.let { Maps.entries.getOrNull(it) }
     val diffValue = track.displayedDiff.toIntOrNull() ?: 0
-    TrackHeaderCard(map = lastMap) {
+    TrackHeaderCard(maps = track.maps) {
         MKText(
             text = stringResource(R.string.trackdetails_course_prefix, courseNumber),
             textColor = Colors.white66,
