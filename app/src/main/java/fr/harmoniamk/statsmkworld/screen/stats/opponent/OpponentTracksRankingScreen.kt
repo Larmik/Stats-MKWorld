@@ -46,7 +46,7 @@ fun OpponentTracksRankingScreen(
             state.allTracks.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)
             else -> {
                 // Sélecteur de tri sur fond clair (onDark false).
-                TracksSortSelector(state.tracksSort, onDark = false, onSelect = viewModel::onTracksSortSelected)
+                TracksSortSelector(state.tracksSort, isIndiv = state.isIndiv, onDark = false, onSelect = viewModel::onTracksSortSelected)
                 Spacer(Modifier.height(11.dp))
                 LazyColumn(
                     Modifier

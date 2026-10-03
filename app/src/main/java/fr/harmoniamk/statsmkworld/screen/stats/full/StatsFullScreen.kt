@@ -43,8 +43,8 @@ import fr.harmoniamk.statsmkworld.extension.displayedMap
 import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.percentOf
-import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionColor
+import fr.harmoniamk.statsmkworld.extension.toCompactString
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.extension.warScoreToDiff
@@ -61,7 +61,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.DistributionFooter
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
 import fr.harmoniamk.statsmkworld.ui.stats.MKStatInfoButton
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
-import fr.harmoniamk.statsmkworld.ui.stats.PodiumRow
+import fr.harmoniamk.statsmkworld.ui.stats.PodiumOrMessage
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
@@ -557,7 +557,7 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
     val toEntry: (fr.harmoniamk.statsmkworld.model.local.TrackStats) -> PodiumEntry = { track ->
         val map = track.map.orEmpty().displayedMap()
         val scoreValue = when {
-            userId != null -> track.playerScore.pointsToPosition(false).firstOrNull()?.toString() ?: "-"
+            userId != null -> track.averagePosition?.toCompactString() ?: "-"
             else -> track.teamScore?.trackScoreToDiff(false) ?: "-"
         }
         PodiumEntry(
@@ -575,11 +575,18 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
         title = stringResource(R.string.best_maps_section),
         titleTrailing = onSeeAll?.let { { SeeAllLink(it) } }
     ) {
-        SortSelector(selectors.trackSortIndex, selectors.onTrackSortChange)
+        // Vue joueur : le tri « score » classe sur la position moyenne → libellé « Position » (#102).
+        SortSelector(
+            selectors.trackSortIndex,
+            selectors.onTrackSortChange,
+            scoreLabel = stringResource(if (userId != null) R.string.stats_sort_position else R.string.stats_sort_score)
+        )
         Spacer(Modifier.height(11.dp))
-        PodiumOrMessage(stringResource(R.string.stats_podium_top), top.map(toEntry))
+        // Occurrences (#102) : « Plus / Moins joués », pas un classement de performance.
+        val byCount = selectors.trackSortIndex == 0
+        PodiumOrMessage(stringResource(if (byCount) R.string.stats_podium_most_played else R.string.stats_podium_top), top.map(toEntry))
         Spacer(Modifier.height(8.dp))
-        PodiumOrMessage(stringResource(R.string.stats_podium_flop), flop.map(toEntry))
+        PodiumOrMessage(stringResource(if (byCount) R.string.stats_podium_least_played else R.string.stats_podium_flop), flop.map(toEntry))
     }
 }
 
@@ -625,50 +632,31 @@ private fun OpponentsPodiumCard(
     ) {
         SortSelector(selectors.opponentSortIndex, selectors.onOpponentSortChange)
         Spacer(Modifier.height(11.dp))
-        PodiumOrMessage(stringResource(R.string.stats_podium_top), top.map(toEntry))
+        // Occurrences (#102) : « Plus / Moins affrontés », pas un classement de performance.
+        val byCount = selectors.opponentSortIndex == 0
+        PodiumOrMessage(stringResource(if (byCount) R.string.stats_podium_most_faced else R.string.stats_podium_top), top.map(toEntry))
         Spacer(Modifier.height(8.dp))
-        PodiumOrMessage(stringResource(R.string.stats_podium_flop), flop.map(toEntry))
-    }
-}
-
-/**
- * Podium sous label (#91 pt.1) : [PodiumRow] complète si ≥ 3 entrées, sinon message de
- * dégradation — jamais un podium tronqué (2 sur 3, artefact de MIN_RANKING_SAMPLE). Le label
- * reste toujours affiché → la section ne disparaît pas au changement de période/tri.
- */
-@Composable
-private fun ColumnScope.PodiumOrMessage(label: String, entries: List<PodiumEntry>) {
-    PodiumLabel(label)
-    when (entries.size) {
-        3 -> PodiumRow(entries)
-        else -> MKText(
-            text = stringResource(R.string.stats_podium_not_enough),
-            textColor = Colors.white55,
-            fontSize = 12,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
-        )
+        PodiumOrMessage(stringResource(if (byCount) R.string.stats_podium_least_faced else R.string.stats_podium_flop), flop.map(toEntry))
     }
 }
 
 /** Sélecteur occurrences / winrate / score (pill, sur carte sombre — occurrences défaut). */
 @Composable
-private fun ColumnScope.SortSelector(index: Int, onChange: (Int) -> Unit) {
+private fun ColumnScope.SortSelector(
+    index: Int,
+    onChange: (Int) -> Unit,
+    scoreLabel: String = stringResource(R.string.stats_sort_score)
+) {
     MKSegmentedSelector(
         items = listOf(
             stringResource(R.string.stats_sort_occurrences),
             stringResource(R.string.stats_sort_winrate),
-            stringResource(R.string.stats_sort_score)
+            scoreLabel
         ),
         page = index,
         onDark = true,
         onClick = onChange
     )
-}
-
-@Composable
-private fun PodiumLabel(text: String) {
-    MKText(text = text.uppercase(), font = Fonts.NunitoBD, textColor = Colors.white66, fontSize = 11, textAlign = TextAlign.Start, modifier = Modifier.padding(bottom = 4.dp))
 }
 
 /** Lien « Classement entier → » (même style que PodiumSectionCard, #67). */

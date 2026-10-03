@@ -24,7 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayedMap
 import fr.harmoniamk.statsmkworld.extension.displayedTag
-import fr.harmoniamk.statsmkworld.extension.pointsToPosition
+import fr.harmoniamk.statsmkworld.extension.sortedByTrackScore
+import fr.harmoniamk.statsmkworld.extension.toCompactString
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
@@ -61,7 +62,7 @@ fun PlayerMapsRankingScreen(
             .let { list ->
                 when (sortIndex) {
                     1 -> list.sortedByDescending { it.winRate ?: 0.0 }
-                    2 -> list.sortedByDescending { (if (userId != null) it.playerScore else it.teamScore) ?: 0 }
+                    2 -> list.sortedByTrackScore(isIndiv = userId != null)
                     else -> list.sortedByDescending { it.totalPlayed }
                 }
             }
@@ -77,7 +78,8 @@ fun PlayerMapsRankingScreen(
                     items = listOf(
                         stringResource(R.string.stats_sort_occurrences),
                         stringResource(R.string.stats_sort_winrate),
-                        stringResource(R.string.stats_sort_score)
+                        // Vue joueur : tri sur la position moyenne (#102).
+                        stringResource(if (isTeam) R.string.stats_sort_score else R.string.stats_sort_position)
                     ),
                     page = sortIndex,
                     onClick = { sortIndex = it }
@@ -108,7 +110,7 @@ private fun TrackStats.toPodiumEntry(userId: String?): PodiumEntry {
     val displayedMap = map.orEmpty().displayedMap()
     val scoreLabel = if (userId != null) R.string.average_position_short else R.string.form_score
     val scoreValue = when {
-        userId != null -> playerScore.pointsToPosition(false).firstOrNull()?.toString() ?: "-"
+        userId != null -> averagePosition?.toCompactString() ?: "-"
         else -> teamScore?.trackScoreToDiff(false) ?: "-"
     }
     return PodiumEntry(

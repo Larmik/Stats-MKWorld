@@ -51,7 +51,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
 import fr.harmoniamk.statsmkworld.extension.displayName
-import fr.harmoniamk.statsmkworld.extension.pointsToPosition
+import fr.harmoniamk.statsmkworld.extension.toCompactString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.SortType
@@ -137,14 +137,20 @@ fun OpponentDetailScreen(
                     // 4. Séries & scores — grille 3 lignes × 2 cellules.
                     stats?.let { s -> item { StreaksScoresCard(state, s) } }
                     // 5. Circuits contre eux (podium Top3/Flop3 trié) + sélecteur + voir en entier.
-                    if (state.topTracks.isNotEmpty() || state.flopTracks.isNotEmpty()) item {
+                    // Carte gardée dès qu'un circuit existe : un tri sous le seuil dégrade en message (#102).
+                    if (state.allTracks.isNotEmpty()) item {
+                        // Occurrences : « Plus / Moins joués », pas un classement de performance (#102).
+                        val byCount = state.tracksSort == SortType.COUNT
                         PodiumSectionCard(
                             title = stringResource(R.string.opponent_detail_best_tracks),
                             top = state.topTracks.map { it.toPodiumEntry(state.isIndiv) },
                             flop = state.flopTracks.map { it.toPodiumEntry(state.isIndiv) },
                             onSeeAll = onTracksRanking,
+                            topLabel = stringResource(if (byCount) R.string.stats_podium_most_played else R.string.stats_podium_top),
+                            flopLabel = stringResource(if (byCount) R.string.stats_podium_least_played else R.string.stats_podium_flop),
+                            completeRowsOnly = true,
                             selector = {
-                                TracksSortSelector(state.tracksSort, onDark = true, onSelect = viewModel::onTracksSortSelected)
+                                TracksSortSelector(state.tracksSort, isIndiv = state.isIndiv, onDark = true, onSelect = viewModel::onTracksSortSelected)
                             }
                         )
                     }
@@ -310,15 +316,16 @@ private fun RowScope.ShockCell(label: String, value: String) {
 
 /**
  * Sélecteur de tri des circuits (Occurrences / Winrate / Score moy., rules 15/16). [onDark] =
- * carte sombre (fiche) ; false = fond clair (écran complet).
+ * carte sombre (fiche) ; false = fond clair (écran complet). [isIndiv] : le tri score classe sur
+ * la position moyenne → libellé « Position » (#102).
  */
 @Composable
-internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int) -> Unit) {
+internal fun TracksSortSelector(sort: SortType, isIndiv: Boolean, onDark: Boolean, onSelect: (Int) -> Unit) {
     MKSegmentedSelector(
         items = listOf(
             stringResource(R.string.rankings_sort_occurrences),
             stringResource(R.string.rankings_sort_winrate),
-            stringResource(R.string.rankings_sort_score)
+            stringResource(if (isIndiv) R.string.stats_sort_position else R.string.rankings_sort_score)
         ),
         page = sort.ordinal,
         onDark = onDark,
@@ -328,13 +335,13 @@ internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int)
 
 /**
  * Circuit → entrée de podium. Vue Équipe : écart d'équipe (`trackScoreToDiff`) ; vue Indiv :
- * position moyenne (`pointsToPosition`) — #67. Partagé avec [OpponentTracksRankingScreen].
+ * position moyenne réelle (#67, #102). Partagé avec [OpponentTracksRankingScreen].
  */
 internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
     val displayedMap = map.orEmpty().displayedMap()
     val (scoreLabel, scoreValue) = when {
         isIndiv -> R.string.average_position_short to
-                (playerScore.pointsToPosition(false).firstOrNull()?.toString() ?: "-")
+                (averagePosition?.toCompactString() ?: "-")
         else -> R.string.form_score to (teamScore?.trackScoreToDiff(false) ?: "-")
     }
     return PodiumEntry(

@@ -9,10 +9,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
+import fr.harmoniamk.statsmkworld.extension.flopExcludingTop
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.percentShares
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
+import fr.harmoniamk.statsmkworld.extension.sortedByTrackScore
 import fr.harmoniamk.statsmkworld.extension.totalShocks
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
@@ -105,7 +107,8 @@ class OpponentDetailViewModel @AssistedInject constructor(
         val shocksPerWar: Float = 0f,
         // Tri courant des circuits (Occurrences / Winrate / Score moy. — comme Classements).
         val tracksSort: SortType = SortType.COUNT,
-        // Top3 / Flop3 des circuits joués contre eux (selon [tracksSort]).
+        // Top3 / Flop3 des circuits joués contre eux (selon [tracksSort]), disjoints ; seuil
+        // MIN_RANKING_SAMPLE hors tri Occurrences (#102).
         val topTracks: List<TrackStats> = listOf(),
         val flopTracks: List<TrackStats> = listOf(),
         // Classement complet des circuits joués contre eux (selon [tracksSort]).
@@ -193,8 +196,17 @@ class OpponentDetailViewModel @AssistedInject constructor(
             val warsPlayed = chronological.size.takeIf { it > 0 } ?: 1
             val shocksPerWar = shockCount.toFloat() / warsPlayed
 
-            // Circuits triés selon le sélecteur (rule 16). Score = perso en indiv, équipe sinon.
-            val sortedTracks = stats.maps.sortedWith(trackComparator(sort, userId != null))
+            // Circuits triés selon le sélecteur (rule 16). Score = position moyenne en indiv, équipe sinon.
+            val sortedTracks = when (sort) {
+                SortType.WINRATE -> stats.maps.sortedByDescending { it.winRate ?: 0.0 }
+                SortType.AVERAGE -> stats.maps.sortedByTrackScore(isIndiv = userId != null)
+                SortType.COUNT -> stats.maps.sortedByDescending { it.totalPlayed }
+            }
+            // Top/flop (#102) : seuil d'échantillon pour les tris de performance, flop privé du top.
+            val podiumTracks = when (sort) {
+                SortType.COUNT -> sortedTracks
+                else -> sortedTracks.filter { it.totalPlayed >= Stats.MIN_RANKING_SAMPLE }
+            }
 
             // Pilotes (membres) face à cet adversaire, mode Équipe côté UI (#67).
             val pilots = computePilots(chronological)
@@ -214,8 +226,8 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 shockCount = shockCount,
                 shocksPerWar = shocksPerWar,
                 tracksSort = sort,
-                topTracks = sortedTracks.take(3),
-                flopTracks = sortedTracks.takeLast(3).reversed(),
+                topTracks = podiumTracks.take(3),
+                flopTracks = podiumTracks.flopExcludingTop(),
                 allTracks = sortedTracks,
                 mapStats = mapStats,
                 pilots = pilots,
@@ -321,12 +333,5 @@ class OpponentDetailViewModel @AssistedInject constructor(
                 )
             }
             .sortedByDescending { it.shockShare }
-    }
-
-    /** Comparateur de circuits (décroissant) : Occurrences / Winrate / Score (perso en indiv, équipe sinon). */
-    private fun trackComparator(sort: SortType, isIndiv: Boolean): Comparator<TrackStats> = when (sort) {
-        SortType.WINRATE -> compareByDescending { it.winRate ?: 0.0 }
-        SortType.AVERAGE -> compareByDescending { (if (isIndiv) it.playerScore else it.teamScore) ?: 0 }
-        SortType.COUNT -> compareByDescending { it.totalPlayed }
     }
 }

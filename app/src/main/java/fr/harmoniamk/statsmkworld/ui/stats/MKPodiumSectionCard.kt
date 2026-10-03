@@ -19,7 +19,10 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 /**
  * Carte « podium » Top3 / Flop3 (lignes de 3 `PodiumCell`), mutualisée (#27) par les fiches
  * Adversaire et Circuit. En-tête + lien optionnel « Voir le classement en entier » ([onSeeAll]).
- * [top]/[flop] = [PodiumEntry] déjà triées (3 max). [selector] optionnel rendu en tête. Rien si vide.
+ * [top]/[flop] = [PodiumEntry] déjà triées (3 max). [selector] optionnel rendu en tête.
+ * [completeRowsOnly] (classements circuits/adversaires, #102) : carte toujours rendue, chaque ligne
+ * dégrade en message sous 3 entrées ([PodiumOrMessage]) ; sinon (pilotes, baggeurs) podium
+ * partiel, flop masqué si vide, rien si tout est vide.
  */
 @Composable
 fun PodiumSectionCard(
@@ -27,9 +30,12 @@ fun PodiumSectionCard(
     top: List<PodiumEntry>,
     flop: List<PodiumEntry>,
     onSeeAll: (() -> Unit)? = null,
+    topLabel: String = stringResource(R.string.stats_podium_top),
+    flopLabel: String = stringResource(R.string.stats_podium_flop),
+    completeRowsOnly: Boolean = false,
     selector: (@Composable ColumnScope.() -> Unit)? = null
 ) {
-    if (top.isEmpty() && flop.isEmpty()) return
+    if (!completeRowsOnly && top.isEmpty() && flop.isEmpty()) return
     StatCard(
         title = title,
         titleTrailing = onSeeAll?.let {
@@ -48,13 +54,42 @@ fun PodiumSectionCard(
             it()
             Spacer(Modifier.height(11.dp))
         }
-        PodiumSubLabel(stringResource(R.string.stats_podium_top))
-        PodiumRow(top)
-        if (flop.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            PodiumSubLabel(stringResource(R.string.stats_podium_flop))
-            PodiumRow(flop)
+        when (completeRowsOnly) {
+            true -> {
+                PodiumOrMessage(topLabel, top)
+                Spacer(Modifier.height(8.dp))
+                PodiumOrMessage(flopLabel, flop)
+            }
+            else -> {
+                PodiumSubLabel(topLabel)
+                PodiumRow(top)
+                if (flop.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    PodiumSubLabel(flopLabel)
+                    PodiumRow(flop)
+                }
+            }
         }
+    }
+}
+
+/**
+ * Podium sous label (#91 pt.1) : [PodiumRow] complète si 3 entrées, sinon message de
+ * dégradation — jamais un podium tronqué (seuil d'échantillon, top/flop disjoints). Le label
+ * reste affiché → la section ne disparaît pas au changement de période/tri.
+ */
+@Composable
+fun ColumnScope.PodiumOrMessage(label: String, entries: List<PodiumEntry>) {
+    PodiumSubLabel(label)
+    when (entries.size) {
+        3 -> PodiumRow(entries)
+        else -> MKText(
+            text = stringResource(R.string.stats_podium_not_enough),
+            textColor = Colors.white55,
+            fontSize = 12,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+        )
     }
 }
 

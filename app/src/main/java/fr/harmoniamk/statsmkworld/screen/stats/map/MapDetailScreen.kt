@@ -17,6 +17,7 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayedMap
 import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.displayName
+import fr.harmoniamk.statsmkworld.extension.flopExcludingTop
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
@@ -148,8 +149,10 @@ fun MapDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_opponents),
                             top = state.opponents.take(3).map { it.toPodiumEntry() },
-                            flop = state.opponents.takeLast(3).reversed().map { it.toPodiumEntry() },
-                            onSeeAll = onOpponentsRanking
+                            flop = state.opponents.flopExcludingTop().map { it.toPodiumEntry() },
+                            onSeeAll = onOpponentsRanking,
+                            // Classement d'adversaires : règles top/flop de #102 (disjoints, podium complet).
+                            completeRowsOnly = true
                         )
                     }
                     item { Spacer(Modifier.height(90.dp)) }

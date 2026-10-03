@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
+import fr.harmoniamk.statsmkworld.extension.flopExcludingTop
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.percentShares
@@ -283,8 +284,8 @@ class StatsFullViewModel @AssistedInject constructor(
     /**
      * Top3/flop3 adversaires par occurrences, winrate ET score sur les [wars] filtrées.
      * `userId` non-null ⇒ point de vue du joueur. winrate/score filtrent à ≥
-     * [Stats.MIN_RANKING_SAMPLE] ; les occurrences classent tous les adversaires. Réutilise
-     * `withFullTeamStats` (rule 32).
+     * [Stats.MIN_RANKING_SAMPLE] ; les occurrences classent tous les adversaires. Flop privé du
+     * top (`flopExcludingTop`, #102). Réutilise `withFullTeamStats` (rule 32).
      */
     private suspend fun computeOpponentRankings(
         wars: List<WarDetails>,
@@ -298,16 +299,18 @@ class StatsFullViewModel @AssistedInject constructor(
             .orEmpty()
             .map { RankingItem.OpponentRanking(it.first, it.second) }
         val rankable = all.filter { it.stats.warStats.warsPlayed >= Stats.MIN_RANKING_SAMPLE }
+        val byCount = all.sortedByDescending { it.stats.warStats.warsPlayed }
+        val byWinrate = rankable.sortedByDescending { it.winratePercent }
+        val byScore = rankable.sortedByDescending { it.stats.averagePoints }
         return OpponentPodiums(
-            topByCount = all.sortedByDescending { it.stats.warStats.warsPlayed }.take(3),
-            flopByCount = all.sortedBy { it.stats.warStats.warsPlayed }.take(3),
-            topByWinrate = rankable.sortedByDescending { it.winratePercent }.take(3),
-            flopByWinrate = rankable.sortedBy { it.winratePercent }.take(3),
-            topByScore = rankable.sortedByDescending { it.stats.averagePoints }.take(3),
-            flopByScore = rankable.sortedBy { it.stats.averagePoints }.take(3),
+            topByCount = byCount.take(3),
+            flopByCount = byCount.flopExcludingTop(),
+            topByWinrate = byWinrate.take(3),
+            flopByWinrate = byWinrate.flopExcludingTop(),
+            topByScore = byScore.take(3),
+            flopByScore = byScore.flopExcludingTop(),
             // Liste complète des adversaires affrontés, pour le classement entier (#67).
-            all = all.filter { it.stats.warStats.warsPlayed > 0 }
-                .sortedByDescending { it.stats.warStats.warsPlayed }
+            all = byCount.filter { it.stats.warStats.warsPlayed > 0 }
         )
     }
 
