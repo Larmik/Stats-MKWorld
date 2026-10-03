@@ -68,19 +68,24 @@ data class LorenziTableStyle(
     val rankingFont: LorenziTableFont = LorenziTableFont(name = "Roboto", weight = 900),
 ) {
     /**
-     * Texte d'une seule couleur. En style inversé (Dark), noms/scores/tags prennent la couleur
-     * d'équipe et non `baseTextColor` (qui ne colore que l'écart et les rangs) : on force donc
-     * la même couleur pour les deux équipes, sans dégradé (vérifié en live, #105).
+     * Tout le texte des deux équipes dans la couleur [hex] (vérifié en live, #105). Le renderer
+     * colore noms/scores/tags avec la couleur d'équipe si `invertColors` (Dark), sinon avec
+     * `baseTextColor` tant que la couleur d'équipe est claire (luminance ≥ 0,25) : on force donc
+     * la couleur d'équipe en conséquence, sans dégradé. À n'appliquer en Light qu'avec un `bkgSrc`
+     * (sans image, le renderer peint le bloc d'équipe dans cette couleur forcée).
      */
-    fun withTextColor(hex: String) = copy(
-        baseTextColor = hex,
-        useForcedColors = true,
-        forcedColor1 = hex,
-        forcedColor2 = hex,
-        forcedGradient1 = emptyList(),
-        forcedGradient2 = emptyList(),
-        autoGradient = 0.0,
-    )
+    fun withTextColor(hex: String): LorenziTableStyle {
+        val teamColor = if (invertColors) hex else "#ffffff"
+        return copy(
+            baseTextColor = hex,
+            useForcedColors = true,
+            forcedColor1 = teamColor,
+            forcedColor2 = teamColor,
+            forcedGradient1 = emptyList(),
+            forcedGradient2 = emptyList(),
+            autoGradient = 0.0,
+        )
+    }
 }
 
 /**
@@ -89,12 +94,13 @@ data class LorenziTableStyle(
  * Atlas League en premier (style proposé par défaut), base « Dark (Thin) » du générateur.
  *
  * @property circuitBackground fond = circuit au meilleur score ; jamais pour Atlas League.
- * @property textColorChoice palette de couleur de texte proposée ([LorenziTextColor]).
+ * @property autoTextColor couleur du texte (noir/blanc) choisie selon le fond ; sinon celle du style,
+ * le fond étant voilé si besoin pour la rendre lisible.
  */
 enum class LorenziStylePreset(
     val style: LorenziTableStyle,
     val circuitBackground: Boolean,
-    val textColorChoice: Boolean,
+    val autoTextColor: Boolean,
 ) {
     ATLAS_LEAGUE(
         LorenziTableStyle(
@@ -119,29 +125,17 @@ enum class LorenziStylePreset(
             rankingFont = LorenziTableFont(name = "Roboto", weight = 400),
         ),
         circuitBackground = false,
-        textColorChoice = false,
+        autoTextColor = false,
     ),
-    LIGHT(LorenziTableStyle(), circuitBackground = true, textColorChoice = false),
+    LIGHT(LorenziTableStyle(), circuitBackground = true, autoTextColor = true),
     DARK(
         LorenziTableStyle(
             name = "Dark",
-            baseTextColor = "#ffffff",
             invertColors = true,
             playerBkgColor = "#888888",
             playerBkgOpacity = 0.05,
-        ),
+        ).withTextColor("#ffffff"), // Dark : texte toujours blanc
         circuitBackground = true,
-        textColorChoice = true,
+        autoTextColor = false,
     ),
-}
-
-/** Palette de couleur de texte du style Dark ; [AUTO] = couleurs d'équipe du générateur (rendu Dark d'origine). */
-enum class LorenziTextColor(val hex: String?) {
-    AUTO(null),
-    WHITE("#ffffff"),
-    YELLOW("#ffd400"),
-    CYAN("#4dd8f0"),
-    GREEN("#7ee36b"),
-    PINK("#ff7ac8"),
-    ORANGE("#ff9a3c"),
 }

@@ -317,7 +317,6 @@
     <string name="wardetails_generate_tab">Generate Tab (PDF)</string>
     <string name="tab_share_cta">Classic Tab &amp; share</string>
     <string name="tab_lorenzi_style">Tab style</string>
-    <string name="tab_lorenzi_text_color">Text color</string>
     <string name="tab_lorenzi_cta">Generate the tab (HLorenzi)</string>
     <string name="tab_lorenzi_generating">Generating…</string>
     <string name="tab_lorenzi_share">Share the tab</string>

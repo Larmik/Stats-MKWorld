@@ -8,14 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,9 +18,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -33,11 +25,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.core.graphics.toColorInt
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.network.lorenzi.LorenziStylePreset
-import fr.harmoniamk.statsmkworld.model.network.lorenzi.LorenziTextColor
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -134,7 +124,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // 3. Style HLorenzi (segmented partagé, rule 16) + palette de texte (Dark) + CTA + aperçu (#105).
+            // 3. Style HLorenzi (segmented partagé, rule 16) + CTA principal + aperçu avant partage (#105).
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     MKText(
@@ -148,27 +138,6 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                         page = state.value.preset.ordinal,
                         onClick = { viewModel.onPresetChange(LorenziStylePreset.entries[it]) }
                     )
-                }
-            }
-            if (state.value.preset.textColorChoice) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        MKText(
-                            text = stringResource(R.string.tab_lorenzi_text_color),
-                            font = Fonts.NunitoBD,
-                            textColor = Colors.white,
-                            fontSize = 12
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                            LorenziTextColor.entries.forEach { textColor ->
-                                TextColorSwatch(
-                                    textColor = textColor,
-                                    selected = textColor == state.value.textColor,
-                                    onClick = { viewModel.onTextColorChange(textColor) }
-                                )
-                            }
-                        }
-                    }
                 }
             }
             item {
@@ -227,22 +196,3 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
     }
 }
 
-/** Pastille de la palette de texte ; [LorenziTextColor.AUTO] (couleurs d'équipe) en dégradé multicolore. */
-@Composable
-private fun TextColorSwatch(textColor: LorenziTextColor, selected: Boolean, onClick: () -> Unit) {
-    val fill = textColor.hex
-        ?.let { SolidColor(Color(it.toColorInt())) }
-        ?: Brush.sweepGradient(listOf(Colors.red, Colors.yellow, Colors.green, Colors.blue, Colors.purple, Colors.red))
-    Box(
-        Modifier
-            .size(30.dp)
-            .clip(CircleShape)
-            .background(fill)
-            .border(
-                width = if (selected) 3.dp else 1.dp,
-                color = if (selected) Colors.white else Colors.whiteBorderSoft,
-                shape = CircleShape
-            )
-            .clickable(onClick = onClick)
-    )
-}
