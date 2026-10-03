@@ -89,7 +89,7 @@ class EditTrackViewModel @AssistedInject constructor(
                 players = players,
                 selectedPositions = positions,
                 // Pré-remplir circuit courant et shocks existants, pour partir de l'état réel.
-                mapSelected = details?.track?.index.orEmpty().mapNotNull { it.toIntOrNull()?.let(Maps.entries::getOrNull) },
+                mapSelected = details?.maps.orEmpty(),
                 shocks = details?.track?.shocks.orEmpty().associate { it.playerId to it.count },
                 is24p = is24p
             )

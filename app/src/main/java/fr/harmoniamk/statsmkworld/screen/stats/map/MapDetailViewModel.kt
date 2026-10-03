@@ -145,7 +145,7 @@ class MapDetailViewModel @AssistedInject constructor(
             } else {
                 // Sections détaillées (distribution/Top-Bot) + shocks : scopées au mode.
                 val mapStats = MapStats(list = scopedDetails, userId = scopeUserId, is24p = false)
-                val maps = allTrackDetails.first().warTrack.track.index.map { Maps.entries[it.toInt()] }
+                val maps = allTrackDetails.first().warTrack.maps
                 // « Scores moyens » figés : score équipe + position joueur, sur toutes les manches.
                 val teamMapStats = MapStats(list = allTrackDetails, userId = currentUserId, is24p = false)
                 _state.value.copy(

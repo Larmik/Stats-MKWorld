@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayedMap
+import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.model.local.Stats
@@ -329,15 +331,16 @@ internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int)
  * position moyenne (`pointsToPosition`) — #67. Partagé avec [OpponentTracksRankingScreen].
  */
 internal fun TrackStats.toPodiumEntry(isIndiv: Boolean): PodiumEntry {
-    val map = map?.firstOrNull()
+    val displayedMap = map.orEmpty().displayedMap()
     val (scoreLabel, scoreValue) = when {
         isIndiv -> R.string.average_position_short to
                 (playerScore.pointsToPosition(false).firstOrNull()?.toString() ?: "-")
         else -> R.string.form_score to (teamScore?.trackScoreToDiff(false) ?: "-")
     }
     return PodiumEntry(
-        labelRes = map?.label,
-        pictureRes = map?.picture,
+        labelRes = displayedMap?.label,
+        tag = map.orEmpty().displayedTag(),
+        pictureRes = displayedMap?.picture,
         stats = listOf(
             R.string.times_played_short to totalPlayed.toString(),
             R.string.form_winrate to (winRate ?: 0.0).toPercentString(),

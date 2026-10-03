@@ -1,7 +1,6 @@
 package fr.harmoniamk.statsmkworld.screen.addTrack
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -33,9 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +49,8 @@ import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerShockCell
 import fr.harmoniamk.statsmkworld.ui.cells.PositionCell
+import fr.harmoniamk.statsmkworld.ui.cells.TrackCellHeight
+import fr.harmoniamk.statsmkworld.ui.cells.TrackHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 
 /**
@@ -180,7 +178,7 @@ private fun ColumnScope.CircuitStep(
         // Cellule circuit MUTUALISÉE avec CurrentWar (rule 16 : MKTrackCell), en mode
         // sélection (image + nom, sans score).
         items(state.mapList, key = { it.name }) { map ->
-            MKTrackCell(map = map, onClick = { onMapSelected(map) })
+            MKTrackCell(maps = listOf(map), onClick = { onMapSelected(map) })
         }
     }
 }
@@ -213,7 +211,7 @@ private fun ColumnScope.IntermissionStep(
         // (intermission retenue) est liserée en vert.
         items(state.intermissionList.orEmpty(), key = { it.name }) { intermission ->
             MKTrackCell(
-                map = intermission,
+                maps = listOf(intermission),
                 selected = state.intermissionSelected == intermission,
                 onClick = { onIntermissionSelected(intermission) }
             )
@@ -233,7 +231,7 @@ private fun IntermissionNoneChip(selected: Boolean, onClick: () -> Unit, modifie
     Box(
         modifier
             .fillMaxWidth()
-            .height(84.dp) // aligné sur la hauteur des MKTrackCell voisines
+            .height(TrackCellHeight) // aligné sur la hauteur des MKTrackCell voisines
             .clip(RoundedCornerShape(6.dp))
             .background(if (selected) Colors.green else Colors.white30)
             .border(2.dp, if (selected) Colors.green else Colors.white55, RoundedCornerShape(6.dp))
@@ -259,10 +257,9 @@ private fun ColumnScope.PositionsStep(
     onPositionClick: (Int) -> Unit,
     onPrevious: () -> Unit
 ) {
-    // Aperçu circuit en tête (MKTrackCell, rule 16) : circuit d'arrivée en 24p, sinon principal.
-    val headerMap = state.intermissionSelected ?: state.mapSelected
-    headerMap?.let {
-        MKTrackCell(map = it, onClick = {}, modifier = Modifier.fillMaxWidth())
+    // Aperçu de la course en tête (MKTrackCell, rule 16) : dernier circuit si intermission.
+    if (state.trackMaps.isNotEmpty()) {
+        MKTrackCell(maps = state.trackMaps, onClick = {}, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(11.dp))
     }
     // Carte de progression : compteur + barre (style AddWar/maquette) + joueur courant.
@@ -361,41 +358,23 @@ private fun ColumnScope.SummaryStep(
     )
 }
 
-/** Carte en-tête du Résumé : circuit + nom + score de manche, diff colorisée (`Int.diffColor`). */
+/** Carte en-tête du Résumé : circuit + score de manche, diff colorisée (`Int.diffColor`). */
 @Composable
 private fun SummaryHeaderCard(state: AddTrackViewModel.State) {
-    val maps = listOfNotNull(state.intermissionSelected, state.mapSelected)
-    val lastMap = maps.lastOrNull()
     // Diff signé (hôte − adverse) = points de manche hôte − complément adverse. En 24p,
     // pas de diff par manche (l'adversaire est saisi ailleurs).
     val diff = (state.teamHostTrackScore ?: 0) - (state.teamOpponentScore ?: 0)
-    StatCard {
-        Row(horizontalArrangement = Arrangement.spacedBy(11.dp), verticalAlignment = Alignment.CenterVertically) {
-            lastMap?.let {
-                Image(
-                    painter = painterResource(it.picture),
-                    contentDescription = null,
-                    modifier = Modifier.width(64.dp).height(44.dp).clip(RoundedCornerShape(6.dp))
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                lastMap?.let {
-                    MKText(text = stringResource(it.label), font = Fonts.Bungee, textColor = Colors.white, fontSize = 15, textAlign = TextAlign.Start, maxLines = 2)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                    MKText(text = "${stringResource(R.string.addtrack_summary_score)} · ", textColor = Colors.white66, fontSize = 12)
-                    MKText(text = summaryScoreLabel(state), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
-                    // Diff colorisée (12p uniquement : en 24p, pas d'adverse par manche).
-                    if (!state.is24p) {
-                        MKText(
-                            text = "  (${state.trackDiff.orEmpty()})",
-                            font = Fonts.NunitoBD,
-                            textColor = diff.diffColor(),
-                            fontSize = 12
-                        )
-                    }
-                }
-            }
+    TrackHeaderCard(maps = state.trackMaps) {
+        MKText(text = "${stringResource(R.string.addtrack_summary_score)} · ", textColor = Colors.white66, fontSize = 12)
+        MKText(text = summaryScoreLabel(state), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 12)
+        // Diff colorisée (12p uniquement : en 24p, pas d'adverse par manche).
+        if (!state.is24p) {
+            MKText(
+                text = "  (${state.trackDiff.orEmpty()})",
+                font = Fonts.NunitoBD,
+                textColor = diff.diffColor(),
+                fontSize = 12
+            )
         }
     }
 }

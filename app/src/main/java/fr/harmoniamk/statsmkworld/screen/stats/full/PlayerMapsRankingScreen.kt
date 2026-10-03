@@ -22,6 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayedMap
+import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
@@ -103,15 +105,16 @@ fun PlayerMapsRankingScreen(
 
 /** Circuit → entrée de podium. [userId] non-null ⇒ position moyenne du joueur ; null ⇒ écart d'équipe. */
 private fun TrackStats.toPodiumEntry(userId: String?): PodiumEntry {
-    val map = map?.firstOrNull()
+    val displayedMap = map.orEmpty().displayedMap()
     val scoreLabel = if (userId != null) R.string.average_position_short else R.string.form_score
     val scoreValue = when {
         userId != null -> playerScore.pointsToPosition(false).firstOrNull()?.toString() ?: "-"
         else -> teamScore?.trackScoreToDiff(false) ?: "-"
     }
     return PodiumEntry(
-        labelRes = map?.label,
-        pictureRes = map?.picture,
+        labelRes = displayedMap?.label,
+        tag = map.orEmpty().displayedTag(),
+        pictureRes = displayedMap?.picture,
         stats = listOf(
             R.string.times_played_short to totalPlayed.toString(),
             R.string.form_winrate to (winRate ?: 0.0).toPercentString(),

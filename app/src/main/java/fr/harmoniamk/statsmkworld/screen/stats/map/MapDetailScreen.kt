@@ -14,6 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayedMap
+import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.toPercentString
@@ -63,7 +65,7 @@ fun MapDetailScreen(
             )
             else -> {
                 val mapStats = state.mapStats!!
-                val map = state.maps.firstOrNull()
+                val map = state.maps.displayedMap()
                 // Sélecteur Indiv/Équipe (rule 15 : composant partagé) — sur fond clair (onDark false).
                 MKSegmentedSelector(
                     items = listOf(
@@ -84,7 +86,8 @@ fun MapDetailScreen(
                             name = map?.label?.let { stringResource(it) } ?: "-",
                             subtitle = stringResource(R.string.map_detail_header, mapStats.trackPlayed),
                             color = Colors.purple,
-                            pictureRes = map?.picture
+                            pictureRes = map?.picture,
+                            tag = state.maps.displayedTag()
                         )
                     }
                     // 2. Performance (winrate de manche + V/N/D).

@@ -83,7 +83,8 @@ fun Eyebrow(text: String) {
 /**
  * En-tête de fiche : pastille + nom (Bungee) + sous-titre. [logo] = URL MKCentral déjà préfixée
  * (sinon pastille [color]) ; [pictureRes] (circuit) prioritaire sur [logo] ; [fallbackText] =
- * texte de la pastille sans logo/picture (initiales joueur / tag).
+ * texte de la pastille sans logo/picture (initiales joueur / tag). [tag] (circuit, #101) affiché
+ * en italique sous le nom.
  */
 @Composable
 fun StatHeaderCard(
@@ -92,7 +93,8 @@ fun StatHeaderCard(
     color: Color,
     logo: String? = null,
     pictureRes: Int? = null,
-    fallbackText: String? = null
+    fallbackText: String? = null,
+    tag: String? = null
 ) {
     StatCard {
         Row(horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -123,6 +125,9 @@ fun StatHeaderCard(
             }
             Column(Modifier.weight(1f)) {
                 MKText(text = name, font = Fonts.Bungee, textColor = Colors.white, fontSize = 17, textAlign = TextAlign.Start, maxLines = 2)
+                tag?.let {
+                    MKText(text = it, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = 12, textAlign = TextAlign.Start, maxLines = 1)
+                }
                 MKText(text = subtitle, textColor = Colors.white66, fontSize = 12, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 4.dp))
             }
         }

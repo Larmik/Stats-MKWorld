@@ -11,7 +11,7 @@ catégorie :
 
 | Dizaine | Catégorie | Fichiers |
 |---|---|---|
-| `1x` | **UI / Compose** | `10-ui-compose` (clés de liste) · `11-compose-state` (type de State, switch, wizard) · `12-ui-roster-display` (roster vs équipe, médaillon) · `13-ui-coherence-visuelle` (style établi, justesse des calculs, pourcentages) · `14-ui-back-onglets` (retour bottom-nav) · `16-ui-mutualiser-composants` (composant partagé, chercher l'existant, `MKButton`/segmented uniques) · `17-ui-bottombar-inset` (marge basse des pôles) |
+| `1x` | **UI / Compose** | `10-ui-compose` (clés de liste) · `11-compose-state` (type de State, switch, wizard) · `12-ui-roster-display` (roster vs équipe, médaillon) · `13-ui-coherence-visuelle` (style établi, justesse des calculs, pourcentages, hauteur de cellule texte, course avec intermission) · `14-ui-back-onglets` (retour bottom-nav) · `16-ui-mutualiser-composants` (composant partagé, chercher l'existant, `MKButton`/segmented uniques) · `17-ui-bottombar-inset` (marge basse des pôles) |
 | `2x` | **ViewModels** | `20-viewmodels` (ordre d'init, recherche à la saisie, pas de Context statique) · `21-vm-offload-compute` (calcul hors thread UI) |
 | `3x` | **Repositories / data sources / UseCases** | `30-repositories` (`suspend` vs `Flow`, clear hors boucle, pas d'UI, réseau par élément) · `31-mkworld-only` (domaine mkworld) · `32-usecase-vs-repository` (placement d'une logique) |
 | `4x` | **Build / release** | `40-build-release` (R8/Moshi, secrets et backup côté client) |

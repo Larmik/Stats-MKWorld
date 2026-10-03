@@ -80,6 +80,9 @@ class AddTrackViewModel @AssistedInject constructor(
         /** Le circuit est choisi → l'étape Intermission/Positions devient accessible. */
         val mapPicked: Boolean get() = mapSelected != null
 
+        /** Circuits de la course dans l'ordre de `WarTrack.index` : intermission (départ) puis circuit choisi (arrivée). */
+        val trackMaps: List<Maps> get() = listOfNotNull(intermissionSelected, mapSelected)
+
         /** Line-up complète (tous les joueurs ont une position) → le Résumé est accessible. */
         val positionsComplete: Boolean get() = players.isNotEmpty() && selectedPositions.size == players.size
 
@@ -298,7 +301,7 @@ class AddTrackViewModel @AssistedInject constructor(
             val shockList = state.value.shocks.map { Shock(it.key, it.value) }
             val track = WarTrack(
                 id = System.currentTimeMillis(),
-                index = listOfNotNull(state.value.intermissionSelected, state.value.mapSelected).map { it.ordinal.toString() },
+                index = state.value.trackMaps.map { it.ordinal.toString() },
                 positions = _state.value.selectedPositions.map { it.position },
                 shocks = shockList
             )

@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.extension.displayedMap
+import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
@@ -553,13 +555,14 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
     if (!hasAnyMap) return
     val scoreLabel = if (userId != null) R.string.average_position_short else R.string.form_score
     val toEntry: (fr.harmoniamk.statsmkworld.model.local.TrackStats) -> PodiumEntry = { track ->
-        val map = track.map?.firstOrNull()
+        val map = track.map.orEmpty().displayedMap()
         val scoreValue = when {
             userId != null -> track.playerScore.pointsToPosition(false).firstOrNull()?.toString() ?: "-"
             else -> track.teamScore?.trackScoreToDiff(false) ?: "-"
         }
         PodiumEntry(
             labelRes = map?.label,
+            tag = track.map.orEmpty().displayedTag(),
             pictureRes = map?.picture,
             stats = listOf(
                 R.string.times_played_short to track.totalPlayed.toString(),
