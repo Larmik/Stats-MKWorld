@@ -34,20 +34,22 @@ fun playerAvatarColor(id: String): Color = ((id.hashCode() and 0x7fffffff) % 32 
 /**
  * Ligne de liste générique (`.lrow` maquette) : carte sombre, pastille ronde (avatar [avatarUrl]
  * sinon [initials] sur [avatarColor]), titre + [titleTrailing], [subtitle], slot [trailing].
+ * [leading] remplace la pastille (ex. logo de tournoi, #103) ; initiales/couleur sont alors ignorées.
  *
  * Composant **partagé unique** (rule 16) entre le pôle Profil et le wizard AddWar, généralisé
  * par paramètres.
  */
 @Composable
 fun MKListRow(
-    initials: String,
-    avatarColor: Color,
     name: String,
+    initials: String = "",
+    avatarColor: Color = Colors.transparent,
     modifier: Modifier = Modifier,
     avatarUrl: String? = null,
     subtitle: String? = null,
     avatarSize: Dp = 34.dp,
     onClick: (() -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null,
     titleTrailing: (@Composable RowScope.() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null
 ) {
@@ -62,14 +64,17 @@ fun MKListRow(
         horizontalArrangement = Arrangement.spacedBy(11.dp)
     ) {
         // Médaillon joueur mutualisé (rule 16) : photo si dispo, initiales sinon.
-        PlayerMedallion(
-            initials = initials,
-            avatarColor = avatarColor,
-            avatarPath = avatarUrl,
-            size = avatarSize,
-            borderWidth = 2.dp,
-            borderColor = Colors.white.copy(alpha = 0.75f)
-        )
+        when (leading) {
+            null -> PlayerMedallion(
+                initials = initials,
+                avatarColor = avatarColor,
+                avatarPath = avatarUrl,
+                size = avatarSize,
+                borderWidth = 2.dp,
+                borderColor = Colors.white.copy(alpha = 0.75f)
+            )
+            else -> leading()
+        }
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 MKText(text = name, font = Fonts.NunitoBD, fontSize = 14, textColor = Colors.white, textAlign = TextAlign.Start, maxLines = 1)

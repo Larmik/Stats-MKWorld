@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.extension.filterByKind
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.flopExcludingTop
 import fr.harmoniamk.statsmkworld.extension.mergeWith
@@ -21,8 +22,10 @@ import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.MapDetails
 import fr.harmoniamk.statsmkworld.model.local.MapStats
+import fr.harmoniamk.statsmkworld.model.local.SeasonFilter
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
@@ -44,6 +47,7 @@ import kotlinx.coroutines.withContext
  * - [userId] non-null (`statsfull` d'un membre) ⇒ écran centré sur ce joueur, [showTabs] false
  *   (rendu Individuelles seul).
  * - [userId] null ⇒ joueur courant, [showTabs] true ⇒ onglets Individuelles / Équipe.
+ * - [initialKindFilter] : filtre Amicaux/Officiels hérité de l'écran parent (#103), défaut au pôle.
  *
  * 24p temporairement retiré (#37) : `is24p` figé à `false`.
  */
@@ -52,13 +56,18 @@ import kotlinx.coroutines.withContext
 class StatsFullViewModel @AssistedInject constructor(
     @Assisted("userId") val userId: String?,
     @Assisted val showTabs: Boolean,
+    @Assisted initialKindFilter: WarKindFilter,
     private val dataStoreRepository: DataStoreRepositoryInterface,
     private val databaseRepository: DatabaseRepositoryInterface
 ) : ViewModel() {
 
     @AssistedFactory
     interface Factory {
-        fun create(@Assisted("userId") userId: String?, showTabs: Boolean): StatsFullViewModel
+        fun create(
+            @Assisted("userId") userId: String?,
+            showTabs: Boolean,
+            initialKindFilter: WarKindFilter
+        ): StatsFullViewModel
     }
 
     /**
@@ -103,7 +112,9 @@ class StatsFullViewModel @AssistedInject constructor(
         // Filtre saison (#70) : `selectedSeasonNumber` null = tout l'historique, défaut = saison
         // en cours. Wars filtrées sur [start, end] avant tout calcul.
         val seasons: List<SeasonEntity> = listOf(),
-        val selectedSeasonNumber: Int? = null
+        val selectedSeasonNumber: Int? = null,
+        // Filtre Amicaux / Officiels (#103), appliqué avec la saison avant tout calcul.
+        val kindFilter: WarKindFilter = WarKindFilter()
     )
 
     /** Les 6 podiums adversaires (top/flop × occurrences/winrate/score) + la liste complète ([all], #67). */
@@ -118,17 +129,6 @@ class StatsFullViewModel @AssistedInject constructor(
         val all: List<RankingItem.OpponentRanking> = listOf()
     )
 
-    /**
-     * Sélection de saison (#70) hissée dans le VM (rule 11). [Default] → saison en cours ;
-     * [AllTime] → tout l'historique ; [Specific] → saison précise. Le défaut se résout après
-     * chargement des saisons (numéro pas connu d'avance).
-     */
-    sealed interface SeasonFilter {
-        data object Default : SeasonFilter
-        data object AllTime : SeasonFilter
-        data class Specific(val number: Int) : SeasonFilter
-    }
-
     // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
     private val is24p = false
 
@@ -138,37 +138,40 @@ class StatsFullViewModel @AssistedInject constructor(
 
     // Sélection de saison (#70) : `combine` avec les wars → recompute à la volée.
     private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
+    private val _kindFilter = MutableStateFlow(initialKindFilter)
 
-    private val _state = MutableStateFlow(State())
+    private val _state = MutableStateFlow(State(kindFilter = initialKindFilter))
 
     // Dernier State complet calculé (#73/#91 pt.4) : `onSeasonSelected` pose `loading = true`
     // dessus (pas sur le `_state` vide) pour ne pas faire disparaître le header ni les données.
     @Volatile
-    private var lastComputedState: State = State()
+    private var lastComputedState: State = State(kindFilter = initialKindFilter)
 
     val state = compute()
         .mergeWith(_state)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State(kindFilter = initialKindFilter))
 
     /** Sélection de saison (`number` null = tout l'historique). Pose `loading` sur le dernier
      * state complet (via `_state`) pour afficher le loader sans vider le header (#91 pt.4)
      * pendant le compute off-main (#73). */
     fun onSeasonSelected(number: Int?) {
         _state.value = lastComputedState.copy(loading = true)
-        _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
+        _seasonFilter.value = SeasonFilter.of(number)
     }
 
-    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
+    /** Filtre Amicaux / Officiels (#103) : même chargement que la saison (#91 pt.4). */
+    fun onKindFilterChange(filter: WarKindFilter) {
+        _state.value = lastComputedState.copy(loading = true, kindFilter = filter)
+        _kindFilter.value = filter
+    }
+
+    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons(), _kindFilter) { warEntities, seasonFilter, seasons, kindFilter ->
             // Saisons observées en Flow (#73). Résolution de la saison effective (défaut = en cours).
-            val currentSeason = seasons.lastOrNull { it.end == null }
-            val activeSeason = when (seasonFilter) {
-                is SeasonFilter.AllTime -> null
-                is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
-                is SeasonFilter.Default -> currentSeason
-            }
-            // Filtre saison appliqué avant tout calcul (sur war.id).
-            val seasonWars = warEntities.filterBySeason(activeSeason)
-            computeState(seasonWars, seasons, activeSeason?.number)
+            val activeSeason = seasonFilter.resolve(seasons)
+            // Filtres saison (sur war.id) et Amicaux/Officiels (#103) appliqués avant tout calcul.
+            val filteredWars = warEntities.filterBySeason(activeSeason).filterByKind(kindFilter)
+            computeState(filteredWars, seasons, activeSeason?.number)
+                .copy(kindFilter = kindFilter)
                 .also { lastComputedState = it }  // dernier state complet pour `onSeasonSelected` (#91 pt.4)
         }
 

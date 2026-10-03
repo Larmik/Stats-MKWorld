@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
@@ -43,7 +44,9 @@ class WarDetailsViewModel @AssistedInject constructor(
         val teamHost: TeamEntity? = null,
         val teamOpponent: List<TeamEntity>? = null,
         val players: List<PlayerScore> = listOf(),
-        val roster: MKCTeamRoster? = null
+        val roster: MKCTeamRoster? = null,
+        // Tournoi officiel (#103) ; null = amical (pas de badge).
+        val tournament: Tournament? = null
     )
 
     private val _state = MutableStateFlow(State())
@@ -62,7 +65,8 @@ class WarDetailsViewModel @AssistedInject constructor(
                     tag = roster?.tag ?: teamHost.tag
                 ),
                 teamOpponent = teamOpponents,
-                roster = roster
+                roster = roster,
+                tournament = Tournament.fromId(details.war.tournamentId)
             )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)

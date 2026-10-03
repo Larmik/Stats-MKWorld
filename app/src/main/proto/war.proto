@@ -11,6 +11,7 @@ message WarProto {
     repeated WarTrackProto tracks = 4;
     repeated WarPenaltyProto penalties = 5;
     repeated WarScoreProto scores = 6;
+    string tournament_id = 7;
 }
 
 message WarTrackProto {

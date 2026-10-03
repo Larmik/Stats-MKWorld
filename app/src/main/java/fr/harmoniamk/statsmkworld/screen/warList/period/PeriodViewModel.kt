@@ -2,13 +2,18 @@ package fr.harmoniamk.statsmkworld.screen.warList.period
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.extension.filterByKind
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.withPlayersList
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -19,20 +24,26 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
 
 /**
  * ViewModel de « Voir par période » (#80). Filtre les wars de l'équipe (roster hôte, 12p) dont
  * le timestamp (`War.id`, epoch ms) tombe dans `[dateA, dateB]`, produit l'historique et le
  * classement des joueurs de la période. Logique mono-consommateur → dans le VM (rule 32).
+ * [initialKindFilter] : filtre Amicaux/Officiels hérité du pôle Wars (#103).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class PeriodViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = PeriodViewModel.Factory::class)
+class PeriodViewModel @AssistedInject constructor(
+    @Assisted initialKindFilter: WarKindFilter,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val firebaseRepository: FirebaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(initialKindFilter: WarKindFilter): PeriodViewModel
+    }
 
     /**
      * Agrégat par joueur sur la période : [warsPlayed] (wars jouées), [participationRate]
@@ -54,14 +65,17 @@ class PeriodViewModel @Inject constructor(
         // Wars de la plage (12p, roster hôte), triées récentes → anciennes.
         val wars: List<WarDetails> = listOf(),
         // Classement des joueurs de la période, trié par nb de wars jouées (décroissant).
-        val players: List<PlayerPeriodStats> = listOf()
+        val players: List<PlayerPeriodStats> = listOf(),
+        // Filtre Amicaux / Officiels (#103).
+        val kindFilter: WarKindFilter = WarKindFilter()
     )
 
     // Sélection de plage : null tant que la saison n'est pas résolue (sème dateA/dateB une fois).
     private val _range = MutableStateFlow<Pair<Long, Long>?>(null)
-    private val _state = MutableStateFlow(State())
+    private val _kindFilter = MutableStateFlow(initialKindFilter)
+    private val _state = MutableStateFlow(State(kindFilter = initialKindFilter))
 
-    val state = combine(databaseRepository.getWars(), _range) { warEntities, range ->
+    val state = combine(databaseRepository.getWars(), _range, _kindFilter) { warEntities, range, kindFilter ->
         val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
         val rosterId = dataStoreRepository.mkcPlayer.firstOrNull()
             ?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
@@ -78,8 +92,9 @@ class PeriodViewModel @Inject constructor(
         }
         val (dateA, dateB) = effectiveRange
 
-        // 12p only + roster hôte + plage de dates (sur le `war.id` brut, epoch ms).
+        // Amicaux/Officiels (#103) + 12p only + roster hôte + plage de dates (sur le `war.id` brut, epoch ms).
         val periodWars = warEntities
+            .filterByKind(kindFilter)
             .filter { it.teamOpponent.size == 1 }
             .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
             .filter { it.id.toLongOrNull()?.let { id -> id in dateA..dateB } == true }
@@ -124,7 +139,8 @@ class PeriodViewModel @Inject constructor(
             dateA = dateA,
             dateB = dateB,
             wars = warDetails,
-            players = players
+            players = players,
+            kindFilter = kindFilter
         )
     }
         .mergeWith(_state)
@@ -133,5 +149,10 @@ class PeriodViewModel @Inject constructor(
     /** Sélection utilisateur d'une plage (dateA ≤ dateB garanti par l'appelant / borné ici). */
     fun onRangeSelected(dateA: Long, dateB: Long) {
         _range.value = minOf(dateA, dateB) to maxOf(dateA, dateB)
+    }
+
+    /** Filtre Amicaux / Officiels (#103). */
+    fun onKindFilterChange(filter: WarKindFilter) {
+        _kindFilter.value = filter
     }
 }

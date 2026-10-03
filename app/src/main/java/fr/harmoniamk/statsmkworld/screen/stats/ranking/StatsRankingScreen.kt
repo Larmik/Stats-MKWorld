@@ -38,6 +38,7 @@ import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
+import fr.harmoniamk.statsmkworld.ui.MKWarKindFilterRow
 import fr.harmoniamk.statsmkworld.ui.cells.playerAvatarColor
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
@@ -118,6 +119,10 @@ fun StatsRankingScreen(
         )
         Spacer(Modifier.height(11.dp))
 
+        // Filtre Amicaux / Officiels (#103), propagé aux fiches ouvertes depuis la liste.
+        MKWarKindFilterRow(filter = state.kindFilter, onFilterChange = viewModel::onKindFilterChange)
+        Spacer(Modifier.height(11.dp))
+
         // Curseur « occurrences minimum » (min = 1, max = plus haut compteur de l'onglet).
         MinOccurrencesSlider(
             value = state.minOccurrences,
@@ -146,13 +151,20 @@ fun StatsRankingScreen(
                     RankingTab.PLAYERS -> state.playerSections.forEach { section ->
                         item(key = "section-${section.titleRes}") { SectionHeader(stringResource(section.titleRes)) }
                         podiumRows(section.players.map { it.toPodiumEntry() }, contentColor = Colors.white) { player ->
-                            onStats(StatsType.PlayerStats(player.player.id, is24p = is24p))
+                            onStats(StatsType.PlayerStats(player.player.id, is24p = is24p, kindFilter = state.kindFilter))
                         }
                     }
 
                     RankingTab.OPPONENTS -> podiumRows(state.opponents.map { it.toPodiumEntry() }, contentColor = Colors.white) { opponent ->
                         // Propage la saison active (#91 pt.5) → la fiche détail est filtrée comme le classement.
-                        onStats(StatsType.OpponentStats(teamId = opponent.team.id, is24p = is24p, seasonNumber = state.selectedSeasonNumber))
+                        onStats(
+                            StatsType.OpponentStats(
+                                teamId = opponent.team.id,
+                                is24p = is24p,
+                                seasonNumber = state.selectedSeasonNumber,
+                                kindFilter = state.kindFilter
+                            )
+                        )
                     }
 
                     RankingTab.TRACKS -> podiumRows(state.tracks.map { it.toPodiumEntry(is24p) }, contentColor = Colors.white) { track ->
@@ -160,8 +172,9 @@ fun StatsRankingScreen(
                             StatsType.MapStats(
                                 trackIndex = track.stats.map?.map { it.ordinal },
                                 is24p = is24p,
-                                // Propage la saison active (#91 pt.5).
-                                seasonNumber = state.selectedSeasonNumber
+                                // Propage la saison active (#91 pt.5) et le filtre Amicaux/Officiels (#103).
+                                seasonNumber = state.selectedSeasonNumber,
+                                kindFilter = state.kindFilter
                             )
                         )
                     }

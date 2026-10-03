@@ -12,7 +12,9 @@ data class DatastoreWar(
     val teamOpponent: List<String>,
     val tracks: List<WarTrack>,
     val penalties: List<WarPenalty>,
-    val scores: List<WarScore>
+    val scores: List<WarScore>,
+    // Tournoi (#103) : indispensable pour que les `copy()` + `writeCurrentWar` en cours de war ne l'effacent pas.
+    val tournamentId: String? = null
 ) {
     var name: String? = null
 
@@ -22,7 +24,8 @@ data class DatastoreWar(
         teamOpponent = war.teamOpponent,
         tracks = war.tracks,
         penalties = war.penalties,
-        scores = war.scores
+        scores = war.scores,
+        tournamentId = war.tournamentId
     )
 
     constructor(proto: WarProto) : this(
@@ -37,7 +40,9 @@ data class DatastoreWar(
             .map { WarPenalty(it) },
         scores = proto.scoresList
             .map { DatastoreWarScore(it) }
-            .map { WarScore(it) }
+            .map { WarScore(it) },
+        // proto3 : chaîne vide = champ absent → amical.
+        tournamentId = proto.tournamentId.takeIf { it.isNotEmpty() }
     )
 
     val proto: WarProto
@@ -57,6 +62,7 @@ data class DatastoreWar(
             scores.forEach {
                 builder.addScores(DatastoreWarScore(it).proto)
             }
+            tournamentId?.let { builder.setTournamentId(it) }
             return builder.build()
         }
 }

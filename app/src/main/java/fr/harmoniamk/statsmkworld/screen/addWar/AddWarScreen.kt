@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -40,6 +41,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -49,6 +51,7 @@ import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKStepper
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
+import fr.harmoniamk.statsmkworld.ui.TournamentBadge
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRow
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowCheck
 import fr.harmoniamk.statsmkworld.ui.cells.MKListRowChevron
@@ -140,11 +143,15 @@ fun AddWarScreen(
             else -> RecapStep(
                 state = state,
                 onPrevious = { viewModel.onStepChange(1) },
+                onTournamentSelected = viewModel::onTournamentSelected,
                 onStart = viewModel::createWar
             )
         }
     }
 }
+
+// Emplacement du logo des lignes de tournoi du Récap (logos larges, libellés alignés).
+private val TournamentLogoWidth = 72.dp
 
 /** Initiales (2 lettres) pour une pastille d'avatar. */
 private fun initialsOf(name: String): String = name.trim()
@@ -286,13 +293,15 @@ private fun ColumnScope.PlayersStep(
 }
 
 /**
- * Étape 3 — Récap : adversaire(s) (nom+tag roster, avatar équipe, rule 12) et 6 joueurs
- * retenus, puis « Démarrer la war » ([onStart]). « Précédent » revient aux Joueurs.
+ * Étape 3 — Récap : adversaire(s) (nom+tag roster, avatar équipe, rule 12), tournoi optionnel
+ * (#103, « Aucun (amical) » par défaut) et 6 joueurs retenus, puis « Démarrer la war » ([onStart]).
+ * « Précédent » revient aux Joueurs.
  */
 @Composable
 private fun ColumnScope.RecapStep(
     state: AddWarViewModel.State,
     onPrevious: () -> Unit,
+    onTournamentSelected: (Tournament?) -> Unit,
     onStart: () -> Unit
 ) {
     LazyColumn(
@@ -309,6 +318,32 @@ private fun ColumnScope.RecapStep(
                 avatarUrl = preview.logo?.let { "https://mkcentral.com$it" },
                 name = preview.name,
                 subtitle = preview.tag
+            )
+        }
+
+        // Tournoi (#103) : choix unique, fixé à la création (une war terminée n'est plus modifiable).
+        item { Eyebrow(stringResource(R.string.addwar_recap_tournament)) }
+        item(key = "tournament-none") {
+            MKListRow(
+                modifier = Modifier.fillMaxWidth(),
+                name = stringResource(R.string.tournament_none),
+                // Amical = pas de badge ; slot vide pour aligner les libellés sur les logos.
+                leading = { Spacer(Modifier.width(TournamentLogoWidth)) },
+                onClick = { onTournamentSelected(null) },
+                trailing = { MKListRowCheck(selected = state.tournament == null) }
+            )
+        }
+        items(Tournament.entries, key = { it.name }) { tournament ->
+            MKListRow(
+                modifier = Modifier.fillMaxWidth(),
+                name = stringResource(tournament.label),
+                leading = {
+                    Box(Modifier.width(TournamentLogoWidth), contentAlignment = Alignment.Center) {
+                        TournamentBadge(tournament = tournament, height = 24.dp)
+                    }
+                },
+                onClick = { onTournamentSelected(tournament) },
+                trailing = { MKListRowCheck(selected = state.tournament == tournament) }
             )
         }
 

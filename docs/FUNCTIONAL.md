@@ -157,6 +157,18 @@ De haut en bas, tu y trouves :
 
 En haut de l'écran, tu retrouves la **loupe** (vers l'Annuaire) et le **menu de saison** (pour filtrer tout le tableau de bord sur une saison précise).
 
+### Wars amicales et wars officielles
+
+Une war peut être rattachée à un **tournoi officiel** (Atlas League, Low-Div Cup, MKCentral Frontier, EuroLeague) au moment de sa création ; sinon elle est **amicale**. Les wars enregistrées avant cette fonctionnalité sont toutes amicales.
+
+Sous les sélecteurs de l'Accueil, des Wars, des Stats, des Classements et de « Voir par période », deux cases **« Amicaux »** et **« Officiels »**, **cochées par défaut**, filtrent toutes les données de l'écran :
+
+- les deux cochées : toutes les wars ;
+- **Amicaux** seule : uniquement les wars sans tournoi ;
+- **Officiels** seule : uniquement les wars de tournoi.
+
+Il est impossible de tout décocher : la dernière case cochée reste cochée. Le filtre n'est **pas mémorisé** : il revient à « les deux cochées » quand tu rouvres un pôle. En revanche, un écran ouvert depuis un écran filtré (fiche d'un joueur, d'un adversaire ou d'un circuit, « voir tout », historique filtré sur un joueur, « Voir par période ») **reprend le filtre** de l'écran d'origine.
+
 ---
 
 ## 6. Le pôle Wars — tes matchs
@@ -170,7 +182,8 @@ En haut de l'écran, le titre indique le **nombre total de wars**. À droite, un
 L'écran propose :
 
 - **Des filtres de résultat** : « Tous » (par défaut), « Victoires », « Nuls », « Défaites ». Ils affinent la liste sans quitter l'écran.
-- **L'historique complet** de tes wars, **regroupé par mois** et trié de la plus récente à la plus ancienne. Les deux formats (12 et 24 joueurs) apparaissent ensemble. Appuie sur une war pour ouvrir son **détail**.
+- **Le filtre « Amicaux » / « Officiels »** (cf. [chapitre 5](#wars-amicales-et-wars-officielles)).
+- **L'historique complet** de tes wars, **regroupé par mois** et trié de la plus récente à la plus ancienne. Les deux formats (12 et 24 joueurs) apparaissent ensemble. Une war de tournoi affiche le **logo du tournoi** à côté de sa date. Appuie sur une war pour ouvrir son **détail**.
 - **Un menu de saison** en haut pour n'afficher que les wars d'une saison donnée. Le compteur de wars s'ajuste à ta sélection.
 
 ### Voir par période
@@ -186,6 +199,7 @@ Par défaut, la période couvre la **saison en cours**, mais tu peux choisir n'i
 
 Depuis l'historique, appuie sur une war pour ouvrir son détail :
 
+- **Le tournoi** (logo + nom) si la war est officielle ; rien pour une war amicale.
 - **La carte de score** : ton équipe face à l'adversaire, avec la **différence de score** au centre (verte si tu gagnes, rouge sinon), les **pénalités** éventuelles de chaque camp et le **total d'éclairs** de la war.
 - **Le classement des joueurs** : chaque joueur avec ses points, **classés du meilleur au moins bon**, et son nombre d'éclairs le cas échéant.
 - **Deux boutons** : **« Générer le Tab (PDF) »** (uniquement en 12 joueurs) pour créer un tableau de résultats à partager, et **« Voir l'adversaire »** pour ouvrir sa fiche détaillée.
@@ -322,9 +336,10 @@ Depuis le pôle **Wars**, appuie sur le bouton **« + » (Créer une war)** en h
 ### Étape 3 — Récapitulatif
 
 - Vérifie l'**adversaire** et ta **composition**.
+- Choisis éventuellement le **tournoi** : « Aucun (amical) » est sélectionné par défaut, ou l'un des tournois officiels (avec son logo). Ce choix est **définitif** : une war terminée ne peut plus être modifiée, tournoi compris.
 - Appuie sur **« Démarrer la war »** pour lancer le match.
 
-> **Bon à savoir :** si tu reviens en arrière dans l'assistant, la sélection de l'étape que tu rejoins est **remise à zéro** (revenir tout au début efface l'adversaire *et* la composition). C'est voulu : quand tu recules, c'est pour refaire ton choix.
+> **Bon à savoir :** si tu reviens en arrière dans l'assistant, la sélection de l'étape que tu rejoins est **remise à zéro** (revenir tout au début efface l'adversaire *et* la composition ; quitter le récapitulatif efface aussi le tournoi choisi). C'est voulu : quand tu recules, c'est pour refaire ton choix.
 
 ### La war en cours
 

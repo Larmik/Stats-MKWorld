@@ -278,6 +278,14 @@
     <string name="addwar_progress">%1$d / %2$d</string>
     <string name="addwar_progress_hint">Sélectionne les 6 joueurs de ton roster qui participent à la war.</string>
     <string name="addwar_your_roster">Ton roster</string>
+    <string name="addwar_recap_tournament">Tournoi</string>
+    <string name="tournament_none">Aucun (amical)</string>
+    <string name="tournament_atlas_league">Atlas League</string>
+    <string name="tournament_low_div_cup">Low-Div Cup</string>
+    <string name="tournament_mkc_frontier">MKCentral Frontier</string>
+    <string name="tournament_euroleague">EuroLeague</string>
+    <string name="war_kind_friendly">Amicaux</string>
+    <string name="war_kind_official">Officiels</string>
     <string name="addwar_previous">Précédent</string>
     <string name="addwar_start_war">Démarrer la war</string>
     <!-- AddTrack wizard — écran Ajouter une course (ticket #44) -->

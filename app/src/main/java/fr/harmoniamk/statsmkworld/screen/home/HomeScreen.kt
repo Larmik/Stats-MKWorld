@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.screen.profile.ProfileScreen
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen
@@ -49,16 +50,17 @@ fun HomeScreen(
     onAddWar: (Boolean) -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
-    // Ouvre « Voir par période » (#80) depuis le pôle Wars → graphe racine.
-    onPeriodView: () -> Unit,
+    // Ouvre « Voir par période » (#80) depuis le pôle Wars → graphe racine. Les callbacks vers
+    // un écran enfant portent le filtre Amicaux/Officiels du pôle d'origine (#103).
+    onPeriodView: (WarKindFilter) -> Unit,
     onStats: (StatsType) -> Unit,
     onSearch: () -> Unit,
     // Historique filtré sur « me » sur le graphe racine : « Résultats → » des Stats (#65), « Voir tout » Accueil vue Moi (#98).
-    onResults: () -> Unit,
+    onResults: (WarKindFilter) -> Unit,
     // « Classement entier » Circuits/Adversaires du pôle Stats → classement scopé (#67 round 3).
     // `isTeam` = portée courante (Équipe vs Individuel).
-    onMapsRanking: (isTeam: Boolean) -> Unit,
-    onOpponentsRanking: (isTeam: Boolean) -> Unit,
+    onMapsRanking: (isTeam: Boolean, kindFilter: WarKindFilter) -> Unit,
+    onOpponentsRanking: (isTeam: Boolean, kindFilter: WarKindFilter) -> Unit,
     onDisconnect: () -> Unit,
     onDebug: () -> Unit
 ) {
@@ -123,9 +125,9 @@ fun HomeScreen(
                         onWarDetailsClick = onWarDetailsClick,
                         // Vue Moi → historique filtré « me » (graphe racine, comme « Résultats → » des Stats) ;
                         // vue Équipe → pôle Wars (#98).
-                        onWarListClick = { isPlayer ->
+                        onWarListClick = { isPlayer, kindFilter ->
                             when (isPlayer) {
-                                true -> onResults()
+                                true -> onResults(kindFilter)
                                 else -> navController.navigate("Home/WarList")
                             }
                         },
@@ -138,7 +140,7 @@ fun HomeScreen(
                         viewModel = hiltViewModel(
                             key = "warlist-all",
                             creationCallback = { factory: WarListViewModel.Factory ->
-                                factory.create(userId = null)
+                                factory.create(userId = null, initialKindFilter = WarKindFilter())
                             }
                         ),
                         onWarDetailsClick = onWarDetailsClick,
@@ -153,7 +155,7 @@ fun HomeScreen(
                         viewModel = hiltViewModel(
                             key = "me-stats",
                             creationCallback = { factory: StatsFullViewModel.Factory ->
-                                factory.create(userId = null, showTabs = true)
+                                factory.create(userId = null, showTabs = true, initialKindFilter = WarKindFilter())
                             }
                         ),
                         onResults = onResults,

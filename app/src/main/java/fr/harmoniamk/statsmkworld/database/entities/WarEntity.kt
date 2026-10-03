@@ -20,6 +20,8 @@ data class WarEntity(
     @ColumnInfo(name = "warTracks") val warTracks: List<WarTrack>?,
     @ColumnInfo(name = "penalties") val penalties: List<WarPenalty>?,
     @ColumnInfo(name = "scores") val scores: List<WarScore>?,
+    // Tournoi officiel (#103) ; null = amical.
+    @ColumnInfo(name = "tournamentId") val tournamentId: String? = null,
 ) {
     constructor(war: War): this(
         id = war.id.toString(),
@@ -28,7 +30,8 @@ data class WarEntity(
         createdDate = Date(war.id).displayedString("dd/MM/yyyy"),
         warTracks = war.tracks,
         penalties = war.penalties,
-        scores = war.scores
+        scores = war.scores,
+        tournamentId = war.tournamentId
     )
 
     fun hasPlayer(playerId: String?): Boolean {

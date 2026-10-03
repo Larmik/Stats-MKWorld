@@ -20,7 +20,9 @@ data class War(
      * (DataStore) et de WarEntity (Room). Vaut 0L pour une war legacy ou pour
      * une war reconstruite depuis le DataStore / Room.
      */
-    val playerHostId: Long = 0L
+    val playerHostId: Long = 0L,
+    /** Tournoi officiel ([fr.harmoniamk.statsmkworld.model.local.Tournament.name]) ; `null` = war amicale (#103). Fixé à la création. */
+    val tournamentId: String? = null
 ): Serializable, Parcelable {
 
     constructor(war: DatastoreWar) : this(
@@ -29,7 +31,8 @@ data class War(
         teamOpponent = war.teamOpponent,
         tracks = war.tracks,
         penalties = war.penalties,
-        scores = war.scores
+        scores = war.scores,
+        tournamentId = war.tournamentId
     )
 
     constructor(entity: WarEntity): this(
@@ -38,7 +41,8 @@ data class War(
         teamOpponent = entity.teamOpponent,
         tracks = entity.warTracks.orEmpty(),
         penalties = entity.penalties.orEmpty(),
-        scores = entity.scores.orEmpty()
+        scores = entity.scores.orEmpty(),
+        tournamentId = entity.tournamentId
     )
 
     fun hasPlayer(playerId: String?): Boolean {

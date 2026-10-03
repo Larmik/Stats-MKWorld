@@ -22,9 +22,9 @@ import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import kotlinx.coroutines.FlowPreview
 
 @TypeConverters(value = [WarTrackConverter::class, WarPositionConverter::class, WarPenaltyConverter::class, StringConverter::class, WarScoreConverter::class, RosterInfoConverter::class])
-// v7 : PlayerEntity.avatar. v8 : SeasonEntity (#30).
+// v7 : PlayerEntity.avatar. v8 : SeasonEntity (#30). v9 : WarEntity.tournamentId (#103).
 // fallbackToDestructiveMigration → perte des données locales acceptée (re-synchro).
-@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class, SeasonEntity::class], version = 8)
+@Database(entities = [WarEntity::class, PlayerEntity::class, TeamEntity::class, SeasonEntity::class], version = 9)
 abstract class MKDatabase : RoomDatabase() {
 
     abstract fun playerDao(): PlayerDao

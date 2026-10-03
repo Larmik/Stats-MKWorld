@@ -13,6 +13,7 @@ import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.firebase.WarScore
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamRoster
 import fr.harmoniamk.statsmkworld.model.selectors.PlayerSelector
@@ -80,7 +81,9 @@ class AddWarViewModel @AssistedInject constructor(
         val expandedRosters: List<MKCTeamRoster> = listOf(),
         // Photos MKCentral des joueurs (playerId → url préfixée), résolues une fois en
         // parallèle ; initiales en fallback tant qu'absentes (rule 12).
-        val playerAvatars: Map<String, String> = emptyMap()
+        val playerAvatars: Map<String, String> = emptyMap(),
+        // Tournoi choisi au Récap (#103) ; null = war amicale (défaut).
+        val tournament: Tournament? = null
     ) {
         /** Nombre d'adversaires attendus selon le mode (1 en 12p, 3 en 24p). */
         val opponentCount: Int get() = if (is24p) 3 else 1
@@ -198,19 +201,26 @@ class AddWarViewModel @AssistedInject constructor(
             playerList = state.value.playerList.mapValues { (_, list) ->
                 list.map { it.copy(isSelected = false) }
             },
-            buttonEnabled = false
+            buttonEnabled = false,
+            tournament = null
         )
     }
 
-    /** Remet la line-up à zéro (retour arrière vers l'étape Joueurs). */
+    /** Remet la line-up et le tournoi du Récap à zéro (retour arrière vers l'étape Joueurs). */
     private fun resetPlayerSelection() {
         _state.value = state.value.copy(
             step = 1,
             playerList = state.value.playerList.mapValues { (_, list) ->
                 list.map { it.copy(isSelected = false) }
             },
-            buttonEnabled = false
+            buttonEnabled = false,
+            tournament = null
         )
+    }
+
+    /** Tournoi choisi au Récap (`null` = amical). */
+    fun onTournamentSelected(tournament: Tournament?) {
+        _state.value = state.value.copy(tournament = tournament)
     }
 
     /** Replie le sélecteur de roster inline éventuellement déplié (étape 1). */
@@ -349,7 +359,8 @@ class AddWarViewModel @AssistedInject constructor(
                 teamOpponent = opponents,
                 tracks = listOf(),
                 penalties = listOf(),
-                scores = teams.map { WarScore(teamId = it, score = 0) }
+                scores = teams.map { WarScore(teamId = it, score = 0) },
+                tournamentId = currentState.tournament?.name
             )
             val team = dataStoreRepository.mkcTeam.firstOrNull() ?: return@launch
             _state.value.playerList.flatMap { it.value }.filter { it.isSelected }.forEach {

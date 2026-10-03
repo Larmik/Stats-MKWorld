@@ -1,6 +1,7 @@
 package fr.harmoniamk.statsmkworld.screen.stats
 
 import fr.harmoniamk.statsmkworld.R
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import java.io.Serializable
 
 /**
@@ -9,7 +10,7 @@ import java.io.Serializable
  *
  * Émis par [fr.harmoniamk.statsmkworld.screen.stats.ranking.StatsRankingScreen] via le
  * callback `onStats`, puis routé par [fr.harmoniamk.statsmkworld.screen.RootScreen] vers
- * l'écran dédié correspondant (`Statsfull/{userId}`, `Opponent/…`, `Map/…`).
+ * l'écran dédié correspondant (`Statsfull/{userId}/{kind}`, `Opponent/…`, `Map/…`).
  *
  * `Serializable` car transporté via `savedStateHandle` de la navigation Compose.
  *
@@ -21,6 +22,9 @@ import java.io.Serializable
  * @property title Ressource de libellé de la portée (titre de la fiche).
  * @property is24PEnabled `true` si la portée cible les wars 24 joueurs (3 adversaires),
  *   `false` pour le mode 12 joueurs (1v1). Sert au filtrage des wars par mode.
+ *
+ * Chaque portée porte le `kindFilter` Amicaux/Officiels du classement d'origine (#103), propagé
+ * en segment de route à la fiche.
  */
 sealed class StatsType(val title: Int, val is24PEnabled: Boolean) : Serializable {
 
@@ -29,7 +33,11 @@ sealed class StatsType(val title: Int, val is24PEnabled: Boolean) : Serializable
      * @property userId Identifiant MKCentral du joueur ciblé.
      * @property is24p Portée 24 joueurs si `true`.
      */
-    class PlayerStats(val userId: String, val is24p: Boolean) :
+    class PlayerStats(
+        val userId: String,
+        val is24p: Boolean,
+        val kindFilter: WarKindFilter = WarKindFilter()
+    ) :
         StatsType(R.string.statistiques_du_joueur, is24p)
 
     /**
@@ -44,7 +52,8 @@ sealed class StatsType(val title: Int, val is24PEnabled: Boolean) : Serializable
         val teamId: String,
         val userId: String? = null,
         val is24p: Boolean,
-        val seasonNumber: Int? = null
+        val seasonNumber: Int? = null,
+        val kindFilter: WarKindFilter = WarKindFilter()
     ) : StatsType(R.string.statistiques_de_l_adversaire, is24p)
 
     /**
@@ -60,6 +69,7 @@ sealed class StatsType(val title: Int, val is24PEnabled: Boolean) : Serializable
         val teamId: String? = null,
         val trackIndex: List<Int>? = null,
         val is24p: Boolean,
-        val seasonNumber: Int? = null
+        val seasonNumber: Int? = null,
+        val kindFilter: WarKindFilter = WarKindFilter()
     ) : StatsType(R.string.statistiques_du_circuit, is24p)
 }

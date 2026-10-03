@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.opponentTeams
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -38,7 +39,9 @@ class WarCellViewModel @AssistedInject constructor(
         val date: String? = null,
         val mapsWon: Int? = null,
         val rosterName: String? = null,
-        val rosterId: String? = null
+        val rosterId: String? = null,
+        // Tournoi officiel (#103) ; null = amical (pas de badge).
+        val tournament: Tournament? = null
     )
 
     val state = dataStoreRepository.mkcTeam
@@ -59,7 +62,8 @@ class WarCellViewModel @AssistedInject constructor(
                 date = Date(details.war.id).displayedString("dd/MM/yyyy"),
                 mapsWon = mapsWon,
                 rosterName = rosterName,
-                rosterId = rosterId.toString()
+                rosterId = rosterId.toString(),
+                tournament = Tournament.fromId(details.war.tournamentId)
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), State())
 

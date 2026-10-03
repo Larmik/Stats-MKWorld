@@ -48,6 +48,7 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -55,6 +56,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.MKWarKindFilterRow
 import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
@@ -68,8 +70,9 @@ fun WelcomeScreen(
     onTeamProfile: () -> Unit,
     onCurrentWar: () -> Unit,
     onWarDetailsClick: (WarDetails) -> Unit,
-    // `isPlayer` = vue Moi : historique filtré sur le joueur courant (#98).
-    onWarListClick: (isPlayer: Boolean) -> Unit,
+    // `isPlayer` = vue Moi : historique filtré sur le joueur courant (#98), qui hérite du
+    // filtre Amicaux/Officiels courant (#103).
+    onWarListClick: (isPlayer: Boolean, kindFilter: WarKindFilter) -> Unit,
     onSearch: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -103,6 +106,12 @@ fun WelcomeScreen(
                     0 -> state.value.playerRecentResults
                     else -> state.value.teamRecentResults
                 }
+                // Filtre Amicaux / Officiels (#103), sous le sélecteur de saison.
+                MKWarKindFilterRow(
+                    filter = state.value.kindFilter,
+                    onFilterChange = viewModel::onKindFilterChange
+                )
+                Spacer(Modifier.height(11.dp))
                 LazyColumn(
                     Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(11.dp)
@@ -174,7 +183,7 @@ fun WelcomeScreen(
                                                 font = Fonts.NunitoBD,
                                                 textColor = Colors.yellow,
                                                 fontSize = 13,
-                                                modifier = Modifier.clickable { onWarListClick(profileIndex == 0) }
+                                                modifier = Modifier.clickable { onWarListClick(profileIndex == 0, state.value.kindFilter) }
                                             )
                                         }
                                     }

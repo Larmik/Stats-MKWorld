@@ -4,13 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
+import fr.harmoniamk.statsmkworld.extension.filterByKind
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.local.SeasonFilter
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -55,35 +58,24 @@ class WelcomeViewModel @Inject constructor(
         val playerRecentResults: List<WarDetails> = listOf(),
         // Filtre par saison (#70) : liste + sélection (null = tout, défaut = saison en cours).
         val seasons: List<SeasonEntity> = listOf(),
-        val selectedSeasonNumber: Int? = null
+        val selectedSeasonNumber: Int? = null,
+        // Filtre Amicaux / Officiels (#103), non mémorisé (écran racine → défaut).
+        val kindFilter: WarKindFilter = WarKindFilter()
     )
-
-    /**
-     * Sélection de saison (#70), même modèle que Stats/Classements/Wars. [Default] = saison
-     * en cours (résolue après chargement) ; [AllTime] = tout l'historique ; [Specific] = passée.
-     */
-    sealed interface SeasonFilter {
-        data object Default : SeasonFilter
-        data object AllTime : SeasonFilter
-        data class Specific(val number: Int) : SeasonFilter
-    }
 
     // Sélection de saison courante (#70) : recompute déclenché à chaque changement via combine.
     private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
+    private val _kindFilter = MutableStateFlow(WarKindFilter())
 
     private val _state = MutableStateFlow(State())
 
-    val state = combine(dataStoreRepository.mkcPlayer, _seasonFilter, databaseRepository.getSeasons()) { player, seasonFilter, seasons ->
+    val state = combine(dataStoreRepository.mkcPlayer, _seasonFilter, databaseRepository.getSeasons(), _kindFilter) { player, seasonFilter, seasons, kindFilter ->
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
                 // Saisons observées en Flow réactif (#73) ; résolution de la saison effective
                 // (défaut = saison en cours ; null = tout l'historique).
-                val activeSeason = when (seasonFilter) {
-                    is SeasonFilter.AllTime -> null
-                    is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
-                    is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
-                }
+                val activeSeason = seasonFilter.resolve(seasons)
                 // Firebase résolu sur le collecteur, HORS du `withContext(Default)` (rule 21, #73).
                 val currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty())
                 // Toute la partie CPU-lourde (construction de `wars`, `withFullStats`,
@@ -91,10 +83,11 @@ class WelcomeViewModel @Inject constructor(
                 // `flowOn` — rule 21, #73) ; métadonnées et `seasons` restent sur le collecteur.
                 // Le bloc renvoie un `State` partiel (stats + résultats récents) complété ensuite.
                 val computed = withContext(Dispatchers.Default) {
-                    // Dashboard 12p uniquement, filtre par saison (#70) appliqué en premier.
+                    // Dashboard 12p uniquement, filtres saison (#70) et Amicaux/Officiels (#103) en premier.
                     val wars = databaseRepository.getWars()
                         .firstOrNull()
                         ?.filterBySeason(activeSeason)
+                        ?.filterByKind(kindFilter)
                         ?.filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
                         ?.map { War(it) }
                         ?.map { WarDetails(it) }
@@ -126,7 +119,8 @@ class WelcomeViewModel @Inject constructor(
                     playerLogo = player.userSettings?.avatar?.takeIf { it.isNotEmpty() }?.let { "https://mkcentral.com$it" },
                     currentWar = currentWar,
                     seasons = seasons,
-                    selectedSeasonNumber = activeSeason?.number
+                    selectedSeasonNumber = activeSeason?.number,
+                    kindFilter = kindFilter
                 )
             }
         }
@@ -138,7 +132,13 @@ class WelcomeViewModel @Inject constructor(
      * `combine` émet ensuite `loading = false`. */
     fun onSeasonSelected(number: Int?) {
         _state.value = _state.value.copy(loading = true)
-        _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
+        _seasonFilter.value = SeasonFilter.of(number)
+    }
+
+    /** Filtre Amicaux / Officiels (#103) : même chargement que la saison. */
+    fun onKindFilterChange(filter: WarKindFilter) {
+        _state.value = state.value.copy(loading = true, kindFilter = filter)
+        _kindFilter.value = filter
     }
 
     init {

@@ -49,6 +49,7 @@ import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.extension.warScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.Stats
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -56,6 +57,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.MKWarKindFilterRow
 import fr.harmoniamk.statsmkworld.ui.stats.DistributionChart
 import fr.harmoniamk.statsmkworld.ui.stats.DistributionFooter
 import fr.harmoniamk.statsmkworld.ui.stats.Eyebrow
@@ -113,11 +115,12 @@ private fun Stats.windowForm(index: Int) = when (index) {
 fun StatsFullScreen(
     viewModel: StatsFullViewModel,
     onBack: (() -> Unit)? = null,
-    onResults: (() -> Unit)? = null,
+    // Les écrans enfants héritent du filtre Amicaux/Officiels courant (#103).
+    onResults: ((WarKindFilter) -> Unit)? = null,
     // « Classement entier » Circuits / Adversaires (#67) : `isTeam` remonte la portée courante
     // (false = joueur, true = équipe) pour naviguer vers le bon classement. Masqués si null.
-    onMapsSeeAll: ((isTeam: Boolean) -> Unit)? = null,
-    onOpponentsSeeAll: ((isTeam: Boolean) -> Unit)? = null
+    onMapsSeeAll: ((isTeam: Boolean, kindFilter: WarKindFilter) -> Unit)? = null,
+    onOpponentsSeeAll: ((isTeam: Boolean, kindFilter: WarKindFilter) -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // 0 = Individuelles, 1 = Équipe. Sur statsfull (pas d'onglets) → toujours 0.
@@ -182,6 +185,13 @@ fun StatsFullScreen(
             onClick = { windowIndex = it }
         )
         Spacer(Modifier.height(11.dp))
+        // Filtre Amicaux / Officiels (#103), sous les sélecteurs existants.
+        MKWarKindFilterRow(
+            filter = state.value.kindFilter,
+            onFilterChange = viewModel::onKindFilterChange
+        )
+        Spacer(Modifier.height(11.dp))
+        val kindFilter = state.value.kindFilter
         when {
             // Chargement circonscrit à la zone de données ; le header ci-dessus reste affiché.
             state.value.loading -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
@@ -194,13 +204,13 @@ fun StatsFullScreen(
                 when (scopeIndex) {
                     1 -> teamSections(
                         state.value, selectors,
-                        onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(true) } },
-                        onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(true) } }
+                        onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(true, kindFilter) } },
+                        onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(true, kindFilter) } }
                     )
                     else -> individualSections(
-                        state.value, viewModel.showTabs, onResults, selectors,
-                        onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(false) } },
-                        onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(false) } }
+                        state.value, viewModel.showTabs, onResults?.let { cb -> { cb(kindFilter) } }, selectors,
+                        onMapsSeeAll = onMapsSeeAll?.let { cb -> { cb(false, kindFilter) } },
+                        onOpponentsSeeAll = onOpponentsSeeAll?.let { cb -> { cb(false, kindFilter) } }
                     )
                 }
             }

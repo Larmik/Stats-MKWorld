@@ -28,6 +28,7 @@ import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.TournamentBadge
 
 private val CellRadius = RoundedCornerShape(6.dp)
 
@@ -82,7 +83,15 @@ private fun WarCell12p(modifier: Modifier, state: WarCellViewModel.State, onClic
         }
         Column(Modifier.weight(1f)) {
             MKText(text = stringResource(R.string.home_vs, opponent?.name.orEmpty()), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 14, textAlign = TextAlign.Start, maxLines = 1)
-            MKText(text = state.date.orEmpty(), textColor = Colors.white55, fontSize = 11, textAlign = TextAlign.Start, modifier = Modifier.padding(top = 2.dp))
+            Row(
+                Modifier.padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                MKText(text = state.date.orEmpty(), textColor = Colors.white55, fontSize = 11, textAlign = TextAlign.Start)
+                // Badge de tournoi (#103), absent pour une war amicale.
+                state.tournament?.let { TournamentBadge(tournament = it, height = 14.dp) }
+            }
         }
         Column(horizontalAlignment = Alignment.End) {
             MKText(text = state.score.orEmpty(), font = Fonts.NunitoBD, textColor = Colors.white, fontSize = 14, maxLines = 1)
@@ -128,7 +137,15 @@ private fun WarCell24p(modifier: Modifier, state: WarCellViewModel.State, onClic
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        MKText(text = state.date.orEmpty(), modifier = Modifier.padding(top = 5.dp), fontSize = 12, maxLines = 1)
+        Row(
+            Modifier.padding(top = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            MKText(text = state.date.orEmpty(), fontSize = 12, maxLines = 1)
+            // Badge de tournoi (#103), absent pour une war amicale.
+            state.tournament?.let { TournamentBadge(tournament = it, height = 14.dp) }
+        }
         Column(Modifier.padding(all = 15.dp)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
