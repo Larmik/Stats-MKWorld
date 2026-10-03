@@ -41,6 +41,7 @@ import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
@@ -64,6 +65,7 @@ fun CurrentWarScreen(
     onActions: () -> Unit,
     onTrackDetails: (WarTrackDetails, Int) -> Unit,
     onWarValidated: () -> Unit,
+    onTournament: (Tournament) -> Unit,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -99,7 +101,8 @@ fun CurrentWarScreen(
                             subtitle = stringResource(
                                 R.string.currentwar_tracks_remaining,
                                 12 - details.warTracks.size
-                            )
+                            ),
+                            onTournamentClick = onTournament
                         )
                     }
 

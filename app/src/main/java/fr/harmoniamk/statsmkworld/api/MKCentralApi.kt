@@ -5,6 +5,8 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayerResponse
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamResponse
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTournament
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTournamentList
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -42,4 +44,16 @@ interface MKCentralApi {
     @GET("registry/teams?game=mkworld&mode=150cc&is_historical=false&is_active=true&min_player_count=6")
     suspend fun getTeams(@Query("page") page: Int): NetworkResponse<MKCTeamResponse>
 
+    // Saisons mkworld d'un tournoi officiel (#152), filtrées par série ou par nom (LIKE). game
+    // figé mkworld : seules ces saisons sont lues, même si la série d'origine est mk8dx (rule 31).
+    @GET("tournaments/list?game=mkworld")
+    suspend fun getTournaments(
+        @Query("series_id") seriesId: Int?,
+        @Query("name") name: String?
+    ): NetworkResponse<MKCTournamentList>
+
+    @GET("tournaments/{tournamentId}")
+    suspend fun getTournament(
+        @Path("tournamentId") tournamentId: Int
+    ): NetworkResponse<MKCTournament>
 }

@@ -16,6 +16,10 @@ Accueil). Tout nouvel écran ou composant doit s'**aligner sur ce style existant
   typographies, rayons, pastilles, états).
 - Si un asset ou une police manque, utiliser l'équivalent projet le plus proche et
   **documenter l'écart** (résumé de PR / `docs/`).
+- **Asset déjà embarqué → pas de chargement réseau** : si l'app embarque déjà l'image
+  (drawable), l'afficher directement plutôt que charger l'équivalent renvoyé par une API
+  (ni mapping DTO, ni colonne de cache, ni `AsyncImage`). Cf. #152 : logos des tournois
+  officiels (`Tournament.logo`), le `logo` MKCentral n'est pas lu.
 
 ## Priorité inchangée : la justesse des calculs prime toujours
 

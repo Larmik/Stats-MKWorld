@@ -104,6 +104,7 @@ Dans les deux modes :
   `PlayerEntity.avatar`, Room), le peupler au fetch **dès qu'un endpoint le fournit** —
   c'est le but d'avoir migré le schéma. Ne renoncer (et documenter) **que** si le coût est
   réellement prohibitif (données absentes de tous les endpoints, volume ingérable).
+  Ne pas créer de champ pour une donnée que l'app embarque déjà (asset local, rule 13).
 - **Vérifier la source réelle avant de conclure.** Avant d'affirmer qu'un endpoint ne
   fournit pas un champ, **inspecter la réponse live** (l'endpoint *détail* peut porter des
   champs absents de l'endpoint *liste*, et inversement). Cf. #50 : `registry/teams/{id}`

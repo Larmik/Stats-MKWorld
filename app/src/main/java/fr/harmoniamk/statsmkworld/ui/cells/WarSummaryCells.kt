@@ -3,6 +3,7 @@ package fr.harmoniamk.statsmkworld.ui.cells
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -80,7 +81,8 @@ fun WarEyebrow(text: String) {
  * Carte « Score du match » (`.warscore`) : hôte VS adversaire(s), pastille + nom du roster + score.
  * [subtitle] optionnel sous les scores (ex. courses restantes, war en cours). En 24 j les côtés
  * adverses sont empilés, sans score chiffré. Différence de score centrale colorisée, total de
- * shocks affiché sous la ligne quand > 0.
+ * shocks affiché sous la ligne quand > 0. [onTournamentClick] rend le badge de tournoi cliquable
+ * (fiche tournoi, #152).
  */
 @Composable
 fun WarScoreCard(
@@ -88,7 +90,8 @@ fun WarScoreCard(
     teamOpponent: List<TeamEntity>?,
     details: WarDetails,
     is24p: Boolean,
-    subtitle: String? = null
+    subtitle: String? = null,
+    onTournamentClick: ((Tournament) -> Unit)? = null
 ) {
     // Écart signé côté hôte (avec pénalités) : diff centrale colorisée.
     val margin = details.scoreMargin(is24p)
@@ -98,6 +101,10 @@ fun WarScoreCard(
         .mapValues { entry -> entry.value.sumOf { it.amount } }
     val totalShocks = details.war.tracks.sumOf { it.shocks.orEmpty().sumOf { shock -> shock.count } }
     val tournament = Tournament.fromId(details.war.tournamentId)
+    val tournamentModifier = when {
+        tournament != null && onTournamentClick != null -> Modifier.clickable { onTournamentClick(tournament) }
+        else -> Modifier
+    }
     WarDashboardCard {
         // 12p : colonnes alignées en haut ; la colonne centrale reprend la grille des côtés (rangée
         // logo, rangée nom, rangée score) → badge centré sur les pastilles, diff centrée sur les
@@ -113,7 +120,7 @@ fun WarScoreCard(
                 when (is24p) {
                     true -> {
                         tournament?.let {
-                            TournamentBadge(tournament = it, height = 24.dp)
+                            TournamentBadge(tournament = it, height = 24.dp, modifier = tournamentModifier)
                             Spacer(Modifier.height(4.dp))
                         }
                         WarScoreDiffText(margin)
@@ -121,7 +128,7 @@ fun WarScoreCard(
                     else -> {
                         // Rangée logo (#103) : badge seul, absent pour une war amicale.
                         Box(Modifier.height(WarTeamCrestSize), contentAlignment = Alignment.Center) {
-                            tournament?.let { TournamentBadge(tournament = it, height = 30.dp) }
+                            tournament?.let { TournamentBadge(tournament = it, height = 30.dp, modifier = tournamentModifier) }
                         }
                         // Rangées nom et score vides aux mêmes styles que les côtés (hauteurs identiques).
                         WarTeamNameText(name = "")

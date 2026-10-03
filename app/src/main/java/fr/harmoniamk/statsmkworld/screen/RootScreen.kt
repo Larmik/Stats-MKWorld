@@ -50,6 +50,8 @@ import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentPilotsRankingScr
 import fr.harmoniamk.statsmkworld.screen.stats.opponent.OpponentTracksRankingScreen
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileScreen
 import fr.harmoniamk.statsmkworld.screen.teamProfile.TeamProfileViewModel
+import fr.harmoniamk.statsmkworld.screen.tournament.TournamentScreen
+import fr.harmoniamk.statsmkworld.screen.tournament.TournamentViewModel
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsScreen
 import fr.harmoniamk.statsmkworld.screen.trackDetails.TrackDetailsViewModel
 import fr.harmoniamk.statsmkworld.screen.warDetails.WarDetailsScreen
@@ -566,6 +568,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.navigate("Home/TrackDetails/true")
                 },
                 onWarValidated = backToHome,
+                onTournament = { navController.navigate("Tournament/${it.name}") },
             )
         }
 
@@ -614,7 +617,24 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 onOpponent = { opponentId ->
                     // Depuis une war : pas de contexte de saison → tout l'historique (« all », #91 pt.5).
                     navController.navigate("Opponent/$opponentId/null/all/${WarKindFilter().routeSegment}")
-                }
+                },
+                onTournament = { navController.navigate("Tournament/${it.name}") }
+            )
+        }
+
+        // Fiche tournoi officiel (#152) ; id = Tournament.name.
+        composable(
+            route = "Tournament/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) {
+            val id = it.arguments?.getString("id")
+            TournamentScreen(
+                viewModel = hiltViewModel(
+                    key = id.toString(),
+                    creationCallback = { factory: TournamentViewModel.Factory ->
+                        factory.create(id.toString())
+                    }),
+                onBack = { navController.popBackStack() }
             )
         }
 

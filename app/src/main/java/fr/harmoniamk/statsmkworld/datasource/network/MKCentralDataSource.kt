@@ -11,6 +11,8 @@ import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayerResponse
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeamResponse
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTournament
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTournamentList
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,6 +22,8 @@ interface MKCentralDataSourceInterface {
     suspend fun getTeam(teamId: String): NetworkResponse<MKCTeam>
     suspend fun getTeams(page: Int): NetworkResponse<MKCTeamResponse>
     suspend fun searchPlayers(page: Int, term: String): NetworkResponse<MKCPlayerResponse>
+    suspend fun getTournaments(seriesId: Int?, name: String?): NetworkResponse<MKCTournamentList>
+    suspend fun getTournament(tournamentId: Int): NetworkResponse<MKCTournament>
 }
 
 @Module
@@ -61,5 +65,17 @@ class MKCentralDataSource @Inject constructor() : MKCentralDataSourceInterface {
         MKCentralApi.baseUrl,
         timeout = 60
     ).searchPlayers(page, term)
+
+    override suspend fun getTournaments(seriesId: Int?, name: String?): NetworkResponse<MKCTournamentList> = RetrofitUtils.createRetrofit(
+        MKCentralApi::class.java,
+        MKCentralApi.baseUrl,
+        timeout = 60
+    ).getTournaments(seriesId, name)
+
+    override suspend fun getTournament(tournamentId: Int): NetworkResponse<MKCTournament> = RetrofitUtils.createRetrofit(
+        MKCentralApi::class.java,
+        MKCentralApi.baseUrl,
+        timeout = 60
+    ).getTournament(tournamentId)
 
 }

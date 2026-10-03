@@ -26,6 +26,13 @@ Interdictions fermes :
   `it.game == "mkworld"`. (L'ancien endpoint `getAllTeams` a été supprimé — ne pas
   le réintroduire.)
 
+**Tournois officiels (#152)** : les tournois mkworld dont la **série d'origine est mk8dx**
+(MKCentral Frontier `series_id=12`, EuroLeague `series_id=27`) sont autorisés, mais **seule la
+saison `game=mkworld`** est lue (`tournaments/list?game=mkworld&series_id=…` puis
+`tournaments/{id}`, dont le détail porte déjà description, règles et logo). Ne **jamais** lire
+`tournaments/series/{id}` d'une série mk8dx ni une saison mk8dx ; l'endpoint liste fige
+`game=mkworld` côté URL.
+
 Conséquence assumée pour le diagnostic `FetchUseCase.diagnoseUnknownOpponents` : un
 id d'adversaire mk8dx pur, non couvert par la table d'override manuel
 `opponentOverrides`, tombe en `NotFound` — c'est **voulu** (relève de l'override

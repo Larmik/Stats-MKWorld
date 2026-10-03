@@ -13,14 +13,14 @@ import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.model.local.Tournament
 
 /**
- * Badge d'un tournoi officiel (#103) : logo embarqué ([Tournament.fallbackLogo]). Composant
- * unique (rule 16) de `WarCell`, du détail de war et du sélecteur d'ajout ; #152 y branchera le
- * logo officiel MKCentral sans toucher aux écrans. Logos larges → hauteur fixe, largeur bornée.
+ * Badge d'un tournoi officiel (#103) : logo embarqué ([Tournament.logo]), le logo MKCentral n'est pas
+ * chargé (#152). Composant unique (rule 16) de `WarCell`, du détail de war, du sélecteur d'ajout et de
+ * la fiche tournoi. Logos larges → hauteur fixe, largeur bornée.
  */
 @Composable
 fun TournamentBadge(tournament: Tournament, modifier: Modifier = Modifier, height: Dp = 20.dp) {
     Image(
-        painter = painterResource(tournament.fallbackLogo),
+        painter = painterResource(tournament.logo),
         contentDescription = stringResource(tournament.label),
         contentScale = ContentScale.Fit,
         modifier = modifier.height(height).widthIn(max = height * 3)

@@ -169,6 +169,10 @@ Sous les sélecteurs de l'Accueil, des Wars, des Stats, des Classements et de «
 
 Il est impossible de tout décocher : la dernière case cochée reste cochée. Le filtre n'est **pas mémorisé** : il revient à « les deux cochées » quand tu rouvres un pôle. En revanche, un écran ouvert depuis un écran filtré (fiche d'un joueur, d'un adversaire ou d'un circuit, « voir tout », historique filtré sur un joueur, « Voir par période ») **reprend le filtre** de l'écran d'origine.
 
+Les **informations officielles** des tournois viennent de **MKCentral** (les logos, eux, sont intégrés à l'app) : l'app récupère la **dernière saison** de chacun des quatre tournois au démarrage (tant qu'elle ne les a pas encore) puis à chaque synchronisation de nuit, donc une nouvelle saison apparaît toute seule.
+
+**La fiche tournoi** (en appuyant sur le logo du tournoi dans la carte de score d'une war) présente le logo, le **nom officiel de la saison**, ses **dates**, l'organisateur et le mode, un bouton **« Voir sur MKCentral »**, puis la **description** et le **règlement** officiels, avec leurs titres, listes et liens cliquables. Ces textes sont publiés **en anglais** par les organisateurs : si ton téléphone est dans une autre langue prise en charge, l'app les **traduit automatiquement** (sur le téléphone, après un téléchargement unique du module de langue en Wi-Fi) et l'indique ; un bouton **« Voir l'original »** / **« Voir la traduction »** permet de basculer. Tant que la traduction n'est pas disponible (pas encore de Wi-Fi, langue non prise en charge), le texte anglais s'affiche. Le règlement n'apparaît pas s'il est identique à la description. Si les informations n'ont encore jamais pu être récupérées, la fiche l'indique.
+
 ---
 
 ## 6. Le pôle Wars — tes matchs
@@ -199,7 +203,7 @@ Par défaut, la période couvre la **saison en cours**, mais tu peux choisir n'i
 
 Depuis l'historique, appuie sur une war pour ouvrir son détail :
 
-- **La carte de score** : ton équipe face à l'adversaire, avec la **différence de score** au centre (verte si tu gagnes, rouge sinon, surmontée du **logo du tournoi** si la war est officielle), les **pénalités** éventuelles de chaque camp et le **total d'éclairs** de la war.
+- **La carte de score** : ton équipe face à l'adversaire, avec la **différence de score** au centre (verte si tu gagnes, rouge sinon, surmontée du **logo du tournoi** si la war est officielle — appuie dessus pour ouvrir la **fiche du tournoi**), les **pénalités** éventuelles de chaque camp et le **total d'éclairs** de la war.
 - **Le classement des joueurs** : chaque joueur avec ses points, **classés du meilleur au moins bon**, et son nombre d'éclairs le cas échéant.
 - **Deux boutons** : **« Générer le Tab (PDF) »** (uniquement en 12 joueurs) pour créer un tableau de résultats à partager, et **« Voir l'adversaire »** pour ouvrir sa fiche détaillée.
 - **Les courses jouées** : la liste des courses de la war, chacune cliquable pour voir le détail (circuit, positions, éclairs).
@@ -344,7 +348,7 @@ Depuis le pôle **Wars**, appuie sur le bouton **« + » (Créer une war)** en h
 
 Une fois la war lancée, tu arrives sur l'écran de suivi :
 
-- **La carte de score** : ton équipe face à l'adversaire, la différence au centre (colorée, surmontée du **logo du tournoi** si la war est officielle), les pénalités éventuelles, le total d'éclairs et le **nombre de courses restantes**.
+- **La carte de score** : ton équipe face à l'adversaire, la différence au centre (colorée, surmontée du **logo du tournoi** si la war est officielle, qui ouvre la **fiche du tournoi**), les pénalités éventuelles, le total d'éclairs et le **nombre de courses restantes**.
 - **Les scores des joueurs** : chaque joueur avec ses points cumulés (et une pastille d'éclair si applicable).
 - **Les actions** : un bouton principal **« Course suivante »** et un bouton **« Plus d'actions »**.
 - **Les courses déjà jouées** : une grille de tuiles, une par course, avec le circuit, le score et les éclairs. Appuie sur une course pour la revoir ou la corriger.
