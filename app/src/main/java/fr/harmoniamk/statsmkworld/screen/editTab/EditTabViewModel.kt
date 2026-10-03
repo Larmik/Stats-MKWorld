@@ -20,6 +20,7 @@ import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.PlayerScoreForTab
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.lorenzi.LorenziStylePreset
+import fr.harmoniamk.statsmkworld.model.network.lorenzi.LorenziTextColor
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -63,6 +64,7 @@ class EditTabViewModel @AssistedInject constructor(
     data class State(
         val rows: Int = 6,
         val preset: LorenziStylePreset = LorenziStylePreset.ATLAS_LEAGUE,
+        val textColor: LorenziTextColor = LorenziTextColor.AUTO,
         val isGenerating: Boolean = false,
         /** PNG HLorenzi affiché en aperçu, partagé (et écrit dans Pictures) seulement à la demande. */
         val lorenziTab: ByteArray? = null,
@@ -90,10 +92,14 @@ class EditTabViewModel @AssistedInject constructor(
         }
     }
 
-    /** Un aperçu ou une génération en cours ne correspond plus au style choisi : on les abandonne. */
     fun onPresetChange(preset: LorenziStylePreset) {
         lorenziJob?.cancel()
         _state.update { it.copy(preset = preset, isGenerating = false, lorenziTab = null) }
+    }
+
+    fun onTextColorChange(textColor: LorenziTextColor) {
+        lorenziJob?.cancel()
+        _state.update { it.copy(textColor = textColor, isGenerating = false, lorenziTab = null) }
     }
 
     /** Tab via gb2.hlorenzi.com (#105) ; repli sur le tab classique si le service échoue. */
@@ -112,7 +118,8 @@ class EditTabViewModel @AssistedInject constructor(
                             opponentTeam = opponentTeam,
                             hostScores = hostScores(warDetails.war),
                             opponentScores = opponentScores,
-                            preset = _state.value.preset
+                            preset = _state.value.preset,
+                            textColor = _state.value.textColor
                         )
                         else -> null
                     }

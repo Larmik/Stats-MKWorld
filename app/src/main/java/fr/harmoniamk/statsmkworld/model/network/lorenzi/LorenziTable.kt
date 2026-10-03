@@ -66,48 +66,62 @@ data class LorenziTableStyle(
     val playerScoreFont: LorenziTableFont = LorenziTableFont(name = "Rubik Mono One", weight = 900),
     val teamScoreFont: LorenziTableFont = LorenziTableFont(name = "Rubik Mono One", weight = 900),
     val rankingFont: LorenziTableFont = LorenziTableFont(name = "Roboto", weight = 900),
-)
-
-private val darkThin = LorenziTableStyle(
-    name = "Dark (Thin)",
-    baseTextColor = "#ffffff",
-    invertColors = true,
-    playerBkgColor = "#888888",
-    playerBkgOpacity = 0.05,
-    headerFont = LorenziTableFont(name = "Roboto", weight = 400),
-    teamNameFont = LorenziTableFont(name = "Roboto", weight = 300),
-    playerNameFont = LorenziTableFont(name = "Roboto", weight = 400),
-    playerScoreFont = LorenziTableFont(name = "Roboto", weight = 400),
-    teamScoreFont = LorenziTableFont(name = "Roboto", weight = 300),
-    rankingFont = LorenziTableFont(name = "Roboto", weight = 400),
-)
-
-private val robotoLight = LorenziTableFont(name = "Roboto", weight = 300)
+) {
+    /**
+     * Texte d'une seule couleur. En style inversé (Dark), noms/scores/tags prennent la couleur
+     * d'équipe et non `baseTextColor` (qui ne colore que l'écart et les rangs) : on force donc
+     * la même couleur pour les deux équipes, sans dégradé (vérifié en live, #105).
+     */
+    fun withTextColor(hex: String) = copy(
+        baseTextColor = hex,
+        useForcedColors = true,
+        forcedColor1 = hex,
+        forcedColor2 = hex,
+        forcedGradient1 = emptyList(),
+        forcedGradient2 = emptyList(),
+        autoGradient = 0.0,
+    )
+}
 
 /**
- * Les 5 styles prédéfinis du générateur (objet `tableStyles` de `src/tableRenderer.ts`),
+ * Styles prédéfinis du générateur retenus pour l'app (objet `tableStyles` de `src/tableRenderer.ts`),
  * recopiés tels quels : l'API ne les connaît pas par nom, l'objet complet est envoyé.
- * Atlas League en premier (style proposé par défaut).
+ * Atlas League en premier (style proposé par défaut), base « Dark (Thin) » du générateur.
+ *
+ * @property circuitBackground fond = circuit au meilleur score ; jamais pour Atlas League.
+ * @property textColorChoice palette de couleur de texte proposée ([LorenziTextColor]).
  */
-enum class LorenziStylePreset(val style: LorenziTableStyle) {
+enum class LorenziStylePreset(
+    val style: LorenziTableStyle,
+    val circuitBackground: Boolean,
+    val textColorChoice: Boolean,
+) {
     ATLAS_LEAGUE(
-        darkThin.copy(
+        LorenziTableStyle(
             name = "Atlas League",
             title = "Atlas League",
             iconSrc = "/assets/atlasleague.png",
             showTeamRankings = false,
             useRankingIcons = false,
+            baseTextColor = "#ffffff",
+            invertColors = true,
             useForcedColors = true,
             forcedColor1 = "#5eb6ea",
             forcedColor2 = "#ffffff",
             forcedGradient1 = listOf("#68c4eb", "#4d72e7"),
             forcedGradient2 = listOf("#b0dfe3", "#ffffff"),
             autoGradient = 0.0,
-            playerBkgColor = "#000000",
-            playerBkgOpacity = 0.15,
-        )
+            headerFont = LorenziTableFont(name = "Roboto", weight = 400),
+            teamNameFont = LorenziTableFont(name = "Roboto", weight = 300),
+            playerNameFont = LorenziTableFont(name = "Roboto", weight = 400),
+            playerScoreFont = LorenziTableFont(name = "Roboto", weight = 400),
+            teamScoreFont = LorenziTableFont(name = "Roboto", weight = 300),
+            rankingFont = LorenziTableFont(name = "Roboto", weight = 400),
+        ),
+        circuitBackground = false,
+        textColorChoice = false,
     ),
-    LIGHT(LorenziTableStyle()),
+    LIGHT(LorenziTableStyle(), circuitBackground = true, textColorChoice = false),
     DARK(
         LorenziTableStyle(
             name = "Dark",
@@ -115,28 +129,19 @@ enum class LorenziStylePreset(val style: LorenziTableStyle) {
             invertColors = true,
             playerBkgColor = "#888888",
             playerBkgOpacity = 0.05,
-        )
+        ),
+        circuitBackground = true,
+        textColorChoice = true,
     ),
-    DARK_THIN(darkThin),
-    MKU(
-        darkThin.copy(
-            name = "MKU",
-            title = "Mario Kart Universal",
-            iconSrc = "/assets/mku.png",
-            showTeamRankings = false,
-            useRankingIcons = false,
-            useForcedColors = true,
-            forcedColor1 = "#007f86",
-            forcedColor2 = "#cd4e00",
-            autoGradient = 0.0,
-            playerBkgColor = "#000000",
-            playerBkgOpacity = 0.15,
-            headerFont = robotoLight,
-            teamNameFont = robotoLight,
-            playerNameFont = robotoLight,
-            playerScoreFont = robotoLight,
-            teamScoreFont = robotoLight,
-            rankingFont = robotoLight,
-        )
-    ),
+}
+
+/** Palette de couleur de texte du style Dark ; [AUTO] = couleurs d'équipe du générateur (rendu Dark d'origine). */
+enum class LorenziTextColor(val hex: String?) {
+    AUTO(null),
+    WHITE("#ffffff"),
+    YELLOW("#ffd400"),
+    CYAN("#4dd8f0"),
+    GREEN("#7ee36b"),
+    PINK("#ff7ac8"),
+    ORANGE("#ff9a3c"),
 }

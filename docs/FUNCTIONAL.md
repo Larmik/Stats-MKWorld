@@ -503,8 +503,9 @@ Elle affiche les **mêmes statistiques que l'onglet « Individuelles » du pôle
 
 - Tu peux ajuster le **nombre de lignes adverses** (de 6 à 9) avec les boutons « − ligne » et « + ligne », utile s'il y a eu des remplaçants côté adverse.
 - Renseigne le **nom et le score** de chaque joueur adverse.
-- Choisis un **style** parmi ceux du générateur de HLorenzi (gb.hlorenzi.com) : **Atlas League** (proposé par défaut), Light, Dark, Dark (Thin) ou MKU.
-- Appuie sur **« Générer le tab (HLorenzi) »** : l'app vérifie que les scores sont cohérents, envoie la war au générateur de HLorenzi et affiche un **aperçu** du tab (tags et noms des rosters, joueurs et scores, pénalités, écart entre les équipes, classement individuel, circuit au meilleur score en fond). Appuie ensuite sur **« Partager le tab »** pour l'enregistrer dans tes images et ouvrir le menu de partage.
+- Choisis un **style** parmi ceux du générateur de HLorenzi (gb.hlorenzi.com) : **Atlas League** (proposé par défaut, sans image de fond), **Light** ou **Dark** (avec le circuit en fond).
+- En style **Dark**, une palette te permet de choisir la **couleur du texte** : « Auto » (couleurs d'équipe du générateur, choix par défaut), blanc, jaune, cyan, vert, rose ou orange. La couleur choisie s'applique aux deux équipes.
+- Appuie sur **« Générer le tab (HLorenzi) »** : l'app vérifie que les scores sont cohérents, envoie la war au générateur de HLorenzi et affiche un **aperçu** du tab (tags et noms des rosters, joueurs et scores, pénalités, écart entre les équipes, classement individuel ; circuit au meilleur score en fond, sauf en Atlas League). Appuie ensuite sur **« Partager le tab »** pour l'enregistrer dans tes images et ouvrir le menu de partage.
 - Si le générateur est injoignable (pas de réseau, service indisponible), un message te prévient et l'app génère **à la place le tab classique**.
 - **« Tab classique & partager »** génère toujours le tab de l'app, sans connexion (logos, tags, scores de chaque camp — pénalités comprises, meilleurs joueurs avec médailles), et ouvre directement le menu de partage.
 

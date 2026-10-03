@@ -16,6 +16,7 @@ import fr.harmoniamk.statsmkworld.model.local.PlayerScoreForTab
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.lorenzi.LorenziStylePreset
 import fr.harmoniamk.statsmkworld.model.network.lorenzi.LorenziTableRequest
+import fr.harmoniamk.statsmkworld.model.network.lorenzi.LorenziTextColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -28,7 +29,8 @@ import javax.inject.Singleton
 interface LorenziRepositoryInterface {
     /**
      * Tab PNG d'une war 12p rendu par gb2.hlorenzi.com (#105). Les pseudos et tags sont envoyés
-     * au service tiers. `null` si le service est injoignable, expire ou répond en erreur.
+     * au service tiers. [textColor] n'est appliqué que si le style propose la palette.
+     * `null` si le service est injoignable, expire ou répond en erreur.
      */
     suspend fun generateTab(
         details: WarDetails,
@@ -36,7 +38,8 @@ interface LorenziRepositoryInterface {
         opponentTeam: TeamEntity,
         hostScores: List<PlayerScoreForTab>,
         opponentScores: List<PlayerScoreForTab>,
-        preset: LorenziStylePreset
+        preset: LorenziStylePreset,
+        textColor: LorenziTextColor
     ): ByteArray?
 }
 
@@ -56,7 +59,8 @@ class LorenziRepository @Inject constructor(@ApplicationContext private val cont
         opponentTeam: TeamEntity,
         hostScores: List<PlayerScoreForTab>,
         opponentScores: List<PlayerScoreForTab>,
-        preset: LorenziStylePreset
+        preset: LorenziStylePreset,
+        textColor: LorenziTextColor
     ): ByteArray? {
         // Format `#date` attendu par le parseur JS (`new Date(...)`) : chiffres ASCII imposés.
         val date = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date(details.war.id))
@@ -65,20 +69,28 @@ class LorenziRepository @Inject constructor(@ApplicationContext private val cont
         val data = (listOf("#date $date") +
                 teamBlock(details, hostTeam, hostScores) +
                 teamBlock(details, opponentTeam, opponentScores)).joinToString("\n")
-        val background = withContext(Dispatchers.Default) {
-            // JPEG ~130 Ko (≈ 170 Ko en base64) : le serveur rejette en 413 un corps > ~1 Mo et
-            // la latence croît avec la taille (PNG brut 500 Ko → ~12 s contre ~6 s).
-            val options = BitmapFactory.Options().apply { inScaled = false }
-            BitmapFactory.decodeResource(context.resources, details.tabBackground, options)?.let { bitmap ->
-                val jpeg = ByteArrayOutputStream().use { stream ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
-                    stream.toByteArray()
-                }
-                bitmap.recycle()
-                "data:image/jpeg;base64," + Base64.encodeToString(jpeg, Base64.NO_WRAP)
-            }.orEmpty()
+        // Pas de fond pour Atlas League : ni décodage ni envoi (corps plus léger, réponse plus rapide).
+        val background = when (preset.circuitBackground) {
+            true -> withContext(Dispatchers.Default) {
+                // JPEG ~130 Ko (≈ 170 Ko en base64) : le serveur rejette en 413 un corps > ~1 Mo et
+                // la latence croît avec la taille (PNG brut 500 Ko → ~12 s contre ~6 s).
+                val options = BitmapFactory.Options().apply { inScaled = false }
+                BitmapFactory.decodeResource(context.resources, details.tabBackground, options)?.let { bitmap ->
+                    val jpeg = ByteArrayOutputStream().use { stream ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+                        stream.toByteArray()
+                    }
+                    bitmap.recycle()
+                    "data:image/jpeg;base64," + Base64.encodeToString(jpeg, Base64.NO_WRAP)
+                }.orEmpty()
+            }
+            else -> ""
         }
-        val request = LorenziTableRequest(data = data, style = preset.style.copy(bkgSrc = background))
+        val style = textColor.hex
+            ?.takeIf { preset.textColorChoice }
+            ?.let { preset.style.withTextColor(it) }
+            ?: preset.style
+        val request = LorenziTableRequest(data = data, style = style.copy(bkgSrc = background))
         return RetrofitUtils.createRetrofit(LorenziApi::class.java, LorenziApi.baseUrl, timeout = 30)
             .getTable(request)
             .successResponse
