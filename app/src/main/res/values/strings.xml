@@ -278,6 +278,14 @@
     <string name="addwar_progress">%1$d / %2$d</string>
     <string name="addwar_progress_hint">Select the 6 players of your roster taking part in the war.</string>
     <string name="addwar_your_roster">Your roster</string>
+    <string name="addwar_recap_tournament">Tournament</string>
+    <string name="tournament_none">None (friendly)</string>
+    <string name="tournament_atlas_league">Atlas League</string>
+    <string name="tournament_low_div_cup">Low-Div Cup</string>
+    <string name="tournament_mkc_frontier">MKCentral Frontier</string>
+    <string name="tournament_euroleague">EuroLeague</string>
+    <string name="war_kind_friendly">Friendlies</string>
+    <string name="war_kind_official">Official</string>
     <string name="addwar_previous">Previous</string>
     <string name="addwar_start_war">Start the war</string>
     <!-- AddTrack wizard — Add a race screen (ticket #44) -->

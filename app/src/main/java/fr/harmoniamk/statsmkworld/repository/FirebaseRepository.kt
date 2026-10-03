@@ -269,7 +269,9 @@ class FirebaseRepository @Inject constructor(private val dataStoreRepository: Da
         penalties = this["penalties"].toMapList().parsePenalties().orEmpty(),
         scores = this["scores"].toMapList().parseScores().orEmpty(),
         // War legacy sans playerHostId → 0L (parsing null-safe, pas de crash).
-        playerHostId = this["playerHostId"]?.toString()?.toLongOrNull() ?: 0L
+        playerHostId = this["playerHostId"]?.toString()?.toLongOrNull() ?: 0L,
+        // Absent (war amicale ou legacy) → null.
+        tournamentId = this["tournamentId"]?.toString()
     )
 
 }

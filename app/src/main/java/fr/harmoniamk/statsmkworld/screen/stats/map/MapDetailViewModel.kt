@@ -8,6 +8,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
+import fr.harmoniamk.statsmkworld.extension.filterByKind
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.percentOf
@@ -19,6 +20,7 @@ import fr.harmoniamk.statsmkworld.model.local.MapStats
 import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +46,8 @@ class MapDetailViewModel @AssistedInject constructor(
     @Assisted("initialUserId") val initialUserId: String?,
     // Saison d'origine (#91 pt.5) : null = tout l'historique. Filtre les wars avant tout calcul.
     @Assisted val seasonNumber: Int?,
+    // Filtre Amicaux/Officiels d'origine (#103), appliqué avec la saison.
+    @Assisted val kindFilter: WarKindFilter,
     private val databaseRepository: DatabaseRepositoryInterface,
     private val dataStoreRepository: DataStoreRepositoryInterface
 ) : ViewModel() {
@@ -53,7 +57,8 @@ class MapDetailViewModel @AssistedInject constructor(
         fun create(
             trackIndex: List<Int>,
             @Assisted("initialUserId") initialUserId: String?,
-            seasonNumber: Int?
+            seasonNumber: Int?,
+            kindFilter: WarKindFilter
         ): MapDetailViewModel
     }
 
@@ -118,6 +123,7 @@ class MapDetailViewModel @AssistedInject constructor(
             // Filtre saison (#91 pt.5) avant tout ; `seasonNumber` null → tout l'historique.
             val season = seasonNumber?.let { number -> seasons.firstOrNull { it.number == number } }
             wars.filterBySeason(season)
+                .filterByKind(kindFilter)
                 .filter { it.teamOpponent.size == 1 }  // 12p uniquement
                 .map { WarDetails(War(it)) }
         }

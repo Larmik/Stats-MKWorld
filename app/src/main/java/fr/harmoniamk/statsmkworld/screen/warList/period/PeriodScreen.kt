@@ -42,6 +42,7 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSegmentedSelector
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.MKWarKindFilterRow
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 import fr.harmoniamk.statsmkworld.ui.stats.PodiumEntry
@@ -74,6 +75,10 @@ fun PeriodScreen(
             dateB = state.value.dateB,
             onRangeSelected = viewModel::onRangeSelected
         )
+        Spacer(Modifier.height(11.dp))
+
+        // Filtre Amicaux / Officiels (#103), hérité du pôle Wars.
+        MKWarKindFilterRow(filter = state.value.kindFilter, onFilterChange = viewModel::onKindFilterChange)
         Spacer(Modifier.height(11.dp))
 
         // Onglets Wars / Joueurs (segmented partagé, rule 15/16). Fond clair du dégradé → onDark = false.

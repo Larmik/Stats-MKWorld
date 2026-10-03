@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.model.local.WarScore
 import fr.harmoniamk.statsmkworld.model.local.WarStats
 import kotlinx.coroutines.flow.Flow
@@ -285,3 +286,6 @@ fun List<WarEntity>.filterBySeason(season: SeasonEntity?): List<WarEntity> {
     return filter { war -> war.id.toLongOrNull()?.let { it in season.start..upperBound } == true }
 }
 
+/** Filtre Amicaux / Officiels (#103), appliqué avant tout calcul : amical = sans `tournamentId`. */
+fun List<WarEntity>.filterByKind(kind: WarKindFilter): List<WarEntity> =
+    filter { war -> if (war.tournamentId == null) kind.friendly else kind.official }

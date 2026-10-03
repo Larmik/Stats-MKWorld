@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -33,6 +34,7 @@ import fr.harmoniamk.statsmkworld.ui.MKChip
 import fr.harmoniamk.statsmkworld.ui.MKHeaderChip
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.MKWarKindFilterRow
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
@@ -63,8 +65,9 @@ fun WarListScreen(
     onWarDetailsClick: (WarDetails) -> Unit,
     onAddWar: (Boolean) -> Unit,
     onBack: (() -> Unit)? = null,
-    // Ouvre « Voir par période » (#80). Null = non proposé (ex. historique filtré joueur, #65).
-    onPeriodView: (() -> Unit)? = null
+    // Ouvre « Voir par période » (#80) avec le filtre Amicaux/Officiels courant (#103). Null = non
+    // proposé (ex. historique filtré joueur, #65).
+    onPeriodView: ((WarKindFilter) -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     // Filtre de résultat : pur état UI, survit à la rotation (rule 11).
@@ -92,7 +95,7 @@ fun WarListScreen(
                 onPeriodView?.let { periodView ->
                     MKHeaderChip(
                         label = stringResource(R.string.period_view),
-                        onClick = periodView
+                        onClick = { periodView(state.value.kindFilter) }
                     )
                 }
                 MKSeasonDropdown(
@@ -109,6 +112,11 @@ fun WarListScreen(
             verticalArrangement = Arrangement.spacedBy(11.dp)
         ) {
             // L'écran ne liste que les wars terminées (war en cours absente, #65).
+
+            // Filtre Amicaux / Officiels (#103), sous le sélecteur de saison.
+            item {
+                MKWarKindFilterRow(filter = state.value.kindFilter, onFilterChange = viewModel::onKindFilterChange)
+            }
 
             // 1. Chips filtre Tous / Victoires / Nuls / Défaites.
             item {

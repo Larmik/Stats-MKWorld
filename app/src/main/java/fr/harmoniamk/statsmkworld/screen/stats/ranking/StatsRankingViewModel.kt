@@ -10,6 +10,7 @@ import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
 import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.database.entities.WarEntity
+import fr.harmoniamk.statsmkworld.extension.filterByKind
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.mergeWith
 import fr.harmoniamk.statsmkworld.extension.percentOf
@@ -18,9 +19,11 @@ import fr.harmoniamk.statsmkworld.extension.withFullStats
 import fr.harmoniamk.statsmkworld.extension.withFullTeamStats
 import fr.harmoniamk.statsmkworld.extension.withTrackStats
 import fr.harmoniamk.statsmkworld.model.firebase.War
+import fr.harmoniamk.statsmkworld.model.local.SeasonFilter
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
+import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -143,22 +146,14 @@ class StatsRankingViewModel @Inject constructor(
         // Filtre saison (#70) : `selectedSeasonNumber` null = tout l'historique, défaut = saison
         // en cours. Rankings recalculés à la volée sur l'intervalle.
         val seasons: List<SeasonEntity> = listOf(),
-        val selectedSeasonNumber: Int? = null
+        val selectedSeasonNumber: Int? = null,
+        // Filtre Amicaux / Officiels (#103), propagé aux fiches via `StatsType`.
+        val kindFilter: WarKindFilter = WarKindFilter()
     )
-
-    /**
-     * Sélection de saison (#70), même modèle que StatsFullViewModel. [Default] = saison en
-     * cours (résolue après chargement) ; [AllTime] = tout l'historique ; [Specific] = saison
-     * passée précise.
-     */
-    sealed interface SeasonFilter {
-        data object Default : SeasonFilter
-        data object AllTime : SeasonFilter
-        data class Specific(val number: Int) : SeasonFilter
-    }
 
     // Sélection de saison (#70) : `combine` avec les wars → recompute à la volée.
     private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
+    private val _kindFilter = MutableStateFlow(WarKindFilter())
 
     private val _state = MutableStateFlow(State())
     private var currentUser: MKCPlayer? = null
@@ -172,20 +167,16 @@ class StatsRankingViewModel @Inject constructor(
     private var loadedSeasons: List<SeasonEntity> = listOf()
     private var loadedSelectedSeasonNumber: Int? = null
 
-    val state = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons()) { warEntities, seasonFilter, seasons ->
+    val state = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons(), _kindFilter) { warEntities, seasonFilter, seasons, kindFilter ->
             // Saisons observées en Flow (#73) : le dropdown apparaît dès l'hydratation eager.
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             val is24p = dataStoreRepository.is24PEnabled.firstOrNull() == true
-            val activeSeason = when (seasonFilter) {
-                is SeasonFilter.AllTime -> null
-                is SeasonFilter.Specific -> seasons.firstOrNull { it.number == seasonFilter.number }
-                is SeasonFilter.Default -> seasons.lastOrNull { it.end == null }
-            }
+            val activeSeason = seasonFilter.resolve(seasons)
             loadedSeasons = seasons
             loadedSelectedSeasonNumber = activeSeason?.number
-            // Rankings recalculés à la volée sur les wars filtrées par saison.
-            // Filtres : host/roster + mode 12p/24p.
-            computeRankings(warEntities.filterBySeason(activeSeason), is24p)
+            // Rankings recalculés à la volée sur les wars filtrées par saison et Amicaux/Officiels
+            // (#103). Filtres : host/roster + mode 12p/24p.
+            computeRankings(warEntities.filterBySeason(activeSeason).filterByKind(kindFilter), is24p)
             _state.value.copy(
                 loading = false,
                 currentUserId = currentUser?.id.toString(),
@@ -254,7 +245,13 @@ class StatsRankingViewModel @Inject constructor(
      * pendant le recompute off-main (#73) ; la branche `combine` émet ensuite `loading = false`. */
     fun onSeasonSelected(number: Int?) {
         _state.value = _state.value.copy(loading = true).recompute()
-        _seasonFilter.value = number?.let { SeasonFilter.Specific(it) } ?: SeasonFilter.AllTime
+        _seasonFilter.value = SeasonFilter.of(number)
+    }
+
+    /** Filtre Amicaux / Officiels (#103) : même chargement que la saison. */
+    fun onKindFilterChange(filter: WarKindFilter) {
+        _state.value = _state.value.copy(loading = true, kindFilter = filter).recompute()
+        _kindFilter.value = filter
     }
 
     // Interactions légères (onglet/tri/recherche/curseur) : re-filtrage instantané → posent
