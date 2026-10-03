@@ -31,11 +31,13 @@ import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.diffColor
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.model.local.PlayerScore
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
+import fr.harmoniamk.statsmkworld.ui.TournamentBadge
 
 /** Rayon uniforme des cartes translucides (maquette : radius 6px), aligné sur WelcomeScreen. */
 val WarSummaryRadius = RoundedCornerShape(6.dp)
@@ -94,6 +96,13 @@ fun WarScoreCard(
         .mapValues { entry -> entry.value.sumOf { it.amount } }
     val totalShocks = details.war.tracks.sumOf { it.shocks.orEmpty().sumOf { shock -> shock.count } }
     WarDashboardCard {
+        // Badge de tournoi (#103), logo seul centré au-dessus de la diff ; absent pour une war amicale.
+        Tournament.fromId(details.war.tournamentId)?.let { tournament ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                TournamentBadge(tournament = tournament, height = 28.dp)
+            }
+            Spacer(Modifier.height(8.dp))
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             WarTeamSide(
                 team = teamHost,

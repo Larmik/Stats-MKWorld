@@ -17,11 +17,8 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarTrackDetails
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
-import fr.harmoniamk.statsmkworld.ui.Colors
-import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
 import fr.harmoniamk.statsmkworld.ui.MKText
-import fr.harmoniamk.statsmkworld.ui.TournamentBadge
 import fr.harmoniamk.statsmkworld.ui.cells.WarPlayerRankingCard
 import fr.harmoniamk.statsmkworld.ui.cells.WarScoreCard
 import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
@@ -51,25 +48,6 @@ fun WarDetailsScreen(
                 Modifier.fillMaxWidth().weight(1f),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
-                // Tournoi officiel (#103) : badge + nom ; rien pour une war amicale.
-                state.value.tournament?.let { tournament ->
-                    item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(9.dp)
-                        ) {
-                            TournamentBadge(tournament = tournament, height = 24.dp)
-                            MKText(
-                                text = stringResource(tournament.label),
-                                font = Fonts.NunitoBD,
-                                textColor = Colors.white,
-                                fontSize = 14,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                }
-
                 // 1. Carte score : hôte VS adversaire(s), sans sous-titre (war terminée).
                 item {
                     WarScoreCard(

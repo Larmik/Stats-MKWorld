@@ -199,8 +199,7 @@ Par défaut, la période couvre la **saison en cours**, mais tu peux choisir n'i
 
 Depuis l'historique, appuie sur une war pour ouvrir son détail :
 
-- **Le tournoi** (logo + nom) si la war est officielle ; rien pour une war amicale.
-- **La carte de score** : ton équipe face à l'adversaire, avec la **différence de score** au centre (verte si tu gagnes, rouge sinon), les **pénalités** éventuelles de chaque camp et le **total d'éclairs** de la war.
+- **La carte de score** : le **logo du tournoi** en haut au centre si la war est officielle, puis ton équipe face à l'adversaire, avec la **différence de score** au centre (verte si tu gagnes, rouge sinon), les **pénalités** éventuelles de chaque camp et le **total d'éclairs** de la war.
 - **Le classement des joueurs** : chaque joueur avec ses points, **classés du meilleur au moins bon**, et son nombre d'éclairs le cas échéant.
 - **Deux boutons** : **« Générer le Tab (PDF) »** (uniquement en 12 joueurs) pour créer un tableau de résultats à partager, et **« Voir l'adversaire »** pour ouvrir sa fiche détaillée.
 - **Les courses jouées** : la liste des courses de la war, chacune cliquable pour voir le détail (circuit, positions, éclairs).
@@ -345,7 +344,7 @@ Depuis le pôle **Wars**, appuie sur le bouton **« + » (Créer une war)** en h
 
 Une fois la war lancée, tu arrives sur l'écran de suivi :
 
-- **La carte de score** : ton équipe face à l'adversaire, la différence au centre (colorée), les pénalités éventuelles, le total d'éclairs et le **nombre de courses restantes**.
+- **La carte de score** : le **logo du tournoi** en haut au centre si la war est officielle, puis ton équipe face à l'adversaire, la différence au centre (colorée), les pénalités éventuelles, le total d'éclairs et le **nombre de courses restantes**.
 - **Les scores des joueurs** : chaque joueur avec ses points cumulés (et une pastille d'éclair si applicable).
 - **Les actions** : un bouton principal **« Course suivante »** et un bouton **« Plus d'actions »**.
 - **Les courses déjà jouées** : une grille de tuiles, une par course, avec le circuit, le score et les éclairs. Appuie sur une course pour la revoir ou la corriger.
