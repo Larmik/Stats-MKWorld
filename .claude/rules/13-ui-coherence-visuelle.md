@@ -65,9 +65,12 @@ stats de deux cellules voisines restent alignées quelle que soit la longueur du
 
 **Blocs comparés côte à côte avec un élément optionnel sous la valeur** (score + pénalité éventuelle
 d'un seul côté, colonne centrale) : ne pas centrer verticalement (l'élément optionnel décale tout le
-bloc). Aligner identités en haut et valeurs sur **la même ligne de base** — `Modifier.alignBy` sur
-une `HorizontalAlignmentLine` publiée par le texte de valeur ; un élément central (diff, badge)
-s'aligne sur cette même ligne sans agrandir la carte. Cf. `WarScoreCard` (`ScoreLine`, #103).
+bloc). Colonnes **alignées en haut** ; l'alignement attendu est le **centre visuel** des éléments
+correspondants (logos entre eux, valeurs entre elles), pas une ligne de base (polices de tailles
+différentes). Une colonne centrale reprend la **grille de rangées** des côtés (rangée logo de même
+hauteur, rangées texte vides aux mêmes styles via des composables partagés, élément central centré
+dans sa rangée) ; aucune hauteur recopiée en dur. Les textes de ces rangées ne doivent pas se
+redimensionner (`resizable = false`), sinon la rangée change de hauteur. Cf. `WarScoreCard` (#103).
 
 ## Course avec intermission : dernier circuit, sans tag
 
