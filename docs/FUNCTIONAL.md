@@ -503,7 +503,12 @@ Elle affiche les **mêmes statistiques que l'onglet « Individuelles » du pôle
 
 - Tu peux ajuster le **nombre de lignes adverses** (de 6 à 9) avec les boutons « − ligne » et « + ligne », utile s'il y a eu des remplaçants côté adverse.
 - Renseigne le **nom et le score** de chaque joueur adverse.
-- Appuie sur **« Tab classique & partager »** : l'app vérifie que les scores sont cohérents, génère le Tab (logos, tags, scores de chaque camp — pénalités comprises, meilleurs joueurs avec médailles) et ouvre le menu de partage.
+- Choisis un **style** parmi ceux du générateur de HLorenzi (gb.hlorenzi.com) : **Atlas League** (proposé par défaut), Light, Dark, Dark (Thin) ou MKU.
+- Appuie sur **« Générer le tab (HLorenzi) »** : l'app vérifie que les scores sont cohérents, envoie la war au générateur de HLorenzi et affiche un **aperçu** du tab (tags et noms des rosters, joueurs et scores, pénalités, écart entre les équipes, classement individuel, circuit au meilleur score en fond). Appuie ensuite sur **« Partager le tab »** pour l'enregistrer dans tes images et ouvrir le menu de partage.
+- Si le générateur est injoignable (pas de réseau, service indisponible), un message te prévient et l'app génère **à la place le tab classique**.
+- **« Tab classique & partager »** génère toujours le tab de l'app, sans connexion (logos, tags, scores de chaque camp — pénalités comprises, meilleurs joueurs avec médailles), et ouvre directement le menu de partage.
+
+**Données envoyées :** le tab HLorenzi est fabriqué par un service externe (gb2.hlorenzi.com). Pour le générer, l'app lui transmet les pseudos des joueurs (les tiens et ceux des adversaires saisis), les tags et noms des équipes, les scores et la date de la war.
 
 Un joueur qui a été **remplacé** (il n'a pas joué toutes les courses) voit son nombre de courses jouées indiqué entre parenthèses à côté de son nom (ex. « Pseudo (7) »).
 
