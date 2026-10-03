@@ -169,9 +169,10 @@ fun StatsFullScreen(
         }
         // Sélecteur de période global (#68), au-dessus de toutes les sections. onDark = false
         // (fond clair de BaseScreen). Change l'état ⇒ recompose les sections (rule 11).
+        // 1er onglet : base « toutes les wars » de la saison sélectionnée ou de l'historique (#100).
         MKSegmentedSelector(
             items = listOf(
-                stringResource(R.string.all_time),
+                stringResource(if (state.value.selectedSeasonNumber == null) R.string.all_time else R.string.period_season),
                 stringResource(R.string.last_n_short, 5),
                 stringResource(R.string.last_n_short, 10)
             ),

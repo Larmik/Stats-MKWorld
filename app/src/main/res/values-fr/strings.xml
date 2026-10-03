@@ -201,7 +201,8 @@
     <string name="position_distribution_section">Distribution des positions</string>
     <string name="last_n_wars">%1$d dernières wars</string>
     <string name="last_n_short">%1$d dern.</string>
-    <string name="all_time">All-time</string>
+    <string name="all_time">Historique</string>
+    <string name="period_season">Saison</string>
     <!-- Filtre par saison (#70) -->
     <string name="season_label">Saison %1$d</string>
     <string name="all_seasons">Tout l\'historique</string>
@@ -240,7 +241,8 @@
     <string name="home_momentum">Momentum</string>
     <string name="home_last_5">5 dernières</string>
     <string name="home_last_10">10 dernières</string>
-    <string name="home_form_delta_cap">forme %1$d wars vs all-time</string>
+    <string name="home_form_delta_cap_season">forme %1$d wars vs moyenne de la saison</string>
+    <string name="home_form_delta_cap_all">forme %1$d wars vs moyenne globale</string>
     <string name="home_score_evolution_cap">évolution du score sur %1$d wars</string>
     <string name="home_live_players">En direct · %1$d joueurs</string>
     <string name="home_vs">vs %1$s</string>
