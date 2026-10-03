@@ -73,7 +73,7 @@ Voici les mots que tu croiseras dans l'application. Chacun est expliqué simplem
 | **Allié** | Un joueur de renfort qui ne fait pas partie du roster officiel mais qui peut jouer une war avec toi. |
 | **Saison** | Une période de jeu. L'application découpe l'histoire de ton équipe en saisons, et tu peux filtrer tes stats saison par saison. |
 | **Winrate** | Le pourcentage de wars gagnées. Par exemple, 60 % de winrate = 6 wars gagnées sur 10. |
-| **All-time** | « Depuis toujours », c'est-à-dire sur tout ton historique, sans limite de temps. |
+| **All-time** | « Depuis toujours », c'est-à-dire sur tout ton historique, sans limite de temps. Dans l'app, ce libellé n'apparaît plus tel quel : on parle de « Saison » quand une saison est sélectionnée, d'« Historique » quand « Tout l'historique » l'est. |
 
 ### Comment les points sont attribués
 
@@ -146,7 +146,7 @@ De haut en bas, tu y trouves :
 3. **Le Momentum (ta dynamique)** — Un aperçu de ta forme récente. Tu peux choisir la fenêtre **« 5 dernières » ou « 10 dernières »** wars. Tu y vois :
    - une **bande de pastilles** vertes (victoire), blanches (nul) et rouges (défaite) qui résume tes derniers résultats ;
    - une **petite courbe** de l'évolution de ton score (verte si ça monte, rouge si ça descend) ;
-   - un **indicateur d'évolution** de ta forme (une flèche ↗ ou ↘ avec un pourcentage), qui compare ta forme récente à ta moyenne de toujours.
+   - un **indicateur d'évolution** de ta forme (une flèche ↗ ou ↘ avec un pourcentage), qui compare ta forme récente à ta moyenne de la saison sélectionnée (« vs moyenne de la saison ») ou, avec « Tout l'historique », à ta moyenne globale (« vs moyenne globale »).
 
 4. **Les chiffres clés** — Trois valeurs essentielles : ton **winrate**, ton **score moyen** et une troisième donnée (ta **position moyenne** en vue « Moi », ou le **pourcentage de courses gagnées** en vue « Équipe »).
 
@@ -209,7 +209,7 @@ Le pôle **Stats** est le cœur analytique de l'application. **Comment y accéde
 
 En haut de l'écran, tu disposes de deux outils qui s'appliquent à **tout** l'écran :
 
-- **Le sélecteur de période** : « Tout l'historique » / « 5 dernières » / « 10 dernières ». Il définit sur quelles wars les stats sont calculées.
+- **Le sélecteur de période** : « Saison » / « 5 dern. » / « 10 dern. ». Il définit sur quelles wars les stats sont calculées. Le premier onglet prend toutes les wars de la saison choisie ; il s'appelle « Historique » quand le menu de saison est sur « Tout l'historique ».
 - **Le menu de saison** : pour restreindre le calcul à une saison précise.
 
 Ces deux réglages sont complémentaires : la saison choisit **quelles** wars comptent, la période prend les **N dernières** parmi elles. L'écran se met à jour immédiatement.

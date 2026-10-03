@@ -202,9 +202,10 @@
     <string name="last_n_wars">Last %1$d wars</string>
     <string name="last_n_short">Last %1$d</string>
     <string name="all_time">All-time</string>
+    <string name="period_season">Season</string>
     <!-- Season filter (#70) -->
     <string name="season_label">Season %1$d</string>
-    <string name="all_seasons">All-time</string>
+    <string name="all_seasons">All seasons</string>
     <string name="form_winrate">Winrate</string>
     <string name="form_score">Average score</string>
     <string name="average_position_short">Avg position</string>
@@ -240,7 +241,8 @@
     <string name="home_momentum">Momentum</string>
     <string name="home_last_5">Last 5</string>
     <string name="home_last_10">Last 10</string>
-    <string name="home_form_delta_cap">%1$d-war form vs all-time</string>
+    <string name="home_form_delta_cap_season">%1$d-war form vs season average</string>
+    <string name="home_form_delta_cap_all">%1$d-war form vs overall average</string>
     <string name="home_score_evolution_cap">score trend over %1$d wars</string>
     <string name="home_live_players">Live · %1$d players</string>
     <string name="home_vs">vs %1$s</string>

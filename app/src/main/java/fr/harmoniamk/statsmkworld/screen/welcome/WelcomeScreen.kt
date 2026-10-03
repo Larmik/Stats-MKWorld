@@ -146,6 +146,7 @@ fun WelcomeScreen(
                                     MomentumCard(
                                         stats = stats,
                                         windowIndex = windowIndex,
+                                        isAllSeasons = state.value.selectedSeasonNumber == null,
                                         onWindowChange = { windowIndex = it }
                                     )
                                 }
@@ -291,9 +292,10 @@ private fun Crest(image: String?, initials: String, color: Color) {
 /**
  * Carte « Momentum » : eyebrow, segmenté 5/10 dernières, bande de pastilles V/N/D
  * (`chronologicalOutcomes`), puis ligne sparkline (`scoreTimeline`) + delta de forme.
+ * `isAllSeasons` choisit la légende du delta (moyenne globale vs moyenne de la saison, #100).
  */
 @Composable
-private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -> Unit) {
+private fun MomentumCard(stats: Stats, windowIndex: Int, isAllSeasons: Boolean, onWindowChange: (Int) -> Unit) {
     val count = if (windowIndex == 0) 5 else 10
     val outcomes = stats.chronologicalOutcomes.takeLast(count)
     val scores = stats.scoreTimeline.takeLast(count)
@@ -359,7 +361,10 @@ private fun MomentumCard(stats: Stats, windowIndex: Int, onWindowChange: (Int) -
                         )
                     }
                     MKText(
-                        text = stringResource(R.string.home_form_delta_cap, count),
+                        text = stringResource(
+                            if (isAllSeasons) R.string.home_form_delta_cap_all else R.string.home_form_delta_cap_season,
+                            count
+                        ),
                         textColor = Colors.white66,
                         fontSize = 12,
                         textAlign = TextAlign.Center,
