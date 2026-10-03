@@ -225,13 +225,14 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
 
 /**
  * Agrégat par circuit (manches groupées par index), partagé par `withTrackStats` et `withFullStats`.
- * Vue joueur ([userId] non-null) : seules les manches courues par le joueur comptent (#102), pour
- * `totalPlayed`, le winrate et les moyennes ; `averagePosition` = vraie moyenne de ses positions.
- * Scores = moyennes par manche, y compris pour un circuit avec intermission.
+ * Vue joueur 12p ([userId] non-null) : seules les manches courues par le joueur comptent (#102),
+ * pour `totalPlayed`, le winrate et les moyennes ; `averagePosition` = vraie moyenne de ses
+ * positions. 24p inchangé (toutes les manches, `teamScore` sommé pour un circuit avec
+ * intermission) : reporté au ticket 24p (#31, audit B35).
  */
 private fun trackStatsOf(tracks: List<WarTrack>, is24p: Boolean, userId: String?): List<TrackStats> =
     tracks
-        .filter { userId == null || it.hasPlayer(userId) }
+        .filter { userId == null || is24p || it.hasPlayer(userId) }
         .groupBy { it.index }.toList()
         // Circuit classique (1 index) ou avec intermission (2 index : [intermission, circuit]).
         .filter { (indexes, _) -> indexes.size in 1..2 }
@@ -247,7 +248,8 @@ private fun trackStatsOf(tracks: List<WarTrack>, is24p: Boolean, userId: String?
                 trackIndex = mapIndexes,
                 totalPlayed = played,
                 winRate = tracksOfMap.count { it.diffScore(is24p) > 0 }.percentOf(played),
-                teamScore = tracksOfMap.sumOf { track -> track.positions.sumOf { it.position.positionToPoints(is24p) } } / played,
+                teamScore = tracksOfMap.sumOf { track -> track.positions.sumOf { it.position.positionToPoints(is24p) } }
+                    .let { total -> if (indexes.size == 2) total else total / played },
                 shockCount = tracksOfMap.sumOf { track -> track.shocks?.sumOf { it.count } ?: 0 },
                 playerScore = playerPositions.sumOf { it.positionToPoints(is24p) } / played,
                 averagePosition = playerPositions.takeIf { it.isNotEmpty() }?.average()

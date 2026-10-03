@@ -78,7 +78,8 @@ fun PlayerMapsRankingScreen(
                     items = listOf(
                         stringResource(R.string.stats_sort_occurrences),
                         stringResource(R.string.stats_sort_winrate),
-                        stringResource(R.string.stats_sort_score)
+                        // Vue joueur : tri sur la position moyenne (#102).
+                        stringResource(if (isTeam) R.string.stats_sort_score else R.string.stats_sort_position)
                     ),
                     page = sortIndex,
                     onClick = { sortIndex = it }

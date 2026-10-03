@@ -57,6 +57,12 @@ Exprimer la partie texte en **sp** (`x.sp.toDp()` via `LocalDensity`) pour suivr
 police système, et partager les tailles de police entre le `MKText` et le calcul. Cf.
 `TrackCellHeight` (`MKTrackCell`, #101 : tag tronqué sous un nom sur 2 lignes).
 
+**Cellules côte à côte d'une même ligne** (podium, grille) : même hauteur (`IntrinsicSize.Min` sur
+la `Row` + `fillMaxHeight()` sur la cellule), bloc d'identité (image, nom, tag) **aligné en haut**,
+bloc de stats **aligné en bas** (`Spacer(Modifier.weight(1f))` entre les deux) : les lignes de
+stats de deux cellules voisines restent alignées quelle que soit la longueur du nom. Cf.
+`PodiumCell` (#102).
+
 ## Course avec intermission : dernier circuit, sans tag
 
 Une course 24p avec intermission porte deux circuits (`WarTrack.index` = `[intermission, circuit
@@ -77,8 +83,11 @@ Cf. #102 (Top/Flop circuits incohérents) :
 - **Top/Flop de performance** (winrate, score) : seuil `Stats.MIN_RANKING_SAMPLE` partout
   (écran Stats et fiches) ; critère de tri = la valeur **affichée** dans la cellule (position
   moyenne en vue joueur → `sortedByTrackScore`).
-- **Top et Flop disjoints** : flop = `flopExcludingTop()` du même tri ; sous 3 entrées, message
-  (`PodiumOrMessage`), jamais de podium tronqué.
+- **Top et Flop disjoints** (classements de **circuits** et d'**adversaires** uniquement) : flop =
+  `flopExcludingTop()` du même tri ; sous 3 entrées, message (`PodiumOrMessage`,
+  `PodiumSectionCard(completeRowsOnly = true)`), jamais de podium tronqué. Les podiums pilotes /
+  baggeurs gardent leur rendu (podium partiel, flop masqué si vide).
+- Le libellé du tri suit le critère : tri « score » des circuits en vue joueur = « Position ».
 - Un tri de **fréquence** (occurrences) n'est pas une performance : libellés « Plus / Moins
   joués » (ou « affrontés »), pas « Top / Flop ».
 

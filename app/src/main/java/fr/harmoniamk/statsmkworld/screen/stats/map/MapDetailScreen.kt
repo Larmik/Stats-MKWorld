@@ -131,7 +131,7 @@ fun MapDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_pilots),
                             top = state.pilots.take(3).map { it.toPodiumEntry() },
-                            flop = state.pilots.flopExcludingTop().map { it.toPodiumEntry() },
+                            flop = state.pilots.takeLast(3).reversed().map { it.toPodiumEntry() },
                             onSeeAll = onPilotsRanking
                         )
                     }
@@ -140,7 +140,7 @@ fun MapDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_baggers),
                             top = state.baggers.take(3).map { it.toPodiumEntry() },
-                            flop = state.baggers.flopExcludingTop().map { it.toPodiumEntry() },
+                            flop = state.baggers.takeLast(3).reversed().map { it.toPodiumEntry() },
                             onSeeAll = onBaggersRanking
                         )
                     }
@@ -150,7 +150,9 @@ fun MapDetailScreen(
                             title = stringResource(R.string.map_detail_opponents),
                             top = state.opponents.take(3).map { it.toPodiumEntry() },
                             flop = state.opponents.flopExcludingTop().map { it.toPodiumEntry() },
-                            onSeeAll = onOpponentsRanking
+                            onSeeAll = onOpponentsRanking,
+                            // Classement d'adversaires : règles top/flop de #102 (disjoints, podium complet).
+                            completeRowsOnly = true
                         )
                     }
                     item { Spacer(Modifier.height(90.dp)) }

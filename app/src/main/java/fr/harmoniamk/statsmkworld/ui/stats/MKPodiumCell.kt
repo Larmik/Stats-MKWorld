@@ -78,7 +78,7 @@ fun ColumnScope.PodiumRow(
 
 /**
  * Cellule podium : image (circuit / logo / initiales / `default_logo`), nom (2 lignes max), tag
- * éventuel (circuit), puis lignes de stats (libellé + valeur). [contentColor] = couleur du nom et des valeurs (libellé à
+ * éventuel (circuit) alignés en haut, puis lignes de stats (libellé + valeur) alignées en bas. [contentColor] = couleur du nom et des valeurs (libellé à
  * 66 % d'alpha) ; les initiales restent blanches sur leur pastille.
  */
 @Composable
@@ -133,7 +133,10 @@ fun RowScope.PodiumCell(
         entry.tag?.let {
             MKText(text = it, font = Fonts.NunitoIT, textColor = contentColor, fontSize = 9, maxLines = 1)
         }
+        // Identité en haut, stats en bas : les lignes de stats de cellules voisines (même hauteur
+        // via `PodiumRow`) restent alignées quelle que soit la longueur du nom/tag.
         Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.weight(1f))
         entry.stats.forEach { (labelRes, value) ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 1.dp),

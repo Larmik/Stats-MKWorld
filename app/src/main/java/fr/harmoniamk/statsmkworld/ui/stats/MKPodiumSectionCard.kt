@@ -19,8 +19,10 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 /**
  * Carte « podium » Top3 / Flop3 (lignes de 3 `PodiumCell`), mutualisée (#27) par les fiches
  * Adversaire et Circuit. En-tête + lien optionnel « Voir le classement en entier » ([onSeeAll]).
- * [top]/[flop] = [PodiumEntry] déjà triées et disjointes (`flopExcludingTop`, #102) ; chaque ligne
- * dégrade en message sous 3 entrées ([PodiumOrMessage]). [selector] optionnel rendu en tête.
+ * [top]/[flop] = [PodiumEntry] déjà triées (3 max). [selector] optionnel rendu en tête.
+ * [completeRowsOnly] (classements circuits/adversaires, #102) : carte toujours rendue, chaque ligne
+ * dégrade en message sous 3 entrées ([PodiumOrMessage]) ; sinon (pilotes, baggeurs) podium
+ * partiel, flop masqué si vide, rien si tout est vide.
  */
 @Composable
 fun PodiumSectionCard(
@@ -30,8 +32,10 @@ fun PodiumSectionCard(
     onSeeAll: (() -> Unit)? = null,
     topLabel: String = stringResource(R.string.stats_podium_top),
     flopLabel: String = stringResource(R.string.stats_podium_flop),
+    completeRowsOnly: Boolean = false,
     selector: (@Composable ColumnScope.() -> Unit)? = null
 ) {
+    if (!completeRowsOnly && top.isEmpty() && flop.isEmpty()) return
     StatCard(
         title = title,
         titleTrailing = onSeeAll?.let {
@@ -50,9 +54,22 @@ fun PodiumSectionCard(
             it()
             Spacer(Modifier.height(11.dp))
         }
-        PodiumOrMessage(topLabel, top)
-        Spacer(Modifier.height(8.dp))
-        PodiumOrMessage(flopLabel, flop)
+        when (completeRowsOnly) {
+            true -> {
+                PodiumOrMessage(topLabel, top)
+                Spacer(Modifier.height(8.dp))
+                PodiumOrMessage(flopLabel, flop)
+            }
+            else -> {
+                PodiumSubLabel(topLabel)
+                PodiumRow(top)
+                if (flop.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    PodiumSubLabel(flopLabel)
+                    PodiumRow(flop)
+                }
+            }
+        }
     }
 }
 

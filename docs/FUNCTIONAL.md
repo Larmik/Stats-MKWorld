@@ -226,7 +226,7 @@ Voici ce que tu y trouves (le contenu s'adapte selon que tu es en « Individuell
   - Par **nombre de fois joué**, les deux lignes s'appellent **« Plus joués / Moins joués »** (circuits) ou **« Plus affrontés / Moins affrontés »** (adversaires) : c'est un classement de fréquence, pas de performance.
   - Par **winrate** ou **score**, seuls les circuits et adversaires joués **au moins 3 fois** sont classés, pour qu'un résultat isolé ne fausse pas le podium.
   - Un même circuit ou adversaire n'apparaît **jamais à la fois** dans le Top et dans le Flop. S'il n'y en a pas assez pour remplir une ligne, un message l'indique.
-  - En vue **Individuelles**, les stats d'un circuit ne comptent que les courses **que tu as réellement courues**, et la **position moyenne** affichée est la vraie moyenne de tes places (ex. « 4,5 »). Le tri par score te classe sur cette position moyenne.
+  - En vue **Individuelles**, les stats d'un circuit ne comptent que les courses **que tu as réellement courues**, et la **position moyenne** affichée est la vraie moyenne de tes places (ex. « 4,5 »). Le tri correspondant s'appelle alors **« Position »** et te classe sur cette position moyenne.
 - **Contributeurs** et **Meilleurs baggeurs** (en vue Équipe) : le classement des joueurs de l'équipe selon leur part de points, puis selon leur part d'éclairs.
 
 Sur beaucoup d'indicateurs, un petit **bouton d'information (ⓘ)** ouvre une explication en une phrase, pour ne jamais rester bloqué sur le sens d'une stat.
@@ -459,7 +459,7 @@ Tu y trouves tout ce que tu dois savoir avant de les affronter : le **nombre de 
 
 Un sélecteur **« Joueur » / « Équipe »** te laisse voir ces stats de ton point de vue personnel ou de celui du collectif.
 
-Les podiums des fiches suivent les mêmes règles que ceux du pôle Stats : circuits classés par winrate ou score seulement à partir de **3 courses**, libellés « Plus / Moins joués » pour le tri par nombre de fois joué, et jamais le même élément dans le Top et le Flop (un message s'affiche s'il n'y en a pas assez).
+Les podiums de **circuits** (fiche adversaire) et d'**adversaires** (fiche circuit) suivent les mêmes règles que ceux du pôle Stats : classés par winrate ou score seulement à partir de **3 courses**, libellés « Plus / Moins joués » pour le tri par nombre de fois joué, et jamais le même élément dans le Top et le Flop (un message s'affiche s'il n'y en a pas assez). En vue « Joueur », le tri des circuits par score s'appelle **« Position »** : il te classe sur ta position moyenne.
 
 ### La fiche d'un circuit
 

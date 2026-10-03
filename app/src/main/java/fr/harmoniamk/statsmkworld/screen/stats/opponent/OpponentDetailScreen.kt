@@ -51,7 +51,6 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatHeaderCard
 import fr.harmoniamk.statsmkworld.ui.stats.mapStatsDetailSections
 import fr.harmoniamk.statsmkworld.extension.displayName
-import fr.harmoniamk.statsmkworld.extension.flopExcludingTop
 import fr.harmoniamk.statsmkworld.extension.toCompactString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.model.local.TrackStats
@@ -149,8 +148,9 @@ fun OpponentDetailScreen(
                             onSeeAll = onTracksRanking,
                             topLabel = stringResource(if (byCount) R.string.stats_podium_most_played else R.string.stats_podium_top),
                             flopLabel = stringResource(if (byCount) R.string.stats_podium_least_played else R.string.stats_podium_flop),
+                            completeRowsOnly = true,
                             selector = {
-                                TracksSortSelector(state.tracksSort, onDark = true, onSelect = viewModel::onTracksSortSelected)
+                                TracksSortSelector(state.tracksSort, isIndiv = state.isIndiv, onDark = true, onSelect = viewModel::onTracksSortSelected)
                             }
                         )
                     }
@@ -159,7 +159,7 @@ fun OpponentDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.opponent_detail_pilots),
                             top = state.pilots.take(3).map { it.toPodiumEntry() },
-                            flop = state.pilots.flopExcludingTop().map { it.toPodiumEntry() },
+                            flop = state.pilots.takeLast(3).reversed().map { it.toPodiumEntry() },
                             onSeeAll = onPilotsRanking
                         )
                     }
@@ -168,7 +168,7 @@ fun OpponentDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.opponent_detail_baggers),
                             top = state.baggers.take(3).map { it.toPodiumEntry() },
-                            flop = state.baggers.flopExcludingTop().map { it.toPodiumEntry() },
+                            flop = state.baggers.takeLast(3).reversed().map { it.toPodiumEntry() },
                             onSeeAll = onBaggersRanking
                         )
                     }
@@ -316,15 +316,16 @@ private fun RowScope.ShockCell(label: String, value: String) {
 
 /**
  * Sélecteur de tri des circuits (Occurrences / Winrate / Score moy., rules 15/16). [onDark] =
- * carte sombre (fiche) ; false = fond clair (écran complet).
+ * carte sombre (fiche) ; false = fond clair (écran complet). [isIndiv] : le tri score classe sur
+ * la position moyenne → libellé « Position » (#102).
  */
 @Composable
-internal fun TracksSortSelector(sort: SortType, onDark: Boolean, onSelect: (Int) -> Unit) {
+internal fun TracksSortSelector(sort: SortType, isIndiv: Boolean, onDark: Boolean, onSelect: (Int) -> Unit) {
     MKSegmentedSelector(
         items = listOf(
             stringResource(R.string.rankings_sort_occurrences),
             stringResource(R.string.rankings_sort_winrate),
-            stringResource(R.string.rankings_sort_score)
+            stringResource(if (isIndiv) R.string.stats_sort_position else R.string.rankings_sort_score)
         ),
         page = sort.ordinal,
         onDark = onDark,

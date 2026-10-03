@@ -575,7 +575,12 @@ private fun MapsPodiumCard(stats: Stats, selectors: SectionSelectors, userId: St
         title = stringResource(R.string.best_maps_section),
         titleTrailing = onSeeAll?.let { { SeeAllLink(it) } }
     ) {
-        SortSelector(selectors.trackSortIndex, selectors.onTrackSortChange)
+        // Vue joueur : le tri « score » classe sur la position moyenne → libellé « Position » (#102).
+        SortSelector(
+            selectors.trackSortIndex,
+            selectors.onTrackSortChange,
+            scoreLabel = stringResource(if (userId != null) R.string.stats_sort_position else R.string.stats_sort_score)
+        )
         Spacer(Modifier.height(11.dp))
         // Occurrences (#102) : « Plus / Moins joués », pas un classement de performance.
         val byCount = selectors.trackSortIndex == 0
@@ -637,12 +642,16 @@ private fun OpponentsPodiumCard(
 
 /** Sélecteur occurrences / winrate / score (pill, sur carte sombre — occurrences défaut). */
 @Composable
-private fun ColumnScope.SortSelector(index: Int, onChange: (Int) -> Unit) {
+private fun ColumnScope.SortSelector(
+    index: Int,
+    onChange: (Int) -> Unit,
+    scoreLabel: String = stringResource(R.string.stats_sort_score)
+) {
     MKSegmentedSelector(
         items = listOf(
             stringResource(R.string.stats_sort_occurrences),
             stringResource(R.string.stats_sort_winrate),
-            stringResource(R.string.stats_sort_score)
+            scoreLabel
         ),
         page = index,
         onDark = true,

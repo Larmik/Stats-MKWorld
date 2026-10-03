@@ -337,6 +337,7 @@
     <string name="stats_podium_not_enough">Not enough data on this period for a full ranking.</string>
     <string name="stats_sort_winrate">Winrate</string>
     <string name="stats_sort_score">Score</string>
+    <string name="stats_sort_position">Position</string>
     <string name="stats_amplitude_min">Min score</string>
     <string name="stats_amplitude_max">Max score</string>
     <string name="stats_sort_occurrences">Occurrences</string>
