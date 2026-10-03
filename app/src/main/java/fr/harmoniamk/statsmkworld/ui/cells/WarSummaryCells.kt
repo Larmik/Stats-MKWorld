@@ -21,11 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.HorizontalAlignmentLine
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import kotlin.math.min
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.diffColor
@@ -38,6 +42,17 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.TournamentBadge
+
+/** Ligne de base des scores de [WarScoreCard] : aligne les scores des deux côtés et la diff. */
+private val ScoreLine = HorizontalAlignmentLine(::min)
+
+/** Publie la ligne de base du texte porteur comme [ScoreLine] (propagée aux colonnes parentes). */
+private val ScoreLineProvider = Modifier.layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    layout(placeable.width, placeable.height, mapOf(ScoreLine to placeable[FirstBaseline])) {
+        placeable.place(0, 0)
+    }
+}
 
 /** Rayon uniforme des cartes translucides (maquette : radius 6px), aligné sur WelcomeScreen. */
 val WarSummaryRadius = RoundedCornerShape(6.dp)
@@ -95,29 +110,38 @@ fun WarScoreCard(
         .groupBy { it.teamId }
         .mapValues { entry -> entry.value.sumOf { it.amount } }
     val totalShocks = details.war.tracks.sumOf { it.shocks.orEmpty().sumOf { shock -> shock.count } }
+    val tournament = Tournament.fromId(details.war.tournamentId)
     WarDashboardCard {
-        // Badge de tournoi (#103), logo seul centré au-dessus de la diff ; absent pour une war amicale.
-        Tournament.fromId(details.war.tournamentId)?.let { tournament ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                TournamentBadge(tournament = tournament, height = 28.dp)
-            }
-            Spacer(Modifier.height(8.dp))
-        }
+        // 12p : les deux côtés et la colonne centrale s'alignent sur la ligne de base des scores
+        // ([ScoreLine]) → crêtes/noms en haut, scores et diff sur la même ligne, même si un seul
+        // côté affiche une pénalité dessous. 24p (pas de score chiffré) : centrage vertical inchangé.
         Row(verticalAlignment = Alignment.CenterVertically) {
+            val scoreAlignment = if (is24p) Modifier else Modifier.alignBy(ScoreLine)
             WarTeamSide(
                 team = teamHost,
                 score = details.scoreHostWithPenalties.takeUnless { is24p },
                 penalty = penaltyByTeam[details.war.teamHost] ?: 0,
-                modifier = Modifier.weight(1f)
+                modifier = scoreAlignment.weight(1f)
             )
-            // Différence de score seule, centrée entre les deux équipes, colorisée.
-            MKText(
-                text = if (margin > 0) "+$margin" else margin.toString(),
-                font = Fonts.Urbanist,
-                textColor = diffColor,
-                fontSize = 20,
-                modifier = Modifier.padding(horizontal = 6.dp)
-            )
+            // Colonne centrale : badge de tournoi (#103, logo seul) juste au-dessus de la diff
+            // colorisée. Le badge (24 dp) tient dans la hauteur crête + nom des côtés : la carte
+            // ne grandit pas. War amicale : diff seule, rendu inchangé.
+            Column(
+                scoreAlignment.padding(horizontal = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                tournament?.let {
+                    TournamentBadge(tournament = it, height = 24.dp)
+                    Spacer(Modifier.height(4.dp))
+                }
+                MKText(
+                    text = if (margin > 0) "+$margin" else margin.toString(),
+                    font = Fonts.Urbanist,
+                    textColor = diffColor,
+                    fontSize = 20,
+                    modifier = ScoreLineProvider
+                )
+            }
             when (is24p) {
                 true -> Column(
                     Modifier.weight(1f),
@@ -205,7 +229,7 @@ fun WarTeamSide(
                 font = Fonts.Urbanist,
                 textColor = Colors.white,
                 fontSize = 30,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = ScoreLineProvider.padding(top = 4.dp)
             )
         }
         // Pénalité de l'équipe, sous son score (rouge).

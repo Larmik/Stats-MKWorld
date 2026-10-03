@@ -63,6 +63,12 @@ bloc de stats **aligné en bas** (`Spacer(Modifier.weight(1f))` entre les deux) 
 stats de deux cellules voisines restent alignées quelle que soit la longueur du nom. Cf.
 `PodiumCell` (#102).
 
+**Blocs comparés côte à côte avec un élément optionnel sous la valeur** (score + pénalité éventuelle
+d'un seul côté, colonne centrale) : ne pas centrer verticalement (l'élément optionnel décale tout le
+bloc). Aligner identités en haut et valeurs sur **la même ligne de base** — `Modifier.alignBy` sur
+une `HorizontalAlignmentLine` publiée par le texte de valeur ; un élément central (diff, badge)
+s'aligne sur cette même ligne sans agrandir la carte. Cf. `WarScoreCard` (`ScoreLine`, #103).
+
 ## Course avec intermission : dernier circuit, sans tag
 
 Une course 24p avec intermission porte deux circuits (`WarTrack.index` = `[intermission, circuit
