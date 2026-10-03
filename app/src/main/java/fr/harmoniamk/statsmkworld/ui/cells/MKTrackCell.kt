@@ -18,10 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayedMap
 import fr.harmoniamk.statsmkworld.extension.displayedTag
@@ -34,8 +37,25 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 /** Rayon de coin des cartes translucides (aligné sur `CurrentWar`/maquette). */
 private val TrackCellRadius = RoundedCornerShape(6.dp)
 
-/** Hauteur uniforme des [MKTrackCell] (image + nom sur 2 lignes + tag), partagée avec les cellules voisines d'une même grille. */
-val TrackCellHeight = 98.dp
+private const val TrackNameFontSize = 12
+private const val TrackTagFontSize = 10
+
+/**
+ * Zone réservée au nom (2 lignes) + tag, en sp pour suivre l'échelle de police système. Nunito
+ * (bd/it) : line-height = 1,364 × taille (hhea 1011/−353 pour 1000 unités) → (12×2 + 10) × 1,364
+ * ≈ 46,4 sp, +1 sp d'arrondi.
+ */
+private val TrackLabelZoneHeight: Dp
+    @Composable get() = with(LocalDensity.current) {
+        ((TrackNameFontSize * 2 + TrackTagFontSize) * 1.364f + 1f).sp.toDp()
+    }
+
+/**
+ * Hauteur uniforme des [MKTrackCell] : paddings 8 + 8, image 36, marge 4, zone nom + tag
+ * (≈ 103 dp à l'échelle de police 1). Partagée avec les cellules voisines d'une même grille.
+ */
+val TrackCellHeight: Dp
+    @Composable get() = 56.dp + TrackLabelZoneHeight
 
 /**
  * Cellule de course/circuit partagée (rule 16). Horizontal : bande colorée (accent) · image + nom ·
@@ -90,19 +110,19 @@ fun MKTrackCell(
                 )
             }
             Column(
-                Modifier.height(46.dp).padding(top = 4.dp),
+                Modifier.padding(top = 4.dp).height(TrackLabelZoneHeight),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 MKText(
                     text = displayedMap?.label?.let { stringResource(it) } ?: "-",
                     font = Fonts.NunitoBD,
                     textColor = Colors.white,
-                    fontSize = 12,
+                    fontSize = TrackNameFontSize,
                     maxLines = 2,
                     textAlign = TextAlign.Center
                 )
                 trackMaps.displayedTag()?.let {
-                    MKText(text = it, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = 10, maxLines = 1)
+                    MKText(text = it, font = Fonts.NunitoIT, textColor = Colors.white, fontSize = TrackTagFontSize, maxLines = 1)
                 }
             }
         }

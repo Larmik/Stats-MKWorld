@@ -46,6 +46,15 @@ Tout pourcentage passe par les fonctions centrales de `extension/` (#99), jamais
 - Les champs de pourcentage sont des `Double` ; tris, seuils (`winrateColor`) et deltas portent
   sur ces valeurs arrondies.
 
+## Zone de texte à hauteur fixe : dimensionner sur les line-heights réels, en sp
+
+Une hauteur fixe qui doit contenir du texte (nombre de lignes réservé pour aligner des cellules) se
+calcule, pas au jugé : line-height de la police × taille × nombre de lignes, plus paddings.
+Nunito (toutes graisses) : line-height = **1,364 × taille** (hhea 1011/−353 pour 1000 unités).
+Exprimer la partie texte en **sp** (`x.sp.toDp()` via `LocalDensity`) pour suivre l'échelle de
+police système, et partager les tailles de police entre le `MKText` et le calcul. Cf.
+`TrackCellHeight` (`MKTrackCell`, #101 : tag tronqué sous un nom sur 2 lignes).
+
 ## Course avec intermission : dernier circuit, sans tag
 
 Une course 24p avec intermission porte deux circuits (`WarTrack.index` = `[intermission, circuit
