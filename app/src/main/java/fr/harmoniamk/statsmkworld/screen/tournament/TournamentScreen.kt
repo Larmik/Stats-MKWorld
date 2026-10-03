@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -28,12 +32,14 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 /**
  * Fiche d'un tournoi officiel (#152), ouverte depuis le badge de la carte score (détail de war, war
  * en cours) : logo, saison, dates, organisateur/mode, lien MKCentral, description et règles
- * (Markdown, anglais). Graphe racine → pas de bottombar (rule 17).
+ * (Markdown, traduits sur l'appareil quand c'est possible, original consultable). Graphe racine → pas de bottombar (rule 17).
  */
 @Composable
 fun TournamentScreen(viewModel: TournamentViewModel, onBack: () -> Unit) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
+    // Bascule traduction / original : état UI local, conservé à la rotation (rule 11).
+    var showOriginal by rememberSaveable { mutableStateOf(false) }
 
     BackHandler { onBack() }
     BaseScreen(
@@ -105,15 +111,35 @@ fun TournamentScreen(viewModel: TournamentViewModel, onBack: () -> Unit) {
                                 }
                             }
                         }
-                        if (details.description.isNotBlank()) item(key = "description") {
-                            StatCard(title = stringResource(R.string.tournament_description)) {
-                                MKMarkdownText(details.description)
+                        state.value.descriptionTranslated?.let {
+                            item(key = "translation") {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                                    MKText(
+                                        text = stringResource(R.string.tournament_auto_translated),
+                                        font = Fonts.NunitoIT,
+                                        textColor = Colors.white66,
+                                        fontSize = 12,
+                                        textAlign = TextAlign.Start,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    MKButton(
+                                        text = stringResource(if (showOriginal) R.string.tournament_show_translation else R.string.tournament_show_original),
+                                        onClick = { showOriginal = !showOriginal }
+                                    )
+                                }
                             }
                         }
-                        state.value.ruleset?.let { ruleset ->
+                        val description = state.value.descriptionTranslated?.takeUnless { showOriginal } ?: details.description
+                        val ruleset = state.value.rulesetTranslated?.takeUnless { showOriginal } ?: state.value.ruleset
+                        if (description.isNotBlank()) item(key = "description") {
+                            StatCard(title = stringResource(R.string.tournament_description)) {
+                                MKMarkdownText(description)
+                            }
+                        }
+                        ruleset?.let {
                             item(key = "ruleset") {
                                 StatCard(title = stringResource(R.string.tournament_ruleset)) {
-                                    MKMarkdownText(ruleset)
+                                    MKMarkdownText(it)
                                 }
                             }
                         }

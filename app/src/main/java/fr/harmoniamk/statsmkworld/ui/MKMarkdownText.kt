@@ -30,6 +30,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import fr.harmoniamk.statsmkworld.model.local.MarkdownSyntax
 
 /**
  * Rendu Markdown minimal (#152) des textes officiels MKCentral, sans dépendance : titres `#`,
@@ -94,14 +95,8 @@ private sealed interface MarkdownBlock {
     data object Rule : MarkdownBlock
 }
 
-private val headingRegex = Regex("""^(#{1,6})\s+(.*)$""")
-private val ruleRegex = Regex("""^(\*{3,}|-{3,}|_{3,})$""")
-private val bulletRegex = Regex("""^[-*+]\s+(.*)$""")
-private val orderedRegex = Regex("""^(\d+)\.\s+(.*)$""")
-private val imageRegex = Regex("""^!\[[^\]]*]\((\S+)\)$""")
-
 // Ordre des alternatives = priorité : lien, gras, italique, URL nue.
-private val inlineRegex = Regex("""\[([^\]]+)]\((\S+?)\)|\*\*(.+?)\*\*|\*(.+?)\*|(https?://[^\s)]+)""")
+private val inlineRegex = Regex("${MarkdownSyntax.LINK}|\\*\\*(.+?)\\*\\*|\\*(.+?)\\*|(${MarkdownSyntax.BARE_URL})")
 
 private val linkStyles = TextLinkStyles(SpanStyle(color = Colors.blue, textDecoration = TextDecoration.Underline))
 
@@ -112,15 +107,15 @@ private class MarkdownBlockParser {
 
     fun parse(markdown: String): List<MarkdownBlock> {
         markdown.lines().map { it.trim() }.forEach { line ->
-            val heading = headingRegex.find(line)
-            val bullet = bulletRegex.find(line)
-            val ordered = orderedRegex.find(line)
-            val image = imageRegex.find(line)
+            val heading = MarkdownSyntax.heading.find(line)
+            val bullet = MarkdownSyntax.bullet.find(line)
+            val ordered = MarkdownSyntax.ordered.find(line)
+            val image = MarkdownSyntax.image.find(line)
             when {
                 line.isEmpty() -> flushParagraph()
                 heading != null -> addBlock(MarkdownBlock.Heading(heading.groupValues[1].length, parseInline(heading.groupValues[2])))
                 // Avant les puces : `***` serait sinon lu comme une puce `*`.
-                ruleRegex.matches(line) -> addBlock(MarkdownBlock.Rule)
+                MarkdownSyntax.rule.matches(line) -> addBlock(MarkdownBlock.Rule)
                 bullet != null -> addBlock(MarkdownBlock.ListItem("•", parseInline(bullet.groupValues[1])))
                 ordered != null -> addBlock(MarkdownBlock.ListItem("${ordered.groupValues[1]}.", parseInline(ordered.groupValues[2])))
                 image != null -> addBlock(MarkdownBlock.Image(image.groupValues[1]))

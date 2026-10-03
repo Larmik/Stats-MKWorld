@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 10,
-    "identityHash": "ba0dc5f81fd07da43412634102852891",
+    "identityHash": "59161c31ee5a113563f386d48ea6de25",
     "entities": [
       {
         "tableName": "WarEntity",
@@ -201,7 +201,7 @@
       },
       {
         "tableName": "TournamentEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `mkcTournamentId` INTEGER NOT NULL, `seasonName` TEXT NOT NULL, `description` TEXT NOT NULL, `ruleset` TEXT NOT NULL, `logo` TEXT, `dateStart` INTEGER, `dateEnd` INTEGER, `organizer` TEXT, `mode` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `mkcTournamentId` INTEGER NOT NULL, `seasonName` TEXT NOT NULL, `description` TEXT NOT NULL, `ruleset` TEXT NOT NULL, `dateStart` INTEGER, `dateEnd` INTEGER, `organizer` TEXT, `mode` TEXT, `descriptionTranslated` TEXT, `rulesetTranslated` TEXT, `translationLanguage` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -234,11 +234,6 @@
             "notNull": true
           },
           {
-            "fieldPath": "logo",
-            "columnName": "logo",
-            "affinity": "TEXT"
-          },
-          {
             "fieldPath": "dateStart",
             "columnName": "dateStart",
             "affinity": "INTEGER"
@@ -257,6 +252,21 @@
             "fieldPath": "mode",
             "columnName": "mode",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "descriptionTranslated",
+            "columnName": "descriptionTranslated",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rulesetTranslated",
+            "columnName": "rulesetTranslated",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "translationLanguage",
+            "columnName": "translationLanguage",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -269,7 +279,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ba0dc5f81fd07da43412634102852891')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '59161c31ee5a113563f386d48ea6de25')"
     ]
   }
 }

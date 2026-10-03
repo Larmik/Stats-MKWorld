@@ -289,6 +289,9 @@
     <string name="tournament_ruleset">Règlement</string>
     <string name="tournament_open_mkcentral">Voir sur MKCentral</string>
     <string name="tournament_unavailable">Informations officielles indisponibles pour l\'instant : elles seront récupérées à la prochaine synchronisation (connexion requise).</string>
+    <string name="tournament_auto_translated">Traduit automatiquement</string>
+    <string name="tournament_show_original">Voir l\'original</string>
+    <string name="tournament_show_translation">Voir la traduction</string>
     <string name="war_kind_friendly">Amicaux</string>
     <string name="war_kind_official">Officiels</string>
     <string name="addwar_previous">Précédent</string>

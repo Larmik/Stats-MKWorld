@@ -1,4 +1,5 @@
 [versions]
+mlkitTranslate = "17.0.3"
 coilCompose = "3.5.0"
 composeBom = "2026.06.00"
 activityKtx = "1.13.0"
@@ -40,6 +41,7 @@ compose = "1.11.3"
 
 
 [libraries]
+mlkit-translate = { module = "com.google.mlkit:translate", version.ref = "mlkitTranslate" }
 
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 

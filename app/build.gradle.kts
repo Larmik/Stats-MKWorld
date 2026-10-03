@@ -122,6 +122,9 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
 
+    // Traduction sur l'appareil des textes officiels des tournois (#152)
+    implementation(libs.mlkit.translate)
+
 
     // Hilt
     implementation(libs.dagger.hilt.android)

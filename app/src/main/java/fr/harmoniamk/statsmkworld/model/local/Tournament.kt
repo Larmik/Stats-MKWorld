@@ -9,11 +9,12 @@ import fr.harmoniamk.statsmkworld.R
  * un tournoi demande une release. `War.tournamentId` stocke le [name] (stable si l'ordre change).
  *
  * [seriesId] / [namePrefix] : clé de résolution MKCentral (série, ou préfixe de nom sans série) de la
- * dernière saison, lue par `TournamentRepository` (#152) ; [fallbackLogo] = repli du logo officiel.
+ * dernière saison, lue par `TournamentRepository` (#152). [logo] embarqué : le logo MKCentral n'est
+ * pas chargé.
  */
 enum class Tournament(
     @StringRes val label: Int,
-    @DrawableRes val fallbackLogo: Int,
+    @DrawableRes val logo: Int,
     val seriesId: Int?,
     val namePrefix: String?
 ) {

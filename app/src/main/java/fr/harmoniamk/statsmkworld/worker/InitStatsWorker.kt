@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.firstOrNull
  * Worker one-shot enfilé à chaque démarrage (`MainViewModel`) et lors de la connexion
  * (`DataStoreRepository`). Rôle : **hydratation eager des saisons (#73)** — synchro RTDB → Room
  * sans attendre le worker périodique — et des tournois officiels tant que leur cache est incomplet
- * (#152 : première installation, montée de version Room).
+ * ou non traduit dans la langue du téléphone (#152).
  *
  * Historique : ce worker peuplait aussi un cache de classements (`StatsRepository`) ; ce cache
  * n'était plus lu par aucun écran (les VM stats recalculent à la demande) et a été retiré comme
@@ -47,8 +47,11 @@ class InitStatsWorker @AssistedInject constructor(
         dataStoreRepository.mkcTeam.firstOrNull()?.id?.let { seasonRepository.fetchSeasons(it.toString()) }
         // Le worker périodique ne passe qu'à 4 h : sans cela, badges et fiches resteraient vides
         // jusqu'à la nuit suivante. Indépendant du joueur (données publiques).
-        if (databaseRepository.getTournaments().firstOrNull().orEmpty().size < Tournament.entries.size)
-            tournamentRepository.fetchTournaments()
+        // Cache complet : seule la traduction est rattrapée (langue changée, modèle absent la veille).
+        when (databaseRepository.getTournaments().firstOrNull().orEmpty().size < Tournament.entries.size) {
+            true -> tournamentRepository.fetchTournaments()
+            else -> tournamentRepository.translateTournaments()
+        }
         return Result.success()
     }
 }
