@@ -91,7 +91,7 @@ data class LorenziTableStyle(
 /**
  * Styles prédéfinis du générateur retenus pour l'app (objet `tableStyles` de `src/tableRenderer.ts`),
  * recopiés tels quels : l'API ne les connaît pas par nom, l'objet complet est envoyé.
- * Atlas League en premier (style proposé par défaut), base « Dark (Thin) » du générateur.
+ * Ordre du sélecteur : Dark (style par défaut), Light, Atlas League (base « Dark (Thin) » du générateur).
  *
  * @property circuitBackground fond = circuit au meilleur score ; jamais pour Atlas League.
  * @property autoTextColor couleur du texte (noir/blanc) choisie selon le fond ; sinon celle du style,
@@ -102,6 +102,17 @@ enum class LorenziStylePreset(
     val circuitBackground: Boolean,
     val autoTextColor: Boolean,
 ) {
+    DARK(
+        LorenziTableStyle(
+            name = "Dark",
+            invertColors = true,
+            playerBkgColor = "#888888",
+            playerBkgOpacity = 0.05,
+        ).withTextColor("#ffffff"), // Dark : texte toujours blanc
+        circuitBackground = true,
+        autoTextColor = false,
+    ),
+    LIGHT(LorenziTableStyle(), circuitBackground = true, autoTextColor = true),
     ATLAS_LEAGUE(
         LorenziTableStyle(
             name = "Atlas League",
@@ -125,17 +136,6 @@ enum class LorenziStylePreset(
             rankingFont = LorenziTableFont(name = "Roboto", weight = 400),
         ),
         circuitBackground = false,
-        autoTextColor = false,
-    ),
-    LIGHT(LorenziTableStyle(), circuitBackground = true, autoTextColor = true),
-    DARK(
-        LorenziTableStyle(
-            name = "Dark",
-            invertColors = true,
-            playerBkgColor = "#888888",
-            playerBkgOpacity = 0.05,
-        ).withTextColor("#ffffff"), // Dark : texte toujours blanc
-        circuitBackground = true,
         autoTextColor = false,
     ),
 }

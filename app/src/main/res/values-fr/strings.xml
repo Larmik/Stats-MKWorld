@@ -315,7 +315,7 @@
     <string name="wardetails_title">DÉTAILS DE LA WAR</string>
     <string name="wardetails_player_ranking">Classement joueurs</string>
     <string name="wardetails_generate_tab">Générer le Tab (PDF)</string>
-    <string name="tab_share_cta">Tab classique &amp; partager</string>
+    <string name="tab_classic_cta">Générer le tab (classique)</string>
     <string name="tab_lorenzi_style">Style du tab</string>
     <string name="tab_lorenzi_cta">Générer le tab (HLorenzi)</string>
     <string name="tab_lorenzi_generating">Génération…</string>

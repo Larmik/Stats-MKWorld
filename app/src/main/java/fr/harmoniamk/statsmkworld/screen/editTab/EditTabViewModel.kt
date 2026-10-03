@@ -62,7 +62,7 @@ class EditTabViewModel @AssistedInject constructor(
     @Suppress("ArrayInDataClass")
     data class State(
         val rows: Int = 6,
-        val preset: LorenziStylePreset = LorenziStylePreset.ATLAS_LEAGUE,
+        val preset: LorenziStylePreset = LorenziStylePreset.DARK,
         val isGenerating: Boolean = false,
         /** PNG HLorenzi affiché en aperçu, partagé (et écrit dans Pictures) seulement à la demande. */
         val lorenziTab: ByteArray? = null,

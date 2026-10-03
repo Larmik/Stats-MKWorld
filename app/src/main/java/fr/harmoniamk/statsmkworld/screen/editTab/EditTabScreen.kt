@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -124,7 +122,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // 3. Style HLorenzi (segmented partagé, rule 16) + CTA principal + aperçu avant partage (#105).
+            // 3. Style HLorenzi (segmented partagé, rule 16) + CTA HLorenzi (#105).
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     MKText(
@@ -158,6 +156,21 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                     }
                 )
             }
+            // 4. Tab classique (génération locale PDF → JPEG + partage), en alternative et en repli :
+            // même rendu que le CTA HLorenzi (même niveau d'action).
+            item {
+                MKButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.tab_classic_cta),
+                    onClick = {
+                        viewModel.generateClassicPdf(
+                            players = valuesListName.take(rows).filterNot { it.isEmpty() },
+                            scores = valuesListScore.take(rows).filterNot { it.isEmpty() }
+                        )
+                    }
+                )
+            }
+            // 5. Aperçu du tab HLorenzi + partage.
             state.value.lorenziTab?.let { png ->
                 item {
                     AsyncImage(
@@ -175,22 +188,6 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                         onClick = viewModel::shareLorenziTab
                     )
                 }
-            }
-
-            // 4. Tab classique (génération locale PDF → JPEG), conservé en alternative et en repli.
-            item {
-                Spacer(Modifier.height(3.dp))
-                MKButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = stringResource(R.string.tab_share_cta),
-                    icon = R.drawable.ic_share,
-                    onClick = {
-                        viewModel.generateClassicPdf(
-                            players = valuesListName.take(rows).filterNot { it.isEmpty() },
-                            scores = valuesListScore.take(rows).filterNot { it.isEmpty() }
-                        )
-                    }
-                )
             }
         }
     }
