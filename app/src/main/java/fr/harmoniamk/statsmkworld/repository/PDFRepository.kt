@@ -26,13 +26,13 @@ import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.TeamEntity
 import fr.harmoniamk.statsmkworld.extension.setData
-import fr.harmoniamk.statsmkworld.model.local.Maps
 import fr.harmoniamk.statsmkworld.model.local.PlayerScoreForTab
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -42,7 +42,14 @@ import javax.inject.Singleton
 import kotlin.math.roundToInt
 
 interface PDFRepositoryInterface {
+    companion object {
+        const val MIME_JPEG = "image/jpeg"
+        const val MIME_PNG = "image/png"
+    }
+
     fun write(pdfDocument: PdfDocument, fileName: String): Flow<Uri?>
+    /** Enregistre une image déjà encodée (ex. PNG HLorenzi) dans Pictures ; `null` si l'écriture échoue. */
+    suspend fun writeImage(bytes: ByteArray, fileName: String, mimeType: String): Uri?
     fun generatePdf(details: WarDetails, teamWin: TeamEntity?, teamLose: TeamEntity?, hostScores: List<PlayerScoreForTab>, opponentScores: List<PlayerScoreForTab>): PdfDocument
     /*
     fun generateDetailedPdf(
@@ -71,27 +78,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
 
     override fun write(pdfDocument: PdfDocument, fileName: String) = flow {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val resolver = context.contentResolver
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-                }
-                val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                imageUri?.let { uri ->
-                    resolver.openOutputStream(uri)?.use { outputStream: OutputStream ->
-                        pdfToJpg(pdfDocument, outputStream)
-                        emit(uri)
-                    }
-                }
-            } else {
-                val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                if (!picturesDir.exists()) picturesDir.mkdirs()
-                val jpegFile = File(picturesDir, fileName)
-                FileOutputStream(jpegFile).use { out -> pdfToJpg(pdfDocument, out) }
-                emit(FileProvider.getUriForFile(context, "${context.packageName}.provider", jpegFile))
-            }
+            saveToPictures(fileName, PDFRepositoryInterface.MIME_JPEG) { pdfToJpg(pdfDocument, it) }?.let { emit(it) }
         } catch (_: IOException) {
             emit(value = null)
         } finally {
@@ -99,11 +86,39 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         }
     }.flowOn(context = Dispatchers.IO)
 
+    override suspend fun writeImage(bytes: ByteArray, fileName: String, mimeType: String): Uri? =
+        withContext(Dispatchers.IO) {
+            try {
+                saveToPictures(fileName, mimeType) { it.write(bytes) }
+            } catch (_: IOException) {
+                null
+            }
+        }
+
+    /** MediaStore (API ≥ 29) ou fichier public + FileProvider ; `null` si MediaStore refuse l'insertion. */
+    private fun saveToPictures(fileName: String, mimeType: String, writeContent: (OutputStream) -> Unit): Uri? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val resolver = context.contentResolver
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+            }
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)?.takeIf { uri ->
+                resolver.openOutputStream(uri)?.use(writeContent) != null
+            }
+        } else {
+            val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            if (!picturesDir.exists()) picturesDir.mkdirs()
+            val imageFile = File(picturesDir, fileName)
+            FileOutputStream(imageFile).use(writeContent)
+            FileProvider.getUriForFile(context, "${context.packageName}.provider", imageFile)
+        }
+
 
     private fun setPdfData(pdfView: View, details: WarDetails, teamWin: TeamEntity?, teamLose: TeamEntity?, allScores: List<Pair<PlayerScoreForTab, String>>) {
         val playersWin: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
         val playersLose: MutableList<Pair<PlayerScoreForTab, Int>> = mutableListOf()
-        val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.lastOrNull()?.toIntOrNull()?.let { Maps.entries.getOrNull(it) }
 
         allScores.forEachIndexed { index, pair ->
             val rank = when (pair.first.score == allScores.getOrNull(index-1)?.first?.score) {
@@ -115,7 +130,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
                 pair.second == teamLose?.id -> playersLose.add(Pair(pair.first, rank))
             }
         }
-        pdfView.findViewById<ImageView>(R.id.tab_bg).setImageResource(bestTrack?.background ?: R.drawable.rsl)
+        pdfView.findViewById<ImageView>(R.id.tab_bg).setImageResource(details.tabBackground)
         pdfView.findViewById<TextView>(R.id.tab_war_date).text = details.date
         pdfView.findViewById<TextView>(R.id.tab_war_diff).text = details.displayedDiff
         pdfView.findViewById<TextView>(R.id.tab_winner_team_tag).text = teamWin?.tag
@@ -292,7 +307,7 @@ class PDFRepository @Inject constructor(@ApplicationContext private val context:
         }
         val bestTrack = details.warTracks.maxByOrNull { track -> track.teamScore }?.index?.let { maps[it] }
 
-        pdfView.findViewById<ImageView>(R.id.tab_bg).setImageResource(bestTrack?.background ?: R.drawable.rsl)
+        pdfView.findViewById<ImageView>(R.id.tab_bg).setImageResource(details.tabBackground)
         pdfView.findViewById<TextView>(R.id.tab_war_date).text = details.date
         pdfView.findViewById<TextView>(R.id.tab_war_diff).text = details.displayedDiff
         pdfView.findViewById<TextView>(R.id.tab_war_shocks).text = "x${playersHost.sumOf { it.first.shockCount }}"

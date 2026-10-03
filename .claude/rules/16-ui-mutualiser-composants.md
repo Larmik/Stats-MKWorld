@@ -92,6 +92,11 @@ couleur demandée (`textColor.copy(alpha = 0.4f)`), lisible quel que soit le fon
   panneau « Annuler la war »…). Un **bouton seul** sur sa ligne n'est **pas** concerné
   (garde sa largeur intrinsèque/centrée). Un bouton « danger » ad hoc (Box rouge) partageant
   la ligne suit la même règle (`weight(1f)`).
+- **Boutons d'action de même niveau → même rendu** : deux actions alternatives d'un même
+  écran (ex. « Générer le tab (HLorenzi) » / « Générer le tab (classique) » d'`EditTabScreen`,
+  #105) ont la même largeur (`weight(1f)` sur une ligne, `fillMaxWidth` si empilés) et la même
+  présence d'icône (sur toutes ou aucune). Une icône reste réservée à une action distincte
+  (ex. « Partager »).
 - **État désactivé sans boîte Material** : `MKButton` pose son fond sur son `Row` interne,
   le container Material doit être transparent **à l'état actif ET désactivé**. Forcer dans
   `ButtonDefaults.buttonColors(...)` **`disabledContainerColor = Color.Transparent`** (et

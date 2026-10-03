@@ -315,7 +315,16 @@
     <string name="wardetails_title">DÉTAILS DE LA WAR</string>
     <string name="wardetails_player_ranking">Classement joueurs</string>
     <string name="wardetails_generate_tab">Générer le Tab (PDF)</string>
-    <string name="tab_share_cta">Tab classique &amp; partager</string>
+    <string name="tab_classic_cta">Générer le tab (classique)</string>
+    <string name="tab_lorenzi_style">Style du tab</string>
+    <string name="tab_lorenzi_cta">Générer le tab (HLorenzi)</string>
+    <string name="tab_lorenzi_generating">Génération…</string>
+    <string name="tab_lorenzi_share">Partager le tab</string>
+    <string name="tab_lorenzi_preview">Aperçu du tab</string>
+    <string name="tab_lorenzi_error">Générateur HLorenzi injoignable : tab classique généré à la place</string>
+    <string name="tab_write_error">Impossible d\'enregistrer l\'image</string>
+    <string name="tab_scores_too_many">Les scores des joueurs sont incorrects (%1$d points en trop)</string>
+    <string name="tab_scores_missing">Les scores des joueurs sont incorrects (%1$d points manquants)</string>
     <string name="wardetails_see_opponent">Voir l\'adversaire</string>
     <string name="wardetails_points_suffix">pts</string>
     <!-- Pôle Stats — écran Statistiques (ticket #25) -->
