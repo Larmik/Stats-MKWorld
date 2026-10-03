@@ -223,6 +223,10 @@ Voici ce que tu y trouves (le contenu s'adapte selon que tu es en « Individuell
 - **Forme & séries** puis **Records & séries** : ta dynamique du moment, tes meilleurs et pires passages, tes courses parfaites (Top 6) et complètement ratées (Bot 6).
 - **La répartition des positions** : un histogramme montrant à quelles places tu (ou l'équipe) finis le plus souvent.
 - **Les podiums Circuits et Adversaires** : le Top 3 et le Flop 3 de tes circuits et adversaires, avec un choix de tri (par nombre de fois joué, par winrate ou par score).
+  - Par **nombre de fois joué**, les deux lignes s'appellent **« Plus joués / Moins joués »** (circuits) ou **« Plus affrontés / Moins affrontés »** (adversaires) : c'est un classement de fréquence, pas de performance.
+  - Par **winrate** ou **score**, seuls les circuits et adversaires joués **au moins 3 fois** sont classés, pour qu'un résultat isolé ne fausse pas le podium.
+  - Un même circuit ou adversaire n'apparaît **jamais à la fois** dans le Top et dans le Flop. S'il n'y en a pas assez pour remplir une ligne, un message l'indique.
+  - En vue **Individuelles**, les stats d'un circuit ne comptent que les courses **que tu as réellement courues**, et la **position moyenne** affichée est la vraie moyenne de tes places (ex. « 4,5 »). Le tri par score te classe sur cette position moyenne.
 - **Contributeurs** et **Meilleurs baggeurs** (en vue Équipe) : le classement des joueurs de l'équipe selon leur part de points, puis selon leur part d'éclairs.
 
 Sur beaucoup d'indicateurs, un petit **bouton d'information (ⓘ)** ouvre une explication en une phrase, pour ne jamais rester bloqué sur le sens d'une stat.
@@ -454,6 +458,8 @@ Au-delà des chiffres globaux, l'application propose des **fiches dédiées** po
 Tu y trouves tout ce que tu dois savoir avant de les affronter : le **nombre de confrontations** et la date de la dernière, le **bilan face à eux** (winrate coloré : rouge si tu es en dessous de 50 %, vert au-dessus), tes **5 dernières wars** contre eux, tes **séries** face à eux, ton **score / écart moyen**, tes **éclairs** contre eux, ainsi que les **circuits qui te réussissent le mieux (ou le moins)** contre cette équipe. En vue Équipe, tu vois aussi quels **pilotes** et quels **baggeurs** de ton équipe performent le mieux face à eux. Tout en bas, l'**historique** de tes wars contre cet adversaire.
 
 Un sélecteur **« Joueur » / « Équipe »** te laisse voir ces stats de ton point de vue personnel ou de celui du collectif.
+
+Les podiums des fiches suivent les mêmes règles que ceux du pôle Stats : circuits classés par winrate ou score seulement à partir de **3 courses**, libellés « Plus / Moins joués » pour le tri par nombre de fois joué, et jamais le même élément dans le Top et le Flop (un message s'affiche s'il n'y en a pas assez).
 
 ### La fiche d'un circuit
 

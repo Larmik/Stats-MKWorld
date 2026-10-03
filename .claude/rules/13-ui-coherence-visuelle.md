@@ -66,6 +66,22 @@ passer par `List<Maps>.displayedMap()` / `displayedTag()` (`extension/ListExtens
 par un `firstOrNull()`/`.name` local. Une grille de **sélection** (un candidat = un circuit) n'est
 pas une course : chaque cellule garde son tag. Cf. #101.
 
+## Classements et positions moyennes
+
+Cf. #102 (Top/Flop circuits incohérents) :
+
+- **Position moyenne = vraie moyenne des positions** (`Double`, affichée via
+  `Double.toCompactString()`), jamais `pointsToPosition` d'une moyenne de points (valeurs hors
+  barème → « 0 »). En vue joueur, ne moyenner que les manches **qu'il a courues**
+  (`WarTrack.hasPlayer`) : une manche non courue n'est pas un 0.
+- **Top/Flop de performance** (winrate, score) : seuil `Stats.MIN_RANKING_SAMPLE` partout
+  (écran Stats et fiches) ; critère de tri = la valeur **affichée** dans la cellule (position
+  moyenne en vue joueur → `sortedByTrackScore`).
+- **Top et Flop disjoints** : flop = `flopExcludingTop()` du même tri ; sous 3 entrées, message
+  (`PodiumOrMessage`), jamais de podium tronqué.
+- Un tri de **fréquence** (occurrences) n'est pas une performance : libellés « Plus / Moins
+  joués » (ou « affrontés »), pas « Top / Flop ».
+
 ## Combinaison avec les autres rules
 
 Les autres rules UI (`10` clés de liste, `11` state, `12` roster, `14` back

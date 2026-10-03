@@ -17,6 +17,7 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.displayedMap
 import fr.harmoniamk.statsmkworld.extension.displayedTag
 import fr.harmoniamk.statsmkworld.extension.displayName
+import fr.harmoniamk.statsmkworld.extension.flopExcludingTop
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
@@ -130,7 +131,7 @@ fun MapDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_pilots),
                             top = state.pilots.take(3).map { it.toPodiumEntry() },
-                            flop = state.pilots.takeLast(3).reversed().map { it.toPodiumEntry() },
+                            flop = state.pilots.flopExcludingTop().map { it.toPodiumEntry() },
                             onSeeAll = onPilotsRanking
                         )
                     }
@@ -139,7 +140,7 @@ fun MapDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_baggers),
                             top = state.baggers.take(3).map { it.toPodiumEntry() },
-                            flop = state.baggers.takeLast(3).reversed().map { it.toPodiumEntry() },
+                            flop = state.baggers.flopExcludingTop().map { it.toPodiumEntry() },
                             onSeeAll = onBaggersRanking
                         )
                     }
@@ -148,7 +149,7 @@ fun MapDetailScreen(
                         PodiumSectionCard(
                             title = stringResource(R.string.map_detail_opponents),
                             top = state.opponents.take(3).map { it.toPodiumEntry() },
-                            flop = state.opponents.takeLast(3).reversed().map { it.toPodiumEntry() },
+                            flop = state.opponents.flopExcludingTop().map { it.toPodiumEntry() },
                             onSeeAll = onOpponentsRanking
                         )
                     }

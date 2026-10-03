@@ -223,52 +223,52 @@ fun List<WarEntity>.withTrackStats(userId: String? = null, teamId: String? = nul
     )
 }
 
-/** Agrégat par circuit (manches groupées par index), partagé par `withTrackStats` et `withFullStats`. */
+/**
+ * Agrégat par circuit (manches groupées par index), partagé par `withTrackStats` et `withFullStats`.
+ * Vue joueur ([userId] non-null) : seules les manches courues par le joueur comptent (#102), pour
+ * `totalPlayed`, le winrate et les moyennes ; `averagePosition` = vraie moyenne de ses positions.
+ * Scores = moyennes par manche, y compris pour un circuit avec intermission.
+ */
 private fun trackStatsOf(tracks: List<WarTrack>, is24p: Boolean, userId: String?): List<TrackStats> =
     tracks
+        .filter { userId == null || it.hasPlayer(userId) }
         .groupBy { it.index }.toList()
+        // Circuit classique (1 index) ou avec intermission (2 index : [intermission, circuit]).
+        .filter { (indexes, _) -> indexes.size in 1..2 }
         .sortedByDescending { it.second.size }
-        .mapNotNull {
-            var teamScoreForTrack = 0
-            var playerScoreForTrack = 0
-            var shockCount = 0
-
-            it.second.forEach { track ->
-                val positions = track.positions
-                playerScoreForTrack += positions
-                    .singleOrNull { pos -> pos.playerId == userId }
-                    ?.position.positionToPoints(is24p)
-                teamScoreForTrack += positions.sumOf { it.position.positionToPoints(is24p) }
-                shockCount += track.shocks?.sumOf { it.count } ?: 0
+        .map { (indexes, tracksOfMap) ->
+            val played = tracksOfMap.size
+            val playerPositions = tracksOfMap.mapNotNull { track ->
+                track.positions.singleOrNull { it.playerId == userId }?.position
             }
-            val played = it.second.size
-            val wonCount = it.second.count { track -> track.diffScore(is24p) > 0 }
-            //Map classique trois tours
-            it.first.singleOrNull()?.let { index ->
-
-                TrackStats(
-                    stats = null,
-                    map = listOf(Maps.entries[index.toInt()]),
-                    trackIndex = listOf(index.toInt()),
-                    totalPlayed = played,
-                    winRate = wonCount.percentOf(played),
-                    teamScore = teamScoreForTrack / played,
-                    shockCount = shockCount,
-                    playerScore = playerScoreForTrack / played
-                )
-            } ?: it.first.takeIf { it.size == 2 }?.let { indexes ->
-                TrackStats(
-                    stats = null,
-                    map = indexes.mapNotNull { it.toIntOrNull() }.mapNotNull { Maps.entries.getOrNull(it) },
-                    trackIndex = indexes.mapNotNull { it.toIntOrNull() },
-                    totalPlayed = played,
-                    winRate = wonCount.percentOf(played),
-                    teamScore = teamScoreForTrack,
-                    shockCount = shockCount,
-                    playerScore = playerScoreForTrack / played
-                )
-            }
+            val mapIndexes = indexes.mapNotNull { it.toIntOrNull() }
+            TrackStats(
+                map = mapIndexes.mapNotNull { Maps.entries.getOrNull(it) },
+                trackIndex = mapIndexes,
+                totalPlayed = played,
+                winRate = tracksOfMap.count { it.diffScore(is24p) > 0 }.percentOf(played),
+                teamScore = tracksOfMap.sumOf { track -> track.positions.sumOf { it.position.positionToPoints(is24p) } } / played,
+                shockCount = tracksOfMap.sumOf { track -> track.shocks?.sumOf { it.count } ?: 0 },
+                playerScore = playerPositions.sumOf { it.positionToPoints(is24p) } / played,
+                averagePosition = playerPositions.takeIf { it.isNotEmpty() }?.average()
+            )
         }
+
+/**
+ * Circuits du meilleur au pire « score » (#102), critère aligné sur la valeur affichée : position
+ * moyenne croissante en vue joueur ([isIndiv]), score d'équipe moyen décroissant sinon.
+ */
+fun List<TrackStats>.sortedByTrackScore(isIndiv: Boolean): List<TrackStats> = when (isIndiv) {
+    true -> sortedBy { it.averagePosition ?: Double.MAX_VALUE }
+    else -> sortedByDescending { it.teamScore ?: 0 }
+}
+
+/**
+ * Flop 3 d'une liste triée du meilleur au pire, pire en premier, privé des éléments du Top 3
+ * (`take(3)`) : un élément n'est jamais dans les deux (#102). Moins de 3 éléments si la liste en
+ * compte moins de 6.
+ */
+fun <T> List<T>.flopExcludingTop(): List<T> = drop(3).takeLast(3).reversed()
 
 /**
  * Filtre les wars sur l'intervalle d'une saison (#70). Rattachement calculé (pas de

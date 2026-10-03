@@ -330,6 +330,10 @@
     <string name="stats_shocks_share">%1$s of shocks</string>
     <string name="stats_podium_top">Top 3</string>
     <string name="stats_podium_flop">Flop 3</string>
+    <string name="stats_podium_most_played">Most played</string>
+    <string name="stats_podium_least_played">Least played</string>
+    <string name="stats_podium_most_faced">Most faced</string>
+    <string name="stats_podium_least_faced">Least faced</string>
     <string name="stats_podium_not_enough">Not enough data on this period for a full ranking.</string>
     <string name="stats_sort_winrate">Winrate</string>
     <string name="stats_sort_score">Score</string>

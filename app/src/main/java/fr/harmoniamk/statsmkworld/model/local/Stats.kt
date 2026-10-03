@@ -1,10 +1,12 @@
 package fr.harmoniamk.statsmkworld.model.local
 
+import fr.harmoniamk.statsmkworld.extension.flopExcludingTop
 import fr.harmoniamk.statsmkworld.extension.percentOf
 import fr.harmoniamk.statsmkworld.extension.pointsToPosition
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
 import fr.harmoniamk.statsmkworld.extension.safeSubList
 import fr.harmoniamk.statsmkworld.extension.sizeOrOne
+import fr.harmoniamk.statsmkworld.extension.sortedByTrackScore
 import fr.harmoniamk.statsmkworld.extension.sum
 import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.warScoreToDiff
@@ -111,36 +113,21 @@ data class Stats(
         return streak
     }
 
-    // ---------------------------------------------------------------------
-    // Lot B — Meilleures/pires maps par winrate ET par score moyen
-    //
-    // Seuil échantillon : une map n'entre dans ces classements qu'à partir de
-    // MIN_RANKING_SAMPLE matchs joués (cf. DÉCISION PRODUIT ≥ 3).
-    // ---------------------------------------------------------------------
+    // Top 3 / Flop 3 des circuits (#102). Tris de performance (winrate, score) : seuil
+    // MIN_RANKING_SAMPLE manches ; occurrences : sans seuil (affiché « Plus / Moins joués »).
+    // Flop = queue du même tri, privée du Top (`flopExcludingTop`).
     private val mapsRankable: List<TrackStats> = maps.filter { it.totalPlayed >= MIN_RANKING_SAMPLE }
+    private val mapsByWinrate: List<TrackStats> = mapsRankable.sortedByDescending { it.winRate ?: 0.0 }
+    // Vue joueur : position moyenne (valeur affichée par la cellule) ; vue équipe : score d'équipe.
+    private val mapsByScore: List<TrackStats> = mapsRankable.sortedByTrackScore(isIndiv = userId != null)
+    private val mapsByCount: List<TrackStats> = maps.sortedByDescending { it.totalPlayed }
 
-    // Score d'un circuit pour le classement « par score » : en vue joueur, le score DU
-    // JOUEUR (playerScore, aligné sur la position moyenne affichée par MapCell) ; en vue
-    // équipe, teamScore.
-    private val TrackStats.rankingScore: Int
-        get() = (if (userId != null) playerScore else teamScore) ?: 0
-
-    /** Top 3 / Flop 3 des maps par winrate (seuil ≥ 3 matchs appliqué). */
-    val topMapsByWinrate: List<TrackStats> =
-        mapsRankable.sortedByDescending { it.winRate ?: 0.0 }.take(3)
-    val flopMapsByWinrate: List<TrackStats> =
-        mapsRankable.sortedBy { it.winRate ?: 0.0 }.take(3)
-    val topMapsByScore: List<TrackStats> =
-        mapsRankable.sortedByDescending { it.rankingScore }.take(3)
-    val flopMapsByScore: List<TrackStats> =
-        mapsRankable.sortedBy { it.rankingScore }.take(3)
-    /** Top 3 / Flop 3 des maps par NOMBRE de fois jouées (occurrences). Le seuil
-     * MIN_RANKING_SAMPLE n'est PAS appliqué ici : « le moins joué » a du sens même
-     * sous le seuil, donc on classe sur toutes les maps rencontrées. */
-    val topMapsByCount: List<TrackStats> =
-        maps.sortedByDescending { it.totalPlayed }.take(3)
-    val flopMapsByCount: List<TrackStats> =
-        maps.filter { it.totalPlayed > 0 }.sortedBy { it.totalPlayed }.take(3)
+    val topMapsByWinrate: List<TrackStats> = mapsByWinrate.take(3)
+    val flopMapsByWinrate: List<TrackStats> = mapsByWinrate.flopExcludingTop()
+    val topMapsByScore: List<TrackStats> = mapsByScore.take(3)
+    val flopMapsByScore: List<TrackStats> = mapsByScore.flopExcludingTop()
+    val topMapsByCount: List<TrackStats> = mapsByCount.take(3)
+    val flopMapsByCount: List<TrackStats> = mapsByCount.flopExcludingTop()
 
     // =====================================================================
     // Stats supplémentaires (bis) — Vagues 1/2/3
@@ -301,8 +288,8 @@ data class Stats(
 
 
     companion object {
-        // Seuil d'échantillon minimal pour figurer dans les classements
-        // winrate/score (maps ET adversaires). Cf. DÉCISION PRODUIT du ticket.
+        // Échantillon minimal pour figurer dans un top/flop de performance (winrate/score),
+        // circuits ET adversaires, fiches comprises (#102).
         const val MIN_RANKING_SAMPLE = 3
     }
 }
@@ -356,6 +343,8 @@ data class TrackStats(
     val trackIndex: List<Int>? = null,
     val teamScore: Int? = null,
     val playerScore: Int? = null,
+    // Vraie moyenne des positions du joueur sur ses manches courues (#102) ; null en vue équipe.
+    val averagePosition: Double? = null,
     val totalPlayed: Int = 0,
     val winRate: Double? = null,
     val shockCount: Int? = null
