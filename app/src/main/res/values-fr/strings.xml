@@ -289,6 +289,13 @@
     <string name="tournament_ruleset">Règlement</string>
     <string name="tournament_open_mkcentral">Voir sur MKCentral</string>
     <string name="tournament_unavailable">Informations officielles indisponibles pour l\'instant : elles seront récupérées à la prochaine synchronisation (connexion requise).</string>
+    <string name="debug_official_wars_preview">Migrer les wars officielles</string>
+    <string name="debug_official_wars_loading_preview">Recherche des wars officielles…</string>
+    <string name="debug_official_wars_loading_migration">Migration des wars officielles…</string>
+    <string name="debug_official_wars_empty">Aucune war à migrer</string>
+    <string name="debug_official_wars_tournament_total">%1$s : %2$d war(s)</string>
+    <string name="debug_official_wars_confirm">Confirmer la migration (%1$d)</string>
+    <string name="debug_official_wars_migrated">%1$d war(s) migrée(s). %2$s</string>
     <string name="tournament_auto_translated">Traduit automatiquement</string>
     <string name="tournament_show_original">Voir l\'original</string>
     <string name="tournament_show_translation">Voir la traduction</string>

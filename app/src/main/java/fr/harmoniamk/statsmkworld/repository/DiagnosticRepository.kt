@@ -5,24 +5,34 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.harmoniamk.statsmkworld.database.entities.PlayerEntity
+import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
+import fr.harmoniamk.statsmkworld.extension.mkWorldRosters
+import fr.harmoniamk.statsmkworld.extension.opponentTeams
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.CandidateRoster
 import fr.harmoniamk.statsmkworld.model.local.MissingPlayer
 import fr.harmoniamk.statsmkworld.model.local.MkworldCandidate
+import fr.harmoniamk.statsmkworld.model.local.OfficialWarCandidate
 import fr.harmoniamk.statsmkworld.model.local.OpponentResolution
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.local.UnknownOpponentDiagnostic
 import fr.harmoniamk.statsmkworld.model.local.UnresolvedOpponent
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCTeam
 import kotlinx.coroutines.flow.firstOrNull
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Outils de diagnostic debug (`DebugViewModel`) : arbitrage des adversaires « Équipe
- * inconnue » et des joueurs manquants, sur les wars historiques Firebase. Repository
+ * inconnue » et des joueurs manquants, migration rétroactive des wars officielles (#156),
+ * sur les wars historiques Firebase. Repository
  * dédié (agrège Firebase/MKCentral/Room/DataStore, un seul consommateur — rule 32).
  */
 interface DiagnosticRepositoryInterface {
@@ -31,6 +41,10 @@ interface DiagnosticRepositoryInterface {
     suspend fun deleteWar(hostRosterId: String, warId: Long)
     suspend fun diagnoseMissingPlayers(): List<MissingPlayer>
     suspend fun addMissingPlayerAsAlly(playerId: String)
+    /** Wars amicales de l'équipe jouées à une date du calendrier officiel, en soirée (lecture seule). */
+    suspend fun findOfficialWarCandidates(): List<OfficialWarCandidate>
+    /** Écrit le `tournamentId` des [candidates] sur Firebase puis rafraîchit Room ; nb de wars migrées par tournoi. */
+    suspend fun migrateOfficialWars(candidates: List<OfficialWarCandidate>): Map<Tournament, Int>
 }
 
 @Module
@@ -231,6 +245,90 @@ class DiagnosticRepository @Inject constructor(
                 warCount = warCountByPlayerId[playerId] ?: 0
             )
         }
+    }
+
+    // Une war est officielle si sa date de création (Paris) figure au calendrier ET qu'elle a été
+    // lancée à partir de 19h30 (aucun match officiel avant 20h ; tolère une création juste avant).
+    // Les wars déjà rattachées à un tournoi ne sont jamais candidates (idempotent).
+    override suspend fun findOfficialWarCandidates(): List<OfficialWarCandidate> {
+        val parisZone = ZoneId.of("Europe/Paris")
+        // Dates de match par saison (Atlas S1/S2/S3 partagent ATLAS_LEAGUE : la saison n'est pas stockée).
+        val calendar: Map<LocalDate, Tournament> = listOf(
+            // Atlas League S1
+            Tournament.ATLAS_LEAGUE to listOf(
+                "2025-10-12", "2025-10-19", "2025-10-26", "2025-11-02", "2025-11-09",
+                "2025-11-16", "2025-11-23", "2025-11-30", "2025-12-07", "2025-12-14"
+            ),
+            // Atlas League S2
+            Tournament.ATLAS_LEAGUE to listOf(
+                "2026-03-15", "2026-03-22", "2026-03-29", "2026-04-12", "2026-04-19",
+                "2026-04-26", "2026-05-03"
+            ),
+            // EuroLeague S1 (10 mai confirmé malgré le dimanche)
+            Tournament.EUROLEAGUE to listOf(
+                "2026-04-10", "2026-04-17", "2026-04-24", "2026-05-01", "2026-05-08",
+                "2026-05-10", "2026-05-22"
+            ),
+            // MKCentral Frontier
+            Tournament.MKC_FRONTIER to listOf("2026-06-06", "2026-06-07", "2026-06-13", "2026-06-14"),
+            // Low Div Cup S18
+            Tournament.LOW_DIV_CUP to listOf("2026-08-22", "2026-08-29", "2026-09-05", "2026-09-12", "2026-09-19"),
+            // Atlas League S3
+            Tournament.ATLAS_LEAGUE to listOf("2026-09-20", "2026-09-28"),
+        ).flatMap { (tournament, dates) -> dates.map { LocalDate.parse(it) to tournament } }.toMap()
+
+        val hostRosterIds = dataStoreRepository.mkcTeam.firstOrNull()
+            ?.mkWorldRosters()?.map { it.id.toString() }
+            .orEmpty()
+
+        return hostRosterIds.flatMap { hostId ->
+            firebaseRepository.getWars(hostId)
+                .filter { it.tournamentId == null }
+                .mapNotNull { war ->
+                    val createdAt = Instant.ofEpochMilli(war.id).atZone(parisZone)
+                    calendar[createdAt.toLocalDate()]
+                        ?.takeIf { !createdAt.toLocalTime().isBefore(LocalTime.of(19, 30)) }
+                        ?.let { tournament ->
+                            OfficialWarCandidate(
+                                hostRosterId = hostId,
+                                war = war,
+                                tournament = tournament,
+                                createdAt = createdAt,
+                                opponents = war.opponentTeams(databaseRepository)
+                            )
+                        }
+                }
+        }.sortedBy { it.war.id }
+    }
+
+    // Relit les wars Firebase (le `copy` porte sur la version fraîche, jamais sur une conversion
+    // Room) et ne réécrit que celles encore sans tournoi. Room est ensuite rafraîchi en UNE passe
+    // (un seul clear pour toutes les rosters, rule 30 / B27), sans relire Firebase après écriture.
+    override suspend fun migrateOfficialWars(candidates: List<OfficialWarCandidate>): Map<Tournament, Int> {
+        val tournamentByWarId = candidates.associate { it.war.id to it.tournament }
+        val hostRosterIds = dataStoreRepository.mkcTeam.firstOrNull()
+            ?.mkWorldRosters()?.map { it.id.toString() }
+            .orEmpty()
+        val warsByHost = hostRosterIds.associateWith { firebaseRepository.getWars(it) }
+
+        val migratedWars = warsByHost.flatMap { (hostId, wars) ->
+            wars.mapNotNull { war ->
+                tournamentByWarId[war.id]
+                    ?.takeIf { war.tournamentId == null }
+                    ?.let { hostId to war.copy(tournamentId = it.name) }
+            }
+        }
+        // Écritures séquentielles : volume faible, pas de rafale Firebase.
+        migratedWars.forEach { (hostId, war) -> firebaseRepository.writeWar(hostId, war) }
+
+        val migratedById = migratedWars.associate { (_, war) -> war.id to war }
+        val refreshedWars = warsByHost.values.flatten().map { migratedById[it.id] ?: it }
+        // Garde-fou anti-wipe : pas de clear si aucune war n'a pu être lue.
+        if (refreshedWars.isNotEmpty()) {
+            databaseRepository.clearWars()
+            databaseRepository.writeWars(refreshedWars.map { WarEntity(it) })
+        }
+        return migratedWars.groupingBy { (_, war) -> tournamentByWarId.getValue(war.id) }.eachCount()
     }
 
     // Ajoute un allié en local ET sur Firebase newAllies (les deux, sinon la resynchro

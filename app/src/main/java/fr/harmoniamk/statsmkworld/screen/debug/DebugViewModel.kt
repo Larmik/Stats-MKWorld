@@ -1,11 +1,15 @@
 package fr.harmoniamk.statsmkworld.screen.debug
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.harmoniamk.statsmkworld.datasource.network.MKCentralDataSourceInterface
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.firebase.User
 import fr.harmoniamk.statsmkworld.model.local.MissingPlayer
+import fr.harmoniamk.statsmkworld.model.local.OfficialWarCandidate
+import fr.harmoniamk.statsmkworld.model.local.Tournament
 import fr.harmoniamk.statsmkworld.model.local.UnknownOpponentDiagnostic
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
@@ -52,12 +56,17 @@ class DebugViewModel @Inject constructor(
     private val _sendNotif = MutableSharedFlow<Unit>()
     private val _diagnostics = MutableStateFlow<List<UnknownOpponentDiagnostic>>(emptyList())
     private val _missingPlayers = MutableStateFlow<List<MissingPlayer>>(emptyList())
+    private val _officialWars = MutableStateFlow(OfficialWarsState())
+    private val _officialWarsMigrated = MutableSharedFlow<Map<Tournament, Int>>()
 
     val sendNotif = _sendNotif.asSharedFlow()
     val sharedToast = _sharedToast.asSharedFlow()
     val sharedLoading = _sharedLoading.asStateFlow()
     val diagnostics = _diagnostics.asStateFlow()
     val missingPlayers = _missingPlayers.asStateFlow()
+    val officialWars = _officialWars.asStateFlow()
+    /** Récapitulatif (nb de wars migrées par tournoi) émis en fin de migration, pour le toast. */
+    val officialWarsMigrated = _officialWarsMigrated.asSharedFlow()
 
     val sharedMatrixMode = dataStoreRepository.matrixMode
 
@@ -212,6 +221,41 @@ class DebugViewModel @Inject constructor(
         }
     }
 
+    // Aperçu (dry-run, #156) : aucune écriture, toutes les candidates cochées par défaut.
+    fun onPreviewOfficialWars() {
+        viewModelScope.launch {
+            _officialWars.value = OfficialWarsState(loadingRes = R.string.debug_official_wars_loading_preview)
+            _officialWars.value = OfficialWarsState(candidates = diagnosticRepository.findOfficialWarCandidates())
+        }
+    }
+
+    // Coche/décoche une candidate (écarte une war d'entraînement repérée dans l'aperçu).
+    fun onToggleOfficialWar(warId: Long) {
+        _officialWars.value = _officialWars.value.let { state ->
+            state.copy(
+                excludedWarIds = when (warId in state.excludedWarIds) {
+                    true -> state.excludedWarIds - warId
+                    else -> state.excludedWarIds + warId
+                }
+            )
+        }
+    }
+
+    // Écrit uniquement les candidates cochées, puis vide l'aperçu.
+    fun onConfirmOfficialWars() {
+        viewModelScope.launch {
+            val selected = _officialWars.value.selectedCandidates
+            _officialWars.value = _officialWars.value.copy(loadingRes = R.string.debug_official_wars_loading_migration)
+            val summary = diagnosticRepository.migrateOfficialWars(selected)
+            _officialWars.value = OfficialWarsState()
+            _officialWarsMigrated.emit(summary)
+        }
+    }
+
+    fun onCancelOfficialWars() {
+        _officialWars.value = OfficialWarsState()
+    }
+
     fun loadWRs() {
         viewModelScope.launch {
             worldRecordsRepository.getCurrentWRs()
@@ -244,6 +288,16 @@ class DebugViewModel @Inject constructor(
                     }
                 }
             }.launchIn(viewModelScope)
+    }
+
+    /** Aperçu de la migration des wars officielles ; [candidates] `null` = aucun aperçu calculé. */
+    data class OfficialWarsState(
+        val candidates: List<OfficialWarCandidate>? = null,
+        val excludedWarIds: Set<Long> = emptySet(),
+        @StringRes val loadingRes: Int? = null,
+    ) {
+        val selectedCandidates: List<OfficialWarCandidate>
+            get() = candidates.orEmpty().filterNot { it.war.id in excludedWarIds }
     }
 
 }
