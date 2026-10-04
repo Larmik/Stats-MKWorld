@@ -274,7 +274,7 @@ class DiagnosticRepository @Inject constructor(
             // Low Div Cup S18
             Tournament.LOW_DIV_CUP to listOf("2026-08-22", "2026-08-29", "2026-09-05", "2026-09-12", "2026-09-19"),
             // Atlas League S3
-            Tournament.ATLAS_LEAGUE to listOf("2026-09-20", "2026-09-28"),
+            Tournament.ATLAS_LEAGUE to listOf("2026-09-20", "2026-09-27"),
         ).flatMap { (tournament, dates) -> dates.map { LocalDate.parse(it) to tournament } }.toMap()
 
         val hostRosterIds = dataStoreRepository.mkcTeam.firstOrNull()
