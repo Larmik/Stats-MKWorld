@@ -22,7 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -297,7 +296,7 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
                     items(dayCandidates, key = { "official-${it.war.id}" }) { candidate ->
                         OfficialWarCell(
                             candidate = candidate,
-                            checked = candidate.war.id in officialWars.selectedWarIds,
+                            checked = candidate.war.id !in officialWars.excludedWarIds,
                             onToggle = { viewModel.onToggleOfficialWar(candidate.war.id) }
                         )
                     }
@@ -506,19 +505,11 @@ private fun OfficialWarsSummary(
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
         when (candidates.isEmpty()) {
             true -> MKText(text = stringResource(R.string.debug_official_wars_empty), fontSize = 13)
-            else -> {
-                selected.groupingBy { it.tournament }.eachCount().forEach { (tournament, count) ->
-                    MKText(
-                        text = stringResource(R.string.debug_official_wars_tournament_total, stringResource(tournament.label), count),
-                        fontSize = 13
-                    )
-                }
-                val unselectedBeforeThreshold = candidates.count { it.isBeforeThreshold && it !in selected }
-                if (unselectedBeforeThreshold > 0)
-                    MKText(
-                        text = stringResource(R.string.debug_official_wars_before_threshold_count, unselectedBeforeThreshold),
-                        fontSize = 13
-                    )
+            else -> selected.groupingBy { it.tournament }.eachCount().forEach { (tournament, count) ->
+                MKText(
+                    text = stringResource(R.string.debug_official_wars_tournament_total, stringResource(tournament.label), count),
+                    fontSize = 13
+                )
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -538,8 +529,7 @@ private fun OfficialWarsSummary(
     }
 }
 
-// Ligne d'aperçu : heure de création (Paris), adversaire(s) nom/tag du roster, tournoi cible ;
-// une war d'avant 19h30 non cochée est atténuée.
+// Ligne d'aperçu : heure de création (Paris), adversaire(s) nom/tag du roster, tournoi cible.
 @Composable
 private fun OfficialWarCell(
     candidate: OfficialWarCandidate,
@@ -548,15 +538,8 @@ private fun OfficialWarCell(
 ) {
     MKListRow(
         name = candidate.opponents.joinToString(" / ") { "${it.name} [${it.tag}]" },
-        subtitle = listOfNotNull(
-            candidate.createdAt.format(DateTimeFormatter.ofPattern("HH:mm")),
-            stringResource(candidate.tournament.label),
-            stringResource(R.string.debug_official_wars_before_threshold).takeIf { candidate.isBeforeThreshold }
-        ).joinToString(" · "),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .alpha(if (candidate.isBeforeThreshold && !checked) 0.5f else 1f),
+        subtitle = "${candidate.createdAt.format(DateTimeFormatter.ofPattern("HH:mm"))} · ${stringResource(candidate.tournament.label)}",
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
         onClick = onToggle,
         leading = { TournamentBadge(candidate.tournament, height = 24.dp) },
         trailing = { MKListRowCheck(selected = checked) }

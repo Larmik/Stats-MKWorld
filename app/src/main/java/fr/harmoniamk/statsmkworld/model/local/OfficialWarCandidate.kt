@@ -18,6 +18,4 @@ data class OfficialWarCandidate(
     val createdAt: ZonedDateTime,
     /** Adversaires résolus via `War.opponentTeams` (nom/tag du roster, dégradé si inconnu — rule 12). */
     val opponents: List<TeamEntity>,
-    /** Créée avant 19h30 : écartée par défaut de la migration, sélectionnable manuellement. */
-    val isBeforeThreshold: Boolean,
 )
