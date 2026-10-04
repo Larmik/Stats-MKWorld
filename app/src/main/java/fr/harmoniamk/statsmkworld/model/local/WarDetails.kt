@@ -1,6 +1,8 @@
 package fr.harmoniamk.statsmkworld.model.local
 
 import android.os.Parcelable
+import androidx.annotation.DrawableRes
+import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.ScoringConstants
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.positionToPoints
@@ -34,6 +36,12 @@ data class WarDetails(val war: War): Serializable, Parcelable {
 
     val displayedDiff: String = (scoreHostWithPenalties - scoreOpponentWithPenalties)
         .let { diff -> if (diff > 0) "+$diff" else "$diff" }
+
+    /** Fond des tabs (local et HLorenzi) : circuit de la course au meilleur score d'équipe, repli RSL. */
+    @get:DrawableRes
+    val tabBackground: Int
+        get() = warTracks.maxByOrNull { track -> track.teamScore }?.index?.lastOrNull()?.toIntOrNull()
+            ?.let { Maps.entries.getOrNull(it) }?.background ?: R.drawable.rsl
 
     /**
      *  24 players
