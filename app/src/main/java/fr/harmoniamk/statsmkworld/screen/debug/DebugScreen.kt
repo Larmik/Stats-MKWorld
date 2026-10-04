@@ -23,11 +23,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.extension.sendDebugNotification
 import fr.harmoniamk.statsmkworld.model.local.MissingPlayer
+import fr.harmoniamk.statsmkworld.model.local.OfficialWarCandidate
 import fr.harmoniamk.statsmkworld.model.local.OpponentResolution
 import fr.harmoniamk.statsmkworld.model.local.UnknownOpponentDiagnostic
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
@@ -38,6 +40,10 @@ import fr.harmoniamk.statsmkworld.ui.MKDialog
 import fr.harmoniamk.statsmkworld.ui.MKLoaderDialog
 import fr.harmoniamk.statsmkworld.ui.MKText
 import fr.harmoniamk.statsmkworld.ui.MKTextField
+import fr.harmoniamk.statsmkworld.ui.TournamentBadge
+import fr.harmoniamk.statsmkworld.ui.cells.MKListRow
+import fr.harmoniamk.statsmkworld.ui.cells.MKListRowCheck
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit) {
@@ -47,6 +53,12 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
     val loading = viewModel.sharedLoading.collectAsState()
     val diagnostics by viewModel.diagnostics.collectAsState()
     val missingPlayers by viewModel.missingPlayers.collectAsState()
+    val officialWars by viewModel.officialWars.collectAsState()
+    // Aperçu de migration groupé par date de match (Paris), recalculé seulement à un nouvel aperçu.
+    val officialWarsByDate = remember(officialWars.candidates) {
+        officialWars.candidates.orEmpty().groupBy { it.createdAt.toLocalDate() }
+    }
+    val selectedOfficialWars = officialWars.selectedCandidates
 
     // War en attente de confirmation de suppression (hostRosterId, warId) ; null = pas de dialog.
     var warToDelete by remember { mutableStateOf<Pair<String, Long>?>(null) }
@@ -60,6 +72,19 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
     }
 
     LaunchedEffect(Unit) {
+        viewModel.officialWarsMigrated.collect { summary ->
+            val detail = summary.entries.joinToString { (tournament, count) ->
+                context.getString(R.string.debug_official_wars_tournament_total, context.getString(tournament.label), count)
+            }
+            Toast.makeText(
+                context,
+                context.getString(R.string.debug_official_wars_migrated, summary.values.sum(), detail),
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
         viewModel.sendNotif.collect {
             context.sendDebugNotification("Test notification")
         }
@@ -67,6 +92,9 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
 
     loading.value?.let {
         MKLoaderDialog(it)
+    }
+    officialWars.loadingRes?.let {
+        MKLoaderDialog(stringResource(it))
     }
 
     warToDelete?.let { (hostRosterId, warId) ->
@@ -227,6 +255,52 @@ fun DebugScreen(viewModel: DebugViewModel = hiltViewModel(), onBack: () -> Unit)
                     player = missingPlayer,
                     onAddAsAlly = { viewModel.onAddMissingPlayerAsAlly(missingPlayer.playerId) }
                 )
+            }
+            // Migration rétroactive des wars officielles (#156) : aperçu d'abord, écriture à la confirmation.
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.onPreviewOfficialWars() }) {
+                    MKText(
+                        text = stringResource(R.string.debug_official_wars_preview),
+                        font = Fonts.Urbanist,
+                        modifier = Modifier.padding(vertical = 20.dp)
+                    )
+                }
+                Spacer(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Colors.blackAlphaed)
+                )
+            }
+            officialWars.candidates?.let { candidates ->
+                item {
+                    OfficialWarsSummary(
+                        candidates = candidates,
+                        selected = selectedOfficialWars,
+                        onConfirm = viewModel::onConfirmOfficialWars,
+                        onCancel = viewModel::onCancelOfficialWars
+                    )
+                }
+                officialWarsByDate.forEach { (date, dayCandidates) ->
+                    item(key = "official-date-$date") {
+                        MKText(
+                            text = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                            font = Fonts.NunitoBD,
+                            fontSize = 13,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 6.dp)
+                        )
+                    }
+                    items(dayCandidates, key = { "official-${it.war.id}" }) { candidate ->
+                        OfficialWarCell(
+                            candidate = candidate,
+                            checked = candidate.war.id !in officialWars.excludedWarIds,
+                            onToggle = { viewModel.onToggleOfficialWar(candidate.war.id) }
+                        )
+                    }
+                }
             }
             item {
                 Column {
@@ -419,4 +493,55 @@ private fun MissingPlayerCell(
                 .background(Colors.blackAlphaed)
         )
     }
+}
+
+@Composable
+private fun OfficialWarsSummary(
+    candidates: List<OfficialWarCandidate>,
+    selected: List<OfficialWarCandidate>,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+        when (candidates.isEmpty()) {
+            true -> MKText(text = stringResource(R.string.debug_official_wars_empty), fontSize = 13)
+            else -> selected.groupingBy { it.tournament }.eachCount().forEach { (tournament, count) ->
+                MKText(
+                    text = stringResource(R.string.debug_official_wars_tournament_total, stringResource(tournament.label), count),
+                    fontSize = 13
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            MKButton(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.cancel),
+                onClick = onCancel
+            )
+            MKButton(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.debug_official_wars_confirm, selected.size),
+                enabled = selected.isNotEmpty(),
+                onClick = onConfirm
+            )
+        }
+    }
+}
+
+// Ligne d'aperçu : heure de création (Paris), adversaire(s) nom/tag du roster, tournoi cible.
+@Composable
+private fun OfficialWarCell(
+    candidate: OfficialWarCandidate,
+    checked: Boolean,
+    onToggle: () -> Unit
+) {
+    MKListRow(
+        name = candidate.opponents.joinToString(" / ") { "${it.name} [${it.tag}]" },
+        subtitle = "${candidate.createdAt.format(DateTimeFormatter.ofPattern("HH:mm"))} · ${stringResource(candidate.tournament.label)}",
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        onClick = onToggle,
+        leading = { TournamentBadge(candidate.tournament, height = 24.dp) },
+        trailing = { MKListRowCheck(selected = checked) }
+    )
 }
