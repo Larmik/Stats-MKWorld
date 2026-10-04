@@ -249,7 +249,8 @@ class DiagnosticRepository @Inject constructor(
 
     // Une war est officielle si sa date de création (Paris) figure au calendrier ET qu'elle a été
     // lancée à partir de 19h30 (aucun match officiel avant 20h ; tolère une création juste avant).
-    // Les wars déjà rattachées à un tournoi ne sont jamais candidates (idempotent).
+    // Les wars du jour antérieures sont renvoyées marquées `isBeforeThreshold` (affichées écartées,
+    // ex. tournoi à plusieurs tours par jour). Une war déjà rattachée n'est jamais candidate (idempotent).
     override suspend fun findOfficialWarCandidates(): List<OfficialWarCandidate> {
         val parisZone = ZoneId.of("Europe/Paris")
         // Dates de match par saison (Atlas S1/S2/S3 partagent ATLAS_LEAGUE : la saison n'est pas stockée).
@@ -286,15 +287,14 @@ class DiagnosticRepository @Inject constructor(
                 .filter { it.tournamentId == null }
                 .mapNotNull { war ->
                     val createdAt = Instant.ofEpochMilli(war.id).atZone(parisZone)
-                    calendar[createdAt.toLocalDate()]
-                        ?.takeIf { !createdAt.toLocalTime().isBefore(LocalTime.of(19, 30)) }
-                        ?.let { tournament ->
+                    calendar[createdAt.toLocalDate()]?.let { tournament ->
                             OfficialWarCandidate(
                                 hostRosterId = hostId,
                                 war = war,
                                 tournament = tournament,
                                 createdAt = createdAt,
-                                opponents = war.opponentTeams(databaseRepository)
+                                opponents = war.opponentTeams(databaseRepository),
+                                isBeforeThreshold = createdAt.toLocalTime().isBefore(LocalTime.of(19, 30))
                             )
                         }
                 }

@@ -296,6 +296,8 @@
     <string name="debug_official_wars_tournament_total">%1$s: %2$d war(s)</string>
     <string name="debug_official_wars_confirm">Confirm migration (%1$d)</string>
     <string name="debug_official_wars_migrated">%1$d war(s) migrated. %2$s</string>
+    <string name="debug_official_wars_before_threshold">Before 7:30 pm</string>
+    <string name="debug_official_wars_before_threshold_count">%1$d war(s) before 7:30 pm not selected</string>
     <string name="tournament_auto_translated">Automatically translated</string>
     <string name="tournament_show_original">View original</string>
     <string name="tournament_show_translation">View translation</string>

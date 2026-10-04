@@ -221,21 +221,25 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    // Aperçu (dry-run, #156) : aucune écriture, toutes les candidates cochées par défaut.
+    // Aperçu (dry-run, #156) : aucune écriture ; seules les wars ≥ 19h30 sont cochées par défaut.
     fun onPreviewOfficialWars() {
         viewModelScope.launch {
             _officialWars.value = OfficialWarsState(loadingRes = R.string.debug_official_wars_loading_preview)
-            _officialWars.value = OfficialWarsState(candidates = diagnosticRepository.findOfficialWarCandidates())
+            val candidates = diagnosticRepository.findOfficialWarCandidates()
+            _officialWars.value = OfficialWarsState(
+                candidates = candidates,
+                selectedWarIds = candidates.filterNot { it.isBeforeThreshold }.map { it.war.id }.toSet()
+            )
         }
     }
 
-    // Coche/décoche une candidate (écarte une war d'entraînement repérée dans l'aperçu).
+    // Coche/décoche une candidate (écarte une war d'entraînement, inclut une war d'avant 19h30).
     fun onToggleOfficialWar(warId: Long) {
         _officialWars.value = _officialWars.value.let { state ->
             state.copy(
-                excludedWarIds = when (warId in state.excludedWarIds) {
-                    true -> state.excludedWarIds - warId
-                    else -> state.excludedWarIds + warId
+                selectedWarIds = when (warId in state.selectedWarIds) {
+                    true -> state.selectedWarIds - warId
+                    else -> state.selectedWarIds + warId
                 }
             )
         }
@@ -293,11 +297,11 @@ class DebugViewModel @Inject constructor(
     /** Aperçu de la migration des wars officielles ; [candidates] `null` = aucun aperçu calculé. */
     data class OfficialWarsState(
         val candidates: List<OfficialWarCandidate>? = null,
-        val excludedWarIds: Set<Long> = emptySet(),
+        val selectedWarIds: Set<Long> = emptySet(),
         @StringRes val loadingRes: Int? = null,
     ) {
         val selectedCandidates: List<OfficialWarCandidate>
-            get() = candidates.orEmpty().filterNot { it.war.id in excludedWarIds }
+            get() = candidates.orEmpty().filter { it.war.id in selectedWarIds }
     }
 
 }
