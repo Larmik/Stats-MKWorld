@@ -50,15 +50,17 @@ Conventions de maintenance (`.claude/rules/process/documentation.md`) :
 - [~] 🟢 **B11 — Adversaires multi-rosters historiques restés en `teamId`.** Création de war en `rosterId`, affichage/classements par roster et migration RTDB des équipes mono-roster faits. **Limite assumée** : les wars historiques contre une équipe multi-rosters restent en `teamId` (roster joué inconnu) → un item de classement « niveau équipe » subsiste à côté des rosters. Pas d'action prévue sans source de vérité. *Prévention : `ui/roster-player-display.md`.*
 - [ ] 🟢 **B38 — Pôle Wars sans marge basse (à confirmer sur device).** Le `LazyColumn` de [WarListScreen.kt:109](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/warList/WarListScreen.kt) (route `Home/WarList`, pôle avec bottombar) n'a ni `contentPadding` ni `Spacer` bas : la dernière `WarCell` est probablement masquée par la `NavigationBar`. L'écran sert aussi au graphe racine (`Home/WarList/me/…`), où la marge reste tolérée. → `contentPadding = PaddingValues(bottom = BottomBarInset)`. *Prévention : `.claude/rules/ui/bottom-nav.md`.* **Suivi : #161.**
 - [ ] 🟢 **B39 — `manageTransferts` remet à 0 le rôle des membres existants.** Dans [FetchUseCase.kt:189-194](../app/src/main/java/fr/harmoniamk/statsmkworld/usecase/FetchUseCase.kt), la condition « joueur présent dans un roster mkworld » matche **tous** les membres déjà dans l'équipe, pas seulement les alliés devenus membres : chaque exécution réécrit `users/{teamId}/{id}` avec `User(mkcPlayer)` (`role = 0`) et remet donc à 0 le rôle d'un leader / admin. Basse priorité (action Debug manuelle, jugée acceptable en l'état). → Ne traiter que les joueurs présents dans `newAllies`, ou préserver le rôle lu dans `users`. *Prévention : `.claude/rules/data/firebase-users.md`.* **Suivi : #163.**
+- [ ] 🟢 **B40 — Accueil : lecture de la war en cours avec un `rosterId` vide.** `getCurrentWar(rosterId.orEmpty())` ([WelcomeViewModel.kt:91](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/welcome/WelcomeViewModel.kt)) : sans roster mkworld, `child("")` pointe vraisemblablement sur `currentWars/` entier, et `Map.toWar()` lève alors `NumberFormatException` sur `"null".toLong()` ([FirebaseRepository.kt:144-146,265](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/FirebaseRepository.kt)) dès qu'une war live existe. Analyse statique, non reproduit sur device. → `rosterId?.let { getCurrentWar(it) }`. *Prévention : `kotlin/style.md`.* **Suivi : #166.**
 
 ---
 
 ## 3. Performance
 
 - [~] 🟠 **P8 — Agrégats par joueur de la période sur le thread UI.** Dans [PeriodViewModel.kt:118](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/warList/period/PeriodViewModel.kt), la boucle `periodWars.forEach { war.withPlayersList(…) }` tourne sur le collecteur et `withPlayersList` relit `getPlayers()` Room **à chaque war**. → Lire les joueurs une fois avant la boucle, puis déporter l'agrégation dans `withContext(Dispatchers.Default)`. *Prévention : `viewmodel/viewmodels.md`.* **Suivi : #111.**
-- [ ] 🟡 **P2 — Pagination MKCentral séquentielle.** [FetchUseCase.fetchTeams()](../app/src/main/java/fr/harmoniamk/statsmkworld/usecase/FetchUseCase.kt) (L131-142) enchaîne les pages une par une. Le parallélisme complet est exclu (throttle MKCentral, `data/repositories.md`) : au mieux des **lots bornés de 3-4 pages**, à valider sur l'API réelle. En arrière-plan (`UpdateDataWorker`), la latence actuelle reste acceptable. *Prévention : `data/repositories.md`.* **Suivi : #113.**
+- [ ] 🟡 **P2 — Pagination MKCentral séquentielle.** [FetchUseCase.fetchTeams()](../app/src/main/java/fr/harmoniamk/statsmkworld/usecase/FetchUseCase.kt) (L131-142) enchaîne les pages une par une. Le parallélisme complet est exclu (throttle MKCentral, `data/network.md`) : au mieux des **lots bornés de 3-4 pages**, à valider sur l'API réelle. En arrière-plan (`UpdateDataWorker`), la latence actuelle reste acceptable. *Prévention : `data/network.md`.* **Suivi : #113.**
 - [ ] 🟡 **P5 — Gating de version dépendant du réseau au démarrage.** `MainViewModel` attend `minimumVersion()` (`fetch(0)`, intervalle minimal 0 s, sans timeout — [RemoteConfigRepository.kt:32-47](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/RemoteConfigRepository.kt)) avant de router → démarrage retardé hors-ligne ou sur réseau lent. → Intervalle de cache raisonnable + `activate()` des valeurs en cache + timeout. *Prévention : checklist anti-audit (I/O bloquant le démarrage).* **Suivi : #115.**
 - [ ] 🟡 **P7 — Coût du calcul de stats et de la recomposition au changement de saison : reste à mesurer sur device (#90).** **Reste, manette en main** : (1) mesures avant/après (Perfetto/CPU profiler : durée de `computeState`/`computeRankings`, jank au changement de saison) à consigner ici ; (2) calcul paresseux « fenêtre/vue visible » de `StatsFullViewModel` (non fait : il supprimerait le switch instantané all-time/5/10 et Individuelles/Équipe, à n'engager que si la mesure montre que le pré-calcul reste dominant) ; (3) recomposition counts (Layout Inspector) sur `StatsFullScreen`/`StatsRankingScreen`/`WelcomeScreen` — à la lecture, aucun calcul en composition ni clé de liste fautive, mais `SectionSelectors` (lambdas recréées) et les `Stats` (`List` non stables) invalident toutes les cartes à chaque recomposition, à confirmer avant d'ajouter `remember`/`@Immutable`. *Prévention : `viewmodel/viewmodels.md`.* **Suivi : #146.**
+- [ ] 🟠 **P9 — `listenToCurrentWar` écoute toute la RTDB.** L'écouteur est posé sur la racine (`database` = `Firebase.database.reference`, [FirebaseRepository.kt:92,148-159](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/FirebaseRepository.kt)) et le nœud `currentWars/{rosterId}` n'est extrait que côté client : chaque écran abonné (Accueil, War en cours, liste des wars) reçoit la base entière, puis à nouveau à chaque écriture de n'importe quelle équipe. → Écouter `database.child("currentWars").child(rosterId)`. *Prévention : `data/repositories.md` (écouteur Firebase scopé au nœud lu).* **Suivi : #165.**
 
 ---
 
@@ -145,11 +147,11 @@ Conventions de maintenance (`.claude/rules/process/documentation.md`) :
 2. **B28** (#114) : demande de permission depuis l'UI (retirer la dépendance `Activity` du repository).
 3. **B29** (#116) : relâcher le splash sur la branche « mise à jour requise ».
 4. **B30** + **D25** (#118) : recherche joueurs annulable/debouncée, une seule implémentation.
-5. **B31** (#120), **B32** (#122), **B33** (#124), **B34** (#160) : correctifs ponctuels.
+5. **B31** (#120), **B32** (#122), **B33** (#124), **B34** (#160), **B40** (#166) : correctifs ponctuels.
 6. **A4** (#126 — backend d'échange OAuth + rotation du secret), **A5** (#128 — règles de backup), **A2** (#129 — règles RTDB, console).
 
 ### Lot 2 — Fluidité (≈ 1 j)
-7. **P8** (#111 — agrégats de `PeriodViewModel`) puis **P5** (#115) ; **P7** (#90, mesures device).
+7. **P9** (#165 — écouteur de la war live scopé à son nœud), **P8** (#111 — agrégats de `PeriodViewModel`) puis **P5** (#115) ; **P7** (#90, mesures device).
 
 ### Lot 3 — Hygiène à faible coût (≈ 1 j)
 8. **D34** (#133 — suppression `MapCell`), **C12**, **C14** (#121), **D14** (#142), **G4** (#108), **B38** (#161), **C15** (#162).
@@ -176,13 +178,15 @@ Chaque catégorie d'entrée est rattachée à la cause qui la produit et à ce q
 | Dépendance UI dans la couche données (B28) | Repository qui manipule une `Activity` | `data/repositories.md` § couche données sans UI |
 | Branches d'état incomplètes (B29) | Seule la branche nominale traitée | checklist anti-audit (correctness) |
 | Requêtes concurrentes à la saisie (B30, D25) | `launch` par frappe sans annulation | `viewmodel/viewmodels.md` § recherche à la saisie |
-| État mutable partagé, saisie, nullables (B31, B32, B33, B37, C15) | `var` capturée, `toInt()`/`toLong()`, `?.toString()`, garde `if (… == null) return` | `kotlin/style.md` |
+| État mutable partagé, saisie, nullables (B31, B32, B33, B37, B40, C15) | `var` capturée, `toInt()`/`toLong()`, `?.toString()`, garde `if (… == null) return` | `kotlin/style.md` |
 | Rôle membre écrasé (B39) | Écriture `users` avec `User(player)` (`role = 0`) sur un membre existant | `data/firebase-users.md` |
+| Overlay OBS cassé en silence | Format RTDB lu par WarOverlay modifié côté app sans le signaler | `data/war-overlay.md` ; checklist anti-audit (contrat overlay) |
 | Adversaire effacé (B32, B11) | `mapNotNull` sur une résolution | `ui/roster-player-display.md` (`TeamEntity.unknown`) |
 | Filtre d'écran non hérité par les enfants (B36) | Segment de route ajouté à une partie seulement des écrans enfants | `viewmodel/navigation-filtres.md` |
 | Moyennes et classements faussés (B34, B35) | Moyenne de points reconvertie en position, manches non courues comptées, tri sans seuil | `stats/calculs.md` § classements et positions moyennes |
 | Calcul sur le thread UI / calcul redondant (P7, P8) | Construction `WarDetails` / agrégats hors `withContext`, reconstruction par élément | `viewmodel/viewmodels.md` § agrégation de wars |
-| Rafales réseau (P2, B30) | Parallélisme non borné vers MKCentral | `data/repositories.md` § réseau par élément |
+| Écoute Firebase trop large (P9, B40) | Écouteur ou lecture posé sur la racine ou un id vide | `data/repositories.md` § `suspend` / `Flow` |
+| Rafales réseau (P2, B30) | Parallélisme non borné vers MKCentral | `data/network.md` |
 | I/O au démarrage (P5) | Appel réseau bloquant le routage | checklist anti-audit (perf) |
 | Composants UI dupliqués (D16, D18, D19, D21, D35, D38) | Composable privé recréé sans chercher l'existant | `ui/components.md` § chercher l'existant |
 | Marge bottombar absente / superflue (B38) | Écran de pôle ajouté sans `BottomBarInset` | `ui/bottom-nav.md` § marge basse |
