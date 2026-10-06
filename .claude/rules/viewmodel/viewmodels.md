@@ -37,24 +37,35 @@ dès la souscription.
   si la résolution côté VM est indispensable (filtre sur un libellé). Cf. audit C10.
 - Exception : `DebugViewModel` (cf. `ui/strings.md`).
 
-## Agrégation de wars : `withContext(Dispatchers.Default)`
+## Agrégation de wars : hors thread UI, annulable
 
-Le collecteur d'un `StateFlow` de VM tourne sur `Main.immediate` : un calcul dans un
-`combine`/`map`/`flatMapLatest` s'exécute sur le thread UI, même dans une `suspend fun` (#73).
+Par défaut (`viewModelScope` = `Main.immediate`), toute la chaîne d'un `StateFlow` de VM
+s'exécute sur le thread UI, `suspend fun` comprises : tout calcul CPU d'agrégation doit en sortir
+via `withContext(Dispatchers.Default)` (#73).
 
 - Concerné : tout VM qui **agrège** des wars (stats, classements, dashboard, période). Un VM qui
   construit un seul `WarDetails` (ex. `CurrentWarCellViewModel`) n'est pas concerné.
-- Deux temps :
-  1. sur le collecteur : lectures Room / DataStore / Firebase, filtre saison, champs légers du
-     `State` (`seasons`, `selectedSeasonNumber`), toujours renseignés ;
-  2. dans `withContext(Dispatchers.Default) { … }` : uniquement le calcul CPU
-     (`map { WarDetails(War(it)) }` compris, `withFullStats`, podiums, `groupBy`, tris).
+- Sur le collecteur : lectures Room / DataStore / Firebase (non bloquantes : executors propres ou
+  callbacks), filtre saison, champs légers du `State` (`seasons`, `selectedSeasonNumber`),
+  toujours renseignés.
+- Dans `withContext(Dispatchers.Default) { … }` : uniquement le calcul CPU
+  (`map { WarDetails(War(it)) }` compris, `withFullStats`, podiums, `groupBy`, tris).
+- La branche qui porte le calcul utilise un opérateur `*Latest` (`mapLatest`, `flatMapLatest`,
+  `collectLatest`) : une nouvelle émission (saison, filtre, mode) annule le calcul obsolète.
+- `combine` : combiner les sources en valeur légère (`Pair`/`Triple`, data class privée
+  `Sources`), puis `.mapLatest { … withContext(Default) { calcul } … }`. Jamais de calcul dans la
+  lambda du `combine` (elle n'est pas annulée).
+- L'annulation n'agit qu'aux points de suspension : à la sortie du `withContext`, un résultat
+  obsolète n'est pas émis. Un très long calcul en boucle peut appeler `ensureActive()` / `yield()`.
 - Une lecture de source ne se répète pas par war dans une boucle : la lire une fois avant.
-- Ne pas mettre `flowOn(Dispatchers.Default)` sur la chaîne de calcul : il déplace aussi les
-  lectures de sources et peut réordonner un `mergeWith` (merge non ordonné).
+- `withContext` plutôt que `flowOn(Dispatchers.Default)`, qui déplace aussi les lectures de
+  sources et peut réordonner un `mergeWith` (merge non ordonné).
 
 ```kotlin
-val seasons = databaseRepository.getSeasons().firstOrNull().orEmpty()   // collecteur
-val stats = withContext(Dispatchers.Default) { wars.map { WarDetails(War(it)) }.withFullStats(…) }
-State(seasons = seasons, stats = stats)
+val state = combine(getWars(), _seasonFilter, getSeasons(), _kindFilter, ::Sources)
+    .mapLatest { (wars, seasonFilter, seasons, kindFilter) ->
+        val season = seasonFilter.resolve(seasons)                       // collecteur
+        val stats = withContext(Dispatchers.Default) { wars.map { WarDetails(War(it)) }.withFullStats(…) }
+        State(seasons = seasons, stats = stats)
+    }
 ```

@@ -26,7 +26,7 @@ import kotlinx.coroutines.FlowPreview
 
 /**
  * Classement complet des adversaires rencontrés sur un circuit (#67), par score moyen d'équipe
- * décroissant. Réutilise le même [MapDetailViewModel] et la grille `podiumRows` (rule 16).
+ * décroissant. Réutilise le même [MapDetailViewModel] et la grille `podiumRows`.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable

@@ -34,7 +34,7 @@ import fr.harmoniamk.statsmkworld.ui.MKText
 private val BannerRadius = RoundedCornerShape(6.dp)
 
 /**
- * Bannière « War en cours », partagée par l'Accueil et l'historique Wars (rule 16). Dégradé
+ * Bannière « War en cours », partagée par l'Accueil et l'historique Wars. Dégradé
  * vert→sombre (`.cbanner`), pastille « En direct » ; corps issu de [CurrentWarCell].
  *
  * @param callToAction texte d'appel à l'action au pied ; masqué si `null`.

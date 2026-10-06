@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
@@ -49,7 +50,7 @@ import kotlinx.coroutines.withContext
  * - [userId] null ⇒ joueur courant, [showTabs] true ⇒ onglets Individuelles / Équipe.
  * - [initialKindFilter] : filtre Amicaux/Officiels hérité de l'écran parent (#103), défaut au pôle.
  *
- * 24p temporairement retiré (#37) : `is24p` figé à `false`.
+ * 24p désactivé (#37) : `is24p` figé à `false`.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel(assistedFactory = StatsFullViewModel.Factory::class)
@@ -129,7 +130,7 @@ class StatsFullViewModel @AssistedInject constructor(
         val all: List<RankingItem.OpponentRanking> = listOf()
     )
 
-    // 24p retiré (ticket #37) : l'écran ne calcule que le 12p.
+    // 24p désactivé (#37) : l'écran ne calcule que le 12p.
     private val is24p = false
 
     // Fenêtres du sélecteur global (#68) : (indexUI, N dernières wars) — 0 = all-time, 1 = 5,
@@ -165,7 +166,16 @@ class StatsFullViewModel @AssistedInject constructor(
         _kindFilter.value = filter
     }
 
-    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons(), _kindFilter) { warEntities, seasonFilter, seasons, kindFilter ->
+    /** Sources légères combinées avant le calcul (`mapLatest` annule un calcul devenu obsolète). */
+    private data class Sources(
+        val warEntities: List<WarEntity>,
+        val seasonFilter: SeasonFilter,
+        val seasons: List<SeasonEntity>,
+        val kindFilter: WarKindFilter
+    )
+
+    private fun compute() = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons(), _kindFilter, ::Sources)
+        .mapLatest { (warEntities, seasonFilter, seasons, kindFilter) ->
             // Saisons observées en Flow (#73). Résolution de la saison effective (défaut = en cours).
             val activeSeason = seasonFilter.resolve(seasons)
             // Filtres saison (sur war.id) et Amicaux/Officiels (#103) appliqués avant tout calcul.
@@ -176,8 +186,8 @@ class StatsFullViewModel @AssistedInject constructor(
         }
 
     // Agrégats CPU-lourds déportés sur `Dispatchers.Default` via `withContext` — pas `flowOn`
-    // (#73) qui, sur la chaîne `mergeWith`/`flattenMerge`, faisait gagner l'état vide. `seasons`/
-    // `activeSeasonNumber` résolus sur le collecteur, toujours reportés dans le State. Cf. rule 21.
+    // (#73) qui, sur la chaîne `mergeWith`/`flattenMerge`, peut réordonner les émissions. `seasons`/
+    // `activeSeasonNumber` résolus sur le collecteur, toujours reportés dans le State.
     private suspend fun computeState(
         warEntities: List<WarEntity>,
         seasons: List<SeasonEntity>,
@@ -229,7 +239,7 @@ class StatsFullViewModel @AssistedInject constructor(
             val teamOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
             val playerOpponentsByWindow = mutableMapOf<Int, OpponentPodiums>()
             // Participation (#78) par fenêtre : wars du joueur / wars de l'équipe (0 % si aucune,
-            // garde de `percentOf`). Calcul dans le VM (mono-consommateur, rule 32).
+            // garde de `percentOf`). Calcul dans le VM (mono-consommateur).
             val participationRateByWindow = mutableMapOf<Int, Double>()
             windowSizes.forEach { (index, lastN) ->
                 val windowWars = lastN?.let { chronologicalWars.takeLast(it) } ?: chronologicalWars
@@ -248,7 +258,7 @@ class StatsFullViewModel @AssistedInject constructor(
                     userId = null,
                     is24p = is24p
                 )
-                // Podiums adversaires (occurrences/winrate/score) : équipe ET joueur (rule 32).
+                // Podiums adversaires (occurrences/winrate/score) : équipe ET joueur.
                 teamOpponentsByWindow[index] = computeOpponentRankings(windowWars, opponentTeams, userId = null)
                 playerOpponentsByWindow[index] = computeOpponentRankings(windowWars, opponentTeams, userId = targetUserId)
             }
@@ -288,7 +298,7 @@ class StatsFullViewModel @AssistedInject constructor(
      * Top3/flop3 adversaires par occurrences, winrate ET score sur les [wars] filtrées.
      * `userId` non-null ⇒ point de vue du joueur. winrate/score filtrent à ≥
      * [Stats.MIN_RANKING_SAMPLE] ; les occurrences classent tous les adversaires. Flop privé du
-     * top (`flopExcludingTop`, #102). Réutilise `withFullTeamStats` (rule 32).
+     * top (`flopExcludingTop`, #102). Réutilise `withFullTeamStats`.
      */
     private suspend fun computeOpponentRankings(
         wars: List<WarDetails>,

@@ -48,7 +48,7 @@ val WarSummaryRadius = RoundedCornerShape(6.dp)
 
 /**
  * Composants partagés du **résumé de war** (carte score, tracks, pastilles) — mutualisés entre
- * `CurrentWarScreen` et `WarDetailsScreen` (rule 16).
+ * `CurrentWarScreen` et `WarDetailsScreen`.
  */
 
 /** Carte dashboard : fond sombre translucide, bordure blanche, radius 6, padding 13. */

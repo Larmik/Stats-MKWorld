@@ -7,7 +7,7 @@ Ce fichier est **hors** de `.claude/rules/` : il n'est pas chargé automatiqueme
 
 - Un `.md` de `.claude/rules/` (sous-répertoires compris) **sans** frontmatter `paths` est chargé à
   chaque session ; **avec** `paths` (globs), il n'est chargé qu'au `Read` / `Write` / `Edit` d'un
-  fichier correspondant, dans la session principale comme dans un sous-agent (vérifié au #158).
+  fichier correspondant, dans la session principale comme dans un sous-agent.
   La lecture via `cat`/`rg` dans Bash ne déclenche rien.
 - `paths` est le seul champ lu ; un YAML invalide fait charger la rule sans condition.
 - Aujourd'hui toutes les rules ont des `paths`. Le transverse (workflow, doc, langue) vit dans
@@ -37,33 +37,6 @@ Racine des globs Kotlin : `app/src/main/java/fr/harmoniamk/statsmkworld/` (abré
 | `kotlin/commentaires.md` | commentaires courts, `#NN` et jamais de n° de rule, pas de code commenté | `app/src/**/*.kt` |
 | `process/documentation.md` | tenue de l'audit, références croisées | `docs/**`, `.claude/**`, `CLAUDE.md` |
 
-## Correspondance des anciens numéros
-
-Le code et `docs/` citent encore des numéros (`rule 16`) : ils se résolvent ainsi (audit G10).
-
-| Ancien | Nouveau fichier |
-|---|---|
-| 10 (clés de liste) | `ui/compose.md` |
-| 11 (State, switch, wizard) | `ui/compose.md` |
-| 12 (roster, médaillon) | `ui/roster-player-display.md` |
-| 13 (cohérence visuelle / calculs) | `ui/components.md` (visuel), `ui/cell-layout.md` (cellules), `stats/calculs.md` (calculs) |
-| 14 (retour onglets) | `ui/bottom-nav.md` |
-| 15 (référence maquette pixel-perfect, retirée à la fin de l'epic 4.0.0) | aucun successeur direct ; cohérence visuelle → `ui/components.md` (audit G8) |
-| 16 (mutualiser les composants) | `ui/components.md` |
-| 17 (marge bottombar) | `ui/bottom-nav.md` |
-| 20 (ViewModels) | `viewmodel/viewmodels.md` |
-| 21 (calcul hors thread UI) | `viewmodel/viewmodels.md` |
-| 30 (repositories) | `data/repositories.md` ; extraction de helpers → `kotlin/constantes-extensions.md` |
-| 31 (mkworld only) | `data/mkworld-only.md` |
-| 32 (UseCase vs repository) | `data/repositories.md` |
-| 40 (build / release) | `build/release-securite.md` |
-| 50 (documentation) | `process/documentation.md` + `CLAUDE.md` |
-| 60 (style Kotlin) | `kotlin/style.md` |
-| 61 (constantes, extensions) | `kotlin/constantes-extensions.md` |
-| 62 (fonctions locales) | `kotlin/style.md` |
-| 63 (noms de paramètres) | `kotlin/style.md` |
-| 64 (commentaires) | `kotlin/commentaires.md` |
-
 ## Format d'une rule
 
 ```markdown
@@ -92,4 +65,5 @@ paths:
 - Nouvelle catégorie (nouveau répertoire) → demander confirmation à l'utilisateur avant.
 - Retour propre à un seul ticket → aucune rule.
 - Toute création / renommage → mettre à jour cet index et `docs/AUDIT.md` § 9.
+- Le code ne cite aucune rule (cf. `kotlin/commentaires.md`).
 - En cas de conflit entre une rule et un ticket, le signaler au lieu de trancher.

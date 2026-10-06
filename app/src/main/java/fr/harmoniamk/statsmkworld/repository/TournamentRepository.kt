@@ -15,7 +15,7 @@ import javax.inject.Singleton
 
 /**
  * Données officielles des tournois de [Tournament] (#152) : synchro MKCentral → Room de leur
- * dernière saison mkworld. Repository dédié (réseau + Room) plutôt que `FetchUseCase` (rule 32).
+ * dernière saison mkworld. Repository dédié (réseau + Room) plutôt que `FetchUseCase`.
  */
 interface TournamentRepositoryInterface {
     /** Rafraîchit chaque tournoi de la liste blanche ; un tournoi en échec garde son cache. */
@@ -44,7 +44,7 @@ class TournamentRepository @Inject constructor(
 ) : TournamentRepositoryInterface {
 
     override suspend fun fetchTournaments() {
-        // Séquentiel (API derrière Cloudflare, rule 30) : 2 appels par tournoi. La liste est triée
+        // Séquentiel (API derrière Cloudflare) : 2 appels par tournoi. La liste est triée
         // par date décroissante → 1ʳᵉ saison = dernière ; le filtre `name` étant un LIKE (il a
         // ramené « Halloween… » pour « Low Div »), le préfixe est revérifié côté client.
         Tournament.entries.forEach { tournament ->

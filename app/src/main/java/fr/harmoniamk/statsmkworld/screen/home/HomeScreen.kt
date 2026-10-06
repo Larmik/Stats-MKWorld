@@ -68,7 +68,7 @@ fun HomeScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Hors Accueil, ← ramène à l'Accueil (racine) ; depuis l'Accueil, ← quitte (rule 14).
+    // Hors Accueil, ← ramène à l'Accueil (racine) ; depuis l'Accueil, ← quitte.
     val onWelcome = currentDestination?.hierarchy?.any { it.route == BottomNavItem.WELCOME.route } == true
     val backToWelcome: () -> Unit = {
         navController.navigate(BottomNavItem.WELCOME.route) {

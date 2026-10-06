@@ -11,6 +11,9 @@ Le rappel « mettre à jour `docs/` à chaque changement » vit dans `CLAUDE.md`
 
 ## Mise à jour de `docs/`
 
+- La doc et la config Claude (`docs/`, `CLAUDE.md`, `.claude/`) décrivent le **code actuel** : pas
+  de mention de fichier, code ou feature supprimé, pas de récit historique (git le garde). Une
+  interdiction toujours utile se formule au présent sur le code actuel.
 - Ne modifier que les sections impactées de `docs/AUDIT.md`, `docs/TECHNICAL.md` et
   `docs/FUNCTIONAL.md`.
 - Changement purement interne : le dire dans le résumé plutôt que toucher la doc.
@@ -26,9 +29,9 @@ Le rappel « mettre à jour `docs/` à chaque changement » vit dans `CLAUDE.md`
 
 ## Références croisées
 
-- Désigner une rule par son chemin relatif à `.claude/rules/` (ex. `ui/compose.md`). Les anciens
-  numéros (`rule 11`) se résolvent par la table de `.claude/rules-index.md`.
-- Renommer, fusionner ou supprimer une rule → `rg "<ancien chemin ou numéro>" docs .claude CLAUDE.md`
-  et corriger chaque renvoi, puis mettre à jour l'index.
+- Dans `docs/` et `.claude/`, désigner une rule par son chemin relatif à `.claude/rules/` (ex.
+  `ui/compose.md`) ; le code n'en cite aucune (cf. `kotlin/commentaires.md`).
+- Renommer, fusionner ou supprimer une rule → `rg "<chemin>" docs .claude CLAUDE.md` et corriger
+  chaque renvoi, puis mettre à jour `.claude/rules-index.md`.
 - Une affirmation de doc (« X est corrigé dans A, B, C ») se vérifie dans le code avant d'être
-  écrite. Cf. audit G8, P8.
+  écrite.

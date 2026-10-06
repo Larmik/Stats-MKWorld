@@ -171,7 +171,7 @@ class EditTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Réécrit la war et recalcule le score hôte (justesse, rule 13) = somme des points
+     * Réécrit la war et recalcule le score hôte (justesse) = somme des points
      * (`positionToPoints`) de toutes les positions de toutes les manches. En 12p seul le score
      * hôte est stocké (adverse dérivé) ; en 24p les scores adverses saisis sont préservés. Les
      * pénalités sont conservées.

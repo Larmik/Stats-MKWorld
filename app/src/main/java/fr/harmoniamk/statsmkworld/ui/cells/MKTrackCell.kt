@@ -52,7 +52,7 @@ val TrackCellHeight: Dp
     }
 
 /**
- * Cellule de course/circuit partagée (rule 16). Horizontal : bande colorée (accent) · image + nom ·
+ * Cellule de course/circuit partagée. Horizontal : bande colorée (accent) · image + nom ·
  * zone shocks réservée · score + diff. Deux modes :
  * - **course jouée** (`track != null`) : score + diff colorisée, accent selon la diff. → détail.
  * - **sélection** / aperçu (`maps`, sans `track`) : image + nom seuls, accent blanc. → sélection.

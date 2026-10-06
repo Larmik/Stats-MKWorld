@@ -62,7 +62,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
 /**
  * Création de war — wizard `Adversaire` → `Joueurs` → `Récap`, étape pilotée par le
- * [AddWarViewModel] (aucune re-navigation, rule 11/14).
+ * [AddWarViewModel] (aucune re-navigation).
  */
 @Composable
 fun AddWarScreen(
@@ -71,7 +71,7 @@ fun AddWarScreen(
     onCurrentWar: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // Champ de recherche : pur état UI éphémère (rule 11) survivant à la rotation.
+    // Champ de recherche : pur état UI éphémère survivant à la rotation.
     var searchTeam by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
@@ -251,7 +251,7 @@ private fun RosterPicker(rosters: List<MKCTeamRoster>, onRosterSelected: (MKCTea
 }
 
 /**
- * Étape 2 — sélection des joueurs de ton roster (roster adverse retiré, #91 pt.8). Aucun CTA :
+ * Étape 2 — sélection des joueurs de ton roster (#91). Aucun CTA :
  * la 6ᵉ sélection bascule automatiquement sur le Récap.
  */
 @Composable
@@ -288,12 +288,11 @@ private fun ColumnScope.PlayersStep(
                 )
             }
         }
-        // Roster adverse indicatif retiré (#91 pt.8) : previews conservées pour le Récap et la création.
     }
 }
 
 /**
- * Étape 3 — Récap : adversaire(s) (nom+tag roster, avatar équipe, rule 12), tournoi optionnel
+ * Étape 3 — Récap : adversaire(s) (nom+tag roster, avatar équipe), tournoi optionnel
  * (#103, « Aucun (amical) » par défaut) et 6 joueurs retenus, puis « Démarrer la war » ([onStart]).
  * « Précédent » revient aux Joueurs.
  */
@@ -308,7 +307,7 @@ private fun ColumnScope.RecapStep(
         Modifier.fillMaxWidth().weight(1f),
         verticalArrangement = Arrangement.spacedBy(11.dp)
     ) {
-        // Adversaire(s) : nom/tag du roster, avatar de l'équipe (rule 12).
+        // Adversaire(s) : nom/tag du roster, avatar de l'équipe.
         item { Eyebrow(stringResource(R.string.addwar_recap_opponent)) }
         items(state.opponentPreviews, key = { "${it.tag}-${it.name}" }) { preview ->
             MKListRow(

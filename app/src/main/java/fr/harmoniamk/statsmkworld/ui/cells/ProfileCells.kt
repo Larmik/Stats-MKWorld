@@ -33,7 +33,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
 /**
  * Composants du **pôle Profil** (maquette 5 pôles) mutualisés entre `ProfileScreen` et les fiches
- * autonomes (`PlayerProfileScreen`/`TeamProfileScreen`) — rule 16.
+ * autonomes (`PlayerProfileScreen`/`TeamProfileScreen`).
  */
 
 /** Rôle affiché dans une pastille (`.role`). */
@@ -127,7 +127,7 @@ fun ProfilePersonCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            // Médaillon mutualisé (rule 16) : photo/logo si dispo, initiales/tag sinon.
+            // Médaillon mutualisé : photo/logo si dispo, initiales/tag sinon.
             PlayerMedallion(
                 initials = avatarFallback,
                 avatarColor = avatarColor,
@@ -194,7 +194,7 @@ fun ProfileInfoCard(infos: List<ProfileInfo>) {
     }
 }
 
-/** Ligne membre/allié (`.lrow`) : avatar, nom + rôle, sous-texte, chevron. Délègue à [MKListRow] (rule 16). */
+/** Ligne membre/allié (`.lrow`) : avatar, nom + rôle, sous-texte, chevron. Délègue à [MKListRow]. */
 @Composable
 fun ProfileMemberRow(
     initials: String,

@@ -50,10 +50,10 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     // Mode 12/24 : état interne réactif (semé par la nav) ; [onModeChange] le bascule
-    // sans re-navigation (rule 11).
+    // sans re-navigation.
     private var is24p: Boolean = initialIs24p
 
-    /** Preview d'un adversaire au récap : nom/tag du roster, avatar de l'équipe parente (rule 12). */
+    /** Preview d'un adversaire au récap : nom/tag du roster, avatar de l'équipe parente. */
     data class OpponentPreview(
         val name: String,
         val tag: String,
@@ -80,7 +80,7 @@ class AddWarViewModel @AssistedInject constructor(
         val expandedRosterTeamId: String? = null,
         val expandedRosters: List<MKCTeamRoster> = listOf(),
         // Photos MKCentral des joueurs (playerId → url préfixée), résolues une fois en
-        // parallèle ; initiales en fallback tant qu'absentes (rule 12).
+        // parallèle ; initiales en fallback tant qu'absentes.
         val playerAvatars: Map<String, String> = emptyMap(),
         // Tournoi choisi au Récap (#103) ; null = war amicale (défaut).
         val tournament: Tournament? = null
@@ -134,7 +134,7 @@ class AddWarViewModel @AssistedInject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
     /**
-     * Résout une fois, en parallèle (rule 30), les photos MKCentral des joueurs et pousse la
+     * Résout une fois, en parallèle, les photos MKCentral des joueurs et pousse la
      * `Map<playerId, url>` dans `_state` (les cellules passent des initiales à la photo).
      */
     private fun resolvePlayerAvatars(players: List<PlayerEntity>) {
@@ -159,7 +159,7 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     /**
-     * Bascule 12↔24 sans re-navigation (rule 11) : le nombre d'adversaires change (1 vs 3),
+     * Bascule 12↔24 sans re-navigation : le nombre d'adversaires change (1 vs 3),
      * d'où la remise à zéro complète de la sélection (retour à l'étape 1).
      */
     fun onModeChange(is24p: Boolean) {
@@ -169,7 +169,7 @@ class AddWarViewModel @AssistedInject constructor(
     }
 
     /**
-     * Navigation entre étapes (rule 11) : un retour en arrière annule la sélection de l'étape
+     * Navigation entre étapes : un retour en arrière annule la sélection de l'étape
      * rejointe (Adversaire = reset complet, Joueurs = line-up) ; aller en avant ne réinitialise rien.
      */
     fun onStepChange(step: Int) {
@@ -183,7 +183,7 @@ class AddWarViewModel @AssistedInject constructor(
 
     /**
      * Retour à l'étape Adversaire = remise à zéro complète (adversaires ET line-up). Mutualisé
-     * entre [onModeChange] et [onStepChange] (≥ 2 appelants, rules 30/61).
+     * entre [onModeChange] et [onStepChange] (≥ 2 appelants).
      */
     private fun resetOpponentSelection() {
         _state.value = state.value.copy(
@@ -280,7 +280,7 @@ class AddWarViewModel @AssistedInject constructor(
         if (current.teamSelected.orEmpty().any { it.id == team.id }) return
         val selectedTeams = current.teamSelected.orEmpty() + team
         val selectedRosterMetas = current.rostersSelected + roster
-        // Preview de l'adversaire : nom/tag du roster (rule 12), avatar de l'équipe.
+        // Preview de l'adversaire : nom/tag du roster, avatar de l'équipe.
         val previews = current.opponentPreviews + OpponentPreview(
             name = roster?.name ?: team.name,
             tag = roster?.tag ?: team.tag,

@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Écran « ACTIONS » de la war en cours. Trois onglets (segmenté partagé, état local
- * `rememberSaveable`, rule 11) : Pénalités (grille équipe/montant, sélection unique),
+ * `rememberSaveable`) : Pénalités (grille équipe/montant, sélection unique),
  * Remplacement (sortant/entrant), Annuler (confirmation + suppression de la war).
  */
 @Composable
@@ -113,7 +113,7 @@ private fun ColumnScope.PenaltiesPanel(
     // unique toutes équipes confondues ; `groupBy` conserve l'ordre de première apparition.
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         state.penalties.orEmpty().groupBy { it.penalty.teamId }.forEach { (teamId, teamPenalties) ->
-            // Nom du roster/équipe (rule 12) ; retombe sur l'hôte si non résolu.
+            // Nom du roster/équipe ; retombe sur l'hôte si non résolu.
             val teamName = teams.singleOrNull { it.id == teamId }?.name ?: hostName
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MKText(
@@ -232,8 +232,8 @@ private fun ColumnScope.CancelPanel(
         )
     }
     Spacer(Modifier.height(2.dp))
-    // Deux actions sur une ligne, largeurs égales (weight 1f, rule 16). Bouton danger aplati
-    // sur le style unique de MKButton (plus de fond rouge ad hoc, #67).
+    // Deux actions sur une ligne, largeurs égales (weight 1f). Le bouton danger suit
+    // le style unique de MKButton (#67).
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         MKButton(
             modifier = Modifier.weight(1f),

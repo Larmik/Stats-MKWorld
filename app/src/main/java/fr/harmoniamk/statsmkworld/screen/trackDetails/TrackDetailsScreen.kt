@@ -40,7 +40,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 /**
  * Relecture en lecture seule d'une course jouée (#47) : carte en-tête ([CourseHeaderCard]),
  * grille « Positions & shocks », et bouton « Éditer la course » (visible tant que la war n'est
- * pas validée, cf. [TrackDetailsViewModel]). Graphe racine → pas de bottombar (rule 17).
+ * pas validée, cf. [TrackDetailsViewModel]). Graphe racine → pas de bottombar.
  */
 @Composable
 fun TrackDetailsScreen(

@@ -28,7 +28,7 @@ import kotlinx.coroutines.FlowPreview
 
 /**
  * Classement complet des circuits joués contre un adversaire (#27). Réutilise le même
- * [OpponentDetailViewModel] (mêmes données, mode et tri) et la grille `podiumRows` (rule 16).
+ * [OpponentDetailViewModel] (mêmes données, mode et tri) et la grille `podiumRows`.
  * Sélecteur de tri Occurrences / Winrate / Score moy. en tête.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)

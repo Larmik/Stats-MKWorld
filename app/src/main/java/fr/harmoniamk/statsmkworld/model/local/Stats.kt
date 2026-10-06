@@ -140,7 +140,7 @@ data class Stats(
 
     // --- Vague 1 : forme récente vs historique -------------------------------
     // « Forme récente » = comparaison de 3 fenêtres (all-time, 5 dernières, 10
-    // dernières wars) sur les mêmes indicateurs, calculés ici (rule 13 : calcul
+    // dernières wars) sur les mêmes indicateurs, calculés ici (calcul
     // prioritaire). Chaque indicateur réutilise la définition all-time historique :
     // - winrate (wars gagnées / jouées) ;
     // - score moyen par war (playerScore en vue joueur, total équipe sinon) ;

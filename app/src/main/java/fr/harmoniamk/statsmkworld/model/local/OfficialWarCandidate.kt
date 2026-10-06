@@ -16,6 +16,6 @@ data class OfficialWarCandidate(
     val tournament: Tournament,
     /** Création de la war (`War.id` = epoch ms) en heure de Paris. */
     val createdAt: ZonedDateTime,
-    /** Adversaires résolus via `War.opponentTeams` (nom/tag du roster, dégradé si inconnu — rule 12). */
+    /** Adversaires résolus via `War.opponentTeams` (nom/tag du roster, dégradé si inconnu). */
     val opponents: List<TeamEntity>,
 )

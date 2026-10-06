@@ -26,7 +26,7 @@ PR. Tu modifies les fichiers ; l'orchestrateur commitera après validation.
 
 **Au premier passage seulement** :
 
-1. Lis `.claude/rules-index.md` (liste des rules, `paths`, correspondance des anciens numéros).
+1. Lis `.claude/rules-index.md` (liste des rules et de leurs `paths`).
 2. Les rules de `.claude/rules/**` portent un frontmatter `paths` : elles se chargent
    **automatiquement** dans ton contexte quand tu fais un `Read`/`Edit`/`Write` d'un fichier
    correspondant (vérifié en sous-agent au #158). Ouvre donc les fichiers de code avec l'outil
@@ -83,7 +83,8 @@ qui modifie le dépôt). Pour chaque point, corrige ou justifie dans le résumé
   filtres saison / Amicaux-Officiels / 12p propagés aux écrans enfants
   (`viewmodel/navigation-filtres.md`).
 - **Performance** : toute agrégation de wars dans `withContext(Dispatchers.Default)`,
-  `WarDetails` compris ; recherche à la saisie annulable (`viewmodel/viewmodels.md`) ; pas de
+  `WarDetails` compris, sur une branche `*Latest` (`mapLatest`/`flatMapLatest`, jamais de calcul
+  dans la lambda d'un `combine`) ; recherche à la saisie annulable (`viewmodel/viewmodels.md`) ; pas de
   lecture de source répétée par élément ; appels réseau par élément bornés
   (`data/repositories.md`) ; `collectAsStateWithLifecycle` (`ui/compose.md`).
 - **Duplication** : pour chaque composable/helper/extension créé, `rg "fun <Nom>"` sur
@@ -95,9 +96,10 @@ qui modifie le dépôt). Pour chaque point, corrige ou justifie dans le résumé
   (`viewmodel/viewmodels.md`) ; aucun libellé en dur hors écran debug (`ui/strings.md`).
 - **Dette** : aucun littéral métier recopié (`"-1"`, rôles, `size > 1`, URL MKCentral,
   `90.dp` → `BottomBarInset`) (`kotlin/constantes-extensions.md`) ; pas de fonction locale,
-  noms explicites (`kotlin/style.md`) ; pas de code commenté ni orphelin, aucun numéro de
-  rule dans un commentaire (`kotlin/commentaires.md`).
-- **Doc** : `docs/` à jour, références de rules valides ; tout problème découvert
+  noms explicites (`kotlin/style.md`) ; pas de code commenté ni orphelin ; commentaires sans renvoi de
+  rule ni mention d'élément supprimé (`kotlin/commentaires.md`).
+- **Doc** : `docs/` à jour et décrivant le code actuel (pas d'historique), références de rules
+  valides ; tout problème découvert
   hors périmètre est ajouté à `docs/AUDIT.md` avec sa ligne *Prévention*
   (`process/documentation.md`).
 

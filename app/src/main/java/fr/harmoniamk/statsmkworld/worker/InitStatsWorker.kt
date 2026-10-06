@@ -21,9 +21,8 @@ import kotlinx.coroutines.flow.firstOrNull
  * sans attendre le worker périodique — et des tournois officiels tant que leur cache est incomplet
  * ou non traduit dans la langue du téléphone (#152).
  *
- * Historique : ce worker peuplait aussi un cache de classements (`StatsRepository`) ; ce cache
- * n'était plus lu par aucun écran (les VM stats recalculent à la demande) et a été retiré comme
- * code mort (#51). Le nom `InitStatsWorker` est conservé car référencé par WorkManager.
+ * Les stats ne sont pas mises en cache : les VM les recalculent à la demande. Le nom
+ * `InitStatsWorker` est référencé par WorkManager : ne pas le renommer.
  */
 @HiltWorker
 class InitStatsWorker @AssistedInject constructor(

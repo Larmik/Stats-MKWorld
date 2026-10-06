@@ -14,11 +14,6 @@ import java.io.Serializable
  *
  * `Serializable` car transporté via `savedStateHandle` de la navigation Compose.
  *
- * Note (#51) : l'ancien membre `TeamStats` et l'écran générique `StatsScreen`/`StatsViewModel`
- * ont été supprimés (aucun émetteur ne les atteignait plus, la fiche joueur passant
- * désormais par [fr.harmoniamk.statsmkworld.screen.stats.full.StatsFullScreen]). Seules les
- * 3 portées réellement émises subsistent.
- *
  * @property title Ressource de libellé de la portée (titre de la fiche).
  * @property is24PEnabled `true` si la portée cible les wars 24 joueurs (3 adversaires),
  *   `false` pour le mode 12 joueurs (1v1). Sert au filtrage des wars par mode.

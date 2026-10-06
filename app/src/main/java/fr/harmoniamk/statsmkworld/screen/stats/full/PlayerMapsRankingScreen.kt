@@ -40,7 +40,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.podiumRows
 /**
  * Classement complet des circuits (#67). [isTeam] false → circuits du joueur (position
  * moyenne), true → circuits d'équipe (écart). Réutilise le même `StatsFullViewModel`
- * (rules 16/32) et la grille `podiumRows`. Tri Occurrences / Winrate / Score moy.
+ * et la grille `podiumRows`. Tri Occurrences / Winrate / Score moy.
  */
 @Composable
 fun PlayerMapsRankingScreen(
@@ -55,7 +55,7 @@ fun PlayerMapsRankingScreen(
     // All-time (index 0) : destination autonome sans sélecteur de période (#68).
     val stats = if (isTeam) state.teamStatsByWindow[0] else state.playerStatsByWindow[0]
     val userId = if (isTeam) null else state.targetUserId
-    // Tri + conversion mémoïsés (rule 11, #73).
+    // Tri + conversion mémoïsés (#73).
     val rows = remember(sortIndex, stats, userId) {
         stats?.maps.orEmpty()
             .filter { it.totalPlayed > 0 }

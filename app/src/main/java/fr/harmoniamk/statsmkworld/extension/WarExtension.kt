@@ -13,10 +13,10 @@ import kotlinx.coroutines.flow.firstOrNull
 /**
  * Résout les adversaires d'une war pour l'affichage. Chaque `rosterId` de `teamOpponent`
  * est remonté à son équipe parente : si le roster est identifiable, nom/tag du **roster**
- * (avatar/couleur de l'équipe conservés, rule 12). L'`id` reste le **rosterId** (appariement
+ * (avatar/couleur de l'équipe conservés). L'`id` reste le **rosterId** (appariement
  * score/pénalité par identifiant, comme l'hôte).
  *
- * **Non destructif** (rule 12) : un id irrésoluble (roster/équipe hors cache, war legacy)
+ * **Non destructif** : un id irrésoluble (roster/équipe hors cache, war legacy)
  * n'est pas effacé mais dégradé via [TeamEntity.unknown].
  */
 suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): List<TeamEntity> =

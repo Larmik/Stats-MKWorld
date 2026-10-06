@@ -37,7 +37,7 @@ val StatCardRadius = RoundedCornerShape(6.dp)
 
 /**
  * Carte translucide standard du pôle Stats (fond sombre, bordure blanche, radius 6). Titre en
- * eyebrow optionnel. Mutualisée (rule 16) avec les fiches Adversaire/Circuit (#27).
+ * eyebrow optionnel. Mutualisée avec les fiches Adversaire/Circuit (#27).
  */
 @Composable
 fun StatCard(

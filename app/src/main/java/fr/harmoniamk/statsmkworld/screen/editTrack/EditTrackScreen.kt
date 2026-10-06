@@ -45,9 +45,9 @@ import fr.harmoniamk.statsmkworld.ui.cells.MKTrackCell
 import fr.harmoniamk.statsmkworld.ui.cells.PlayerShockCell
 
 /**
- * Édition d'une course saisie — 2 onglets (segmented partagé, état `rememberSaveable`, rule 11) :
+ * Édition d'une course saisie — 2 onglets (segmented partagé, état `rememberSaveable`) :
  * `Circuit` (grille de sélection) et `Positions` (positions & shocks fusionnés, #46). « Confirmer »
- * n'est actif que si toutes les positions sont distinctes. Graphe racine → pas de bottombar (rule 17).
+ * n'est actif que si toutes les positions sont distinctes. Graphe racine → pas de bottombar.
  */
 @Composable
 fun EditTrackScreen(
@@ -56,7 +56,7 @@ fun EditTrackScreen(
     onBackToCurrent: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // Onglet courant et recherche : purs états UI éphémères (rule 11), survivant à la rotation.
+    // Onglet courant et recherche : purs états UI éphémères, survivant à la rotation.
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var search by rememberSaveable { mutableStateOf("") }
 

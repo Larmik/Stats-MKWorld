@@ -134,7 +134,7 @@ class TeamProfileViewModel @AssistedInject constructor(
 
     /**
      * Membres des rosters mkworld : rôle réel (nœud Firebase `users` pour mon équipe, sinon
-     * indicateurs MKCentral leader/manager) + avatar MKCentral résolu en parallèle (rule 30).
+     * indicateurs MKCentral leader/manager) + avatar MKCentral résolu en parallèle.
      */
     private suspend fun resolveMembers(team: MKCTeam): List<MemberInfo> = coroutineScope {
         val rosters = team.rosters.filter { it.game == "mkworld" }

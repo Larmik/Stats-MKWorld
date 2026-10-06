@@ -11,7 +11,7 @@ paths:
 # Domaine mkworld uniquement
 
 - Ne jamais lire, récupérer ni stocker une équipe / roster d'un autre jeu (`game=mk8dx`, tout
-  `game != "mkworld"`). Ne pas réintroduire `getMK8Teams` ni `getAllTeams` (supprimés).
+  `game != "mkworld"`) : aucun endpoint, filtre ni requête ciblant un autre jeu.
 - L'unique endpoint liste `MKCentralApi.getTeams` (synchro et diagnostic) fige dans l'URL
   `game=mkworld&mode=150cc&is_historical=false&is_active=true&min_player_count=6`.
 - Côté modèle, filtrer les rosters avec `MKCTeam.mkWorldRosters()` (`extension/MKCTeamExtension.kt`),

@@ -15,7 +15,7 @@ import javax.inject.Singleton
 
 /**
  * Repository dédié aux saisons (#30) : agrège RTDB (source de vérité `seasons/{teamId}`)
- * et Room (cache), d'où un repository propre plutôt qu'un UseCase partagé (rule 32).
+ * et Room (cache), d'où un repository propre plutôt qu'un UseCase partagé.
  * - [fetchSeasons] : synchro RTDB → Room, seeding si le nœud est vide ;
  * - [seedInitialSeasons] : (ré)inscrit l'historique inconditionnellement (outil Debug) ;
  * - [startNewSeason] : clôt la saison courante et en ouvre une nouvelle (RTDB + Room).

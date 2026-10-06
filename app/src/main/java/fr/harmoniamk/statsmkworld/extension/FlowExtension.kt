@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 /**
  * Fusionne ce flow avec un autre en un flux dont les émissions sont entrelacées (merge NON
  * ordonné). Utilisé par les ViewModels stats pour combiner la chaîne de calcul dérivée des
- * sources avec le `_state` interactif interne (cf. rule 21 : attention à l'ordre avec `flowOn`).
+ * sources avec le `_state` interactif interne (attention à l'ordre avec `flowOn`).
  *
  * @param flow Le second flow à fusionner avec celui-ci.
  */

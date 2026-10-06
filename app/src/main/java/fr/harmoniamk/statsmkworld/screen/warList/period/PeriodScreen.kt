@@ -62,7 +62,7 @@ fun PeriodScreen(
     onBack: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // Onglet courant : 0 = Wars, 1 = Joueurs. Pur état UI, survit à la rotation (rule 11).
+    // Onglet courant : 0 = Wars, 1 = Joueurs. Pur état UI, survit à la rotation.
     var tabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     BaseScreen(
@@ -81,7 +81,7 @@ fun PeriodScreen(
         MKWarKindFilterRow(filter = state.value.kindFilter, onFilterChange = viewModel::onKindFilterChange)
         Spacer(Modifier.height(11.dp))
 
-        // Onglets Wars / Joueurs (segmented partagé, rule 15/16). Fond clair du dégradé → onDark = false.
+        // Onglets Wars / Joueurs (segmented partagé). Fond clair du dégradé → onDark = false.
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.period_tab_wars),
@@ -116,7 +116,7 @@ fun PeriodScreen(
     }
 }
 
-/** Onglet Wars : compteur + liste des wars de la période via `WarCell` (rule 16). */
+/** Onglet Wars : compteur + liste des wars de la période via `WarCell`. */
 @Composable
 private fun WarsTab(wars: List<WarDetails>, onWarDetailsClick: (WarDetails) -> Unit) {
     LazyColumn(
@@ -149,7 +149,7 @@ private fun WarsTab(wars: List<WarDetails>, onWarDetailsClick: (WarDetails) -> U
 
 /**
  * Onglet Joueurs : classement de la période (nb wars, taux de participation, score moyen,
- * shocks) via la cellule podium mutualisée (`PodiumRow`, rule 16), 3 par ligne.
+ * shocks) via la cellule podium mutualisée (`PodiumRow`), 3 par ligne.
  */
 @Composable
 private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
@@ -157,7 +157,7 @@ private fun PlayersTab(players: List<PeriodViewModel.PlayerPeriodStats>) {
         Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // Clé de ligne stable (String primitive, rule 10) : concat des ids de la ligne.
+        // Clé de ligne stable (String primitive) : concat des ids de la ligne.
         items(players.chunked(3), key = { row -> row.joinToString("-") { it.player.id } }) { row ->
             // PodiumRow est une extension de ColumnScope.
             Column {
@@ -185,7 +185,7 @@ private fun PeriodViewModel.PlayerPeriodStats.toPodiumEntry(): PodiumEntry = Pod
 )
 
 /**
- * Deux champs Du / Au ouvrant un `DatePickerDialog` Material3 (écart maquette documenté, rule 13).
+ * Deux champs Du / Au ouvrant un `DatePickerDialog` Material3 (écart maquette documenté).
  * Chaque validation remonte la plage au VM (`dateA ≤ dateB` borné côté VM).
  */
 @OptIn(ExperimentalMaterial3Api::class)

@@ -32,13 +32,13 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 /**
  * Fiche d'un tournoi officiel (#152), ouverte depuis le badge de la carte score (détail de war, war
  * en cours) : logo, saison, dates, organisateur/mode, lien MKCentral, description et règles
- * (Markdown, traduits sur l'appareil quand c'est possible, original consultable). Graphe racine → pas de bottombar (rule 17).
+ * (Markdown, traduits sur l'appareil quand c'est possible, original consultable). Graphe racine → pas de bottombar.
  */
 @Composable
 fun TournamentScreen(viewModel: TournamentViewModel, onBack: () -> Unit) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
-    // Bascule traduction / original : état UI local, conservé à la rotation (rule 11).
+    // Bascule traduction / original : état UI local, conservé à la rotation.
     var showOriginal by rememberSaveable { mutableStateOf(false) }
 
     BackHandler { onBack() }
@@ -101,7 +101,7 @@ fun TournamentScreen(viewModel: TournamentViewModel, onBack: () -> Unit) {
                     else -> {
                         state.value.pageUrl?.let { url ->
                             item(key = "mkcentral") {
-                                // Bouton seul sur sa ligne : largeur intrinsèque, centré (rule 16).
+                                // Bouton seul sur sa ligne : largeur intrinsèque, centré.
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                                     MKButton(
                                         text = stringResource(R.string.tournament_open_mkcentral),

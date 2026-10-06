@@ -60,10 +60,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Fiche détail adversaire (#27). Sélecteur Indiv/Équipe (rule 11 : état réactif du VM). Sections :
+ * Fiche détail adversaire (#27). Sélecteur Indiv/Équipe (état réactif du VM). Sections :
  * en-tête, Bilan face à eux, 5 dernières, Séries & scores, Circuits/Pilotes/Baggeurs contre eux
- * (podiums), sections détaillées mutualisées (rule 16) et historique des wars → WarDetailsScreen.
- * Rules 13/15/16.
+ * (podiums), sections détaillées mutualisées et historique des wars → WarDetailsScreen.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -84,7 +83,7 @@ fun OpponentDetailScreen(
             else -> {
                 val team = state.team
                 val stats = state.stats
-                // Sélecteur Indiv/Équipe (rule 15 : composant partagé).
+                // Sélecteur Indiv/Équipe (composant partagé).
                 MKSegmentedSelector(
                     items = listOf(
                         stringResource(R.string.opponent_detail_scope_indiv),
@@ -314,7 +313,7 @@ private fun RowScope.ShockCell(label: String, value: String) {
 }
 
 /**
- * Sélecteur de tri des circuits (Occurrences / Winrate / Score moy., rules 15/16). [onDark] =
+ * Sélecteur de tri des circuits (Occurrences / Winrate / Score moy.). [onDark] =
  * carte sombre (fiche) ; false = fond clair (écran complet). [isIndiv] : le tri score classe sur
  * la position moyenne → libellé « Position » (#102).
  */

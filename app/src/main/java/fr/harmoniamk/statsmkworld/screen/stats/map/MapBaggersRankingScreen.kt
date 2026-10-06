@@ -26,7 +26,7 @@ import kotlinx.coroutines.FlowPreview
 
 /**
  * Classement complet des baggeurs sur un circuit (#69), par part de shocks décroissante.
- * Réutilise le même [MapDetailViewModel] et la grille `podiumRows` (rule 16).
+ * Réutilise le même [MapDetailViewModel] et la grille `podiumRows`.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable

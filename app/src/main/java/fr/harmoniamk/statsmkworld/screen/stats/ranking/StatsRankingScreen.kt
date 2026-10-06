@@ -65,8 +65,8 @@ fun StatsRankingScreen(
     BaseScreen(
         title = stringResource(R.string.classements),
         modifier = Modifier.padding(bottom = BottomBarInset),
-        // Sélecteur de saison (#70, MKSeasonDropdown partagé rule 16). Change l'état VM ⇒
-        // recalcul à la volée (rule 11, pas de re-nav).
+        // Sélecteur de saison (#70, MKSeasonDropdown partagé). Change l'état VM ⇒
+        // recalcul à la volée (pas de re-nav).
         headerTrailing = {
             MKSeasonDropdown(
                 seasons = state.seasons,
@@ -75,7 +75,6 @@ fun StatsRankingScreen(
             )
         }
     ) {
-        // Label « Palmarès triable » retiré (#50 pt.5) : la fonction est évidente.
         MKSegmentedSelector(
             items = listOf(
                 stringResource(R.string.rankings_tab_players),
@@ -202,7 +201,7 @@ private fun RankingItem.PlayerRanking.toPodiumEntry(): Pair<PodiumEntry, Ranking
     ) to this
 
 private fun RankingItem.OpponentRanking.toPodiumEntry(): Pair<PodiumEntry, RankingItem.OpponentRanking> =
-    // Rule 12 : nom/tag du roster, logo de l'équipe (non résolu déjà dégradé côté données).
+    // Nom/tag du roster, logo de l'équipe (non résolu déjà dégradé côté données).
     PodiumEntry(
         name = team.name,
         logo = team.logo,

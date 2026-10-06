@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Segmenté standard de l'app (« pill » maquette) : item actif = fond blanc/texte sombre, inactif
- * = texte contrasté sur fond translucide. LE composant segmented du projet, ne pas recréer (rule 15).
+ * = texte contrasté sur fond translucide. LE composant segmented du projet, ne pas recréer.
  * Stateless : sélection pilotée par [page], nouvel index remonté via [onClick].
  *
  * @param onDark `true` sur carte sombre (dashboard Accueil) → texte inactif blanc ; `false`

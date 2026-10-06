@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -58,7 +59,7 @@ sealed interface RankingItem {
 
     /**
      * [participationRate] (#78) : % de wars de l'équipe où le joueur est présent
-     * (`warsPlayed.percentOf(total wars équipe)`). Calculé dans le VM (rule 32), absent de [Stats].
+     * (`warsPlayed.percentOf(total wars équipe)`). Calculé dans le VM, absent de [Stats].
      */
     class PlayerRanking(
         val player: PlayerEntity,
@@ -167,7 +168,16 @@ class StatsRankingViewModel @Inject constructor(
     private var loadedSeasons: List<SeasonEntity> = listOf()
     private var loadedSelectedSeasonNumber: Int? = null
 
-    val state = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons(), _kindFilter) { warEntities, seasonFilter, seasons, kindFilter ->
+    /** Sources légères combinées avant le calcul (`mapLatest` annule un calcul devenu obsolète). */
+    private data class Sources(
+        val warEntities: List<WarEntity>,
+        val seasonFilter: SeasonFilter,
+        val seasons: List<SeasonEntity>,
+        val kindFilter: WarKindFilter
+    )
+
+    val state = combine(databaseRepository.getWars(), _seasonFilter, databaseRepository.getSeasons(), _kindFilter, ::Sources)
+        .mapLatest { (warEntities, seasonFilter, seasons, kindFilter) ->
             // Saisons observées en Flow (#73) : le dropdown apparaît dès l'hydratation eager.
             currentUser = dataStoreRepository.mkcPlayer.firstOrNull()
             val is24p = dataStoreRepository.is24PEnabled.firstOrNull() == true

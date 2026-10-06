@@ -77,7 +77,7 @@ fun WelcomeScreen(
     onSearch: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // État UI local : profil (0 = Moi, 1 = Équipe), fenêtre Momentum (0 = 5, 1 = 10). Rule 11.
+    // État UI local : profil (0 = Moi, 1 = Équipe), fenêtre Momentum (0 = 5, 1 = 10).
     var profileIndex by rememberSaveable { mutableIntStateOf(0) }
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
     BaseScreen(

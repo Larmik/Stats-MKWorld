@@ -27,7 +27,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 /**
- * Cellule joueur avec compteur de shocks et édition optionnelle de la position, partagée (rule 16).
+ * Cellule joueur avec compteur de shocks et édition optionnelle de la position, partagée.
  *
  * Carte translucide, nom en haut puis grille 3 colonnes centrée : `−` | (position en haut, icône
  * shock + compteur en bas) | `+`, rangées à hauteur fixe pour aligner les steppers. Si

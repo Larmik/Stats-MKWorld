@@ -26,7 +26,7 @@ import kotlinx.coroutines.FlowPreview
 
 /**
  * Classement complet des pilotes sur un circuit (#27), par score perso moyen décroissant.
- * Réutilise le même [MapDetailViewModel] et la grille `podiumRows` (rule 16).
+ * Réutilise le même [MapDetailViewModel] et la grille `podiumRows`.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable

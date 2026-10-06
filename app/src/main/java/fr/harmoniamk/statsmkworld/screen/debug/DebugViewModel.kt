@@ -263,7 +263,7 @@ class DebugViewModel @Inject constructor(
     }
 
     // Inscrit rétroactivement les 3 saisons dans RTDB + Room (#30) ; réinitialise l'index
-    // (écriture inconditionnelle). Logique dans SeasonRepository (rule 32).
+    // (écriture inconditionnelle). Logique dans SeasonRepository.
     fun onSeedSeasons() {
         viewModelScope.launch {
             _sharedLoading.emit("Inscription des saisons...")

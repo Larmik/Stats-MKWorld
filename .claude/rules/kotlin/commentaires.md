@@ -5,14 +5,17 @@ paths:
 
 # Commentaires : courts, documentaires, sans code mort
 
+- Un commentaire décrit le **code actuel** : aucune mention de fichier, code ou feature supprimé
+  (« remplace l'ancien X », « ex-Y », « fusionné depuis », « retiré en #NN »), aucun historique.
+  git garde le passé.
 - Un commentaire dit ce que fait un élément et pourquoi un choix non évident a été fait ; il ne
   paraphrase pas le code.
 - KDoc concis sur les éléments publics non triviaux : une phrase, puis `@param` / `@return`
   seulement s'ils apportent une info absente de la signature.
 - Garder l'info à valeur : piège métier, invariant, raison d'un choix (« throttle MKCentral →
   séquentiel », « garde-fou anti-wipe »).
-- Référencer un **ticket** (`#NN`) ou une entrée d'audit, **jamais un numéro ni un nom de rule** :
-  les rules sont renommées et fusionnées, le renvoi se périme (cf. audit G10).
+- Référencer un **ticket** (`#NN`) ou une entrée d'audit, **jamais une rule** (ni numéro ni
+  chemin) : une rule évolue, le renvoi se périme.
 - Condenser un commentaire verbeux plutôt que le supprimer s'il porte du sens.
 - À éviter : paraphrase (`// incrémente le compteur`), redondance avec le nom, pavés de 8-10
   lignes, en-têtes décoratifs (`// ----`), KDoc sur un trivial.

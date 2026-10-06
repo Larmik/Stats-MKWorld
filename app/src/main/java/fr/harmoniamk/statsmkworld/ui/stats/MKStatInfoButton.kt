@@ -25,8 +25,8 @@ import fr.harmoniamk.statsmkworld.ui.MKDialog
 
 /**
  * Bouton rond d'information (ⓘ) à côté d'un indicateur : ouvre [MKDialog] (titre = libellé,
- * message = explication). État d'ouverture éphémère conservé en rotation ([rememberSaveable],
- * rule 11). Réutilisé par toutes les sections de stats (rule 16, via `MetricTile.info`).
+ * message = explication). État d'ouverture éphémère conservé en rotation ([rememberSaveable]).
+ * Réutilisé par toutes les sections de stats (via `MetricTile.info`).
  */
 @Composable
 fun MKStatInfoButton(title: String, message: String, modifier: Modifier = Modifier) {

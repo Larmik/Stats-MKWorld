@@ -39,10 +39,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 
 /**
- * Fiche détail circuit (#27). Sélecteur Indiv/Équipe (rule 11 : état réactif du VM). Sections :
+ * Fiche détail circuit (#27). Sélecteur Indiv/Équipe (état réactif du VM). Sections :
  * en-tête, Performance (winrate de manche + V/N/D), Scores moyens (équipe + position joueur +
  * shocks), Répartition + Top/Bot 2→6 (mutualisées), et Pilotes/Baggeurs/Adversaires du circuit
- * (podiums, mode Équipe uniquement). Rules 13/15/16.
+ * (podiums, mode Équipe uniquement).
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -67,7 +67,7 @@ fun MapDetailScreen(
             else -> {
                 val mapStats = state.mapStats!!
                 val map = state.maps.displayedMap()
-                // Sélecteur Indiv/Équipe (rule 15 : composant partagé) — sur fond clair (onDark false).
+                // Sélecteur Indiv/Équipe (composant partagé) — sur fond clair (onDark false).
                 MKSegmentedSelector(
                     items = listOf(
                         stringResource(R.string.map_detail_scope_indiv),
@@ -202,7 +202,7 @@ internal fun MapDetailViewModel.BaggerRanking.toPodiumEntry(): PodiumEntry =
  */
 internal fun MapDetailViewModel.OpponentRanking.toPodiumEntry(): PodiumEntry =
     PodiumEntry(
-        // Rule 12 : nom du roster + logo de l'équipe parente.
+        // Nom du roster + logo de l'équipe parente.
         name = team.name,
         logo = team.logo,
         stats = listOf(

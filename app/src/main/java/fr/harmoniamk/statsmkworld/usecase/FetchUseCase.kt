@@ -89,7 +89,7 @@ class FetchUseCase @Inject constructor(
             dataStoreRepository.setMKCTeam(it)
             databaseRepository.clearPlayers()
             // Avatar des membres (#50) : seul registry/players/{id} le porte (pas les endpoints
-            // équipe) → résolu PAR membre, SÉQUENTIELLEMENT (rule 30 : une rafale parallèle se
+            // équipe) → résolu PAR membre, SÉQUENTIELLEMENT (une rafale parallèle se
             // fait throttler par MKCentral → successResponse=null sans exception). Chaque appel
             // tolérant aux échecs (runCatching → avatar null = initiales), tous traités pareil.
             it.rosters.filter { roster -> roster.game == "mkworld" }.forEach { roster ->
@@ -129,7 +129,7 @@ class FetchUseCase @Inject constructor(
     }
 
     override suspend fun fetchTeams(): String  {
-        // Domaine exclusivement mkworld (rule 31) : on ne récupère/stocke QUE des équipes mkworld.
+        // Domaine exclusivement mkworld : on ne récupère/stocke QUE des équipes mkworld.
         val teams = mutableListOf<TeamEntity>()
         var teamPage = 1
         val firstResponse = getTeams(teamPage)

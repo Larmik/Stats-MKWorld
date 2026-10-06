@@ -70,7 +70,7 @@ fun WarListScreen(
     onPeriodView: ((WarKindFilter) -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // Filtre de résultat : pur état UI, survit à la rotation (rule 11).
+    // Filtre de résultat : pur état UI, survit à la rotation.
     var filter by rememberSaveable { mutableStateOf(WarFilter.ALL) }
 
     // Sous-titre : « wars de <joueur> » si filtré sur un joueur (#65), sinon « N wars ».

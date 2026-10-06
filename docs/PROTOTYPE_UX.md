@@ -108,13 +108,13 @@ Barre d'app : ← retour + titre **NOUVELLE WAR**. **Wizard interactif à 2 éta
 segmenté `12 joueurs` (actif) / `24 joueurs` en tête (ajuste le libellé indicatif —
 en 24 j, 3 équipes adverses), puis stepper cliquable `1 · Adversaire` → `2 · Joueurs`.
 Les étapes basculent **dynamiquement** (mêmes panels que les onglets ; pas de
-re-navigation, cf. rule `11`).
+re-navigation, cf. `ui/compose.md`).
 
 **Étape 1 — Adversaire** (panel `s1`) :
 1. Champ « **Rechercher une équipe / un tag** ».
 2. **Liste d'équipes** (clic → étape 2) : Plombiers du Coin (tag PC, roster unique),
    Tortues Géniales (tag TG, **2 rosters mkworld**), Fzero Squad (FZ), Koopa Onslaught (KO).
-3. **Choix du roster** (rule `12`) : cliquer une équipe **multi-rosters** (Tortues
+3. **Choix du roster** (`ui/roster-player-display.md`) : cliquer une équipe **multi-rosters** (Tortues
    Géniales) déplie un sélecteur `Main` (tag TG) / `Academy` (tag TGA) — pastille
    `Idée UX`. Une équipe **mono-roster** passe directement à l'étape 2.
 4. Hint : « Logo = équipe, nom + tag = roster… ».
@@ -182,7 +182,7 @@ Barre d'app : ← retour + titre **COURSE**.
 2. **Positions & shocks** (eyebrow) : Pascal `P1 · 1 shock` · Larmik `P3 · 0 shock` · Juju `P5 · 2 shocks` · Max `P6 · 0 shock`.
 3. Bouton « **Éditer la course** » → `edittrack`.
 
-> **Implémentation (#47)** : écran refondu au niveau maquette (rules 13/15). Carte en-tête via
+> **Implémentation (#47)** : écran refondu au niveau maquette (`ui/components.md`). Carte en-tête via
 > `StatCard` (illustration du circuit + nom Bungee + sous-titre « Course N · {score hôte - adverse}
 > (±diff) », le score des deux équipes (`WarTrackDetails.displayedResult`) suivi de la diff
 > colorisée) — l'illustration du circuit remplace la pastille à initiales de la maquette, par
@@ -230,16 +230,16 @@ Barre d'app : ← retour + titre **DÉTAILS DE LA WAR**.
    - Plage Cheep Cheep · **54** (+10)
    - Désert Sec-Sec · **49** (+2)
 
-> **Implémentation (#48)** : écran refondu au niveau maquette (rules 13/15). C'est l'**écran-frère**
-> de `currentwar` (war terminée) : il **mutualise** ses composants de résumé (rule 16). Les blocs
+> **Implémentation (#48)** : écran refondu au niveau maquette (`ui/components.md`). C'est l'**écran-frère**
+> de `currentwar` (war terminée) : il **mutualise** ses composants de résumé (`ui/components.md`). Les blocs
 > carte score / cellules de course / pastilles d'équipe sont extraits dans `ui/cells/WarSummaryCells.kt`
 > (`WarScoreCard`, `WarTracksSection`, `WarDashboardCard`, `WarEyebrow`, `WarTeamSide`, `WarTeamCrest`,
 > `WarPlayerRankingCard`) et partagés entre `CurrentWarScreen` et `WarDetailsScreen`.
 > - **Carte score** : `WarScoreCard` (hôte VS adversaire, diff centrale colorisée, pénalités/shocks),
->   **sans** le sous-titre « courses restantes » (réservé à la war en cours). Nom/tag = roster (rule 12).
+>   **sans** le sous-titre « courses restantes » (réservé à la war en cours). Nom/tag = roster (`ui/roster-player-display.md`).
 > - **Classement joueurs** : `WarPlayerRankingCard` — grille 2 colonnes de tuiles (`.two > .b`),
 >   joueurs **triés par points décroissants**, nom + « N pts » (+ shocks). Données réelles
->   (`WarDetails.withPlayersList`), jamais les valeurs de démo (rule 13).
+>   (`WarDetails.withPlayersList`), jamais les valeurs de démo (`stats/calculs.md`).
 > - **Boutons** (`.btn2` : fond blanc translucide, bordure douce, icône 16 dp + libellé Urbanist) :
 >   « Générer le Tab (PDF) » (→ EditTab) affiché **uniquement en 12 j / 1v1** (masqué en 24 j) et
 >   « Voir l'adversaire » → fiche adversaire (`Opponent/{opponentId}/null`, portée Équipe). Icônes
@@ -248,7 +248,7 @@ Barre d'app : ← retour + titre **DÉTAILS DE LA WAR**.
 >   maquette **non repris** dans l'app livrée (retour utilisateur #48) : la règle reste appliquée
 >   (bouton Tab masqué en 24 j) sans afficher le texte explicatif.
 > - Écran du **graphe racine** (poussé par-dessus WarList/CurrentWar/fiche adversaire) → pas de
->   bottombar, aucune marge basse requise (rule 17).
+>   bottombar, aucune marge basse requise (`ui/bottom-nav.md`).
 >
 > Conséquence de la mutualisation : l'ancien composant `ui/WarScoreView.kt` (avec ses vues 12 j/24 j)
 > n'a **plus aucun consommateur** — dead code candidat à suppression dans un nettoyage ultérieur.
@@ -265,7 +265,7 @@ Barre d'app : ← retour + titre **TAB (PDF)**.
 
 ### Écran `period` — « PAR PÉRIODE » (extension epic, hors maquette d'origine — #80)
 
-> **Ajout au périmètre de l'epic** (pas dans la maquette HTML source) : écran d'aide à la composition des line-ups. Documenté ici comme extension du pôle Wars ; pas de critère de conformité structurelle maquette (rule 15), mais rendu pixel-perfect par réutilisation des composants existants (rule 13).
+> **Ajout au périmètre de l'epic** (pas dans la maquette HTML source) : écran d'aide à la composition des line-ups. Documenté ici comme extension du pôle Wars ; pas de critère de conformité structurelle maquette, mais rendu pixel-perfect par réutilisation des composants existants (`ui/components.md`).
 
 Accès : bouton **« Voir par période »** en tête de l'écran `wars` (pôle Wars uniquement). Barre d'app : ← retour + titre **PAR PÉRIODE**.
 

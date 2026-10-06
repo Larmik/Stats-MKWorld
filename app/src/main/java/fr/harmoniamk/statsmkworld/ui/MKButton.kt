@@ -27,10 +27,10 @@ import androidx.compose.ui.unit.dp
 private val ButtonRadius = RoundedCornerShape(10.dp)
 
 /**
- * Bouton **unique** de l'app (#50, rule 16) : fond blanc translucide (`Colors.white30`), sans
+ * Bouton **unique** de l'app (#50) : fond blanc translucide (`Colors.white30`), sans
  * bordure, libellé + icône majuscules (Urbanist), coins 10 dp. Tous les boutons passent par ici.
  *
- * [icon] optionnel : icône de tête (métriques de l'ancien `WarActionButton` : hauteur 46 dp).
+ * [icon] optionnel : icône de tête (hauteur 46 dp, padding horizontal 12 dp).
  * [textColor] ajuste le contraste du libellé selon le fond (blanc sur sombre, `Colors.black` sur
  * surface claire type `MKDialog`), pas une variante de style. Désactivé = fond + texte atténués.
  */
@@ -68,7 +68,6 @@ fun MKButton(
             modifier = Modifier
                 .background(color = backgroundColor, shape = ButtonRadius)
                 .clip(ButtonRadius)
-                // Avec icône : hauteur 46 dp / padding 12 dp (rendu ancien WarActionButton).
                 .let { if (icon != null) it.height(46.dp) else it }
                 .padding(horizontal = if (icon != null) 12.dp else 16.dp, vertical = if (icon != null) 0.dp else 8.dp),
             verticalAlignment = Alignment.CenterVertically,

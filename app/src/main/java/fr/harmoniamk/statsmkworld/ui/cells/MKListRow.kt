@@ -36,7 +36,7 @@ fun playerAvatarColor(id: String): Color = ((id.hashCode() and 0x7fffffff) % 32 
  * sinon [initials] sur [avatarColor]), titre + [titleTrailing], [subtitle], slot [trailing].
  * [leading] remplace la pastille (ex. logo de tournoi, #103) ; initiales/couleur sont alors ignorées.
  *
- * Composant **partagé unique** (rule 16) entre le pôle Profil et le wizard AddWar, généralisé
+ * Composant **partagé unique** entre le pôle Profil et le wizard AddWar, généralisé
  * par paramètres.
  */
 @Composable
@@ -63,7 +63,7 @@ fun MKListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp)
     ) {
-        // Médaillon joueur mutualisé (rule 16) : photo si dispo, initiales sinon.
+        // Médaillon joueur mutualisé : photo si dispo, initiales sinon.
         when (leading) {
             null -> PlayerMedallion(
                 initials = initials,
