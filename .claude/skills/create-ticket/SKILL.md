@@ -12,7 +12,7 @@ Description fournie en entrée : **$0**
 Ton objectif : créer **une issue GitHub** propre et actionnable sur le dépôt
 `Larmik/Stats-MKWorld`, décrivant le bug ou la feature donné(e) en entrée.
 
-> La gestion des tickets se fait sur **GitHub Issues**
+> La gestion des tickets se fait sur **GitHub Issues**.
 > Le dépôt est **public** : le contenu de l'issue est visible de tous
 > — pas de secret (clé, token, chemin de keystore, id Discord réel…) dans le corps.
 
