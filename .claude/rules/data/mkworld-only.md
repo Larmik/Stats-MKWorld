@@ -24,3 +24,20 @@ paths:
   `tournaments/series/{id}` d'une série mk8dx.
 - Conséquence voulue : dans `DiagnosticRepository.diagnoseUnknownOpponents`, un id mk8dx pur non
   couvert par `opponentOverrides` tombe en `NotFound` (override manuel ou suppression de war).
+
+## Endpoint liste MKCentral
+
+- `getTeams()` (`registry/teams?game=mkworld&…`) renvoie toujours `rosters[].players: []` et aucun
+  compte de joueurs (`detailed=true` n'y change rien). Le nombre de joueurs n'existe que via le
+  détail `registry/teams/{id}`.
+- Une feature qui a besoin du nombre de joueurs de chaque équipe exige une requête détail par
+  équipe (des centaines par synchro) : l'écarter ou la chiffrer avant d'écrire le ticket.
+
+## Migration `teamId` → `rosterId` (`FetchUseCase.migrateOpponentsToRoster`)
+
+- `War.teamOpponent` n'est réécrit en `rosterId` que si l'équipe adverse a **exactement un**
+  roster mkworld et que ce `rosterId` se résout localement. Une équipe multi-rosters reste en
+  `teamId` (roster joué inconnu, audit B11).
+- Toute écriture RTDB de prod (migration, réattribution, suppression de war) est difficilement
+  réversible : confirmer avec l'utilisateur avant de l'exécuter.
+
