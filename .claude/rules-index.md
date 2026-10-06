@@ -29,9 +29,11 @@ Racine des globs Kotlin : `app/src/main/java/fr/harmoniamk/statsmkworld/` (abré
 | `stats/shocks-bagging.md` | shock = éclair obtenu (hors score), bagging situationnel, pas de corrélation avec la position | `…/model/firebase/Shock.kt`, `…/model/local/**`, `…/extension/**`, `…/screen/stats/**`, `…/screen/currentWar/**`, `…/ui/stats/**`, `…/ui/cells/**`, `res/values*/strings.xml`… |
 | `viewmodel/viewmodels.md` | Factory assistée, ordre d'init, recherche, ressources, `withContext(Default)` | `app/src/main/java/**/*ViewModel.kt`, `RootScreen.kt` |
 | `viewmodel/navigation-filtres.md` | saison / `WarKindFilter` / 12p propagés aux enfants | `RootScreen.kt`, `HomeScreen.kt`, `**/*ViewModel.kt`, filtres `model/local/` |
-| `data/repositories.md` | DI, `suspend` vs `Flow`, pas d'UI, `clear*`, réseau par élément, UseCase vs repository | `…/repository/**`, `…/datasource/**`, `…/usecase/**`, `…/worker/**` |
+| `data/repositories.md` | DI, `suspend` vs `Flow`, écouteur Firebase scopé, pas d'UI, `clear*`, UseCase vs repository | `…/repository/**`, `…/datasource/**`, `…/usecase/**`, `…/worker/**` |
+| `data/network.md` | réseau par élément : parallèle vs séquentiel (throttle MKCentral), tolérance à l'échec, peuplement au fetch | `…/repository/**`, `…/datasource/network/**`, `…/usecase/**`, `…/worker/**`, `app/src/main/java/**/*ViewModel.kt` |
 | `data/mkworld-only.md` | domaine mkworld, tournois officiels, endpoint liste sans joueurs, migration `teamId` → `rosterId` | `…/api/**`, `…/datasource/network/**`, `…/usecase/**`, `DiagnosticRepository.kt`, `TournamentRepository.kt`, `MKCTeamExtension.kt` |
 | `data/firebase-users.md` | rôles membres / alliés (`role = 0`), `manageTransferts` | `FirebaseRepository.kt`, `DiagnosticRepository.kt`, `…/usecase/**`, `User.kt`, `PlayerEntity.kt`, VM profils / war en cours / AddWar, `…/screen/debug/**` |
+| `data/war-overlay.md` | contrat RTDB lu par l'overlay OBS (`currentWars/`, `tags/`, barème 12p), issue `Larmik/WarOverlay` | `…/model/firebase/**`, `FirebaseRepository.kt`, `FetchUseCase.kt`, `ScoringConstants.kt`, `IntegerExtension.kt` |
 | `data/room.md` | version, schémas, destructive migration | `…/database/**`, `…/datasource/local/**`, `app/schemas/**` |
 | `build/release-securite.md` | R8 des modèles par réflexion, secrets, backup | `app/build.gradle.kts`, `proguard-rules.pro`, manifest, `res/xml/*rules.xml`, `…/model/**`, `…/serializers/**`… |
 | `kotlin/style.md` | `?.let`, pas de `!!`, `var` capturée, saisie, fonctions locales, noms | `app/src/**/*.kt` |

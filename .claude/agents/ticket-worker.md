@@ -85,8 +85,9 @@ qui modifie le dépôt). Pour chaque point, corrige ou justifie dans le résumé
 - **Performance** : toute agrégation de wars dans `withContext(Dispatchers.Default)`,
   `WarDetails` compris, sur une branche `*Latest` (`mapLatest`/`flatMapLatest`, jamais de calcul
   dans la lambda d'un `combine`) ; recherche à la saisie annulable (`viewmodel/viewmodels.md`) ; pas de
-  lecture de source répétée par élément ; appels réseau par élément bornés
-  (`data/repositories.md`) ; `collectAsStateWithLifecycle` (`ui/compose.md`).
+  lecture de source répétée par élément ; écouteur Firebase posé sur le nœud lu, jamais la racine
+  (`data/repositories.md`) ; appels réseau par élément bornés (`data/network.md`) ;
+  `collectAsStateWithLifecycle` (`ui/compose.md`).
 - **Duplication** : pour chaque composable/helper/extension créé, `rg "fun <Nom>"` sur
   `app/src/main` — réutiliser ou extraire l'existant (`ui/components.md`) ; extension dans le
   fichier de son récepteur (`kotlin/constantes-extensions.md`).
@@ -94,6 +95,8 @@ qui modifie le dépôt). Pour chaque point, corrige ou justifie dans le résumé
   repository sans `Activity`, logique mono-consommateur hors UseCase
   (`data/repositories.md`) ; ordre `_state` → `state` → `init`, pas de `Context` statique
   (`viewmodel/viewmodels.md`) ; aucun libellé en dur hors écran debug (`ui/strings.md`).
+- **Contrat overlay** : changement de `currentWars/`, `tags/`, des champs lus ou du barème 12p
+  signalé dans le résumé, avec l'issue `Larmik/WarOverlay` à créer (`data/war-overlay.md`).
 - **Dette** : aucun littéral métier recopié (`"-1"`, rôles, `size > 1`, URL MKCentral,
   `90.dp` → `BottomBarInset`) (`kotlin/constantes-extensions.md`) ; pas de fonction locale,
   noms explicites (`kotlin/style.md`) ; pas de code commenté ni orphelin ; commentaires sans renvoi de

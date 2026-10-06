@@ -20,6 +20,9 @@ paths:
   pas emballer un one-shot dans `callbackFlow` / `flowOf` consommé par `firstOrNull()`.
 - Source qui émet dans le temps (`listenToCurrentWar`, DataStore, Room streaming, événements) →
   `Flow`.
+- Écouteur ou lecture Firebase posé sur le nœud lu (`child("currentWars").child(id)`), jamais sur
+  la racine : la racine transfère toute la base à chaque écriture. Id nul ou vide → pas d'appel
+  (`child("")` vise le parent). Cf. audit P9, B40.
 - Accès synchrone (`Firebase.auth.currentUser != null`) → ni `suspend` ni `Flow`.
 - Pont `Task` Firebase : `kotlinx-coroutines-play-services` n'est pas déclaré → utiliser
   `suspendCancellableCoroutine` + `addOnSuccessListener` / `addOnFailureListener` (cf.
@@ -36,20 +39,6 @@ paths:
   en boucle. Un seul clear avant la boucle, ou purge + réécriture en une passe (cf. `fetchTeams`).
   Cf. audit B27.
 
-## Réseau par élément d'une collection
-
-- Parallèle (`coroutineScope { items.map { async { … } }.awaitAll() }`) seulement si l'API tient la
-  rafale et pour un petit volume à la demande (`TeamProfileViewModel.resolveMembers`,
-  `AddWarViewModel.resolvePlayerAvatars`).
-- Séquentiel (ou lots de 3-4) dès que l'API throttle : symptôme = `successResponse == null` sans
-  exception sur une partie des éléments. MKCentral throttle en synchro (#50 : `FetchUseCase.fetchTeam`).
-- Chaque élément est tolérant à l'échec (`runCatching { … }.getOrNull()`) : il dégrade, les autres
-  sont écrits.
-- Peupler au fetch un champ persistant (ex. `PlayerEntity.avatar`) dès qu'un endpoint le fournit ;
-  vérifier la réponse live avant de conclure qu'un endpoint ne l'a pas (`registry/teams/{id}` ne
-  porte pas l'avatar des membres, `registry/players/{id}` si).
-- Peupler tous les éléments d'un listing ou aucun (cf. `ui/roster-player-display.md`).
-
 ## UseCase ou repository
 
 - `usecase/` = orchestration consommée par ≥ 2 appelants distincts. Une logique à un seul
@@ -59,3 +48,4 @@ paths:
   `diagnoseMissingPlayers`, `addMissingPlayerAsAlly`, `findOfficialWarCandidates`,
   `migrateOfficialWars`) dans `repository/DiagnosticRepository.kt`, pas dans `FetchUseCase`.
 - Extraction de helpers privés : cf. `kotlin/constantes-extensions.md`.
+- Appels réseau par élément d'une collection : cf. `data/network.md`.

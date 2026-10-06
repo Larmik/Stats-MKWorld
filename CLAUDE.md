@@ -109,7 +109,7 @@ Schémas Protobuf hors package : `app/src/main/proto/` (`mkc_player.proto`, `mkc
 - **Scoring 12p** : position → points (`Int.positionToPoints`), score adverse = `82×nbTracks − scoreHost`, ajusté des `WarPenalty`. Logique dans `extension/WarExtension.kt` + `extension/IntegerExtension.kt`.
 - **Maps** : enum `model/local/Maps.kt` énumérant les circuits MK World (label, image, coupe), avec règles d'intermissions.
 - **Stats** : calculées à la demande en mémoire par les VM (`model/local/Stats.kt`, `extension/ListExtension.kt`, `WarExtension`), sans cache. `InitStatsWorker` n'hydrate plus que saisons et tournois officiels.
-- **Firebase RTDB** : `currentWars/{teamId}` (war live, écoutée en temps réel), `wars/{teamId}/{warId}` (historique), `users/{teamId}/{userId}`, `newAllies/{teamId}`, `tags/`, `debug/`.
+- **Firebase RTDB** : `currentWars/{rosterId}` (war live, écoutée en temps réel), `wars/{teamId}/{warId}` (historique), `users/{teamId}/{userId}`, `newAllies/{teamId}`, `tags/`, `debug/`. `currentWars/` et `tags/` sont lus par l'overlay OBS WarOverlay : contrat à préserver, cf. `.claude/rules/data/war-overlay.md`.
 
 ### Flux de démarrage (`MainViewModel`)
 
