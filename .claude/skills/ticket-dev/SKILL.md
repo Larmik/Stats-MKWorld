@@ -3,7 +3,7 @@ name: ticket-dev
 description: Prend un ticket (numéro/URL d'issue GitHub, ou texte collé), crée une branche nommée d'après le titre, délègue les modifications de code à l'agent ticket-worker en respectant les rules du projet, itère sur les retours sans commiter, puis — sur validation explicite — commit / push / crée la PR vers master en liant l'issue. À utiliser quand on veut traiter un ticket de bout en bout.
 arguments: [numero-ou-url-issue-github-ou-texte]
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash, Agent, SendMessage, AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash, Agent, SendMessage, AskUserQuestion, Skill
 ---
 
 # Traitement d'un ticket de bout en bout
