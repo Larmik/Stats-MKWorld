@@ -16,7 +16,7 @@ Ton objectif : **re-rédiger** une issue GitHub existante du dépôt
 propre, précis et actionnable. Tu ne crées pas de nouvelle issue — tu **édites**
 l'existante.
 
-> Gestion des tickets sur **GitHub Issues** (Trello abandonné). Le dépôt est
+> Gestion des tickets sur **GitHub Issues**. Le dépôt est
 > **public** : le corps est visible de tous — **aucun secret** (clé, token, chemin de
 > keystore, id Discord réel…) dans le contenu.
 
