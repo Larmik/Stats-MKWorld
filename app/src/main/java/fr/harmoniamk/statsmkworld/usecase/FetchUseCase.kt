@@ -166,9 +166,19 @@ class FetchUseCase @Inject constructor(
         databaseRepository.clearWars()
         databaseRepository.writeWars(wars.map { WarEntity(it) })
     }
+
+    // tags/ (lu par l'overlay WarOverlay, #164) résout un rosterId de war vers le tag du roster :
+    // une entrée par roster, jamais par équipe (ids distincts). Seule « 6v6 Squad », persistée
+    // sans roster, garde son id d'équipe (c'est l'id porté par ses wars).
     override suspend fun fetchTags() {
-        val tags = databaseRepository.getTeams().map { it.map { Tag(it.tag, it.id) } }.firstOrNull()
-        tags?.let { firebaseRepository.writeTags(it) }
+        val tags = databaseRepository.getTeams().firstOrNull()?.flatMap { team ->
+            when (team.rosters.isEmpty()) {
+                true -> listOf(Tag(tag = team.tag, teamId = team.id))
+                else -> team.rosters.map { roster -> Tag(tag = roster.tag, teamId = roster.id) }
+            }
+        }
+        // Cache vide (jamais synchronisé) : ne pas effacer tags/.
+        tags?.takeIf { it.isNotEmpty() }?.let { firebaseRepository.writeTags(it) }
     }
 
     override fun manageTransferts() = dataStoreRepository.mkcTeam

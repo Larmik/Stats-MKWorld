@@ -38,6 +38,8 @@ paths:
 - `clear*()` vide toute la table : jamais dans une méthode qui traite un élément et qu'on appelle
   en boucle. Un seul clear avant la boucle, ou purge + réécriture en une passe (cf. `fetchTeams`).
   Cf. audit B27.
+- `tags/` (RTDB, `setValue` intégral via `FetchUseCase.fetchTags`) n'est réécrit que par l'action
+  manuelle Debug, jamais depuis une synchro (`fetchData`, `fetchTeams`, workers). Cf. #164.
 
 ## UseCase ou repository
 
