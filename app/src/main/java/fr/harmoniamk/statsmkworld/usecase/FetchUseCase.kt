@@ -157,8 +157,6 @@ class FetchUseCase @Inject constructor(
                     logo = null
                 )
             ))
-            // Sous le garde-fou : tags/ n'est jamais réécrit à partir d'un cache non rafraîchi.
-            fetchTags()
         }
         return dataStoreRepository.mkcTeam.firstOrNull()?.id.toString()
     }
