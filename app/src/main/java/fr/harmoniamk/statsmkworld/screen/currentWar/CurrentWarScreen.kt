@@ -54,7 +54,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarEyebrow
 import fr.harmoniamk.statsmkworld.ui.cells.WarScoreCard
 import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
 
-// Rayon uniforme des cartes (maquette : radius 6px), aligné sur WelcomeScreen.
+// Rayon uniforme des cartes (6 dp), aligné sur WelcomeScreen.
 private val CardRadius = RoundedCornerShape(6.dp)
 
 @Composable
@@ -295,7 +295,7 @@ private fun OpponentScoresBlock(
     }
 }
 
-/** Ligne de saisie d'un score adverse (`.scoreset`) : pastille + nom + champ centré. */
+/** Ligne de saisie d'un score adverse : pastille + nom + champ centré. */
 @Composable
 private fun ScoreSetRow(team: TeamEntity, value: String, onValueChange: (String) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {

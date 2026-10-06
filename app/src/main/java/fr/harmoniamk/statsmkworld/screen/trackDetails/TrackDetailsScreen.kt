@@ -57,7 +57,7 @@ fun TrackDetailsScreen(
             Spacer(Modifier.height(9.dp))
 
             StatCard(title = stringResource(R.string.trackdetails_positions_shocks)) {
-                // Une tuile par joueur, triée par position (comme la maquette : 1, 3, 5…).
+                // Une tuile par joueur, triée par position (1, 3, 5…).
                 val players = state.positions.sortedBy { it.position.position }
                 players.chunked(2).forEach { pair ->
                     Row(

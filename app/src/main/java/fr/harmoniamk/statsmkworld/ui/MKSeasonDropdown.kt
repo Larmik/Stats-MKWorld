@@ -24,8 +24,6 @@ import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
  * des headers Accueil/Wars/Stats/Classements. Stateless : sélection pilotée par
  * [selectedSeasonNumber] (`null` = tout l'historique), choix remonté via [onSeasonSelected] ;
  * seul l'état d'ouverture est local. Rien affiché si [seasons] est vide.
- *
- * ⚠️ Écart assumé vs maquette : le prototype ne prévoit pas de dropdown de saison.
  */
 @Composable
 fun MKSeasonDropdown(

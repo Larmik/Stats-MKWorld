@@ -130,7 +130,7 @@ fun ColumnScope.TeamProfileContent(
     onAddAllyClick: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // 0 = Membres, 1 = Alliés (sous-onglets `pf2` de la maquette, via segmented partagé).
+    // 0 = Membres, 1 = Alliés (sous-onglets via segmented partagé).
     var subTab by rememberSaveable { mutableIntStateOf(0) }
     val isMe = viewModel.id == "me"
     // Résolu hors du LazyListScope (stringResource n'y est pas appelable).
@@ -171,7 +171,7 @@ fun ColumnScope.TeamProfileContent(
                         badgeRes = R.string.profile_badge_team,
                         bio = team.description
                     ) {
-                        // Tag en pastille « membre » grise + date de création (maquette).
+                        // Tag en pastille « membre » grise + date de création.
                         RolePill(ProfileRole.MEMBER, text = "TAG ${team.tag}")
                         MKText(text = "·", fontSize = 13, textColor = Colors.white.copy(alpha = 0.72f), resizable = false)
                         MKText(

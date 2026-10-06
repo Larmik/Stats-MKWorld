@@ -1,5 +1,4 @@
 # Smoke test non destructif : écran Accueil + bascule de mode.
-# Réf. TESTS_FUNCTIONAL.md §4 (Accueil) et §4.4 (sélecteur 12p/24p).
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - launchApp

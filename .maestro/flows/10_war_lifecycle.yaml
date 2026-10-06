@@ -1,5 +1,5 @@
 # Cycle de vie complet d'une war 12p, ALÉATOIRE (joueurs, circuit, positions),
-# dans UNE seule war (réf. TESTS_FUNCTIONAL.md §5,§7,§8.1,§8.2,§9,§8.3). Idempotent.
+# dans UNE seule war. Idempotent.
 # Le score 12p attendu est calculé en JS (pick.js) et vérifié → test property-based.
 appId: fr.harmoniamk.statsmkworld.debug
 ---

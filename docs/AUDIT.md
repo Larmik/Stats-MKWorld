@@ -120,7 +120,7 @@ Conventions de maintenance (`.claude/rules/process/documentation.md`) :
 
 ## 6. Tests & outillage
 
-- [~] 🟠 **T1 — Couverture de tests.** Suite **E2E Maestro** présente (`.maestro/`, cf. [TESTS_FUNCTIONAL.md](TESTS_FUNCTIONAL.md)). **Correction** : le test JVM `StatsEngineTest` annoncé par l'audit précédent n'existe pas dans le dépôt — seul `ExampleUnitTest` est présent (`app/src/test`). **Reste** : tests unitaires du moteur (`withFullStats`, `withTrackStats`, `WarStats`, scoring 12p/24p), selon les modalités que l'utilisateur fixera (`CLAUDE.md` : pas de tests spontanés). *Prévention : hors config (décision utilisateur).* **Suivi : #110.**
+- [~] 🟠 **T1 — Couverture de tests.** Suite **E2E Maestro** présente (`.maestro/`). **Correction** : le test JVM `StatsEngineTest` annoncé par l'audit précédent n'existe pas dans le dépôt — seul `ExampleUnitTest` est présent (`app/src/test`). **Reste** : tests unitaires du moteur (`withFullStats`, `withTrackStats`, `WarStats`, scoring 12p/24p), selon les modalités que l'utilisateur fixera (`CLAUDE.md` : pas de tests spontanés). *Prévention : hors config (décision utilisateur).* **Suivi : #110.**
 - [ ] 🟡 **T2 — Pas de CI.** → Pipeline build + `lint` (+ tests JVM quand ils existeront). *Prévention : —.* **Suivi : #110.**
 - [ ] 🟡 **T3 — `versionCode` manuel** ([build.gradle.kts:28](../app/build.gradle.kts)), risque d'incohérence avec `minimumVersion` Remote Config. → Bump automatisé. *Prévention : `CLAUDE.md` (pièges).* **Suivi : #110.**
 

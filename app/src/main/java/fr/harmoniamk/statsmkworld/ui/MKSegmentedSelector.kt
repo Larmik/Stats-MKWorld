@@ -16,7 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 
 /**
- * Segmenté standard de l'app (« pill » maquette) : item actif = fond blanc/texte sombre, inactif
+ * Segmenté standard de l'app (style « pill ») : item actif = fond blanc/texte sombre, inactif
  * = texte contrasté sur fond translucide. LE composant segmented du projet, ne pas recréer.
  * Stateless : sélection pilotée par [page], nouvel index remonté via [onClick].
  *

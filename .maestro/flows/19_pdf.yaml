@@ -1,4 +1,4 @@
-# Tableau PDF (réf. TESTS_FUNCTIONAL.md §12.1, §12.2). Ouverture + ajustement lignes. Non destructif.
+# Tableau PDF. Ouverture + ajustement lignes. Non destructif.
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - stopApp

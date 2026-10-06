@@ -1,4 +1,4 @@
-# Validation d'une war 12p complète (réf. TESTS_FUNCTIONAL.md §6.3 + §6.10).
+# Validation d'une war 12p complète.
 # NON IDEMPOTENT : ajoute une war à l'historique (debug). À lancer explicitement :
 #   maestro test .maestro/manual/15_validate_war.yaml
 appId: fr.harmoniamk.statsmkworld.debug

@@ -1,5 +1,5 @@
 # Cycle war 24p ALÉATOIRE (3 adversaires, intermission, positions 1-24, barème 24p).
-# Réf. TESTS_FUNCTIONAL.md §5(24p), §7(24p + intermission + shocks), §8.1, §8.2, §8.3. Idempotent.
+# Idempotent.
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - runFlow: ../subflows/start_war_24p.yaml

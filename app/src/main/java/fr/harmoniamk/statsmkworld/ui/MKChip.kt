@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * Pilule interactive (`.chip` maquette) : actif = fond blanc/texte sombre, inactif = translucide.
+ * Pilule interactive : actif = fond blanc/texte sombre, inactif = translucide.
  * Partagée entre les filtres de wars et le compteur de lignes Tab. `enabled = false`
  * grise le libellé et coupe le clic (butée min/max du compteur).
  */

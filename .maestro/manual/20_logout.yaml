@@ -1,4 +1,4 @@
-# Déconnexion (réf. TESTS_FUNCTIONAL.md §15.13).
+# Déconnexion.
 # ⚠️ À LANCER EN DERNIER, MANUELLEMENT : déconnecte l'utilisateur → re-login Discord
 #    (OAuth) MANUEL requis ensuite. Ne PAS inclure dans la suite automatique.
 #   maestro test .maestro/manual/20_logout.yaml

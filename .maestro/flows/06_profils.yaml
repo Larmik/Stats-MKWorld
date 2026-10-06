@@ -1,4 +1,4 @@
-# Profils joueur & équipe (réf. TESTS_FUNCTIONAL.md §4.2, §4.3, §15.8, §15.14, §16.1, §16.3).
+# Profils joueur & équipe.
 # Lecture seule / non destructif (la déconnexion est ouverte puis ANNULÉE).
 appId: fr.harmoniamk.statsmkworld.debug
 ---

@@ -38,7 +38,7 @@ import fr.harmoniamk.statsmkworld.ui.MKWarKindFilterRow
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
-/** Filtres de résultat de l'historique (chips maquette). */
+/** Filtres de résultat de l'historique (chips). */
 private enum class WarFilter(val labelRes: Int) {
     ALL(R.string.wars_filter_all),
     WINS(R.string.wars_filter_wins),

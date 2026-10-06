@@ -202,7 +202,7 @@ private fun ColumnScope.OpponentStep(
                     onClick = { onTeamSelected(team) },
                     trailing = { MKListRowChevron() }
                 )
-                // Sélecteur de roster inline (équipe multi-rosters, cf. maquette `roster-pick`).
+                // Sélecteur de roster inline (équipe multi-rosters).
                 if (state.expandedRosterTeamId == team.id) {
                     RosterPicker(
                         rosters = state.expandedRosters,
@@ -223,7 +223,7 @@ private fun ColumnScope.OpponentStep(
     }
 }
 
-/** Sélecteur de roster déplié (`.roster-pick`) : cadre pointillé translucide + lignes rosters. */
+/** Sélecteur de roster déplié : cadre pointillé translucide + lignes rosters. */
 @Composable
 private fun RosterPicker(rosters: List<MKCTeamRoster>, onRosterSelected: (MKCTeamRoster) -> Unit) {
     Column(

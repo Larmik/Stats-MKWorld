@@ -34,7 +34,7 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
-/** Rayon de coin des cartes translucides (aligné sur `CurrentWar`/maquette). */
+/** Rayon de coin des cartes translucides (aligné sur `CurrentWar`). */
 private val TrackCellRadius = RoundedCornerShape(6.dp)
 
 private const val TrackNameFontSize = 12

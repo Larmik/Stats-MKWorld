@@ -225,7 +225,7 @@ private fun ColumnScope.IntermissionStep(
     )
 }
 
-/** Chip « Aucune » de l'intermission : pastille arrondie active/inactive (style maquette). */
+/** Chip « Aucune » de l'intermission : pastille arrondie active/inactive. */
 @Composable
 private fun IntermissionNoneChip(selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
@@ -262,7 +262,7 @@ private fun ColumnScope.PositionsStep(
         MKTrackCell(maps = state.trackMaps, onClick = {}, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(11.dp))
     }
-    // Carte de progression : compteur + barre (style AddWar/maquette) + joueur courant.
+    // Carte de progression : compteur + barre (style AddWar) + joueur courant.
     state.currentPlayer?.let {
         ProgressCard(current = state.selectedPositions.size + 1, total = state.players.size)
         Spacer(Modifier.height(11.dp))
@@ -331,7 +331,7 @@ private fun ColumnScope.SummaryStep(
                 .padding(11.dp),
             verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            // Cartes joueur en 2 colonnes (`.two` de la maquette).
+            // Cartes joueur en 2 colonnes.
             state.selectedPositions.chunked(2).forEach { pair ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     pair.forEach { playerPosition ->

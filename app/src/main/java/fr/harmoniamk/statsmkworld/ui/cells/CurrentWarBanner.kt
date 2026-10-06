@@ -30,12 +30,12 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
-// Rayon des cartes du dashboard (maquette : radius 6px).
+// Rayon des cartes du dashboard (6 dp).
 private val BannerRadius = RoundedCornerShape(6.dp)
 
 /**
  * Bannière « War en cours », partagée par l'Accueil et l'historique Wars. Dégradé
- * vert→sombre (`.cbanner`), pastille « En direct » ; corps issu de [CurrentWarCell].
+ * vert→sombre, pastille « En direct » ; corps issu de [CurrentWarCell].
  *
  * @param callToAction texte d'appel à l'action au pied ; masqué si `null`.
  */

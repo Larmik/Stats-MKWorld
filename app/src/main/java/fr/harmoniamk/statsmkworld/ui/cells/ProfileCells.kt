@@ -32,11 +32,11 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 
 /**
- * Composants du **pôle Profil** (maquette 5 pôles) mutualisés entre `ProfileScreen` et les fiches
+ * Composants du **pôle Profil** mutualisés entre `ProfileScreen` et les fiches
  * autonomes (`PlayerProfileScreen`/`TeamProfileScreen`).
  */
 
-/** Rôle affiché dans une pastille (`.role`). */
+/** Rôle affiché dans une pastille. */
 enum class ProfileRole(val labelRes: Int) {
     LEADER(R.string.leader),
     ADMIN(R.string.admin),
@@ -54,9 +54,9 @@ enum class ProfileRole(val labelRes: Int) {
 }
 
 /**
- * Pastille de rôle (`.role .lead/.adm/.mem`) : fond/texte/bordure teintés selon le
+ * Pastille de rôle : fond/texte/bordure teintés selon le
  * rôle. [text] permet de surcharger le libellé (ex. « TAG HM » réutilise le style
- * « membre » gris dans la carte équipe de la maquette).
+ * « membre » gris dans la carte équipe).
  */
 @Composable
 fun RolePill(role: ProfileRole, text: String? = null) {
@@ -85,7 +85,7 @@ fun RolePill(role: ProfileRole, text: String? = null) {
     }
 }
 
-/** Badge « Profil / Équipe MKCentral » (`.badge-mkc`) : bleu translucide, bordure bleue. */
+/** Badge « Profil / Équipe MKCentral » : bleu translucide, bordure bleue. */
 @Composable
 fun MkcBadge(labelRes: Int) {
     Box(
@@ -106,7 +106,7 @@ fun MkcBadge(labelRes: Int) {
 }
 
 /**
- * Carte profil centrée (`.pcard`) : avatar, nom, ligne meta, bio, badge MKCentral.
+ * Carte profil centrée : avatar, nom, ligne meta, bio, badge MKCentral.
  *
  * @param avatarUrl URL MKCentral préfixée → image ; `null` → pastille [avatarFallback].
  * @param metaContent ligne meta (pays + rôle joueur, ou tag + saison équipe).
@@ -161,8 +161,8 @@ fun ProfilePersonCard(
 class ProfileInfo(val key: String, val value: String, val valueSmall: String? = null)
 
 /**
- * Carte « Informations » (`.card > .eyebrow + .two`) : grille 2 colonnes de tuiles
- * translucides libellé/valeur (`.b > .k + .v`).
+ * Carte « Informations » : grille 2 colonnes de tuiles
+ * translucides libellé/valeur.
  */
 @Composable
 fun ProfileInfoCard(infos: List<ProfileInfo>) {
@@ -194,7 +194,7 @@ fun ProfileInfoCard(infos: List<ProfileInfo>) {
     }
 }
 
-/** Ligne membre/allié (`.lrow`) : avatar, nom + rôle, sous-texte, chevron. Délègue à [MKListRow]. */
+/** Ligne membre/allié : avatar, nom + rôle, sous-texte, chevron. Délègue à [MKListRow]. */
 @Composable
 fun ProfileMemberRow(
     initials: String,
@@ -219,7 +219,7 @@ fun ProfileMemberRow(
 }
 
 /**
- * Ligne de réglage (`.setrow`) : icône de tête + titre + sous-titre, contenu de fin (toggle/chevron).
+ * Ligne de réglage : icône de tête + titre + sous-titre, contenu de fin (toggle/chevron).
  * [danger] colore icône et titre en rouge (Déconnexion) ; [divider] = séparateur inférieur optionnel.
  */
 @Composable

@@ -1,4 +1,4 @@
-# Historique + détail war (réf. TESTS_FUNCTIONAL.md §10, §11). Lecture seule.
+# Historique + détail war. Lecture seule.
 # NB: MKButton et titres BaseScreen sont AFFICHÉS en MAJUSCULES, mais leur
 # sémantique (a11y/Maestro) est en casse naturelle → sélecteurs en casse naturelle.
 appId: fr.harmoniamk.statsmkworld.debug

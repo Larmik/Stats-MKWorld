@@ -321,7 +321,7 @@ fun ColumnScope.PlayerProfileContent(
                             ) { Spacer(Modifier) }
                         }
                     }
-                    // Ligne version (maquette) : « Stats MKWorld · vX » + dernière synchro.
+                    // Ligne version : « Stats MKWorld · vX » + dernière synchro.
                     item {
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                             MKText(

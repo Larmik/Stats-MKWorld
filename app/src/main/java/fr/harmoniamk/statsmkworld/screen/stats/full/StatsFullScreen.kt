@@ -108,8 +108,7 @@ private fun Stats.windowForm(index: Int) = when (index) {
  * - vue **pour un joueur donné** (`statsfull`, [showTabs] = false) : rendu Individuelles
  *   seul, avec barre de retour et sous-titre = nom du joueur.
  *
- * Toggle 12 j / 24 j réactif. Rendu pixel-perfect maquette,
- * réutilisant le vocabulaire visuel de l'Accueil (cartes translucides, eyebrows,
+ * Toggle 12 j / 24 j réactif. Rendu réutilisant le vocabulaire visuel de l'Accueil (cartes translucides, eyebrows,
  * tuiles, barre V/N/D). Données réelles ; libellés de saison masqués (#30 non livré).
  */
 @Composable

@@ -1,4 +1,4 @@
-# Garde-fous de création de war 12p (réf. TESTS_FUNCTIONAL.md §5.4, §5.5, §5.8).
+# Garde-fous de création de war 12p.
 # NON DESTRUCTIF : jamais 6 joueurs, jamais de validation effective -> aucune war créée.
 # La sémantique `enabled` des MKButton n'étant pas exposée à Maestro (clearAndSetSemantics),
 # on vérifie via PROXY COMPORTEMENTAL : taper un bouton inactif ne change pas d'écran.

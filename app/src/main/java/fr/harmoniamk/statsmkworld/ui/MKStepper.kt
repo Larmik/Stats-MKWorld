@@ -15,7 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 
 /**
- * Stepper de wizard (`.stepper`/`.stp` maquette) : rangée d'étapes de poids égal, étape active =
+ * Stepper de wizard : rangée d'étapes de poids égal, étape active =
  * pastille blanche/texte sombre, autres = texte atténué. LE composant stepper du projet, ne pas
  * recréer. Utilisé par le wizard AddWar. Stateless : étape courante pilotée par
  * [step], index cliqué remonté via [onStepClick] ; cliquable seulement si [enabled] l'autorise.

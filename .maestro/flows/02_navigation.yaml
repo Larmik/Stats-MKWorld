@@ -1,4 +1,4 @@
-# Navigation inter-onglets (réf. TESTS_FUNCTIONAL.md §3).
+# Navigation inter-onglets.
 # Onglets sélectionnés par contentDescription (Accueil / Statistiques / Annuaire).
 appId: fr.harmoniamk.statsmkworld.debug
 ---

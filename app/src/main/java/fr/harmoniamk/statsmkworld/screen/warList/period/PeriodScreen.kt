@@ -53,7 +53,7 @@ import java.util.Date
 /**
  * Écran « Voir par période » (#80) — aide à la composition des line-ups. Plage `[dateA, dateB]`
  * (semée sur la saison en cours) + deux onglets : historique (`WarCell`) et classement des
- * joueurs de la période (`PodiumRow`). 12p uniquement. Hors prototype.
+ * joueurs de la période (`PodiumRow`). 12p uniquement.
  */
 @Composable
 fun PeriodScreen(
@@ -185,7 +185,7 @@ private fun PeriodViewModel.PlayerPeriodStats.toPodiumEntry(): PodiumEntry = Pod
 )
 
 /**
- * Deux champs Du / Au ouvrant un `DatePickerDialog` Material3 (écart maquette documenté).
+ * Deux champs Du / Au ouvrant un `DatePickerDialog` Material3.
  * Chaque validation remonte la plage au VM (`dateA ≤ dateB` borné côté VM).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -242,7 +242,7 @@ private fun DateRangeSelector(
     }
 }
 
-/** Champ de date (libellé + valeur formatée), style tuile translucide de la maquette. */
+/** Champ de date (libellé + valeur formatée), style tuile translucide. */
 @Composable
 private fun DateField(
     modifier: Modifier = Modifier,

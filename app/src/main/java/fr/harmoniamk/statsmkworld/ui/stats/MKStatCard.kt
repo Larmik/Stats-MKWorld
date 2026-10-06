@@ -32,7 +32,7 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
-/** Rayon de coin commun aux cartes translucides du pôle Stats (maquette). */
+/** Rayon de coin commun aux cartes translucides du pôle Stats. */
 val StatCardRadius = RoundedCornerShape(6.dp)
 
 /**
@@ -148,7 +148,7 @@ fun WinTieLossBar(won: Int, tied: Int, loss: Int) {
 }
 
 /**
- * Carte « bilan » de la maquette : gros winrate (vert) + résumé V/N/D + barre V/N/D.
+ * Carte « bilan » : gros winrate (vert) + résumé V/N/D + barre V/N/D.
  * [subtitle] libre (ex. « de winrate sur N wars/passages »). Utilisée par les fiches
  * Adversaire (« Bilan face à eux ») et Circuit (« Performance »).
  */

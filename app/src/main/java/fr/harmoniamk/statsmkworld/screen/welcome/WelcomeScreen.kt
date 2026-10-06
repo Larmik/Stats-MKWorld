@@ -62,7 +62,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
-// Rayon uniforme des cartes du dashboard (maquette : radius 6px).
+// Rayon uniforme des cartes du dashboard (6 dp).
 private val CardRadius = RoundedCornerShape(6.dp)
 
 @Composable

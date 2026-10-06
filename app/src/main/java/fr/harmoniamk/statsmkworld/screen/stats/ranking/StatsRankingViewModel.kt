@@ -239,7 +239,7 @@ class StatsRankingViewModel @Inject constructor(
         allMembers = playersByGroup[0].orEmpty()
         allAllies = playersByGroup[1].orEmpty()
 
-        // Adversaires (perspective équipe, comme le prototype : pas de switch indiv/équipe).
+        // Adversaires (perspective équipe : pas de switch indiv/équipe).
         val teams = databaseRepository.getTeams().firstOrNull().orEmpty()
             .filterNot { it.id == currentTeam?.id.toString() }
             .sortedBy { it.name }

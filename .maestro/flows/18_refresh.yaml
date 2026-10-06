@@ -1,4 +1,4 @@
-# Rafraîchir les données (réf. TESTS_FUNCTIONAL.md §15.9). Exerce fetchData (réseau ⚙️). Non destructif.
+# Rafraîchir les données. Exerce fetchData (réseau ⚙️). Non destructif.
 appId: fr.harmoniamk.statsmkworld.debug
 ---
 - stopApp
