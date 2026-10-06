@@ -35,7 +35,7 @@ Racine des globs Kotlin : `app/src/main/java/fr/harmoniamk/statsmkworld/` (abré
 | `kotlin/style.md` | `?.let`, pas de `!!`, `var` capturée, saisie, fonctions locales, noms | `app/src/**/*.kt` |
 | `kotlin/constantes-extensions.md` | principe « ≥ 2 sites », ancres de littéraux, placement des extensions | `app/src/**/*.kt` |
 | `kotlin/commentaires.md` | commentaires courts, `#NN` et jamais de n° de rule, pas de code commenté | `app/src/**/*.kt` |
-| `process/documentation.md` | tenue de l'audit, références croisées | `docs/**`, `.claude/**`, `CLAUDE.md` |
+| `process/documentation.md` | tenue de l'audit (issue `/create-ticket` par entrée), références croisées | `docs/**`, `.claude/**`, `CLAUDE.md` |
 
 ## Format d'une rule
 

@@ -1108,11 +1108,7 @@ Le fond (circuit de la course au meilleur score d'équipe, repli `rsl`) est port
 ./gradlew compileDebugKotlin   # compile sans packager
 ./gradlew test                 # tests JVM (squelettiques)
 ./gradlew clean
-
-maestro test .maestro/flows    # suite E2E Maestro (device/émulateur requis, app déjà connectée)
 ```
-
-> **Tests E2E (Maestro).** `.maestro/` contient les `flows/` (cas automatisés), `subflows/` (briques réutilisables : `start_war_12p/24p`, `cancel_current_war`), `manual/` (non idempotents, à lancer explicitement) et `scripts/pick.js` (tirages aléatoires + résultats attendus calculés en JS → tests *property-based*). Build **debug** = env. Firebase séparé (écritures sans risque).
 
 ---
 

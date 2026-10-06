@@ -26,6 +26,8 @@ Le rappel « mettre à jour `docs/` à chaque changement » vit dans `CLAUDE.md`
   rule, étape de checklist, ou « — ») ; compléter la matrice du § 9 si une catégorie apparaît.
 - Un problème découvert hors périmètre d'un ticket s'ajoute à l'audit au lieu d'être corrigé en
   passant.
+- Toute entrée ajoutée à l'audit reçoit immédiatement son issue GitHub, créée via `/create-ticket`,
+  et son numéro est reporté dans l'entrée (*Suivi : #NN*). Pas d'entrée « Suivi : à créer ».
 
 ## Références croisées
 

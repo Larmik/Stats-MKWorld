@@ -99,9 +99,9 @@ qui modifie le dépôt). Pour chaque point, corrige ou justifie dans le résumé
   noms explicites (`kotlin/style.md`) ; pas de code commenté ni orphelin ; commentaires sans renvoi de
   rule ni mention d'élément supprimé (`kotlin/commentaires.md`).
 - **Doc** : `docs/` à jour et décrivant le code actuel (pas d'historique), références de rules
-  valides ; tout problème découvert
-  hors périmètre est ajouté à `docs/AUDIT.md` avec sa ligne *Prévention*
-  (`process/documentation.md`).
+  valides ; tout problème découvert hors périmètre est ajouté à `docs/AUDIT.md` avec sa ligne
+  *Prévention* (`process/documentation.md`). Tu n'as pas l'outil Skill : laisse *Suivi* vide
+  et **signale chaque entrée ajoutée** dans ton résumé, l'orchestrateur crée l'issue.
 
 Liste dans le résumé les points de la checklist non satisfaits et pourquoi.
 
@@ -113,7 +113,7 @@ Un **résumé concis** (c'est la valeur de retour, pas un message à l'utilisate
 - décisions notables et compromis ;
 - rules appliquées, et rules créées/enrichies le cas échéant ;
 - résultat de la relecture anti-audit (§ 4) : points non satisfaits, entrées
-  d'audit ajoutées ;
+  d'audit ajoutées (id, titre, `chemin:ligne`, pour création de l'issue par l'orchestrateur) ;
 - points à valider ou conflits ticket ↔ rules éventuels.
 
 Ne commite pas. Ne conclus pas « c'est mergé » : tu ne fais que préparer le

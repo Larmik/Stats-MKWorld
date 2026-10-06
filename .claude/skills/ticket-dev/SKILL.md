@@ -105,6 +105,9 @@ et rounds de retours) :
 3. Un écart → renvoie-le au worker (même agent) avant de commiter. Un écart
    **assumé** (hors périmètre, décision utilisateur) → il doit figurer dans
    `docs/AUDIT.md` avec sa ligne *Prévention* et être signalé à l'utilisateur.
+4. **Pour chaque entrée d'audit ajoutée** (signalée par le worker ou par toi) : crée
+   immédiatement l'issue via `/create-ticket` (citer l'id d'audit dans les Notes), puis
+   reporte son numéro dans l'entrée (*Suivi : #NN*) avant le commit.
 
 ## 5. Commit / push / PR (systématique, dès la fin du worker)
 
@@ -145,6 +148,7 @@ Tant que l'utilisateur donne des retours :
      (répertoire) ne se crée qu'après confirmation de l'utilisateur. Un retour purement spécifique à
      ce ticket ne doit **pas** créer de rule.
   3. refaire la relecture anti-audit (§ 4 du worker) sur le nouveau diff.
+  Toute entrée d'audit ajoutée pendant le round reçoit son issue (`/create-ticket`, étape 4).
 - Puis **contrôle anti-audit (étape 4)**, **re-commit (message = nom de branche) + push** sur la même branche (la PR se
   met à jour automatiquement), relaie le résumé et **attends** de nouveau.
 
