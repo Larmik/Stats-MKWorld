@@ -26,9 +26,9 @@ import fr.harmoniamk.statsmkworld.ui.cells.WarTracksSection
 
 /**
  * Détail d'une war terminée (#48), écran-frère de `CurrentWarScreen` dont il réutilise les
- * composants ([WarScoreCard], [WarTracksSection], rule 16) : carte score, classement joueurs,
+ * composants ([WarScoreCard], [WarTracksSection]) : carte score, classement joueurs,
  * boutons « Tab (PDF) » (12p uniquement) / « Voir l'adversaire », courses jouées. Graphe racine
- * → pas de bottombar (rule 17). Nom/tag = roster (rule 12).
+ * → pas de bottombar. Nom/tag = roster.
  */
 @Composable
 fun WarDetailsScreen(

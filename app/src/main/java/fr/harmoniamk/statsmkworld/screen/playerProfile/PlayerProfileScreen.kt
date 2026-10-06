@@ -44,6 +44,7 @@ import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.getActivity
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.BottomBarInset
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKButton
@@ -196,8 +197,8 @@ fun ColumnScope.PlayerProfileContent(
 
             LazyColumn(
                 Modifier.fillMaxWidth().weight(1f),
-                // Marge basse pour ne pas être masqué par la bottombar du pôle (rule 10).
-                contentPadding = PaddingValues(bottom = 90.dp),
+                // Marge basse : contenu partagé avec le pôle Profil (bottombar).
+                contentPadding = PaddingValues(bottom = BottomBarInset),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 // Carte identité (pcard) : avatar, nom, pays + rôle, bio, badge MKCentral.
@@ -320,7 +321,7 @@ fun ColumnScope.PlayerProfileContent(
                             ) { Spacer(Modifier) }
                         }
                     }
-                    // Ligne version (maquette) : « Stats MKWorld · vX » + dernière synchro.
+                    // Ligne version : « Stats MKWorld · vX » + dernière synchro.
                     item {
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                             MKText(

@@ -28,7 +28,7 @@ import kotlinx.coroutines.FlowPreview
 
 /**
  * Classement complet des circuits joués contre un adversaire (#27). Réutilise le même
- * [OpponentDetailViewModel] (mêmes données, mode et tri) et la grille `podiumRows` (rule 16).
+ * [OpponentDetailViewModel] (mêmes données, mode et tri) et la grille `podiumRows`.
  * Sélecteur de tri Occurrences / Winrate / Score moy. en tête.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -40,7 +40,7 @@ fun OpponentTracksRankingScreen(
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BaseScreen(title = stringResource(R.string.opponent_detail_best_tracks), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.opponent_detail_best_tracks), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             state.allTracks.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)

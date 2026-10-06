@@ -11,9 +11,9 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 
 /**
- * Ligne de filtre Amicaux / Officiels (#103), partagée par tous les écrans filtrables (rule 16).
+ * Ligne de filtre Amicaux / Officiels (#103), partagée par tous les écrans filtrables.
  * Stateless : le nouveau filtre (dernière case non décochable, cf. [WarKindFilter]) remonte via
- * [onFilterChange] vers le VM, qui recalcule sans re-navigation (rule 11).
+ * [onFilterChange] vers le VM, qui recalcule sans re-navigation.
  */
 @Composable
 fun MKWarKindFilterRow(

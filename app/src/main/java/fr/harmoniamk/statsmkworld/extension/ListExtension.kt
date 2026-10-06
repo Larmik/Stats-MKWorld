@@ -82,7 +82,7 @@ fun List<*>.sizeOrOne(): Int = size.takeIf { it > 0 } ?: 1
 
 /**
  * Stats (joueur [userId] / face à [teamId] / équipe) des wars. Calcul pur en mémoire, sans
- * lecture Room : à appeler sous `withContext(Dispatchers.Default)` (rule 21).
+ * lecture Room : à appeler sous `withContext(Dispatchers.Default)`.
  */
 fun List<WarDetails>.withFullStats(userId: String? = null, teamId: String? = null, is24p: Boolean = false): Flow<Stats> {
 

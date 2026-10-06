@@ -33,7 +33,7 @@ import javax.inject.Singleton
  * Outils de diagnostic debug (`DebugViewModel`) : arbitrage des adversaires « Équipe
  * inconnue » et des joueurs manquants, migration rétroactive des wars officielles (#156),
  * sur les wars historiques Firebase. Repository
- * dédié (agrège Firebase/MKCentral/Room/DataStore, un seul consommateur — rule 32).
+ * dédié (agrège Firebase/MKCentral/Room/DataStore, un seul consommateur).
  */
 interface DiagnosticRepositoryInterface {
     suspend fun diagnoseUnknownOpponents(): List<UnknownOpponentDiagnostic>
@@ -77,8 +77,8 @@ class DiagnosticRepository @Inject constructor(
     )
 
     // Diagnostic NON destructif (aucune écriture) : retient les wars dont un teamOpponent
-    // ne résout AUCUNE TeamEntity locale, charge une seule fois les équipes mkworld
-    // (rule 31), puis résout chaque id distinct en mémoire (évite N appels réseau).
+    // ne résout AUCUNE TeamEntity locale, charge une seule fois les équipes mkworld,
+    // puis résout chaque id distinct en mémoire (évite N appels réseau).
     override suspend fun diagnoseUnknownOpponents(): List<UnknownOpponentDiagnostic> {
         val hostRosterIds = dataStoreRepository.mkcTeam.firstOrNull()
             ?.rosters?.filter { it.game == "mkworld" }?.map { it.id.toString() }
@@ -197,7 +197,7 @@ class DiagnosticRepository @Inject constructor(
     )
 
     // Réécrit teamOpponent (rawId → newId), UNIQUEMENT si newId se résout localement
-    // (rule 12 — ne jamais écrire un id non résolvable).
+    // (ne jamais écrire un id non résolvable).
     override suspend fun reattributeOpponent(hostRosterId: String, warId: Long, rawId: String, newId: String) {
         if (databaseRepository.getTeam(newId) != null) {
             firebaseRepository.getWars(hostRosterId).firstOrNull { it.id == warId }?.let { war ->
@@ -303,7 +303,7 @@ class DiagnosticRepository @Inject constructor(
 
     // Relit les wars Firebase (le `copy` porte sur la version fraîche, jamais sur une conversion
     // Room) et ne réécrit que celles encore sans tournoi. Room est ensuite rafraîchi en UNE passe
-    // (un seul clear pour toutes les rosters, rule 30 / B27), sans relire Firebase après écriture.
+    // (un seul clear pour toutes les rosters, audit B27), sans relire Firebase après écriture.
     override suspend fun migrateOfficialWars(candidates: List<OfficialWarCandidate>): Map<Tournament, Int> {
         val tournamentByWarId = candidates.associate { it.war.id to it.tournament }
         val hostRosterIds = dataStoreRepository.mkcTeam.firstOrNull()

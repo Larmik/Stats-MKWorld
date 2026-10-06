@@ -36,7 +36,7 @@ data class UnresolvedOpponent(
 sealed class OpponentResolution {
 
     /**
-     * Équipe source mkworld retrouvée (rule 31). Son id ne sert PAS à réattribuer : on
+     * Équipe source mkworld retrouvée. Son id ne sert PAS à réattribuer : on
      * rebondit sur [teamName]/[teamTag] pour proposer des [mkworldCandidates] (équipes
      * mkworld au nom/tag proche, ou override manuel). La réattribution écrit le rosterId
      * d'un candidat choisi par l'humain.

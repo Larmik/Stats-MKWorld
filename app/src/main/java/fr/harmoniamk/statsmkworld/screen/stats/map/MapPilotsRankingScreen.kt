@@ -26,7 +26,7 @@ import kotlinx.coroutines.FlowPreview
 
 /**
  * Classement complet des pilotes sur un circuit (#27), par score perso moyen décroissant.
- * Réutilise le même [MapDetailViewModel] et la grille `podiumRows` (rule 16).
+ * Réutilise le même [MapDetailViewModel] et la grille `podiumRows`.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -37,7 +37,7 @@ fun MapPilotsRankingScreen(
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BaseScreen(title = stringResource(R.string.map_detail_pilots), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.map_detail_pilots), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             state.pilots.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)

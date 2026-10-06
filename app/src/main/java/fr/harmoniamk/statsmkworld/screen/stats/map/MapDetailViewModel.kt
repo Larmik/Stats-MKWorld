@@ -30,12 +30,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
 /**
- * Fiche détail d'un circuit (#27). Deux modes (rule 11) : Équipe (toutes les manches) et Individuel
+ * Fiche détail d'un circuit (#27). Deux modes : Équipe (toutes les manches) et Individuel
  * (celles du joueur courant). Mode = état réactif ([isIndiv]) semé par [initialUserId], toggle sans
  * re-nav. 12p uniquement. [trackIndex] identifie le circuit.
  */
@@ -119,20 +119,24 @@ class MapDetailViewModel @AssistedInject constructor(
     private val trackKey = trackIndex.map { it.toString() }
 
     val state = databaseRepository.getWars()
-        .combine(databaseRepository.getSeasons()) { wars, seasons ->
+        .combine(databaseRepository.getSeasons()) { wars, seasons -> wars to seasons }
+        .mapLatest { (wars, seasons) ->
             // Filtre saison (#91 pt.5) avant tout ; `seasonNumber` null → tout l'historique.
             val season = seasonNumber?.let { number -> seasons.firstOrNull { it.number == number } }
-            wars.filterBySeason(season)
-                .filterByKind(kindFilter)
-                .filter { it.teamOpponent.size == 1 }  // 12p uniquement
-                .map { WarDetails(War(it)) }
+            // Construction des `WarDetails` sur `Dispatchers.Default` (#73).
+            withContext(Dispatchers.Default) {
+                wars.filterBySeason(season)
+                    .filterByKind(kindFilter)
+                    .filter { it.teamOpponent.size == 1 }  // 12p uniquement
+                    .map { WarDetails(War(it)) }
+            }
         }
         .combine(isIndiv) { warDetails, indiv -> warDetails to indiv }
-        .map { (warDetails, indiv) ->
+        .mapLatest { (warDetails, indiv) ->
             // Joueur courant toujours résolu (position moyenne joueur affichée en permanence) ;
             // en mode Équipe il ne scope pas les sections (scope = null).
             val currentUserId = dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
-            // Calcul CPU-lourd déporté sur `Dispatchers.Default` — pas `flowOn` (rule 21, #73).
+            // Calcul CPU-lourd déporté sur `Dispatchers.Default` — pas `flowOn` (#73).
             withContext(Dispatchers.Default) {
             val scopeUserId = if (indiv) currentUserId else null
             // Toutes les manches du circuit (scope équipe + pilotes) ; en indiv, filtrées ensuite.
@@ -177,7 +181,7 @@ class MapDetailViewModel @AssistedInject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
-    /** Bascule Indiv/Équipe (rule 11). */
+    /** Bascule Indiv/Équipe. */
     fun onModeChange(indiv: Boolean) {
         isIndiv.value = indiv
     }
@@ -257,8 +261,8 @@ class MapDetailViewModel @AssistedInject constructor(
 
     /**
      * Adversaires rencontrés sur ce circuit (12p), triés par score moyen d'équipe décroissant.
-     * Winrate = manches gagnées (`trackOutcome > 0`) / total. Rule 12 (non résolu → « Équipe
-     * inconnue »). Seuil [Stats.MIN_RANKING_SAMPLE].
+     * Winrate = manches gagnées (`trackOutcome > 0`) / total. Adversaire non résolu →
+     * `TeamEntity.unknown`. Seuil [Stats.MIN_RANKING_SAMPLE].
      */
     private suspend fun computeOpponents(details: List<MapDetails>): List<OpponentRanking> {
         // 12p : opposant unique par war → groupe les manches du circuit par opposant.
@@ -273,7 +277,7 @@ class MapDetailViewModel @AssistedInject constructor(
                 val averageTeamScore = tracks.sumOf { it.teamScore } / tracks.size
                 val wonCount = tracks.count { it.trackOutcome() > 0 }
                 val winrate = wonCount.percentOf(tracks.size)
-                // Rule 12 : nom/tag du roster, logo de l'équipe parente ; non résolu → dégradé.
+                // Nom/tag du roster, logo de l'équipe parente ; non résolu → dégradé.
                 val team = databaseRepository.getTeam(opponentId)?.let { resolved ->
                     val roster = resolved.rosters.firstOrNull { it.id == opponentId }
                     resolved.copy(
@@ -281,7 +285,7 @@ class MapDetailViewModel @AssistedInject constructor(
                         name = roster?.name ?: resolved.name,
                         tag = roster?.tag ?: resolved.tag
                     )
-                } ?: TeamEntity(id = opponentId, name = "Équipe inconnue", tag = "???", color = null, logo = null)
+                } ?: TeamEntity.unknown(opponentId)
                 OpponentRanking(
                     team = team,
                     averageTeamScore = averageTeamScore,

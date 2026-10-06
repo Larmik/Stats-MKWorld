@@ -43,12 +43,12 @@ import fr.harmoniamk.statsmkworld.ui.TournamentBadge
 /** Diamètre de la pastille d'équipe, repris par la rangée logo de la colonne centrale de [WarScoreCard]. */
 private val WarTeamCrestSize = 42.dp
 
-/** Rayon uniforme des cartes translucides (maquette : radius 6px), aligné sur WelcomeScreen. */
+/** Rayon uniforme des cartes translucides (6 dp), aligné sur WelcomeScreen. */
 val WarSummaryRadius = RoundedCornerShape(6.dp)
 
 /**
  * Composants partagés du **résumé de war** (carte score, tracks, pastilles) — mutualisés entre
- * `CurrentWarScreen` et `WarDetailsScreen` (rule 16).
+ * `CurrentWarScreen` et `WarDetailsScreen`.
  */
 
 /** Carte dashboard : fond sombre translucide, bordure blanche, radius 6, padding 13. */
@@ -78,7 +78,7 @@ fun WarEyebrow(text: String) {
 }
 
 /**
- * Carte « Score du match » (`.warscore`) : hôte VS adversaire(s), pastille + nom du roster + score.
+ * Carte « Score du match » : hôte VS adversaire(s), pastille + nom du roster + score.
  * [subtitle] optionnel sous les scores (ex. courses restantes, war en cours). En 24 j les côtés
  * adverses sont empilés, sans score chiffré. Différence de score centrale colorisée, total de
  * shocks affiché sous la ligne quand > 0. [onTournamentClick] rend le badge de tournoi cliquable

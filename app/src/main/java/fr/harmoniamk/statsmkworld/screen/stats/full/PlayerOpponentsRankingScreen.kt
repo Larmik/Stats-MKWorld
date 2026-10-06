@@ -34,7 +34,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.podiumRows
 /**
  * Classement complet des adversaires (#67). [isTeam] false → adversaires du joueur (score
  * joueur), true → adversaires d'équipe (écart). Réutilise le même `StatsFullViewModel`
- * (rules 16/32) et la grille `podiumRows`. Tri Occurrences / Winrate / Score moy.
+ * et la grille `podiumRows`. Tri Occurrences / Winrate / Score moy.
  */
 @Composable
 fun PlayerOpponentsRankingScreen(
@@ -49,7 +49,7 @@ fun PlayerOpponentsRankingScreen(
     // All-time (index 0) : destination autonome sans sélecteur de période (#68).
     val podiums = (if (isTeam) state.teamOpponentsByWindow[0] else state.playerOpponentsByWindow[0])
         ?: StatsFullViewModel.OpponentPodiums()
-    // Tri + conversion mémoïsés (rule 11, #73).
+    // Tri + conversion mémoïsés (#73).
     val rows = remember(sortIndex, podiums, isTeam) {
         podiums.all
             .let { list ->
@@ -99,7 +99,7 @@ fun PlayerOpponentsRankingScreen(
 
 /**
  * Adversaire → entrée de podium. [isTeam] true ⇒ écart d'équipe ; false ⇒ score du joueur.
- * Rule 12 : nom/tag du roster, logo de l'équipe parente.
+ * Nom/tag du roster, logo de l'équipe parente.
  */
 private fun RankingItem.OpponentRanking.toPodiumEntry(isTeam: Boolean): PodiumEntry =
     PodiumEntry(

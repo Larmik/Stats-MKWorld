@@ -186,7 +186,7 @@ class EditTabViewModel @AssistedInject constructor(
         war.withPlayersList(databaseRepository, firebaseRepository, dataStoreRepository)
             .map { PlayerScoreForTab(it, war.tracks.size) }
 
-    /** Équipe hôte au nom/tag du roster de la war (rule 12) ; id = rosterId pour l'appariement des pénalités. */
+    /** Équipe hôte au nom/tag du roster de la war ; id = rosterId pour l'appariement des pénalités. */
     private suspend fun hostTeam(war: War): TeamEntity? =
         dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
             val roster = team.rosters.singleOrNull { it.id.toString() == war.teamHost }

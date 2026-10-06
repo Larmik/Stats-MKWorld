@@ -26,7 +26,7 @@ import kotlinx.coroutines.FlowPreview
 
 /**
  * Classement complet des adversaires rencontrés sur un circuit (#67), par score moyen d'équipe
- * décroissant. Réutilise le même [MapDetailViewModel] et la grille `podiumRows` (rule 16).
+ * décroissant. Réutilise le même [MapDetailViewModel] et la grille `podiumRows`.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @Composable
@@ -37,7 +37,7 @@ fun MapOpponentsRankingScreen(
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BaseScreen(title = stringResource(R.string.map_detail_opponents), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.map_detail_opponents), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             state.opponents.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)

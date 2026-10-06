@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // empty' | head -n 1 | grep -qE '(^|&&|;)[[:space:]]*gh pr create( |$)' && printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"Rappel PR : (1) contrôle anti-audit du diff (matrice § 9 de docs/AUDIT.md, checklist § 4 de .claude/agents/ticket-worker.md) ; (2) mettre à jour docs/AUDIT.md, docs/TECHNICAL.md et docs/FUNCTIONAL.md pour refléter cette PR (rule 50) ; puis commit + push sur la branche de la PR.\"}}' || true"
+            "command": "jq -r '.tool_input.command // empty' | head -n 1 | grep -qE '(^|&&|;)[[:space:]]*gh pr create( |$)' && printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"Rappel PR : (1) contrôle anti-audit du diff (matrice § 9 de docs/AUDIT.md, checklist § 4 de .claude/agents/ticket-worker.md) ; (2) mettre à jour docs/AUDIT.md, docs/TECHNICAL.md et docs/FUNCTIONAL.md pour refléter cette PR (CLAUDE.md, .claude/rules/process/documentation.md) ; puis commit + push sur la branche de la PR.\"}}' || true"
           }
         ]
       }

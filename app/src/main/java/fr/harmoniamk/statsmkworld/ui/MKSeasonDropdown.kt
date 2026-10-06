@@ -20,12 +20,10 @@ import fr.harmoniamk.statsmkworld.R
 import fr.harmoniamk.statsmkworld.database.entities.SeasonEntity
 
 /**
- * Menu déroulant de sélection de **saison** (#70), composant **partagé unique** (rule 16)
+ * Menu déroulant de sélection de **saison** (#70), composant **partagé unique**
  * des headers Accueil/Wars/Stats/Classements. Stateless : sélection pilotée par
  * [selectedSeasonNumber] (`null` = tout l'historique), choix remonté via [onSeasonSelected] ;
- * seul l'état d'ouverture est local (rule 11). Rien affiché si [seasons] est vide.
- *
- * ⚠️ Écart assumé vs maquette (rules 13/15) : le prototype ne prévoit pas de dropdown de saison.
+ * seul l'état d'ouverture est local. Rien affiché si [seasons] est vide.
  */
 @Composable
 fun MKSeasonDropdown(
@@ -43,7 +41,7 @@ fun MKSeasonDropdown(
 
     // Trigger + menu dans un Box aligné TopEnd : popup ancré au bord droit, sans déborder à gauche.
     Box(modifier = modifier.wrapContentSize(Alignment.TopEnd)) {
-        // Pastille de header partagée (rule 16) ; chevron « ▾ » en trailing (pas de drawable dédié).
+        // Pastille de header partagée ; chevron « ▾ » en trailing (pas de drawable dédié).
         MKHeaderChip(
             label = currentLabel,
             onClick = { expanded = true },

@@ -56,12 +56,12 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 /**
  * Ajout d'une course dans la war en cours — wizard `Circuit` → (`Intermission` 24p) →
  * `Positions` → `Résumé`, étape pilotée par le [AddTrackViewModel] (retour arrière réinitialise
- * l'étape rejointe, rule 11). Graphe racine par-dessus CurrentWar → pas de bottombar (rule 17).
+ * l'étape rejointe). Graphe racine par-dessus CurrentWar → pas de bottombar.
  */
 @Composable
 fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // Champ de recherche : pur état UI éphémère (rule 11) survivant à la rotation.
+    // Champ de recherche : pur état UI éphémère survivant à la rotation.
     var search by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
@@ -175,7 +175,7 @@ private fun ColumnScope.CircuitStep(
             .clip(RoundedCornerShape(6.dp))
             .background(Colors.blackAlphaed, RoundedCornerShape(6.dp))
     ) {
-        // Cellule circuit MUTUALISÉE avec CurrentWar (rule 16 : MKTrackCell), en mode
+        // Cellule circuit MUTUALISÉE avec CurrentWar (MKTrackCell), en mode
         // sélection (image + nom, sans score).
         items(state.mapList, key = { it.name }) { map ->
             MKTrackCell(maps = listOf(map), onClick = { onMapSelected(map) })
@@ -225,7 +225,7 @@ private fun ColumnScope.IntermissionStep(
     )
 }
 
-/** Chip « Aucune » de l'intermission : pastille arrondie active/inactive (style maquette). */
+/** Chip « Aucune » de l'intermission : pastille arrondie active/inactive. */
 @Composable
 private fun IntermissionNoneChip(selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
@@ -257,12 +257,12 @@ private fun ColumnScope.PositionsStep(
     onPositionClick: (Int) -> Unit,
     onPrevious: () -> Unit
 ) {
-    // Aperçu de la course en tête (MKTrackCell, rule 16) : dernier circuit si intermission.
+    // Aperçu de la course en tête (MKTrackCell) : dernier circuit si intermission.
     if (state.trackMaps.isNotEmpty()) {
         MKTrackCell(maps = state.trackMaps, onClick = {}, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(11.dp))
     }
-    // Carte de progression : compteur + barre (style AddWar/maquette) + joueur courant.
+    // Carte de progression : compteur + barre (style AddWar) + joueur courant.
     state.currentPlayer?.let {
         ProgressCard(current = state.selectedPositions.size + 1, total = state.players.size)
         Spacer(Modifier.height(11.dp))
@@ -331,7 +331,7 @@ private fun ColumnScope.SummaryStep(
                 .padding(11.dp),
             verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            // Cartes joueur en 2 colonnes (`.two` de la maquette).
+            // Cartes joueur en 2 colonnes.
             state.selectedPositions.chunked(2).forEach { pair ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     pair.forEach { playerPosition ->

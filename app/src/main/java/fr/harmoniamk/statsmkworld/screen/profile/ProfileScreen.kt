@@ -37,8 +37,8 @@ import fr.harmoniamk.statsmkworld.ui.cells.PlayerCell
 import kotlinx.coroutines.launch
 
 /**
- * Pôle Profil (#28) — onglets fusionnés Joueur / Équipe (segmented partagé, sans re-navigation,
- * rule 11/14). Chaque onglet réutilise [PlayerProfileContent] / [TeamProfileContent] sur « moi »
+ * Pôle Profil (#28) — onglets fusionnés Joueur / Équipe (segmented partagé, sans re-navigation).
+ * Chaque onglet réutilise [PlayerProfileContent] / [TeamProfileContent] sur « moi »
  * (`id = "me"`). Le sheet « Ajouter un ally » est hébergé ici.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -58,7 +58,7 @@ fun ProfileScreen(
         creationCallback = { factory: TeamProfileViewModel.Factory -> factory.create("me") }
     )
 
-    // 0 = Joueur, 1 = Équipe. État réactif (rule 11) survivant à la rotation.
+    // 0 = Joueur, 1 = Équipe. État réactif survivant à la rotation.
     var tabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     val bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)

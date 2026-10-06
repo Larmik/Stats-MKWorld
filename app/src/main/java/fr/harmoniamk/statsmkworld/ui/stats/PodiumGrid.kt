@@ -7,7 +7,7 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 
 /**
  * Ajoute à un `LazyListScope` les lignes de 3 `PodiumCell` pour [items] (grille de classement).
- * [onClick] reçoit l'entrée métier cliquée. Mutualisé (rule 16) entre Classements et fiches
+ * [onClick] reçoit l'entrée métier cliquée. Mutualisé entre Classements et fiches
  * Adversaire/Circuit (#27). [contentColor] = couleur du texte (blanc par défaut).
  */
 fun <T> LazyListScope.podiumRows(

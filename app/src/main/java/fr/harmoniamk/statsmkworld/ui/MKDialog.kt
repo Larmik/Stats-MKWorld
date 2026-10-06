@@ -47,7 +47,7 @@ fun MKDialog(
                fontSize = 18,
            )
            MKText(text = message)
-            // Deux boutons → largeurs égales (weight 1f, rule 16) ; un seul → centré.
+            // Deux boutons → largeurs égales (weight 1f) ; un seul → centré.
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = if (secondButtonText != null) Arrangement.spacedBy(9.dp) else Arrangement.Center

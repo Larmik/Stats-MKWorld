@@ -3,7 +3,7 @@ name: ticket-dev
 description: Prend un ticket (numéro/URL d'issue GitHub, ou texte collé), crée une branche nommée d'après le titre, délègue les modifications de code à l'agent ticket-worker en respectant les rules du projet, itère sur les retours sans commiter, puis — sur validation explicite — commit / push / crée la PR vers master en liant l'issue. À utiliser quand on veut traiter un ticket de bout en bout.
 arguments: [numero-ou-url-issue-github-ou-texte]
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, Bash, Agent, SendMessage, AskUserQuestion
+allowed-tools: Read, Grep, Glob, Bash, Agent, SendMessage, AskUserQuestion, Skill
 ---
 
 # Traitement d'un ticket de bout en bout
@@ -72,8 +72,9 @@ avec un prompt contenant :
 
 - le **contenu intégral du ticket** ;
 - le **nom de la branche** ;
-- la consigne : lire **toutes** les rules dans `.claude/rules/*.md` et les
-  respecter, faire les modifications nécessaires, **ne faire aucune opération
+- la consigne : lire `.claude/rules-index.md`, respecter les rules de `.claude/rules/**`
+  (chargées à l'ouverture des fichiers correspondants via `Read`, cf. § 1 du worker), faire
+  les modifications nécessaires, **ne faire aucune opération
   git** (lecture `git diff`/`git status` permise), exécuter la **relecture finale
   anti-audit** de son § 4 sur son diff, puis retourner un résumé (fichiers touchés +
   décisions + rules appliquées + résultat de la relecture).
@@ -98,12 +99,15 @@ et rounds de retours) :
 2. Relis toi-même `git diff master...HEAD` + `git diff` (non commité) au regard de la
    matrice § 9 de `docs/AUDIT.md`, en ciblant les patterns les plus récurrents :
    composable/helper recréé alors qu'il existe (`rg "fun <Nom>"`), littéral métier
-   recopié (`"-1"`, rôles, `teamOpponent.size`, `https://mkcentral.com`, `90.dp`),
+   recopié (`"-1"`, rôles, `teamOpponent.size`, `https://mkcentral.com`, `90.dp`, `"Équipe inconnue"`),
    calcul de wars hors `withContext`, one-shot en `Flow`, `clear*()` en boucle, code
    commenté, secret/token ajouté.
 3. Un écart → renvoie-le au worker (même agent) avant de commiter. Un écart
    **assumé** (hors périmètre, décision utilisateur) → il doit figurer dans
    `docs/AUDIT.md` avec sa ligne *Prévention* et être signalé à l'utilisateur.
+4. **Pour chaque entrée d'audit ajoutée** (signalée par le worker ou par toi) : crée
+   immédiatement l'issue via `/create-ticket` (citer l'id d'audit dans les Notes), puis
+   reporte son numéro dans l'entrée (*Suivi : #NN*) avant le commit.
 
 ## 5. Commit / push / PR (systématique, dès la fin du worker)
 
@@ -124,7 +128,7 @@ validation** :
    ```
    🤖 Generated with [Claude Code](https://claude.com/claude-code)
    ```
-4. Habitude doc (rule 50) : mettre à jour les sections **impactées** de
+4. Habitude doc (`CLAUDE.md`, `.claude/rules/process/documentation.md`) : mettre à jour les sections **impactées** de
    `docs/AUDIT.md` / `docs/TECHNICAL.md` / `docs/FUNCTIONAL.md`, puis re-commit + push
    sur la branche de la PR.
 5. Affiche l'URL de la PR (et rappelle le `#N` de l'issue liée), puis **attends les
@@ -140,10 +144,11 @@ Tant que l'utilisateur donne des retours :
   2. **enrichir les rules** : si un retour correspond à une rule existante dans
      `.claude/rules/`, la mettre à jour ; s'il exprime une préférence générale et
      durable sans rule correspondante, l'ajouter au fichier de la catégorie
-     existante (tableau de `.claude/rules/README.md`) — une **nouvelle dizaine** ne
-     se crée qu'après confirmation de l'utilisateur. Un retour purement spécifique à
+     existante (procédure de `.claude/rules-index.md`) — une **nouvelle catégorie**
+     (répertoire) ne se crée qu'après confirmation de l'utilisateur. Un retour purement spécifique à
      ce ticket ne doit **pas** créer de rule.
   3. refaire la relecture anti-audit (§ 4 du worker) sur le nouveau diff.
+  Toute entrée d'audit ajoutée pendant le round reçoit son issue (`/create-ticket`, étape 4).
 - Puis **contrôle anti-audit (étape 4)**, **re-commit (message = nom de branche) + push** sur la même branche (la PR se
   met à jour automatiquement), relaie le résumé et **attends** de nouveau.
 
@@ -158,8 +163,8 @@ Tant que l'utilisateur donne des retours :
 La **validation finale** de l'utilisateur sert à **fusionner** la PR. Avant de la
 proposer comme « fait », vérifier que le ticket est couvert (critères d'acceptation de
 l'issue) et que les rules sont respectées — notamment la cohérence visuelle avec
-l'existant et la justesse des calculs (`13`), la réutilisation des composants
-partagés (`16`) — et que le dernier contrôle anti-audit (étape 4) est propre. Lister les écarts éventuels : tant qu'il en reste, rester en boucle
+l'existant (`ui/components.md`) et la justesse des calculs (`stats/calculs.md`), la
+réutilisation des composants partagés (`ui/components.md`) — et que le dernier contrôle anti-audit (étape 4) est propre. Lister les écarts éventuels : tant qu'il en reste, rester en boucle
 de retours.
 
 ### Après fusion (obligatoire, ne jamais oublier)

@@ -1,8 +1,7 @@
 ---
 name: create-ticket
-description: Crée une issue GitHub structurée (Contexte / Description / Solutions proposées) sur le dépôt Larmik/Stats-MKWorld à partir d'une description de bug ou de feature. À utiliser quand on veut transformer une idée de bug/feature en ticket actionnable sur GitHub Issues (remplace l'ancien flux Trello).
+description: Crée une issue GitHub structurée (Contexte / Description / Solutions proposées) sur le dépôt Larmik/Stats-MKWorld à partir d'une description de bug ou de feature. À utiliser quand on veut transformer une idée de bug/feature en ticket actionnable sur GitHub Issues, notamment pour chaque entrée ajoutée à docs/AUDIT.md.
 arguments: [description-bug-ou-feature]
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(gh issue *), Bash(gh label *), Bash(gh api *), Agent, AskUserQuestion
 ---
 
@@ -13,8 +12,8 @@ Description fournie en entrée : **$0**
 Ton objectif : créer **une issue GitHub** propre et actionnable sur le dépôt
 `Larmik/Stats-MKWorld`, décrivant le bug ou la feature donné(e) en entrée.
 
-> La gestion des tickets se fait sur **GitHub Issues** (le board Trello est
-> abandonné). Le dépôt est **public** : le contenu de l'issue est visible de tous
+> La gestion des tickets se fait sur **GitHub Issues**.
+> Le dépôt est **public** : le contenu de l'issue est visible de tous
 > — pas de secret (clé, token, chemin de keystore, id Discord réel…) dans le corps.
 
 ## 1. Comprendre la demande
@@ -65,8 +64,9 @@ le compromis (effort / risque / portée). Mets en avant la solution recommandée
   (le préfixe sert au nommage de branche par `/ticket-dev`).
 - **Labels de type** : `bug` (bug) ou `enhancement` (feature et technique).
 - **Pistes et solutions conformes aux rules** : une solution proposée ne doit pas
-  contredire `.claude/rules/*.md` (ex. pas de parallélisme non borné vers MKCentral,
-  rule 30 ; pas de composant dupliqué, rule 16). Si le ticket découle d'une entrée de
+  contredire `.claude/rules/**` (index : `.claude/rules-index.md` ; ex. pas de parallélisme
+  non borné vers MKCentral, `data/repositories.md` ; pas de composant dupliqué,
+  `ui/components.md`). Si le ticket découle d'une entrée de
   `docs/AUDIT.md`, citer son identifiant (ex. « audit B27 ») dans les Notes.
 - Pas d'epic, de milestone ni de label de pôle : uniquement le label de type.
 

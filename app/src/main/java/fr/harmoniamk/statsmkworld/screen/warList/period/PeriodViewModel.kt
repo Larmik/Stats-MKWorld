@@ -17,18 +17,21 @@ import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel de « Voir par période » (#80). Filtre les wars de l'équipe (roster hôte, 12p) dont
  * le timestamp (`War.id`, epoch ms) tombe dans `[dateA, dateB]`, produit l'historique et le
- * classement des joueurs de la période. Logique mono-consommateur → dans le VM (rule 32).
+ * classement des joueurs de la période. Logique mono-consommateur → dans le VM.
  * [initialKindFilter] : filtre Amicaux/Officiels hérité du pôle Wars (#103).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -75,7 +78,7 @@ class PeriodViewModel @AssistedInject constructor(
     private val _kindFilter = MutableStateFlow(initialKindFilter)
     private val _state = MutableStateFlow(State(kindFilter = initialKindFilter))
 
-    val state = combine(databaseRepository.getWars(), _range, _kindFilter) { warEntities, range, kindFilter ->
+    val state = combine(databaseRepository.getWars(), _range, _kindFilter, ::Triple).mapLatest { (warEntities, range, kindFilter) ->
         val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
         val rosterId = dataStoreRepository.mkcPlayer.firstOrNull()
             ?.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
@@ -93,15 +96,17 @@ class PeriodViewModel @AssistedInject constructor(
         val (dateA, dateB) = effectiveRange
 
         // Amicaux/Officiels (#103) + 12p only + roster hôte + plage de dates (sur le `war.id` brut, epoch ms).
-        val periodWars = warEntities
-            .filterByKind(kindFilter)
-            .filter { it.teamOpponent.size == 1 }
-            .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
-            .filter { it.id.toLongOrNull()?.let { id -> id in dateA..dateB } == true }
-            .map { War(it) }
-            .sortedByDescending { it.id }
-
-        val warDetails = periodWars.map { WarDetails(it) }
+        // Construction des `War`/`WarDetails` sur `Dispatchers.Default` (#73).
+        val (periodWars, warDetails) = withContext(Dispatchers.Default) {
+            val periodWars = warEntities
+                .filterByKind(kindFilter)
+                .filter { it.teamOpponent.size == 1 }
+                .filter { (!multiRosterEnabled && it.teamHost == rosterId) || multiRosterEnabled }
+                .filter { it.id.toLongOrNull()?.let { id -> id in dateA..dateB } == true }
+                .map { War(it) }
+                .sortedByDescending { it.id }
+            periodWars to periodWars.map { WarDetails(it) }
+        }
 
         // Agrégats par joueur via withPlayersList (score/shocks/présence). trackPlayed > 0 = « a
         // joué » la war. Dénominateur participation = nb wars équipe de la période.

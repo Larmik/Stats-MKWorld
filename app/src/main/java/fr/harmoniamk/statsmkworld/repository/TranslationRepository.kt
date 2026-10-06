@@ -107,7 +107,7 @@ class TranslationRepository @Inject constructor() : TranslationRepositoryInterfa
         }
     }
 
-    /** Pont `Task` → coroutine (`kotlinx-coroutines-play-services` non déclaré, rule 30). */
+    /** Pont `Task` → coroutine (`kotlinx-coroutines-play-services` non déclaré). */
     private suspend fun <T> Task<T>.awaitResult(): Result<T> = suspendCancellableCoroutine { continuation ->
         addOnSuccessListener { continuation.resume(Result.success(it)) }
         addOnFailureListener { continuation.resume(Result.failure(it)) }

@@ -38,7 +38,7 @@ import fr.harmoniamk.statsmkworld.ui.MKWarKindFilterRow
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
-/** Filtres de résultat de l'historique (chips maquette). */
+/** Filtres de résultat de l'historique (chips). */
 private enum class WarFilter(val labelRes: Int) {
     ALL(R.string.wars_filter_all),
     WINS(R.string.wars_filter_wins),
@@ -70,7 +70,7 @@ fun WarListScreen(
     onPeriodView: ((WarKindFilter) -> Unit)? = null
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // Filtre de résultat : pur état UI, survit à la rotation (rule 11).
+    // Filtre de résultat : pur état UI, survit à la rotation.
     var filter by rememberSaveable { mutableStateOf(WarFilter.ALL) }
 
     // Sous-titre : « wars de <joueur> » si filtré sur un joueur (#65), sinon « N wars ».

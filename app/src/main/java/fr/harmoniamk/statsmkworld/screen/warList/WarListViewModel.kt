@@ -11,6 +11,7 @@ import fr.harmoniamk.statsmkworld.extension.filterByKind
 import fr.harmoniamk.statsmkworld.extension.filterBySeason
 import fr.harmoniamk.statsmkworld.extension.format
 import fr.harmoniamk.statsmkworld.extension.get
+import fr.harmoniamk.statsmkworld.database.entities.WarEntity
 import fr.harmoniamk.statsmkworld.model.firebase.War
 import fr.harmoniamk.statsmkworld.model.local.SeasonFilter
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
@@ -76,6 +78,15 @@ class WarListViewModel @AssistedInject constructor(
     private val _seasonFilter = MutableStateFlow<SeasonFilter>(SeasonFilter.Default)
     private val _kindFilter = MutableStateFlow(initialKindFilter)
 
+    /** Sources légères combinées avant le calcul (`mapLatest` annule un calcul devenu obsolète). */
+    private data class Sources(
+        val wars: List<WarEntity>,
+        val currentWar: War?,
+        val seasonFilter: SeasonFilter,
+        val seasons: List<SeasonEntity>,
+        val kindFilter: WarKindFilter
+    )
+
     val state = currentRosterId
         // `listenToCurrentWar` alimente `State.currentWar` (gating du bouton), pas le filtrage.
         .flatMapLatest { rosterId ->
@@ -84,8 +95,9 @@ class WarListViewModel @AssistedInject constructor(
                 firebaseRepository.listenToCurrentWar(rosterId),
                 _seasonFilter,
                 databaseRepository.getSeasons(),
-                _kindFilter
-            ) { wars, currentWar, seasonFilter, seasons, kindFilter ->
+                _kindFilter,
+                ::Sources
+            ).mapLatest { (wars, currentWar, seasonFilter, seasons, kindFilter) ->
                 val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
                 // "me"/null = joueur courant ; sinon le joueur passé (filtre de participation).
                 val currentPlayerId = dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
@@ -100,7 +112,7 @@ class WarListViewModel @AssistedInject constructor(
                 // Filtres saison (#70) + Amicaux/Officiels (#103) + roster hôte + par joueur si
                 // demandé, tous modes 12/24.
                 // Seul ce mapping/groupage CPU est déporté sur `Dispatchers.Default` (withContext,
-                // pas flowOn — rule 21, #73) ; lectures de sources et `seasons` sur le collecteur.
+                // pas flowOn, #73) ; lectures de sources et `seasons` sur le collecteur.
                 val (details, grouped) = withContext(Dispatchers.Default) {
                     val details = wars
                         .filterBySeason(activeSeason)

@@ -108,7 +108,7 @@ fun RowScope.PodiumCell(
                 contentDescription = null,
                 modifier = Modifier.size(40.dp).clip(CircleShape)
             )
-            // Médaillon mutualisé (#50 pt.4, rule 16) : photo si dispo, initiales sinon.
+            // Médaillon mutualisé (#50 pt.4) : photo si dispo, initiales sinon.
             entry.initials != null -> PlayerMedallion(
                 initials = entry.initials,
                 avatarColor = entry.avatarColor,

@@ -34,17 +34,17 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
 /**
- * Fiche détail d'un adversaire (#27). Deux modes (rule 11) : Équipe (toutes les wars face à eux)
+ * Fiche détail d'un adversaire (#27). Deux modes : Équipe (toutes les wars face à eux)
  * et Individuel (celles du joueur courant). Mode = état réactif ([isIndiv]) semé par
  * [initialUserId], toggle sans re-nav. 12p uniquement. [teamId] = opposant (rosterId ou teamId
- * legacy) ; nom/tag du roster, avatar de l'équipe parente (rule 12).
+ * legacy) ; nom/tag du roster, avatar de l'équipe parente.
  */
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel(assistedFactory = OpponentDetailViewModel.Factory::class)
@@ -129,39 +129,45 @@ class OpponentDetailViewModel @AssistedInject constructor(
     )
 
     private val _state = MutableStateFlow(State(isIndiv = initialUserId != null))
-    // Mode réactif (rule 11) : semé par initialUserId, basculé par onModeChange.
+    // Mode réactif : semé par initialUserId, basculé par onModeChange.
     private val isIndiv = MutableStateFlow(initialUserId != null)
     // Tri réactif des circuits (Occurrences par défaut, comme l'écran Classements).
     private val tracksSort = MutableStateFlow(SortType.COUNT)
 
     val state = databaseRepository.getWars()
-        .combine(databaseRepository.getSeasons()) { wars, seasons ->
+        .combine(databaseRepository.getSeasons()) { wars, seasons -> wars to seasons }
+        .mapLatest { (wars, seasons) ->
             // Filtre saison (#91 pt.5) avant tout ; `seasonNumber` null → tout l'historique.
             val season = seasonNumber?.let { number -> seasons.firstOrNull { it.number == number } }
-            wars.filterBySeason(season)
-                .filterByKind(kindFilter)
-                .filter { it.hasTeam(teamId) }
-                .filter { it.teamOpponent.size == 1 }  // 12p uniquement
-                .map { WarDetails(War(it)) }
+            // Construction des `WarDetails` sur `Dispatchers.Default` (#73).
+            withContext(Dispatchers.Default) {
+                wars.filterBySeason(season)
+                    .filterByKind(kindFilter)
+                    .filter { it.hasTeam(teamId) }
+                    .filter { it.teamOpponent.size == 1 }  // 12p uniquement
+                    .map { WarDetails(War(it)) }
+            }
         }
         .combine(isIndiv) { wars, indiv -> wars to indiv }
-        .flatMapLatest { (wars, indiv) ->
+        .mapLatest { (wars, indiv) ->
             // userId courant seulement en mode Individuel.
             val userId = when (indiv) {
                 true -> dataStoreRepository.mkcPlayer.firstOrNull()?.id?.toString()
                 else -> null
             }
-            // En indiv, ne garder que les wars où le joueur courant a joué.
-            val scopedWars = when (userId) {
-                null -> wars
-                else -> wars.filter { it.war.hasPlayer(userId) }
+            withContext(Dispatchers.Default) {
+                // En indiv, ne garder que les wars où le joueur courant a joué.
+                val scopedWars = when (userId) {
+                    null -> wars
+                    else -> wars.filter { it.war.hasPlayer(userId) }
+                }
+                val stats = scopedWars.withFullStats(teamId = teamId, userId = userId).first()
+                Triple(scopedWars, indiv, Pair(userId, stats))
             }
-            scopedWars.withFullStats(teamId = teamId, userId = userId)
-                .map { stats -> Triple(scopedWars, indiv, Pair(userId, stats)) }
         }
         .combine(tracksSort) { data, sort -> data to sort }
-        .map { (data, sort) ->
-            // Calcul CPU-lourd déporté sur `Dispatchers.Default` — pas `flowOn` (rule 21, #73).
+        .mapLatest { (data, sort) ->
+            // Calcul CPU-lourd déporté sur `Dispatchers.Default` — pas `flowOn` (#73).
             withContext(Dispatchers.Default) {
             val (wars, indiv, userIdAndStats) = data
             val (userId, stats) = userIdAndStats
@@ -173,7 +179,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                     name = roster?.name ?: resolved.name,
                     tag = roster?.tag ?: resolved.tag
                 )
-            } ?: TeamEntity(id = teamId, name = "Équipe inconnue", tag = "???", color = null, logo = null)
+            } ?: TeamEntity.unknown(teamId)
 
             // Wars triées chronologiquement (war.id = timestamp).
             val chronological = wars.sortedBy { it.war.id }
@@ -202,7 +208,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
             val warsPlayed = chronological.size.takeIf { it > 0 } ?: 1
             val shocksPerWar = shockCount.toFloat() / warsPlayed
 
-            // Circuits triés selon le sélecteur (rule 16). Score = position moyenne en indiv, équipe sinon.
+            // Circuits triés selon le sélecteur. Score = position moyenne en indiv, équipe sinon.
             val sortedTracks = when (sort) {
                 SortType.WINRATE -> stats.maps.sortedByDescending { it.winRate ?: 0.0 }
                 SortType.AVERAGE -> stats.maps.sortedByTrackScore(isIndiv = userId != null)
@@ -245,7 +251,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
-    /** Bascule Indiv/Équipe (rule 11) : met à jour l'état réactif, l'écran se recompose. */
+    /** Bascule Indiv/Équipe : met à jour l'état réactif, l'écran se recompose. */
     fun onModeChange(indiv: Boolean) {
         isIndiv.value = indiv
     }

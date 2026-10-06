@@ -34,7 +34,7 @@ import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
-/** Rayon de coin des cartes translucides (aligné sur `CurrentWar`/maquette). */
+/** Rayon de coin des cartes translucides (aligné sur `CurrentWar`). */
 private val TrackCellRadius = RoundedCornerShape(6.dp)
 
 private const val TrackNameFontSize = 12
@@ -52,7 +52,7 @@ val TrackCellHeight: Dp
     }
 
 /**
- * Cellule de course/circuit partagée (rule 16). Horizontal : bande colorée (accent) · image + nom ·
+ * Cellule de course/circuit partagée. Horizontal : bande colorée (accent) · image + nom ·
  * zone shocks réservée · score + diff. Deux modes :
  * - **course jouée** (`track != null`) : score + diff colorisée, accent selon la diff. → détail.
  * - **sélection** / aperçu (`maps`, sans `track`) : image + nom seuls, accent blanc. → sélection.

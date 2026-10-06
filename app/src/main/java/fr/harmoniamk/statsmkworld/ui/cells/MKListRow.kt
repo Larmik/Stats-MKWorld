@@ -32,11 +32,11 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 fun playerAvatarColor(id: String): Color = ((id.hashCode() and 0x7fffffff) % 32 + 1).toTeamColor()
 
 /**
- * Ligne de liste générique (`.lrow` maquette) : carte sombre, pastille ronde (avatar [avatarUrl]
+ * Ligne de liste générique : carte sombre, pastille ronde (avatar [avatarUrl]
  * sinon [initials] sur [avatarColor]), titre + [titleTrailing], [subtitle], slot [trailing].
  * [leading] remplace la pastille (ex. logo de tournoi, #103) ; initiales/couleur sont alors ignorées.
  *
- * Composant **partagé unique** (rule 16) entre le pôle Profil et le wizard AddWar, généralisé
+ * Composant **partagé unique** entre le pôle Profil et le wizard AddWar, généralisé
  * par paramètres.
  */
 @Composable
@@ -63,7 +63,7 @@ fun MKListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp)
     ) {
-        // Médaillon joueur mutualisé (rule 16) : photo si dispo, initiales sinon.
+        // Médaillon joueur mutualisé : photo si dispo, initiales sinon.
         when (leading) {
             null -> PlayerMedallion(
                 initials = initials,
@@ -88,7 +88,7 @@ fun MKListRow(
     }
 }
 
-/** Chevron de fin (`.chev`) d'une [MKListRow] menant à un autre écran/étape. */
+/** Chevron de fin d'une [MKListRow] menant à un autre écran/étape. */
 @Composable
 fun MKListRowChevron() {
     Icon(
@@ -100,7 +100,7 @@ fun MKListRowChevron() {
 }
 
 /**
- * Pastille de sélection (`.chk`) d'une [MKListRow] : cercle vide (bordure atténuée)
+ * Pastille de sélection d'une [MKListRow] : cercle vide (bordure atténuée)
  * quand non sélectionné, cercle vert plein avec ✓ sombre quand [selected].
  */
 @Composable

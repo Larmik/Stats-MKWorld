@@ -15,11 +15,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 /**
- * Pastille cliquable de header, composant **partagé unique** (rule 16) : fond blanc translucide,
+ * Pastille cliquable de header, composant **partagé unique** : fond blanc translucide,
  * coins 10 dp. Utilisée par le dropdown de saison ([MKSeasonDropdown]) et « Voir par période »
  * (#80) pour un rendu identique ; `trailing` optionnel (chevron) distingue le dropdown.
- *
- * ⚠️ Écart assumé vs maquette (rules 13/15) : le prototype ne prévoit pas ces pastilles de header.
  */
 @Composable
 fun MKHeaderChip(

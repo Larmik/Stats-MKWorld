@@ -40,7 +40,7 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCardRadius
 /**
  * Relecture en lecture seule d'une course jouée (#47) : carte en-tête ([CourseHeaderCard]),
  * grille « Positions & shocks », et bouton « Éditer la course » (visible tant que la war n'est
- * pas validée, cf. [TrackDetailsViewModel]). Graphe racine → pas de bottombar (rule 17).
+ * pas validée, cf. [TrackDetailsViewModel]). Graphe racine → pas de bottombar.
  */
 @Composable
 fun TrackDetailsScreen(
@@ -57,7 +57,7 @@ fun TrackDetailsScreen(
             Spacer(Modifier.height(9.dp))
 
             StatCard(title = stringResource(R.string.trackdetails_positions_shocks)) {
-                // Une tuile par joueur, triée par position (comme la maquette : 1, 3, 5…).
+                // Une tuile par joueur, triée par position (1, 3, 5…).
                 val players = state.positions.sortedBy { it.position.position }
                 players.chunked(2).forEach { pair ->
                     Row(

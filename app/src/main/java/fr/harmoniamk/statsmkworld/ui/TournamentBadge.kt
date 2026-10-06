@@ -14,7 +14,7 @@ import fr.harmoniamk.statsmkworld.model.local.Tournament
 
 /**
  * Badge d'un tournoi officiel (#103) : logo embarqué ([Tournament.logo]), le logo MKCentral n'est pas
- * chargé (#152). Composant unique (rule 16) de `WarCell`, du détail de war, du sélecteur d'ajout et de
+ * chargé (#152). Composant unique de `WarCell`, du détail de war, du sélecteur d'ajout et de
  * la fiche tournoi. Logos larges → hauteur fixe, largeur bornée.
  */
 @Composable

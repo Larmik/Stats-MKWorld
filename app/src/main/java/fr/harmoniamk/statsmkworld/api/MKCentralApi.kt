@@ -40,12 +40,12 @@ interface MKCentralApi {
     // Équipes mkworld (synchro registre + diagnostic « Équipe inconnue »). Miroir du
     // filtre par défaut MKCentral « actives, ≥ 6 joueurs » : min_player_count élague
     // l'équipe entière, sans amputer les rosters d'une équipe qualifiante. game figé
-    // mkworld (rule 31).
+    // mkworld.
     @GET("registry/teams?game=mkworld&mode=150cc&is_historical=false&is_active=true&min_player_count=6")
     suspend fun getTeams(@Query("page") page: Int): NetworkResponse<MKCTeamResponse>
 
     // Saisons mkworld d'un tournoi officiel (#152), filtrées par série ou par nom (LIKE). game
-    // figé mkworld : seules ces saisons sont lues, même si la série d'origine est mk8dx (rule 31).
+    // figé mkworld : seules ces saisons sont lues, même si la série d'origine est mk8dx.
     @GET("tournaments/list?game=mkworld")
     suspend fun getTournaments(
         @Query("series_id") seriesId: Int?,

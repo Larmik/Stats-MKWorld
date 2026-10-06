@@ -51,7 +51,7 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     data class State(
-        // Étape courante (pilotée dans le VM, rule 11) : 3 étapes en 12p, 4 en 24p (Intermission
+        // Étape courante (pilotée dans le VM) : 3 étapes en 12p, 4 en 24p (Intermission
         // intercalée). Indexer via [stepCircuit]/[stepIntermission]/[stepPositions]/[stepSummary].
         val step: Int = 0,
         // Mode courant (déterminé par le nombre d'adversaires). Pilote l'indexation des étapes.
@@ -171,7 +171,7 @@ class AddTrackViewModel @AssistedInject constructor(
     }
 
     /**
-     * Navigation entre étapes (rule 11) : un retour en arrière annule la sélection de l'étape
+     * Navigation entre étapes : un retour en arrière annule la sélection de l'étape
      * rejointe (Circuit = reset complet, Intermission = 2ᵉ circuit + positions, Positions =
      * line-up) ; aller en avant (ou rester) ne réinitialise rien.
      */
@@ -254,7 +254,7 @@ class AddTrackViewModel @AssistedInject constructor(
             // Line-up complète : calcul du score de manche et passage au Résumé.
             positions.size == _state.value.players.size -> {
                 // Score hôte = somme des points (positionToPoints) ; adverse = complément au
-                // max de manche. Barème existant réutilisé (justesse, rule 13).
+                // max de manche. Barème existant réutilisé (justesse).
                 val scoreHost = _state.value.selectedPositions.map { it.position }.sumOf { it.position.positionToPoints(is24p) }
                 val maxPointsPerTrack = when (is24p) {
                     true -> ScoringConstants.MAX_POINTS_PER_TRACK_24P
@@ -309,7 +309,7 @@ class AddTrackViewModel @AssistedInject constructor(
             tracks.addAll(it.tracks)
             tracks.add(track)
             // Score de war hôte = score courant + score de manche. Recalculé à la validation
-            // (non accumulé) → insensible aux retours arrière (justesse, rule 13).
+            // (non accumulé) → insensible aux retours arrière (justesse).
             val newHostWarScore = (state.value.teamHostWarScore ?: 0) + (state.value.teamHostTrackScore ?: 0)
             val newWar = when (state.value.teamOpponent.orEmpty().size > 1) {
                 true -> it.copy(tracks = tracks, scores = listOf(WarScore(teamId = it.teamHost, score = newHostWarScore)))

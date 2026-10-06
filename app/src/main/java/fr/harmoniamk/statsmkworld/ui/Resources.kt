@@ -4,24 +4,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
 
 object Colors{
     val white = Color(0xFFFFFFFF)
     val whiteAlphaed = Color(0x55FFFFFF)
-    // Rouge/vert défaite/victoire, assombris vs les pastels maquette (--loss/--win) : servent
-    // aussi de TEXTE sur le fond clair du dégradé, où les pastels manquaient de contraste (#50 pt.6).
+    // Rouge/vert défaite/victoire assombris : servent aussi de TEXTE sur le fond clair du
+    // dégradé, où des teintes pastel manqueraient de contraste (#50).
     val red = Color(0xFFE05D51)
     val blue = Color(0xFFAECBFA)
     val yellow = Color(0xFFFFF176)
     val green = Color(0xFF4FA96C)
     val purple = Color(0xFFD7AEFB)
-    val gold = Color(0xFFD4AF37) // --gold de la maquette (pastille de rôle Leader)
+    val gold = Color(0xFFD4AF37) // pastille de rôle Leader
     val grey = Color(0xFFF8F9FA)
     val black = Color(0xFF3C4043)
     val blackAlphaed = Color(0x773C4043)
     val transparent = Color(0x00FFFFFF)
-    // Bande d'appbar (`.appbar` rgba(48,51,54,.5), #50 pt.2).
+    // Bande d'appbar (#50).
     val appbar = Color(0x80303336)
     // Blancs translucides (bordures / libellés secondaires des cartes sombres du dashboard).
     val whiteBorder = Color(0xEBFFFFFF) // rgba(255,255,255,.92) — bordure de carte
@@ -87,3 +88,9 @@ object Fonts {
         )
 
 }
+
+/**
+ * Marge basse des contenus scrollables de pôle : hauteur de la bottombar de `HomeScreen`, dont
+ * l'`innerPadding` n'est pas propagé au contenu (#107).
+ */
+val BottomBarInset = 90.dp

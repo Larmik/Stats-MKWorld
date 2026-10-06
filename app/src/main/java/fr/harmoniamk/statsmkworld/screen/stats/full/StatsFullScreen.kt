@@ -52,6 +52,7 @@ import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.BottomBarInset
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
@@ -107,8 +108,7 @@ private fun Stats.windowForm(index: Int) = when (index) {
  * - vue **pour un joueur donné** (`statsfull`, [showTabs] = false) : rendu Individuelles
  *   seul, avec barre de retour et sous-titre = nom du joueur.
  *
- * Toggle 12 j / 24 j réactif (rule 11). Rendu pixel-perfect maquette (rule 13/15),
- * réutilisant le vocabulaire visuel de l'Accueil (cartes translucides, eyebrows,
+ * Toggle 12 j / 24 j réactif. Rendu réutilisant le vocabulaire visuel de l'Accueil (cartes translucides, eyebrows,
  * tuiles, barre V/N/D). Données réelles ; libellés de saison masqués (#30 non livré).
  */
 @Composable
@@ -126,7 +126,7 @@ fun StatsFullScreen(
     // 0 = Individuelles, 1 = Équipe. Sur statsfull (pas d'onglets) → toujours 0.
     var scopeIndex by rememberSaveable { mutableIntStateOf(0) }
     // Période globale (#68) : 0 = all-time, 1 = 5, 2 = 10. Un seul état lu par toutes les
-    // sections (rule 11 : State, pas de re-nav). Survit à la rotation.
+    // sections (State, pas de re-nav). Survit à la rotation.
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
     // Tri podiums : 0 = occurrences (défaut), 1 = winrate, 2 = score. Axe indépendant de la période.
     var trackSortIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -146,10 +146,10 @@ fun StatsFullScreen(
     BaseScreen(
         title = stringResource(R.string.statistiques),
         subtitle = subtitle,
-        // Retour d'appbar seulement en fiche poussée (showTabs=false) ; pas en onglet (rule 14).
+        // Retour d'appbar seulement en fiche poussée (showTabs=false) ; pas en onglet.
         onBack = onBack?.takeIf { !viewModel.showTabs },
-        // Sélecteur de saison (#70, MKSeasonDropdown partagé rule 16). Change l'état VM ⇒
-        // recalcul à la volée des agrégats (rule 11, pas de re-nav).
+        // Sélecteur de saison (#70, MKSeasonDropdown partagé). Change l'état VM ⇒
+        // recalcul à la volée des agrégats (pas de re-nav).
         headerTrailing = {
             MKSeasonDropdown(
                 seasons = state.value.seasons,
@@ -157,10 +157,10 @@ fun StatsFullScreen(
                 onSeasonSelected = viewModel::onSeasonSelected
             )
         },
-        modifier = Modifier.padding(bottom = if (viewModel.showTabs) 90.dp else 0.dp)
+        modifier = Modifier.padding(bottom = if (viewModel.showTabs) BottomBarInset else 0.dp)
     ) {
         // Le header reste toujours visible ; seule la zone de données passe en chargement au
-        // recompute (#73). Sélecteur 12j/24j retiré temporairement (#37, is24p figé false côté VM).
+        // recompute (#73). Sélecteur 12j/24j désactivé (#37, is24p figé false côté VM).
         if (viewModel.showTabs) {
             MKSegmentedSelector(
                 items = listOf(
@@ -173,7 +173,7 @@ fun StatsFullScreen(
             Spacer(Modifier.height(11.dp))
         }
         // Sélecteur de période global (#68), au-dessus de toutes les sections. onDark = false
-        // (fond clair de BaseScreen). Change l'état ⇒ recompose les sections (rule 11).
+        // (fond clair de BaseScreen). Change l'état ⇒ recompose les sections.
         // 1er onglet : base « toutes les wars » de la saison sélectionnée ou de l'historique (#100).
         MKSegmentedSelector(
             items = listOf(
@@ -345,7 +345,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.teamSections(
     item { FormStreakCard(allTimeStats, stringResource(R.string.stats_team_form_title)) }
     // Vue équipe : min/max = écart de points de war (warScoreToDiff), pas le total (#67).
     item { RecordsTilesCard(allTimeStats, selectors, isTeam = true) }
-    // 4bis. Top/Bot 5→2 sur la fenêtre (N=6 retiré, redondant avec Records & séries, #64) :
+    // 4bis. Top/Bot 5→2 sur la fenêtre (pas de N=6, redondant avec Records & séries, #64) :
     //       équipe ET adversaire. Masqués si aucune ligne affichable.
     (state.teamMapStatsByWindow[selectors.windowIndex] ?: state.teamMapStatsByWindow[0])?.let { mapStats ->
         if (hasDisplayableTopBottom(mapStats.topsTable, mapStats.bottomsTable)) item {
@@ -684,7 +684,7 @@ private fun SeeAllLink(onClick: () -> Unit) {
 // Composants de carte (réutilisés par les deux onglets)
 /**
  * En-tête : vignette (photo joueur / logo équipe) + nom + sous-titre. [logo] = URL MKCentral
- * préfixée ; fallback = initiales (joueur) ou default_logo (équipe). Délègue à [StatHeaderCard] (rule 16).
+ * préfixée ; fallback = initiales (joueur) ou default_logo (équipe). Délègue à [StatHeaderCard].
  */
 @Composable
 private fun HeaderCard(name: String, subtitle: String, color: Color, logo: String?, isTeam: Boolean) {
@@ -798,7 +798,7 @@ private fun DistributionCard(stats: Stats, selectors: SectionSelectors) {
     val distribution = stats.positionDistributionFor(lastN = null)
     if (distribution.none { it.second > 0 }) return
     StatCard(title = stringResource(R.string.stats_distribution_title)) {
-        // Chart/footer mutualisés (ui/stats/MKDistributionCard.kt) — rule 16.
+        // Chart/footer mutualisés (ui/stats/MKDistributionCard.kt).
         DistributionChart(distribution)
         DistributionFooter(distribution)
     }

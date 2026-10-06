@@ -120,7 +120,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                 // Filtre Amicaux/Officiels (#103) propagé aux enfants en segment de route `{kind}`.
                 onPeriodView = { kindFilter -> navController.navigate("Home/Period/${kindFilter.routeSegment}") },
                 onStats = { type ->
-                    // userId (nullable) sème le mode initial Indiv/Équipe (rule 11) ; « null » = Équipe.
+                    // userId (nullable) sème le mode initial Indiv/Équipe ; « null » = Équipe.
                     when (type) {
                         is StatsType.PlayerStats -> navController.navigate("Statsfull/${type.userId}/${type.kindFilter.routeSegment}")
                         // Saison propagée (#91 pt.5) en segment de route : « all » = tout l'historique.
@@ -449,7 +449,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        // Historique des wars filtré sur un joueur (#65), graphe racine (back → StatsFull, rule 14).
+        // Historique des wars filtré sur un joueur (#65), graphe racine (back → StatsFull).
         // `userId` = id du joueur, ou « me » = joueur courant (résolu par le VM).
         composable(
             route = "Home/WarList/{userId}/{kind}",
@@ -476,7 +476,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
             )
         }
 
-        // « Voir par période » (#80), graphe racine (pas de bottombar, rule 17).
+        // « Voir par période » (#80), graphe racine (pas de bottombar).
         composable(
             route = "Home/Period/{kind}",
             arguments = listOf(navArgument("kind") { type = NavType.StringType })
@@ -613,7 +613,7 @@ fun RootScreen(startDestination: String, code: String = "", onBack: () -> Unit) 
                     navController.navigate("Home/WarDetails/Tab")
                 },
                 // « Voir l'adversaire » → fiche adversaire. opponentId = rosterId (ou teamId
-                // legacy) ; userId « null » = portée Équipe (rule 15).
+                // legacy) ; userId « null » = portée Équipe.
                 onOpponent = { opponentId ->
                     // Depuis une war : pas de contexte de saison → tout l'historique (« all », #91 pt.5).
                     navController.navigate("Opponent/$opponentId/null/all/${WarKindFilter().routeSegment}")

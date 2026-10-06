@@ -50,6 +50,7 @@ import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.BottomBarInset
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -61,7 +62,7 @@ import fr.harmoniamk.statsmkworld.ui.cells.CurrentWarBanner
 import fr.harmoniamk.statsmkworld.ui.cells.WarCell
 import fr.harmoniamk.statsmkworld.ui.cells.WarCellViewModel
 
-// Rayon uniforme des cartes du dashboard (maquette : radius 6px).
+// Rayon uniforme des cartes du dashboard (6 dp).
 private val CardRadius = RoundedCornerShape(6.dp)
 
 @Composable
@@ -76,12 +77,12 @@ fun WelcomeScreen(
     onSearch: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // État UI local : profil (0 = Moi, 1 = Équipe), fenêtre Momentum (0 = 5, 1 = 10). Rule 11.
+    // État UI local : profil (0 = Moi, 1 = Équipe), fenêtre Momentum (0 = 5, 1 = 10).
     var profileIndex by rememberSaveable { mutableIntStateOf(0) }
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
     BaseScreen(
         title = stringResource(R.string.accueil),
-        modifier = Modifier.padding(bottom = 90.dp),
+        modifier = Modifier.padding(bottom = BottomBarInset),
         onSearch = onSearch,
         // Dropdown de saison (#70) : filtre tous les agrégats du dashboard.
         headerTrailing = {

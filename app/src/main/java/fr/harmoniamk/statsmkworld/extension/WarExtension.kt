@@ -13,12 +13,11 @@ import kotlinx.coroutines.flow.firstOrNull
 /**
  * Résout les adversaires d'une war pour l'affichage. Chaque `rosterId` de `teamOpponent`
  * est remonté à son équipe parente : si le roster est identifiable, nom/tag du **roster**
- * (avatar/couleur de l'équipe conservés, rule 12). L'`id` reste le **rosterId** (appariement
+ * (avatar/couleur de l'équipe conservés). L'`id` reste le **rosterId** (appariement
  * score/pénalité par identifiant, comme l'hôte).
  *
- * **Non destructif** (rule 12) : un id irrésoluble (roster/équipe hors cache, war legacy)
- * n'est pas effacé mais dégradé en [TeamEntity] « Équipe inconnue » / « ??? » / sans logo,
- * en conservant l'id pour l'appariement.
+ * **Non destructif** : un id irrésoluble (roster/équipe hors cache, war legacy)
+ * n'est pas effacé mais dégradé via [TeamEntity.unknown].
  */
 suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): List<TeamEntity> =
     teamOpponent.map { rosterId ->
@@ -29,13 +28,7 @@ suspend fun War.opponentTeams(databaseRepository: DatabaseRepositoryInterface): 
                 name = roster?.name ?: team.name,
                 tag = roster?.tag ?: team.tag
             )
-        } ?: TeamEntity(
-            id = rosterId,
-            name = "Équipe inconnue",
-            tag = "???",
-            color = null,
-            logo = null
-        )
+        } ?: TeamEntity.unknown(rosterId)
     }
 
 suspend fun War.withPlayersList(databaseRepository: DatabaseRepositoryInterface, firebaseRepository: FirebaseRepositoryInterface, dataStoreRepository: DataStoreRepositoryInterface): List<PlayerScore> {

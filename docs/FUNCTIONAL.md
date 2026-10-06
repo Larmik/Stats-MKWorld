@@ -445,7 +445,7 @@ Ce sont des cas **exacts** : une course répartie entre le haut et le bas du cla
 
 - **Shocks / war** — Le nombre moyen d'**éclairs obtenus** par war. C'est la mesure de ton *bagging* (rester à l'arrière pour farmer des objets puissants). Un éclair obtenu est compté même si tu ne l'utilises pas.
 
-  **À lire avec nuance :** un grand nombre d'éclairs veut dire que tu bagges beaucoup, ce qui est **précieux** pour l'équipe — mais ce n'est **pas** relié à ta position finale, et il n'y a **pas** de « baggeur attitré » : les rôles changent en pleine course (un joueur devant peut se mettre à bagger, un baggeur qui tire un bon objet peut remonter). C'est pourquoi l'évolution de cette stat s'affiche **sans couleur** : ni « plus » ni « moins » n'est forcément « mieux ». Et rappel : les éclairs **n'entrent pas** dans le calcul du score.
+  **À lire avec nuance :** un grand nombre d'éclairs veut dire que tu bagges beaucoup, ce qui est **précieux** pour l'équipe — mais ce n'est **pas** relié à ta position finale, et il n'y a **pas** de « baggeur attitré » : les rôles changent en pleine course (un joueur devant peut se mettre à bagger, un baggeur qui tire un bon objet peut remonter). C'est pourquoi l'évolution de cette stat s'affiche **sans couleur** : ni « plus » ni « moins » n'est forcément « mieux ». Et rappel : les éclairs **n'entrent pas** dans le calcul du score. De même, une position moyenne basse ou des Bot 6 ne sont pas un mauvais signe pour un joueur qui bag.
 
 ### La contribution
 

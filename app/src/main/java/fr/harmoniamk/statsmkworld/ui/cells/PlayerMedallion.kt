@@ -20,7 +20,7 @@ import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKText
 
 /**
- * Médaillon joueur **unique et partagé** (rule 16) : pastille colorée [initials] surmontée de la
+ * Médaillon joueur **unique et partagé** : pastille colorée [initials] surmontée de la
  * photo de profil [avatarPath] si dispo. Fallback naturel : les initiales restent visibles dessous
  * tant que Coil n'a rien chargé (chargement ou échec → initiales conservées).
  *

@@ -14,6 +14,7 @@ import fr.harmoniamk.statsmkworld.model.local.SeasonFilter
 import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
+import fr.harmoniamk.statsmkworld.model.network.mkcentral.MKCPlayer
 import fr.harmoniamk.statsmkworld.repository.DataStoreRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.DatabaseRepositoryInterface
 import fr.harmoniamk.statsmkworld.repository.FirebaseRepositoryInterface
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -69,18 +71,27 @@ class WelcomeViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(State())
 
-    val state = combine(dataStoreRepository.mkcPlayer, _seasonFilter, databaseRepository.getSeasons(), _kindFilter) { player, seasonFilter, seasons, kindFilter ->
+    /** Sources légères combinées avant le calcul (`mapLatest` annule un calcul devenu obsolète). */
+    private data class Sources(
+        val player: MKCPlayer,
+        val seasonFilter: SeasonFilter,
+        val seasons: List<SeasonEntity>,
+        val kindFilter: WarKindFilter
+    )
+
+    val state = combine(dataStoreRepository.mkcPlayer, _seasonFilter, databaseRepository.getSeasons(), _kindFilter, ::Sources)
+        .mapLatest { (player, seasonFilter, seasons, kindFilter) ->
             val multiRosterEnabled = dataStoreRepository.multiRosterEnabled.firstOrNull() == true
             val rosterId = player.rosters?.firstOrNull { it.game == "mkworld" }?.rosterID?.toString()
             dataStoreRepository.mkcTeam.firstOrNull()?.let { team ->
                 // Saisons observées en Flow réactif (#73) ; résolution de la saison effective
                 // (défaut = saison en cours ; null = tout l'historique).
                 val activeSeason = seasonFilter.resolve(seasons)
-                // Firebase résolu sur le collecteur, HORS du `withContext(Default)` (rule 21, #73).
+                // Firebase résolu sur le collecteur, HORS du `withContext(Default)` (#73).
                 val currentWar = firebaseRepository.getCurrentWar(rosterId.orEmpty())
                 // Toute la partie CPU-lourde (construction de `wars`, `withFullStats`,
                 // résultats récents) déportée sur `Dispatchers.Default` via `withContext` (pas
-                // `flowOn` — rule 21, #73) ; métadonnées et `seasons` restent sur le collecteur.
+                // `flowOn`, #73) ; métadonnées et `seasons` restent sur le collecteur.
                 // Le bloc renvoie un `State` partiel (stats + résultats récents) complété ensuite.
                 val computed = withContext(Dispatchers.Default) {
                     // Dashboard 12p uniquement, filtres saison (#70) et Amicaux/Officiels (#103) en premier.

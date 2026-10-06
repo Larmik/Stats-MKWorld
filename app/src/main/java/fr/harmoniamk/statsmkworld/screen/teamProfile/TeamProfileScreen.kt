@@ -37,6 +37,7 @@ import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.extension.displayedString
 import fr.harmoniamk.statsmkworld.extension.toTeamColor
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.BottomBarInset
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.MKBottomSheet
 import fr.harmoniamk.statsmkworld.ui.MKButton
@@ -129,7 +130,7 @@ fun ColumnScope.TeamProfileContent(
     onAddAllyClick: () -> Unit
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    // 0 = Membres, 1 = Alliés (sous-onglets `pf2` de la maquette, via segmented partagé).
+    // 0 = Membres, 1 = Alliés (sous-onglets via segmented partagé).
     var subTab by rememberSaveable { mutableIntStateOf(0) }
     val isMe = viewModel.id == "me"
     // Résolu hors du LazyListScope (stringResource n'y est pas appelable).
@@ -156,8 +157,8 @@ fun ColumnScope.TeamProfileContent(
 
             LazyColumn(
                 Modifier.fillMaxWidth().weight(1f),
-                // Marge basse pour ne pas être masqué par la bottombar du pôle (rule 10).
-                contentPadding = PaddingValues(bottom = 90.dp),
+                // Marge basse : contenu partagé avec le pôle Profil (bottombar).
+                contentPadding = PaddingValues(bottom = BottomBarInset),
                 verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 // Carte identité équipe (pcard) : logo, nom, tag + création, bio, badge.
@@ -170,7 +171,7 @@ fun ColumnScope.TeamProfileContent(
                         badgeRes = R.string.profile_badge_team,
                         bio = team.description
                     ) {
-                        // Tag en pastille « membre » grise + date de création (maquette).
+                        // Tag en pastille « membre » grise + date de création.
                         RolePill(ProfileRole.MEMBER, text = "TAG ${team.tag}")
                         MKText(text = "·", fontSize = 13, textColor = Colors.white.copy(alpha = 0.72f), resizable = false)
                         MKText(

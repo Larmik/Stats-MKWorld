@@ -122,7 +122,7 @@ fun EditTabScreen(viewModel: EditTabViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // 3. Style HLorenzi (segmented partagé, rule 16) + CTA HLorenzi (#105).
+            // 3. Style HLorenzi (segmented partagé) + CTA HLorenzi (#105).
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     MKText(

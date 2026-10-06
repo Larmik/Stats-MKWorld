@@ -88,7 +88,7 @@ class BaseViewModel @Inject constructor(dataStoreRepository: DataStoreRepository
         ))
 }
 
-/** Bouton d'action de l'appbar (`.ic-btn` maquette) : retour ou loupe/registre. */
+/** Bouton d'action de l'appbar : retour ou loupe/registre. */
 @Composable
 private fun AppBarIconButton(iconRes: Int, contentDescription: String, onClick: () -> Unit) {
     Box(
@@ -110,7 +110,7 @@ private fun AppBarIconButton(iconRes: Int, contentDescription: String, onClick: 
 }
 
 /**
- * Écran de base : fond dégradé + appbar maquette (`.appbar`, #50 pt.2) — retour optionnel
+ * Écran de base : fond dégradé + appbar (#50) — retour optionnel
  * ([onBack]) à gauche, titre + sous-titre, action loupe→registre optionnelle ([onSearch]) à droite.
  */
 @Composable
