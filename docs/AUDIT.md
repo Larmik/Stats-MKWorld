@@ -6,7 +6,7 @@
 **Légende de sévérité** : 🔴 Bloquant/critique · 🟠 Important · 🟡 Moyen · 🟢 Cosmétique/confort.
 **Statut** : `[ ]` ouvert · `[~]` partiellement traité (le reste est décrit).
 
-Conventions de maintenance (rule `50-process-doc.md`) :
+Conventions de maintenance (`.claude/rules/process/documentation.md`) :
 
 - les numéros de ligne sont indicatifs (état au moment de l'audit) — à reconfirmer avant correction ;
 - une entrée **traitée est supprimée** (pas de liste ✅ : l'historique vit dans git et les PR) ;
@@ -48,6 +48,7 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 - [ ] 🟡 **B36 — Saison non propagée aux écrans enfants hors fiches Adversaire/Circuit.** Seules les routes `Opponent/…/{season}/…` et `Map/…/{season}/…` héritent de la saison du parent ([RootScreen.kt:122-123](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/RootScreen.kt)). `Statsfull/{userId}/{kind}`, ses « voir tout » `Statsfull/{userId}/{kind}/Maps|Opponents/{isTeam}`, `Home/WarList/{userId}/{kind}` et `Home/Period/{kind}` repartent sur la saison en cours (`SeasonFilter.Default`) même si le parent filtrait une autre saison ou tout l'historique — alors que le filtre Amicaux/Officiels, lui, est désormais hérité (#103). → Propager la saison par segment de route, sur le modèle de `{season}` + `toSeasonNumber()`. *Prévention : —.*
 - [ ] 🟢 **B37 — Lecture des wars Firebase non tolérante à un id non numérique.** `Map.toWar()` convertit `this["id"].toString().toLong()` ([FirebaseRepository.kt:265](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/FirebaseRepository.kt)) : un nœud `wars/{rosterId}/…` à id absent ou corrompu lève une `NumberFormatException` qui fait échouer **toute** la lecture `getWars` (synchro, diagnostics, migration des wars officielles #156) au lieu d'ignorer l'entrée. → `toLongOrNull()` et `mapNotNull` sur l'entrée invalide. Constaté en #156, aucun cas observé en données réelles. *Prévention : rule 60 (conversion tolérante).*
 - [~] 🟢 **B11 — Adversaires multi-rosters historiques restés en `teamId`.** Création de war en `rosterId`, affichage/classements par roster et migration RTDB des équipes mono-roster faits. **Limite assumée** : les wars historiques contre une équipe multi-rosters restent en `teamId` (roster joué inconnu) → un item de classement « niveau équipe » subsiste à côté des rosters. Pas d'action prévue sans source de vérité. *Prévention : rule 12.*
+- [ ] 🟢 **B38 — Pôle Wars sans marge basse (à confirmer sur device).** Le `LazyColumn` de [WarListScreen.kt:109](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/warList/WarListScreen.kt) (route `Home/WarList`, pôle avec bottombar) n'a ni `contentPadding` ni `Spacer` bas : la dernière `WarCell` est probablement masquée par la `NavigationBar`. L'écran sert aussi au graphe racine (`Home/WarList/me/…`), où la marge reste tolérée. → `contentPadding = PaddingValues(bottom = BottomBarInset)`. *Prévention : `.claude/rules/ui/bottom-nav.md`.* **Suivi : à créer.**
 
 ---
 
@@ -105,7 +106,7 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 - [ ] 🟡 **C1 — `fallbackToDestructiveMigration()`** : perte des données locales à chaque montée de schéma (acceptable car re-sync, documenté dans `CLAUDE.md`). *Prévention : `CLAUDE.md` (pièges).*
 - [ ] 🟡 **C2 — Désérialisation Firebase à la main** (cast `Map<*, *>` + parse champ par champ, [FirebaseRepository.kt:114-152,249-275](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/FirebaseRepository.kt)). → `getValue(Class)` / data classes typées. *Prévention : —.* **Suivi : #125.**
 - [~] 🟡 **C9 — One-shots emballés dans un `Flow` (contraire à la rule 30).** `PDFRepository.write` ([PDFRepository.kt:45,72](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/PDFRepository.kt)), `FetchUseCase.manageTransferts`/`migrateOpponentsToRoster` ([FetchUseCase.kt:41-42](../app/src/main/java/fr/harmoniamk/statsmkworld/usecase/FetchUseCase.kt)), `withFullStats`/`withFullTeamStats` qui renvoient un `Flow` à valeur unique consommé par `firstOrNull()` ([ListExtension.kt:80,166](../app/src/main/java/fr/harmoniamk/statsmkworld/extension/ListExtension.kt)) — le paramètre `databaseRepository` mort a été retiré (#90). → Résultat direct (fonction pure pour les extensions de calcul). *Prévention : rule 30.* **Suivi : #117.**
-- [ ] 🟡 **C10 — `Context` statique et libellés en dur dans les ViewModels.** `MainApplication.instance?.applicationContext?.getString(...)` ([AddTrackViewModel.kt:137](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/addTrack/AddTrackViewModel.kt), [EditTrackViewModel.kt:104](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/editTrack/EditTrackViewModel.kt)) ; toasts en dur (`DebugViewModel`) ; 14 libellés en dur dans `DebugScreen`. → `@ApplicationContext` injecté ou ids `R.string` résolus en UI. *Prévention : rule 20.* **Suivi : #119.**
+- [ ] 🟡 **C10 — `Context` statique et libellés en dur dans les ViewModels.** `MainApplication.instance?.applicationContext?.getString(...)` ([AddTrackViewModel.kt:137](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/addTrack/AddTrackViewModel.kt), [EditTrackViewModel.kt:104](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/editTrack/EditTrackViewModel.kt)) (l'écran debug, `DebugViewModel` / `DebugScreen`, est exempté : `.claude/rules/ui/strings.md`). → `@ApplicationContext` injecté ou ids `R.string` résolus en UI. *Prévention : rule 20.* **Suivi : #119.**
 - [ ] 🟢 **C12 — `CoroutineScope` implémenté sans usage** par `FetchUseCase` ([FetchUseCase.kt:63,239](../app/src/main/java/fr/harmoniamk/statsmkworld/usecase/FetchUseCase.kt)), `RegistryViewModel` ([RegistryViewModel.kt:24](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/registry/RegistryViewModel.kt)) et `UpdateDataWorker` (aucun `launch` sur ce scope, `Job` absent). → Retirer. *Prévention : —.* **Suivi : #121.**
 - [ ] 🟢 **C13 — Worker périodique : pas de retry et re-planification à chaque lancement.** `MKCoroutineWorker.doWork()` renvoie toujours `success` sans capturer d'exception ([MKCoroutineWorker.kt:52-55](../app/src/main/java/fr/harmoniamk/statsmkworld/worker/MKCoroutineWorker.kt)) ; `RootScreen` ré-enfile en `CANCEL_AND_REENQUEUE` à chaque démarrage ([RootScreen.kt:67-69](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/RootScreen.kt)), ce qui annule une synchro en cours. → `Result.retry()` sur échec réseau, politique `UPDATE`. *Prévention : —.* **Suivi : #123.**
 - [ ] 🟢 **C14 — Code commenté laissé en place.** `generateDetailedPdf` commenté avec `StrictMode.permitAll()` ([EditTabViewModel.kt:199-243](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/editTab/EditTabViewModel.kt)), blocs commentés de [PDFRepository.kt:54,246](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/PDFRepository.kt). (Le segmenté 12/24 commenté d'`AddWarScreen` est une désactivation assumée #91.) → Supprimer, git garde l'historique. *Prévention : rule 64.* **Suivi : #121.**
@@ -113,6 +114,7 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 - [ ] 🟢 **C5 — ProGuard `-dontoptimize`** ([proguard-rules.pro:10](../app/proguard-rules.pro)) désactive l'optimisation R8. → À réévaluer avec un build release testé. *Prévention : rule 40.* **Suivi : #127.**
 - [ ] 🟢 **C6 — Opt-ins expérimentaux** (74 annotations, dont 69 coroutines `@FlowPreview`/`@ExperimentalCoroutinesApi`/`@OptIn(…Coroutines…)` et 5 Compose, souvent sans API expérimentale réellement utilisée). → Retirer les superflus, surveiller aux montées de version. *Prévention : —.* **Suivi : #127.**
 - [~] 🟢 **C8 — Collecte d'état Compose.** `rememberSaveable` désormais généralisé (35) et `derivedStateOf` inutiles retirés. **Reste** : 9 `collectAsState()` non liés au cycle de vie (vs 51 `collectAsStateWithLifecycle`). → Aligner. *Prévention : rule 11.* **Suivi : #127.**
+- [ ] 🟢 **C15 — Garde `if (… == null) return` sur un nullable.** [DiagnosticRepository.kt:149](../app/src/main/java/fr/harmoniamk/statsmkworld/repository/DiagnosticRepository.kt) (`if (mkworldTeams == null) return OpponentResolution.Error`) au lieu de `?:` / `?.let`. → `val teams = mkworldTeams ?: return OpponentResolution.Error`. *Prévention : `.claude/rules/kotlin/style.md`.* **Suivi : à créer.**
 
 ---
 
@@ -128,13 +130,13 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 
 - [ ] 🟡 **G2 — Rôles et équipe synthétique en littéraux.** Rôles `0/1/2` et le mapping « leader → 2 » répétés ([PlayerEntity.kt:44](../app/src/main/java/fr/harmoniamk/statsmkworld/database/entities/PlayerEntity.kt), [SignupViewModel.kt:124](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/signup/SignupViewModel.kt), [DebugViewModel.kt:99](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/debug/DebugViewModel.kt), [TeamProfileViewModel.kt:128,150](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/teamProfile/TeamProfileViewModel.kt), [PlayerProfileViewModel.kt:93,112-119](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/playerProfile/PlayerProfileViewModel.kt)) alors qu'un `ProfileRole` existe côté UI ([ProfileCells.kt:40](../app/src/main/java/fr/harmoniamk/statsmkworld/ui/cells/ProfileCells.kt)) ; id `"123456789"` de la « 6v6 Squad » ([FetchUseCase.kt:155](../app/src/main/java/fr/harmoniamk/statsmkworld/usecase/FetchUseCase.kt)). Absorbe l'ancien D31. → Enum `Role` (valeur Firebase + libellé) + constante. *Prévention : rule 61.* **Suivi : #107.**
 - [ ] 🟡 **G6 — Sentinelle allié `rosterId = "-1"` en littéral (~15 sites).** [PlayerEntity.kt:32](../app/src/main/java/fr/harmoniamk/statsmkworld/database/entities/PlayerEntity.kt), [FetchUseCase.kt:184](../app/src/main/java/fr/harmoniamk/statsmkworld/usecase/FetchUseCase.kt), [OpponentDetailViewModel.kt:266,305](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/opponent/OpponentDetailViewModel.kt), [MapDetailViewModel.kt:193,233](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/map/MapDetailViewModel.kt), [TeamProfileViewModel.kt:117,180](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/teamProfile/TeamProfileViewModel.kt), D27. Écriture et lecture doivent rester cohérentes. → Constante partagée + `val PlayerEntity.isAlly`. *Prévention : rule 61.* **Suivi : #107.**
-- [ ] 🟢 **G7 — Marge bottombar `90.dp` en littéral.** 16 occurrences de `90.dp`, dont **13 marges bottombar** ; **8** sont posées sur des écrans du graphe racine **sans** bottombar : `MapDetailScreen.kt:151`, `OpponentDetailScreen.kt:180`, et les 6 écrans de classement `OpponentPilots`/`OpponentTracks`/`OpponentBaggers`/`MapPilots`/`MapOpponents`/`MapBaggers` `RankingScreen`. Hors périmètre : `MapCell.kt:135` (largeur) et `AddTrackScreen.kt:279` (hauteur de grille), plus un commentaire de `StatsRankingScreen.kt:60`. → Constante partagée (`ui/`), appliquée aux seuls contenus de pôle. *Prévention : rules 17/61.* **Suivi : #107.**
 - [ ] 🟡 **G1 — Id joueur debug `"18595"` codé en dur** (`ScoringConstants.DEBUG_PLAYER_ID`). → Remote Config ou `BuildConfig`. *Prévention : —.* **Suivi : #108.**
 - [ ] 🟡 **G3 — Scraping `mkwrs.com` fragile** (`WorldRecordsRepository`, regex ; seul consommateur : écran Debug). Champs du modèle `WorldRecord` peuplés mais jamais lus. → Tolérance + log, ou retrait si la feature est abandonnée. *Prévention : —.* **Suivi : #108.**
 - [ ] 🟢 **G4 — `.kotlin/` non ignoré.** Dossier présent à la racine, non suivi mais absent du `.gitignore` (risque de commit accidentel via `git add -A`). → Ajouter `.kotlin/`. *Prévention : —.* **Suivi : #108.**
 - [ ] 🟢 **G5 — Homonyme `WarScore`.** `model/firebase/WarScore` et `model/local/Stats.kt:343 → WarScore(war, score)` partagent le nom (risque d'import erroné). → Renommer la variante présentation (`RankedWarScore`). *Prévention : rule 63.* **Suivi : #108.**
 - [ ] 🟢 **G8 — Documentation : références à des rules supprimées.** `TECHNICAL.md` (l. 102, 104, 115, 186, 188, 190, 198, 691, 722, 760, 789, 794, 796, 1045) et `PROTOTYPE_UX.md` (l. 185, 233, 268) citent `15-ui-prototype-reference.md` / « rules 13/15 » (pixel-perfect), rules retirées à la fin de l'epic. → Remplacer par les rules 13/16 actuelles. *Prévention : rule 50 (références croisées).* **Suivi : #109.**
 - [ ] 🟢 **G9 — `TECHNICAL.md` décrit encore le cache de classements supprimé.** [TECHNICAL.md:278](TECHNICAL.md) attribue le classement adverse par roster à « `InitStatsWorker` → `withFullTeamStats` », alors que ce cache (`StatsRepository`) a été supprimé en #51 : le calcul vit dans `StatsFullViewModel.computeOpponentRankings` / `StatsRankingViewModel.computeRankings` (cf. TECHNICAL.md:750). → Réattribuer la phrase aux ViewModels. *Prévention : rule 50 (références croisées).* **Suivi : #109.**
+- [ ] 🟢 **G10 — Renvois numériques aux rules dans le code et la doc.** Depuis #158 les rules sont des fichiers à slug (`.claude/rules/<couche>/<sujet>.md`) ; les ~151 commentaires `rule NN` du code (ex. [OpponentDetailScreen.kt:87](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/opponent/OpponentDetailScreen.kt)) et ceux de `TECHNICAL.md` / `PROTOTYPE_UX.md` / des lignes *Prévention* de cet audit restent valables via la table de correspondance de `.claude/rules-index.md`. **« rule 15 » est morte** (référence maquette retirée à la fin de l'epic, côté doc cf. G8) et reste citée dans le code : [MKSegmentedSelector.kt:20](../app/src/main/java/fr/harmoniamk/statsmkworld/ui/MKSegmentedSelector.kt), [MKStepper.kt:20](../app/src/main/java/fr/harmoniamk/statsmkworld/ui/MKStepper.kt), [RootScreen.kt:616](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/RootScreen.kt), [PeriodScreen.kt:84](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/warList/period/PeriodScreen.kt), [OpponentDetailScreen.kt:87,318](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/opponent/OpponentDetailScreen.kt), [MapDetailScreen.kt:70](../app/src/main/java/fr/harmoniamk/statsmkworld/screen/stats/map/MapDetailScreen.kt). → Au fil des tickets, remplacer un renvoi `rule NN` touché par le ticket `#NN` d'origine (ou le supprimer). *Prévention : `.claude/rules/kotlin/commentaires.md` (pas de n° de rule en commentaire) ; `.claude/rules/process/documentation.md` § références croisées.* **Suivi : à créer.**
 
 ---
 
@@ -152,8 +154,8 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 7. **P8** (#111 — rule 21 sur `OpponentDetail`/`MapDetail`/`Period`) puis **P5** (#115) ; **P7** (#90, mesures device).
 
 ### Lot 3 — Hygiène à faible coût (≈ 1 j)
-8. **D34** (#133 — suppression `MapCell`), **C12**, **C14** (#121), **D14** (#142), **G4** (#108), **G8** (#109).
-9. Constantes : **G2**, **G6**, **G7** (#107), **D28**, **D30** (#138).
+8. **D34** (#133 — suppression `MapCell`), **C12**, **C14** (#121), **D14** (#142), **G4** (#108), **G8** (#109), **G10**, **B38**, **C15**.
+9. Constantes : **G2**, **G6** (#107), **D28**, **D30** (#138).
 
 ### Lot 4 — Refactoring structurel (itératif)
 10. UI : **D16** (#130), **D35** (#131), **D18**, **D19** (#134), **D21** (#135), **D36** (#132).
@@ -167,31 +169,33 @@ Conventions de maintenance (rule `50-process-doc.md`) :
 
 ## 9. Matrice audit ↔ prévention
 
-Chaque catégorie d'entrée est rattachée à la cause qui la produit et à ce qui l'empêche de revenir. La relecture finale anti-audit (`.claude/agents/ticket-worker.md` § 4, `.claude/skills/ticket-dev/SKILL.md` § 4) parcourt cette table sur le diff avant livraison.
+Chaque catégorie d'entrée est rattachée à la cause qui la produit et à ce qui l'empêche de revenir (rules : chemins relatifs à `.claude/rules/`, index dans `.claude/rules-index.md`). La relecture finale anti-audit (`.claude/agents/ticket-worker.md` § 4, `.claude/skills/ticket-dev/SKILL.md` § 4) parcourt cette table sur le diff avant livraison.
 
 | Catégorie (entrées) | Cause générative | Prévention |
 |---|---|---|
-| Secrets / données sensibles côté client (A2, A4, A5) | Secret placé dans `BuildConfig`, sauvegarde par défaut | rule 40 § secrets ; `settings.json` (deny lecture des secrets) |
-| Écriture destructive mal placée (B27, D26) | `clear*()` dans une méthode appelée par élément | rule 30 § écriture destructive |
-| Dépendance UI dans la couche données (B28) | Repository qui manipule une `Activity` | rule 30 § couche données sans UI |
+| Secrets / données sensibles côté client (A2, A4, A5) | Secret placé dans `BuildConfig`, sauvegarde par défaut | `build/release-securite.md` § secrets ; `settings.json` (deny lecture des secrets) |
+| Écriture destructive mal placée (B27, D26) | `clear*()` dans une méthode appelée par élément | `data/repositories.md` § écriture destructive ; `data/room.md` |
+| Dépendance UI dans la couche données (B28) | Repository qui manipule une `Activity` | `data/repositories.md` § couche données sans UI |
 | Branches d'état incomplètes (B29) | Seule la branche nominale traitée | checklist anti-audit (correctness) |
-| Requêtes concurrentes à la saisie (B30, D25) | `launch` par frappe sans annulation | rule 20 § recherche à la saisie |
-| État mutable partagé, saisie, nullables (B31, B32, B33) | `var` capturée, `toInt()`, `?.toString()` | rule 60 |
-| Adversaire effacé (B32, B11) | `mapNotNull` sur une résolution | rule 12 |
-| Filtre d'écran non hérité par les enfants (B36) | Segment de route ajouté à une partie seulement des écrans enfants | checklist anti-audit (correctness) |
-| Moyennes et classements faussés (B34, B35) | Moyenne de points reconvertie en position, manches non courues comptées, tri sans seuil | rule 13 § classements et positions moyennes |
-| Calcul sur le thread UI / calcul redondant (P7, P8) | Construction `WarDetails` / agrégats hors `withContext`, reconstruction par élément | rule 21 |
-| Rafales réseau (P2, B30) | Parallélisme non borné vers MKCentral | rule 30 § résolution réseau |
+| Requêtes concurrentes à la saisie (B30, D25) | `launch` par frappe sans annulation | `viewmodel/viewmodels.md` § recherche à la saisie |
+| État mutable partagé, saisie, nullables (B31, B32, B33, B37, C15) | `var` capturée, `toInt()`/`toLong()`, `?.toString()`, garde `if (… == null) return` | `kotlin/style.md` |
+| Adversaire effacé (B32, B11) | `mapNotNull` sur une résolution | `ui/roster-player-display.md` (`TeamEntity.unknown`) |
+| Filtre d'écran non hérité par les enfants (B36) | Segment de route ajouté à une partie seulement des écrans enfants | `viewmodel/navigation-filtres.md` |
+| Moyennes et classements faussés (B34, B35) | Moyenne de points reconvertie en position, manches non courues comptées, tri sans seuil | `stats/calculs.md` § classements et positions moyennes |
+| Calcul sur le thread UI / calcul redondant (P7, P8) | Construction `WarDetails` / agrégats hors `withContext`, reconstruction par élément | `viewmodel/viewmodels.md` § agrégation de wars |
+| Rafales réseau (P2, B30) | Parallélisme non borné vers MKCentral | `data/repositories.md` § réseau par élément |
 | I/O au démarrage (P5) | Appel réseau bloquant le routage | checklist anti-audit (perf) |
-| Composants UI dupliqués (D16, D18, D19, D21, D35, D38) | Composable privé recréé sans chercher l'existant | rule 16 § chercher avant de créer ; rule 13 |
-| Logique dupliquée (D2, D9, D10, D24-D28, D37) | Copier-coller d'une branche ou d'un VM voisin | rules 16, 32, 61 ; checklist (duplication) |
-| Extensions mal placées (D36) | Extension posée dans le fichier qui l'utilise | rule 61 § corollaire extensions |
-| One-shots en `Flow`, paramètres morts (C9) | Signature calquée sur un ancien patron | rule 30 |
-| Contexte statique / libellés en dur (C10) | Raccourci `MainApplication.instance` | rule 20 § ressources dans les VM |
-| Fonctions locales | Helper déclaré dans la fonction appelante | rule 62 |
-| Code mort / commenté (D34, D39, C14) | Remplacement sans suppression de l'ancien | rule 64 § code commenté ; checklist (orphelins) |
-| Constantes magiques (G1, G2, G6, G7, D28, D30) | Littéral métier recopié à chaque site | rule 61 § littéraux métier partagés ; rule 17 |
-| Documentation obsolète (G8, G9, P8) | Rule ou comportement modifié sans grep des références | rule 50 § références croisées |
+| Composants UI dupliqués (D16, D18, D19, D21, D35, D38) | Composable privé recréé sans chercher l'existant | `ui/components.md` § chercher l'existant |
+| Marge bottombar absente / superflue (B38) | Écran de pôle ajouté sans `BottomBarInset` | `ui/bottom-nav.md` § marge basse |
+| Collecte d'état Compose (C8) | `collectAsState()` hors cycle de vie | `ui/compose.md` § collecte |
+| Logique dupliquée (D2, D9, D10, D24-D28, D37) | Copier-coller d'une branche ou d'un VM voisin | `kotlin/constantes-extensions.md` (principe ≥ 2 sites) ; `ui/components.md` ; `data/repositories.md` ; checklist (duplication) |
+| Extensions mal placées (D36) | Extension posée dans le fichier qui l'utilise | `kotlin/constantes-extensions.md` § placement des extensions |
+| One-shots en `Flow`, paramètres morts (C9) | Signature calquée sur un ancien patron | `data/repositories.md` § `suspend` / `Flow` |
+| Contexte statique / libellés en dur (C10) | Raccourci `MainApplication.instance` | `viewmodel/viewmodels.md` § ressources ; `ui/strings.md` |
+| Fonctions locales | Helper déclaré dans la fonction appelante | `kotlin/style.md` § pas de fonction locale |
+| Code mort / commenté (D34, D39, C14) | Remplacement sans suppression de l'ancien | `kotlin/commentaires.md` § code commenté ; checklist (orphelins) |
+| Constantes magiques (G1, G2, G6, D28, D30) | Littéral métier recopié à chaque site | `kotlin/constantes-extensions.md` § littéraux métier |
+| Documentation obsolète, renvois de rules (G8, G9, G10, P8) | Rule ou comportement modifié sans grep des références ; n° de rule cité en commentaire | `process/documentation.md` § références croisées ; `kotlin/commentaires.md` |
 | Tests / CI / version (T1-T3) | Décision utilisateur en attente | hors config — `CLAUDE.md` (pas de tests spontanés) |
 | Sans prévention dédiée (D11-D15, D33, C2, C4-C6, C12, C13, G3-G5) | Dette historique, pas reproduite par le flux actuel | checklist anti-audit (ne pas aggraver) |
 

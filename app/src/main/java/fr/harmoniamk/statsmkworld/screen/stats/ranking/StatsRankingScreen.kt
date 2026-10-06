@@ -32,6 +32,7 @@ import fr.harmoniamk.statsmkworld.extension.toPercentString
 import fr.harmoniamk.statsmkworld.extension.trackScoreToDiff
 import fr.harmoniamk.statsmkworld.screen.stats.StatsType
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.BottomBarInset
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
@@ -61,10 +62,9 @@ fun StatsRankingScreen(
     val state by viewModel.state.collectAsState()
     val is24p = state.is24PEnabled == true
 
-    // padding bas = hauteur de la bottom bar (rule 17, 90.dp).
     BaseScreen(
         title = stringResource(R.string.classements),
-        modifier = Modifier.padding(bottom = 90.dp),
+        modifier = Modifier.padding(bottom = BottomBarInset),
         // Sélecteur de saison (#70, MKSeasonDropdown partagé rule 16). Change l'état VM ⇒
         // recalcul à la volée (rule 11, pas de re-nav).
         headerTrailing = {

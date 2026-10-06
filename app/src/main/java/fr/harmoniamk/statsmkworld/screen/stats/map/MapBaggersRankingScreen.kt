@@ -37,7 +37,7 @@ fun MapBaggersRankingScreen(
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BaseScreen(title = stringResource(R.string.map_detail_baggers), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.map_detail_baggers), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             state.baggers.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)

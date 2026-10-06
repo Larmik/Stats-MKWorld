@@ -186,7 +186,6 @@ fun OpponentDetailScreen(
                                 onClick = onWarDetailsClick
                             )
                         }
-                        item { Spacer(Modifier.height(90.dp)) }
                     }
                 }
             }

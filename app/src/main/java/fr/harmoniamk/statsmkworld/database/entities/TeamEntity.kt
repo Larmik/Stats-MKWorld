@@ -36,4 +36,12 @@ data class TeamEntity(
         color = roster.color.toInt(),
         logo = null
     )
+
+    companion object {
+        /**
+         * Adversaire irrésoluble (roster/équipe hors cache, war legacy) : dégradé plutôt
+         * qu'effacé, l'[id] est conservé pour l'appariement score/pénalité.
+         */
+        fun unknown(id: String) = TeamEntity(id = id, name = "Équipe inconnue", tag = "???", color = null, logo = null)
+    }
 }

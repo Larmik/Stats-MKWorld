@@ -50,6 +50,7 @@ import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarDetails
 import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.BottomBarInset
 import fr.harmoniamk.statsmkworld.extension.displayName
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
@@ -81,7 +82,7 @@ fun WelcomeScreen(
     var windowIndex by rememberSaveable { mutableIntStateOf(0) }
     BaseScreen(
         title = stringResource(R.string.accueil),
-        modifier = Modifier.padding(bottom = 90.dp),
+        modifier = Modifier.padding(bottom = BottomBarInset),
         onSearch = onSearch,
         // Dropdown de saison (#70) : filtre tous les agrégats du dashboard.
         headerTrailing = {

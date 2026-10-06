@@ -40,7 +40,7 @@ fun OpponentTracksRankingScreen(
     BackHandler { onBack() }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    BaseScreen(title = stringResource(R.string.opponent_detail_best_tracks), onBack = onBack, modifier = Modifier.padding(bottom = 90.dp)) {
+    BaseScreen(title = stringResource(R.string.opponent_detail_best_tracks), onBack = onBack) {
         when {
             state.loading -> CircularProgressIndicator()
             state.allTracks.isEmpty() -> MKText(text = stringResource(R.string.stats_no_data), textColor = Colors.white66, fontSize = 13)

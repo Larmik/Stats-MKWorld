@@ -173,7 +173,7 @@ class OpponentDetailViewModel @AssistedInject constructor(
                     name = roster?.name ?: resolved.name,
                     tag = roster?.tag ?: resolved.tag
                 )
-            } ?: TeamEntity(id = teamId, name = "Équipe inconnue", tag = "???", color = null, logo = null)
+            } ?: TeamEntity.unknown(teamId)
 
             // Wars triées chronologiquement (war.id = timestamp).
             val chronological = wars.sortedBy { it.war.id }

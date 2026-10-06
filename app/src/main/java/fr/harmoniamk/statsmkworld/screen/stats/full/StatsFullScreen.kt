@@ -52,6 +52,7 @@ import fr.harmoniamk.statsmkworld.model.local.Stats
 import fr.harmoniamk.statsmkworld.model.local.WarKindFilter
 import fr.harmoniamk.statsmkworld.screen.stats.ranking.RankingItem
 import fr.harmoniamk.statsmkworld.ui.BaseScreen
+import fr.harmoniamk.statsmkworld.ui.BottomBarInset
 import fr.harmoniamk.statsmkworld.ui.Colors
 import fr.harmoniamk.statsmkworld.ui.Fonts
 import fr.harmoniamk.statsmkworld.ui.MKSeasonDropdown
@@ -157,7 +158,7 @@ fun StatsFullScreen(
                 onSeasonSelected = viewModel::onSeasonSelected
             )
         },
-        modifier = Modifier.padding(bottom = if (viewModel.showTabs) 90.dp else 0.dp)
+        modifier = Modifier.padding(bottom = if (viewModel.showTabs) BottomBarInset else 0.dp)
     ) {
         // Le header reste toujours visible ; seule la zone de données passe en chargement au
         // recompute (#73). Sélecteur 12j/24j retiré temporairement (#37, is24p figé false côté VM).

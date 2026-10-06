@@ -281,7 +281,7 @@ class MapDetailViewModel @AssistedInject constructor(
                         name = roster?.name ?: resolved.name,
                         tag = roster?.tag ?: resolved.tag
                     )
-                } ?: TeamEntity(id = opponentId, name = "Équipe inconnue", tag = "???", color = null, logo = null)
+                } ?: TeamEntity.unknown(opponentId)
                 OpponentRanking(
                     team = team,
                     averageTeamScore = averageTeamScore,

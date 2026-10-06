@@ -155,7 +155,6 @@ fun MapDetailScreen(
                             completeRowsOnly = true
                         )
                     }
-                    item { Spacer(Modifier.height(90.dp)) }
                 }
             }
         }

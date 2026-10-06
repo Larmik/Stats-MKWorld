@@ -65,8 +65,9 @@ le compromis (effort / risque / portée). Mets en avant la solution recommandée
   (le préfixe sert au nommage de branche par `/ticket-dev`).
 - **Labels de type** : `bug` (bug) ou `enhancement` (feature et technique).
 - **Pistes et solutions conformes aux rules** : une solution proposée ne doit pas
-  contredire `.claude/rules/*.md` (ex. pas de parallélisme non borné vers MKCentral,
-  rule 30 ; pas de composant dupliqué, rule 16). Si le ticket découle d'une entrée de
+  contredire `.claude/rules/**` (index : `.claude/rules-index.md` ; ex. pas de parallélisme
+  non borné vers MKCentral, `data/repositories.md` ; pas de composant dupliqué,
+  `ui/components.md`). Si le ticket découle d'une entrée de
   `docs/AUDIT.md`, citer son identifiant (ex. « audit B27 ») dans les Notes.
 - Pas d'epic, de milestone ni de label de pôle : uniquement le label de type.
 

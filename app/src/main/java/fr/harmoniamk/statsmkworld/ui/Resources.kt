@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import fr.harmoniamk.statsmkworld.R
 
 object Colors{
@@ -87,3 +88,9 @@ object Fonts {
         )
 
 }
+
+/**
+ * Marge basse des contenus scrollables de pôle : hauteur de la bottombar de `HomeScreen`, dont
+ * l'`innerPadding` n'est pas propagé au contenu (#107).
+ */
+val BottomBarInset = 90.dp
