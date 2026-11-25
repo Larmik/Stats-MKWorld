@@ -1136,7 +1136,7 @@ Le `.claude/settings.json` du dépôt verrouille en lecture `local.properties`, 
 
 ## 20. Annexe : circuits (enum Maps)
 
-`model/local/Maps.kt` — 30 entrées, **l'ordinal de l'enum = l'index stocké dans `WarTrack.index`**. Chaque entrée porte `label` (`@StringRes`), `picture`, `cup`, `background` (`@DrawableRes`).
+`model/local/Maps.kt` — 48 entrées, **l'ordinal de l'enum = l'index stocké dans `WarTrack.index`**. Chaque entrée porte `label` (`@StringRes`), `picture`, `cup`, `background` (`@DrawableRes`).
 
 | # | Code | Coupe |
 |---|---|---|
@@ -1148,6 +1148,8 @@ Le `.claude/settings.json` du dépôt verrouille en lecture `local.properties`, 
 | 20–23 | DD, BCi, DBB, rMMM | Feuille |
 | 24–27 | rCM, rTF, BC, AH | Éclair |
 | 28–29 | MC, RR | Spéciale |
+| 30–39 | rCI1, rCI2, rGV1, rGV2, rGV3, rKP1, rMC1, rMC2, rMC3, rVL1 | — (circuits rétro supplémentaires) |
+| 40–47 | MBC2, rSGB2, rWS2, rDH2, SSS2, rAF2, rDKP2, rKTB2 | — (variantes « 2 », fond `background` du circuit d'origine) |
 
 > Attention : la coupe associée dans l'enum suit l'ordre déclaratif, qui ne correspond pas exactement à un découpage de 4 — certaines entrées « éclair »/« feuille » se chevauchent (ex. `rMMM` est en coupe Éclair). Se référer au champ `cup` de chaque entrée pour la vérité.
 

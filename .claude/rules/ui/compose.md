@@ -50,9 +50,11 @@ paths:
 - Centraliser avant/arrière dans une seule `onStepChange(step)` appelée par Précédent,
   `BackHandler` et le clic stepper : `step >= current` → rien à réinitialiser ; `step < current`
   → réinitialiser la sélection de l'étape rejointe.
-- Revenir à la première étape = remise à zéro complète du wizard.
-- Mutualiser le corps de reset s'il a ≥ 2 déclencheurs (cf. `kotlin/constantes-extensions.md`).
-- Implémentations de référence : `AddWarViewModel.onStepChange` (`resetOpponentSelection`,
-  partagé avec `onModeChange` ; `resetPlayerSelection`) et `AddTrackViewModel.onStepChange`
-  (`resetTrack`, `resetIntermission`, `resetPositions`).
+- Exception, étape de saisie unitaire séquentielle (Positions d'AddTrack) : le back système /
+  appbar annule d'abord la dernière saisie (fonction VM dédiée, `onUndoLastPosition()`) et ne
+  recule d'étape que sans saisie ; « Précédent » reste un retour d'étape via `onStepChange`.
+- Revenir à la première étape = remise à zéro complète ; mutualiser le corps de reset s'il a
+  ≥ 2 déclencheurs (cf. `kotlin/constantes-extensions.md`).
+- Références : `AddWarViewModel.onStepChange` (`resetOpponentSelection` partagé avec `onModeChange`,
+  `resetPlayerSelection`), `AddTrackViewModel.onStepChange` (`resetTrack/Intermission/Positions`).
 - Le gating du stepper (étape cliquable si les précédentes sont complètes) reste indépendant.

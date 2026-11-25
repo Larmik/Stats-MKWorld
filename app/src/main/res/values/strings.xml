@@ -505,4 +505,12 @@
     <string name="rmc2">Mario Circuit 2</string>
     <string name="rmc3">Mario Circuit 3</string>
     <string name="rvl1">Vanilla Lake 1</string>
+    <string name="mbc2">Mario Bros Circuit 2</string>
+    <string name="rktb2">Koopa Troopa Beach 2</string>
+    <string name="sss2">Salty Salty Speedway 2</string>
+    <string name="rdkp2">DK Pass 2</string>
+    <string name="rdh2">Desert Hills 2</string>
+    <string name="rsgb2">Shy Guy Bazaar 2</string>
+    <string name="rws2">Wario Stadium 2</string>
+    <string name="raf2">Airship Fortress 2</string>
 </resources>

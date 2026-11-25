@@ -45,7 +45,15 @@ enum class Maps(@StringRes val label: Int, @DrawableRes val picture: Int, @Drawa
     rMC1(R.string.rmc1, R.drawable.rmc1,  R.drawable.rmc1),
     rMC2(R.string.rmc2, R.drawable.rmc2,  R.drawable.rmc2),
     rMC3(R.string.rmc3, R.drawable.rmc3,  R.drawable.rmc3),
-    rVL1(R.string.rvl1, R.drawable.rvl1,  R.drawable.rvl1);
+    rVL1(R.string.rvl1, R.drawable.rvl1,  R.drawable.rvl1),
+    MBC2(R.string.mbc2, R.drawable.mbc2,  R.drawable.mbc_tab_bg),
+    rSGB2(R.string.rsgb2, R.drawable.rsgb2,  R.drawable.rsgb_tab_bg),
+    rWS2(R.string.rws2, R.drawable.rws2,  R.drawable.ws_tab_bg),
+    rDH2(R.string.rdh2, R.drawable.rdh2,  R.drawable.rdh_tab_bg),
+    SSS2(R.string.sss2, R.drawable.sss2,  R.drawable.sss_tab_bg),
+    rAF2(R.string.raf2, R.drawable.raf2,  R.drawable.af_tab_bg),
+    rDKP2(R.string.rdkp2, R.drawable.rdkp2,  R.drawable.rdkp_tab_bg),
+    rKTB2(R.string.rktb2, R.drawable.ktb2,  R.drawable.rktb_tab_bg);
 
     companion object {
         fun intermissionsFrom(map: Maps): List<Maps> = when (map) {
