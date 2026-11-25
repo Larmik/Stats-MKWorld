@@ -56,7 +56,8 @@ import fr.harmoniamk.statsmkworld.ui.stats.StatCard
 /**
  * Ajout d'une course dans la war en cours — wizard `Circuit` → (`Intermission` 24p) →
  * `Positions` → `Résumé`, étape pilotée par le [AddTrackViewModel] (retour arrière réinitialise
- * l'étape rejointe). Graphe racine par-dessus CurrentWar → pas de bottombar.
+ * l'étape rejointe ; aux Positions, le back annule d'abord la dernière position saisie).
+ * Graphe racine par-dessus CurrentWar → pas de bottombar.
  */
 @Composable
 fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () -> Unit) {
@@ -71,6 +72,9 @@ fun AddTrackScreen(viewModel: AddTrackViewModel = hiltViewModel(), onBack: () ->
     // Retour étape-conscient, partagé back système + appbar (#50 pt.2).
     val handleBack: () -> Unit = {
         when {
+            // Positions en cours de saisie → annule la dernière sélection, une par une (#169).
+            state.step == state.stepPositions && state.selectedPositions.isNotEmpty() ->
+                viewModel.onUndoLastPosition()
             // Étape avancée → revenir à la précédente (réinitialise l'étape rejointe).
             state.step > 0 -> viewModel.onStepChange(state.step - 1)
             else -> onBack()
@@ -249,7 +253,8 @@ private fun IntermissionNoneChip(selected: Boolean, onClick: () -> Unit, modifie
 /**
  * Étape 3 — saisie joueur par joueur : progression, positions cliquables (les prises sont
  * verrouillées). La dernière position bascule automatiquement sur le Résumé (VM). « Précédent »
- * revient à l'étape précédente et réinitialise la saisie ([AddTrackViewModel.onStepChange]).
+ * revient à l'étape précédente et réinitialise la saisie ([AddTrackViewModel.onStepChange]) ;
+ * le back (système / appbar) annule la dernière position ([AddTrackViewModel.onUndoLastPosition]).
  */
 @Composable
 private fun ColumnScope.PositionsStep(

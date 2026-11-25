@@ -505,4 +505,12 @@
     <string name="rmc2">Circuit Mario 2</string>
     <string name="rmc3">Circuit Mario 3</string>
     <string name="rvl1">Lac Vanille 1</string>
+    <string name="mbc2">Circuit Mario Bros 2</string>
+    <string name="rktb2">Plage Koopa 2</string>
+    <string name="sss2">Cité Fleur-de-sel 2</string>
+    <string name="rdkp2">Alpes DK 2</string>
+    <string name="rdh2">Désert du Soleil 2</string>
+    <string name="rsgb2">Souk Maskass 2</string>
+    <string name="rws2">Stade Wario 2</string>
+    <string name="raf2">Bateau Volant 2</string>
 </resources>

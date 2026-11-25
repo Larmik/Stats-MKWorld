@@ -282,6 +282,19 @@ class AddTrackViewModel @AssistedInject constructor(
         }
     }
 
+    /**
+     * Annule la dernière position saisie (back pendant l'étape Positions, #169) : la position
+     * redevient libre et son joueur redevient le joueur courant. S'appuie sur [positions]
+     * (ordre de saisie), `selectedPositions` étant triée par position.
+     */
+    fun onUndoLastPosition() {
+        positions.removeLastOrNull()
+        _state.value = state.value.copy(
+            selectedPositions = positions.sortedBy { it.position.position },
+            currentPlayer = state.value.players.getOrNull(positions.size)
+        )
+    }
+
     fun onAddShock(id: String) {
         val shocks = state.value.shocks.toMutableMap()
         shocks[id]?.let { shocks[id] = it + 1 } ?: run { shocks[id] = 1 }
