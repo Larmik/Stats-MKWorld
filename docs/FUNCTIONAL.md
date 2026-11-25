@@ -360,7 +360,7 @@ Une fois la war lancée, tu arrives sur l'écran de suivi :
 Appuie sur **« Course suivante »**. Un assistant t'accompagne :
 
 1. **Circuit** — Cherche et choisis le circuit joué parmi les 30 disponibles.
-2. **Positions** — Saisis la position d'arrivée **joueur par joueur** : pour chaque joueur, appuie sur sa place (de 1 à 12). Les places déjà prises sont verrouillées. Après la dernière position, tu passes au résumé.
+2. **Positions** — Saisis la position d'arrivée **joueur par joueur** : pour chaque joueur, appuie sur sa place (de 1 à 12). Les places déjà prises sont verrouillées. Après la dernière position, tu passes au résumé. Une erreur de saisie ? Le **retour** (bouton retour du téléphone ou flèche **←** en haut) annule la **dernière position saisie** : la place redevient libre et c'est de nouveau au joueur concerné. Répète-le pour annuler plusieurs positions, dans l'ordre inverse ; sans aucune position saisie, le retour te ramène à l'étape précédente. Le bouton **« Précédent »**, lui, revient directement à l'étape précédente et efface toute la saisie.
 3. **Résumé** — L'app affiche le **score de la course** (calculé automatiquement) et te permet, pour chaque joueur, d'**ajouter ou retirer des éclairs** avec les boutons « − » et « + ». Appuie sur **« Confirmer »** pour enregistrer la course.
 
 > En 24 joueurs, une étape **Intermission** s'ajoute (un second circuit enchaîné, optionnel).
