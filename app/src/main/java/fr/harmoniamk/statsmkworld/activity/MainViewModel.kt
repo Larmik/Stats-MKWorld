@@ -54,8 +54,12 @@ class MainViewModel @Inject constructor(
         .mergeWith(_state)
         .stateIn(viewModelScope, SharingStarted.Lazily, _state.value)
 
+    /**
+     * Retour OAuth Discord : lit le paramètre `code` du deep link (Discord ajoute d'autres
+     * paramètres, ex. `iss`) et force `Signup` seulement s'il est présent.
+     */
     fun processIntent(intent: Intent) {
-        intent.dataString?.split("?")?.lastOrNull()?.split("=")?.lastOrNull()?.let { code ->
+        intent.data?.getQueryParameter("code")?.takeIf { it.isNotEmpty() }?.let { code ->
             _state.value = _state.value.copy(code = code, startDestination = "Signup")
         }
     }

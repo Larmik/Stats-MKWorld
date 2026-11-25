@@ -157,7 +157,7 @@ when {
 }
 ```
 
-`processIntent` extrait le `code` OAuth d'un deep link `statsmkworld.com?...=code` (split sur `?` puis `=`) et force `Signup`. `initStats()` lance `InitStatsWorker` (one-time, tag `"InitStats"`).
+`processIntent` lit le paramètre `code` du deep link de retour OAuth (`statsmkworld.com/?code=…`, Discord y ajoute d'autres paramètres comme `iss`) via `Uri.getQueryParameter("code")` et ne force `Signup` que si ce code est présent et non vide. `initStats()` lance `InitStatsWorker` (one-time, tag `"InitStats"`).
 
 ### Graphe `RootScreen.kt`
 

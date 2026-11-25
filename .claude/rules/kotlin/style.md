@@ -24,6 +24,8 @@ war?.let { doSomething(it) }   // au lieu de : if (war == null) return ; doSomet
 
 - Ne pas réassigner une `var` extérieure dans un `map` / `flatMap` / `forEach` pour la relire
   dans un opérateur suivant : porter la valeur dans l'élément (`Pair`, data class). Cf. audit B31.
+- Paramètre d'une URI (deep link, redirection OAuth) → `uri.getQueryParameter("nom")`, jamais un
+  `split("?")` / `split("=")` : l'ordre et le nombre de paramètres ne sont pas garantis.
 - Texte saisi → `toIntOrNull()` / `toLongOrNull()` avec repli explicite, jamais `toInt()`. Cf.
   audit B32.
 
