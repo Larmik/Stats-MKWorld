@@ -7,7 +7,7 @@ Guide de référence pour travailler sur **Stats MKWorld** — application Andro
 App Android native (Kotlin + Jetpack Compose) qui permet à des équipes compétitives de Mario Kart World d'enregistrer leurs *wars* course par course, de les synchroniser en temps réel via Firebase, et d'en tirer des statistiques détaillées (joueurs, équipes, circuits, adversaires). L'identité du joueur et les rosters proviennent de **MKCentral** ; la connexion se fait via **Discord OAuth2**.
 
 - **Package / applicationId** : `fr.harmoniamk.statsmkworld`
-- **Version** : `versionName` 4.1.0 / `versionCode` 26 (bump manuel à la release)
+- **Version** : `versionName` 4.1.1 / `versionCode` 27 (bump manuel à la release)
 - **minSdk** 28 · **targetSdk / compileSdk** 37 · **Java 17**
 - **Éditeur** : Harmonia
 - Documentation détaillée : [docs/TECHNICAL.md](docs/TECHNICAL.md) (architecture) · [docs/FUNCTIONAL.md](docs/FUNCTIONAL.md) (fonctionnel)
@@ -115,7 +115,7 @@ Schémas Protobuf hors package : `app/src/main/proto/` (`mkc_player.proto`, `mkc
 
 1. Si `RemoteConfig.minimumVersion > versionCode` → écran « mise à jour requise ».
 2. Sinon, si un `mkcPlayer` valide (`id != 0`) existe en DataStore → `Home`.
-3. Sinon → `Signup` (onboarding + Discord OAuth). Un deep link `statsmkworld.com?...=code` injecte le `code` OAuth.
+3. Sinon → `Signup` (onboarding + Discord OAuth). Un deep link `statsmkworld.com/?code=…` injecte le `code` OAuth (paramètre lu via `Uri.getQueryParameter`).
 
 ## Conventions de code
 
